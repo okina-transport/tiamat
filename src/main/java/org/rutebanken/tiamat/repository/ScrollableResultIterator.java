@@ -1,7 +1,9 @@
 package org.rutebanken.tiamat.repository;
 
+import org.hibernate.Cache;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
+import org.rutebanken.tiamat.model.StopPlace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,13 +16,15 @@ public class ScrollableResultIterator<T> implements Iterator<T> {
     private final ScrollableResults scrollableResults;
     private final int fetchSize;
     private final Session session;
+    private final Cache cache;
     private int counter;
     private Optional<T> currentItem = Optional.empty();
 
-    public ScrollableResultIterator(ScrollableResults scrollableResults, int fetchSize, Session session) {
+    public ScrollableResultIterator(ScrollableResults scrollableResults, int fetchSize, Session session, Cache cache) {
         this.scrollableResults = scrollableResults;
         this.fetchSize = fetchSize;
         this.session = session;
+        this.cache = cache;
         counter = 0;
     }
 
@@ -37,7 +41,7 @@ public class ScrollableResultIterator<T> implements Iterator<T> {
 
     @Override
     public T next() {
-        if(!currentItem.isPresent()) {
+        if (!currentItem.isPresent()) {
             currentItem = getNext();
         }
 
@@ -63,8 +67,23 @@ public class ScrollableResultIterator<T> implements Iterator<T> {
     }
 
     private void evictBeforeNext() {
-        if(currentItem.isPresent()) {
+        if (currentItem.isPresent()) {
             session.evict(currentItem.get());
+
+            if (currentItem.get() instanceof StopPlace) {
+                StopPlace stopPlace = (StopPlace) currentItem.get();
+                if (cache.containsEntity(StopPlace.class, stopPlace.getId())) {
+//                    logger.warn("Is still cached: {}", stopPlace);
+                }
+                cache.evictEntity(StopPlace.class, stopPlace.getId());
+
+            }
+        }
+
+        if (counter % fetchSize == 0) {
+            logger.info("Flush and clean session at counter {}", counter);
+            session.flush();
+            session.clear();
         }
     }
 

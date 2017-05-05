@@ -4,10 +4,7 @@ package org.rutebanken.tiamat.repository;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
-import org.hibernate.Criteria;
-import org.hibernate.ScrollMode;
-import org.hibernate.ScrollableResults;
-import org.hibernate.Session;
+import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.model.Quay;
@@ -285,6 +282,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 		final int fetchSize = 100;
 
 		Session session = entityManager.getEntityManagerFactory().createEntityManager().unwrap(Session.class);
+		Cache cache = entityManager.getEntityManagerFactory().getCache().unwrap(Cache.class);
 
 		Criteria query = session.createCriteria(StopPlace.class);
 		if (stopPlaceNetexIds != null) {
@@ -294,9 +292,10 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 		query.setReadOnly(true);
 		query.setFetchSize(fetchSize);
 		query.setCacheable(false);
+		query.setCacheMode(CacheMode.IGNORE);
 		ScrollableResults results = query.scroll(ScrollMode.FORWARD_ONLY);
 
-		ScrollableResultIterator<StopPlace> stopPlaceEntityIterator = new ScrollableResultIterator<>(results, fetchSize, session);
+		ScrollableResultIterator<StopPlace> stopPlaceEntityIterator = new ScrollableResultIterator<>(results, fetchSize, session, cache);
 
 		return stopPlaceEntityIterator;
 	}

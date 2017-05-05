@@ -19,7 +19,7 @@ public abstract class IdentifiedEntity {
     protected String netexId;
 
 
-    private Long getId() {
+    public Long getId() {
         return id;
     }
 

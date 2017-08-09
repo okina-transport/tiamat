@@ -1,6 +1,7 @@
 package org.rutebanken.tiamat.model;
 
 import javax.persistence.*;
+import javax.persistence.Version;
 import java.time.Instant;
 
 @MappedSuperclass
@@ -29,6 +30,9 @@ public class EntityInVersionStructure extends EntityStructure {
     protected ModificationEnumeration modification;
 
     protected long version;
+
+    @Version
+    private Long concurrentCheck;
 
     @Transient
     protected StatusEnumeration status;

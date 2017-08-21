@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.rest.graphql.resolvers;
 
+import graphql.TypeResolutionEnvironment;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.TypeResolver;
 import org.springframework.stereotype.Component;
@@ -13,10 +14,9 @@ public class MutableTypeResolver implements TypeResolver {
     public void setResolveFunction(Function<Object, GraphQLObjectType> resolveFunction) {
         this.resolveFunction = resolveFunction;
     }
-
+    
     @Override
-    public GraphQLObjectType getType(Object object) {
-        return resolveFunction.apply(object);
+    public GraphQLObjectType getType(TypeResolutionEnvironment typeResolutionEnvironment) {
+        return resolveFunction.apply(typeResolutionEnvironment.getObject());
     }
-
 }

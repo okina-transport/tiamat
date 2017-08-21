@@ -148,7 +148,7 @@ public class TransportModeScalar {
 
         List<GraphQLInputObjectField> inputFields = new ArrayList<>();
         inputFields.add(newInputObjectField()
-                .name(TRANSPORT_MODE)
+                .name(TRANSPORT_MODE+"Input")
                 .type(filteredTransportModesType.build())
                 .build()
         );

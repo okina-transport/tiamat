@@ -1,6 +1,8 @@
 package org.rutebanken.tiamat.config;
 
 import org.glassfish.jersey.server.ResourceConfig;
+import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
+import org.rutebanken.tiamat.rest.dto.DtoJbvCodeMappingResource;
 import org.rutebanken.tiamat.rest.dto.DtoQuayResource;
 import org.rutebanken.tiamat.rest.dto.DtoStopPlaceResource;
 import org.rutebanken.tiamat.rest.exception.GeneralExceptionMapper;
@@ -21,6 +23,7 @@ public class JerseyConfig extends ResourceConfig {
         register(HealthResource.class);
         register(DtoStopPlaceResource.class);
         register(DtoQuayResource.class);
+        register(DtoJbvCodeMappingResource.class);
         register(ImportResource.class);
         register(RestoringImportResource.class);
         register(AsyncExportResource.class);

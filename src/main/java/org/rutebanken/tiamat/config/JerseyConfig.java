@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
 import javax.ws.rs.ApplicationPath;
 
 @Configuration
-@ApplicationPath("/jersey")
+@ApplicationPath("/services")
 public class JerseyConfig extends ResourceConfig {
     public JerseyConfig() {
         register(HealthResource.class);

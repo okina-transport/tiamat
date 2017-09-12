@@ -22,12 +22,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
+
 /**
  * Import publication deliveries
  */
 @Component
 @Produces("application/xml")
-@Path("/stop_places/netex")
+@Path(SERVICES_PATH + "/stop_places/netex")
 public class ImportResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportResource.class);

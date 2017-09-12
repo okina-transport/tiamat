@@ -19,9 +19,11 @@ import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.net.URI;
 
+import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
+
 @Component
 @Produces("application/xml")
-@Path("/stop_places/netex")
+@Path(SERVICES_PATH + "/stop_places/netex")
 public class ExportResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ExportResource.class);

@@ -17,11 +17,12 @@ import java.io.PrintWriter;
 import java.time.Instant;
 import java.util.List;
 
+import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
 import static org.rutebanken.tiamat.repository.QuayRepositoryImpl.JBV_CODE;
 
 @Component
 @Produces("application/json")
-@Path("/admin/jbv_code_mapping")
+@Path(SERVICES_PATH + "/admin/jbv_code_mapping")
 public class DtoJbvCodeMappingResource {
 
     private static final Logger logger = LoggerFactory.getLogger(DtoJbvCodeMappingResource.class);

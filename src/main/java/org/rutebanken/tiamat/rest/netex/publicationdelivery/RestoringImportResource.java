@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Consumer;
 
+import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
 import static org.rutebanken.tiamat.rest.netex.publicationdelivery.async.RunnableUnmarshaller.POISON_PARKING;
 import static org.rutebanken.tiamat.rest.netex.publicationdelivery.async.RunnableUnmarshaller.POISON_STOP_PLACE;
 
@@ -52,7 +53,7 @@ import static org.rutebanken.tiamat.rest.netex.publicationdelivery.async.Runnabl
  */
 @Component
 @Produces("application/xml")
-@Path("/admin/netex")
+@Path(SERVICES_PATH + "/admin/netex")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 public class RestoringImportResource {
 

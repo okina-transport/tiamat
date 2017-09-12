@@ -17,9 +17,11 @@ import java.io.PrintWriter;
 import java.time.Instant;
 import java.util.List;
 
+import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
+
 @Component
 @Produces("application/json")
-@Path("/stop_places/mapping/stop_place")
+@Path(SERVICES_PATH + "/stop_places/mapping/stop_place")
 @Transactional
 public class DtoStopPlaceResource {
 

@@ -23,8 +23,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
+
 @Component
-@Path("/stop_places/graphql")
+@Path(SERVICES_PATH + "/stop_places/graphql")
 @Transactional
 public class GraphQLResource {
 

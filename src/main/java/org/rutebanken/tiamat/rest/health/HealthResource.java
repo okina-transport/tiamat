@@ -20,7 +20,7 @@ public class HealthResource {
     private StopPlaceRepository stopPlaceRepository;
 
     @GET
-    @Path("readiness")
+    @Path("ready")
     public Response readinessProbe() {
         stopPlaceRepository.findAllByOrderByChangedDesc(new PageRequest(1, 1));
         return Response.status(Response.Status.OK).build();

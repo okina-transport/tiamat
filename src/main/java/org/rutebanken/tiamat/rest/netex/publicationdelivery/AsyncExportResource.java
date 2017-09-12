@@ -22,7 +22,7 @@ import static org.rutebanken.tiamat.exporter.AsyncPublicationDeliveryExporter.AS
  */
 @Component
 @Produces("application/xml")
-@Path("/publication_delivery")
+@Path("/stop_places/netex")
 public class AsyncExportResource {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncExportResource.class);

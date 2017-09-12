@@ -27,7 +27,7 @@ import java.util.Set;
  */
 @Component
 @Produces("application/xml")
-@Path("/publication_delivery")
+@Path("/stop_places/netex")
 public class ImportResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportResource.class);

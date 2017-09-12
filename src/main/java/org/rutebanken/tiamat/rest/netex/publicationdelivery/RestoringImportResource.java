@@ -52,7 +52,7 @@ import static org.rutebanken.tiamat.rest.netex.publicationdelivery.async.Runnabl
  */
 @Component
 @Produces("application/xml")
-@Path("/publication_delivery")
+@Path("/stop_places/netex")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 public class RestoringImportResource {
 

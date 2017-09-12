@@ -21,7 +21,7 @@ import java.net.URI;
 
 @Component
 @Produces("application/xml")
-@Path("/publication_delivery")
+@Path("/stop_places/netex")
 public class ExportResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ExportResource.class);

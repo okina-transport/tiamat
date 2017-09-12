@@ -21,40 +21,33 @@ import static org.rutebanken.tiamat.repository.QuayRepositoryImpl.JBV_CODE;
 
 @Component
 @Produces("application/json")
-@Path("/stop_places/mapping/quay")
-public class DtoQuayResource {
+@Path("/admin/jbv_code_mapping")
+public class DtoJbvCodeMappingResource {
 
-    private static final Logger logger = LoggerFactory.getLogger(DtoQuayResource.class);
+    private static final Logger logger = LoggerFactory.getLogger(DtoJbvCodeMappingResource.class);
 
     private final QuayRepository quayRepository;
 
     @Autowired
-    public DtoQuayResource(QuayRepository quayRepository) {
+    public DtoJbvCodeMappingResource(QuayRepository quayRepository) {
         this.quayRepository = quayRepository;
     }
 
+
     @GET
     @Produces("text/plain")
-    public Response getIdMapping(@DefaultValue(value = "300000") @QueryParam(value = "recordsPerRoundTrip") int recordsPerRoundTrip,
-                                        @QueryParam("includeStopType") boolean includeStopType) {
+    public Response getJbvCodeMapping() {
 
-        logger.info("Fetching Quay mapping table...");
+        logger.info("Fetching JBV mapping table for all Quays containg keyValue {}...", JBV_CODE);
 
         return Response.ok().entity((StreamingOutput) output -> {
 
-            int recordPosition = 0;
-            boolean lastEmpty = false;
-            Instant now = Instant.now();
             try (PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(output)))) {
-                while (!lastEmpty) {
-                    List<IdMappingDto> quayMappings = quayRepository.findKeyValueMappingsForQuay(now, recordPosition, recordsPerRoundTrip);
-                    for (IdMappingDto mapping : quayMappings) {
-                        writer.println(mapping.toCsvString(includeStopType));
-                        recordPosition++;
+                    List<JbvCodeMappingDto> quayMappings = quayRepository.findJbvCodeMappingsForQuay();
+                    for (JbvCodeMappingDto mapping : quayMappings) {
+                        writer.println(mapping.toCsvString());
                     }
                     writer.flush();
-                    if (quayMappings.isEmpty()) lastEmpty = true;
-                }
                 writer.close();
             } catch (Exception e) {
                 logger.warn("Catched exception when streaming id map for quay: {}", e.getMessage(), e);
@@ -62,4 +55,5 @@ public class DtoQuayResource {
             }
         }).build();
     }
+
 }

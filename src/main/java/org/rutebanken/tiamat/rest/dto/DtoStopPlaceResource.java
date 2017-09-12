@@ -19,7 +19,7 @@ import java.util.List;
 
 @Component
 @Produces("application/json")
-@Path("/stop_place")
+@Path("/stop_places/mapping/stop_place")
 @Transactional
 public class DtoStopPlaceResource {
 
@@ -34,7 +34,6 @@ public class DtoStopPlaceResource {
 
     @GET
     @Produces("text/plain")
-    @Path("/id_mapping")
     public Response getIdMapping(@DefaultValue(value = "300000") @QueryParam(value = "recordsPerRoundTrip") int recordsPerRoundTrip,
                                             @QueryParam("includeStopType") boolean includeStopType) {
 

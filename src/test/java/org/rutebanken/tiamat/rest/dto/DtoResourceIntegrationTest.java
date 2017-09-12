@@ -54,7 +54,7 @@ public class DtoResourceIntegrationTest extends TiamatIntegrationTest {
 
         saverService.saveNewVersion(stopPlace, newVersion);
 
-        String url =  "/jersey/quay/id_mapping";
+        String url =  "/services/quay/id_mapping";
         String responseWithoutStopPlaceType = getIdMapping(url);
 
         assertThat(responseWithoutStopPlaceType).contains(originalId + "," + q1.getNetexId() + "\n");
@@ -90,7 +90,7 @@ public class DtoResourceIntegrationTest extends TiamatIntegrationTest {
 
         saverService.saveNewVersion(stopPlace, newVersion);
 
-        String url =  "/jersey/quay/jbv_code_mapping";
+        String url =  "/services/quay/jbv_code_mapping";
         String response = getIdMapping(url);
 
         assertThat(response)
@@ -102,7 +102,7 @@ public class DtoResourceIntegrationTest extends TiamatIntegrationTest {
 
     @Test
     public void testStopPlaceIdMapping() {
-        String url =  "/jersey/stop_place/id_mapping";
+        String url =  "/services/stop_place/id_mapping";
 
         StopPlace stopPlace = new StopPlace();
         String originalId = "TST:111";

@@ -228,7 +228,7 @@ export MAVEN_OPTS='-Xms256m -Xmx1712m -Xss256m -XX:NewSize=64m -XX:MaxNewSize=12
 ### Import previously exported NeTEx file into emtpy Tiamat
 This NeTEx file contains stop places with IDs starting with *NSR*. Tiamat will bypass the ID sequence and insert these IDs as primary keys into the database.
 ```
-curl  -XPOST -H"Content-Type: application/xml" -d@tiamat-export-130117-20170109-094137.xml http://localhost:1997/jersey/publication_delivery/restoring_import
+curl  -XPOST -H"Content-Type: application/xml" -d@tiamat-export-130117-20170109-094137.xml http://localhost:1997/services/publication_delivery/restoring_import
 ```
 
 ### Initial import from previously exported tiamat data with kubernetes
@@ -237,7 +237,7 @@ pod=`kc get pods  |grep tiamat | awk '{print $1}' | head -n1`
 kc exec -i $pod -- bash -c 'cat > /tmp/import' < tiamat-export-124268-20170313-160049.xml
 kc exec -it $pod bash
 cd /tmp
-curl -XPOST -H "Content-type: application/xml" -d@import http://localhost:8777/jersey/publication_delivery/restoring_import
+curl -XPOST -H "Content-type: application/xml" -d@import http://localhost:8777/services/publication_delivery/restoring_import
 ```
 See https://github.com/rutebanken/devsetup/blob/master/docs/stolon.md#stolon-tiamat-setup
 
@@ -250,7 +250,7 @@ This NeTEx file should not contain NSR ID.
 Tiamat will return the modified NeTEx structure with it's own NSR IDs. Original IDs will be present in key value list on each object.
 
 ```
-curl  -XPOST -H"Content-Type: application/xml" -d@chouette-netex.xml http://localhost:1997/jersey/publication_delivery
+curl  -XPOST -H"Content-Type: application/xml" -d@chouette-netex.xml http://localhost:1997/services/publication_delivery
 ```
 
 

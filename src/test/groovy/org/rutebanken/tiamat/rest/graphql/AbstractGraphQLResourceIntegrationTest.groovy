@@ -15,7 +15,7 @@ import static io.restassured.RestAssured.given;
 
 public abstract class AbstractGraphQLResourceIntegrationTest extends TiamatIntegrationTest {
 
-    protected static final String BASE_URI_GRAPHQL = "/jersey/graphql/";
+    protected static final String BASE_URI_GRAPHQL = "/services/graphql/";
 
     @Before
     public void configureRestAssured() {

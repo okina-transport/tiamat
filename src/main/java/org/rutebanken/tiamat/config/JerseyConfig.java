@@ -9,9 +9,8 @@ import org.rutebanken.tiamat.rest.graphql.GraphQLResource;
 import org.rutebanken.tiamat.rest.health.HealthResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ExportResource;
-import org.rutebanken.tiamat.rest.netex.publicationdelivery.RestoringImportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ImportResource;
-import org.rutebanken.tiamat.rest.topographic_place.StopPlaceTopographicRefUpdaterResource;
+import org.rutebanken.tiamat.rest.netex.publicationdelivery.RestoringImportResource;
 import org.springframework.context.annotation.Configuration;
 
 import javax.ws.rs.ApplicationPath;
@@ -29,7 +28,6 @@ public class JerseyConfig extends ResourceConfig {
         register(AsyncExportResource.class);
         register(ExportResource.class);
         register(GraphQLResource.class);
-        register(StopPlaceTopographicRefUpdaterResource.class);
         register(GeneralExceptionMapper.class);
     }
 }

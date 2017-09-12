@@ -53,7 +53,7 @@ public class ExportResource {
 
     @GET
     @Produces(MediaType.APPLICATION_XML)
-    @Path("changed")
+    @Path("changed_in_period")
     public Response exportStopPlacesWithEffectiveChangedInPeriod(@BeanParam ChangedStopPlaceSearchDto searchDTO,
                                                                         @BeanParam ExportParams exportParams,
                                                                         @Context UriInfo uriInfo)

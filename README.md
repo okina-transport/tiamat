@@ -195,17 +195,17 @@ When the job is finished, you can download the exported data.
 
 ### Start async export:
 ```
-curl https://api-test.entur.org/tiamat/1.0/stop_places/netex/async | xmllint --format -
+curl https://api-test.entur.org/tiamat/1.0/stop_places/netex/export/initiate | xmllint --format -
 ```
 
 ### Check job status:
 ```
-curl https://api-test.entur.org/tiamat/1.0/stop_places/netex/async/job | xmllint --format -
+curl https://api-test.entur.org/tiamat/1.0/stop_places/netex/export | xmllint --format -
 ```
 
 ### When job is done. Download it:
 ```
-curl https://api-test.entur.org/tiamat/1.0/stop_places/netex/async/job/130116/content | zcat | xmllint --format - > export.xml
+curl https://api-test.entur.org/tiamat/1.0/stop_places/netex/export/130116/content | zcat | xmllint --format - > export.xml
 ```
 
 See also https://rutebanken.atlassian.net/browse/NRP-924

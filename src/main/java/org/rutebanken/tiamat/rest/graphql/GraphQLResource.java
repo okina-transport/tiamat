@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
-@Path("/graphql")
+@Path("/stop_places/graphql")
 @Transactional
 public class GraphQLResource {
 

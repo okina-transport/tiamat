@@ -261,7 +261,7 @@ https://rutebanken.atlassian.net/wiki/display/REIS/Holdeplassregister
 # GraphQL
 GraphQL endpoint is available on
 ```
-https://api-test.entur.org/tiamat/1.0/graphql
+https://api-test.entur.org/tiamat/1.0/stop_places/graphql
 ```
 
 Tip: GraphiQL UI available on https://www-test.entur.org/admin/shamash-nsr/

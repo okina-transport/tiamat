@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
+import io.swagger.annotations.Api;
 import org.rutebanken.tiamat.exporter.AsyncPublicationDeliveryExporter;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.job.ExportJob;
@@ -21,6 +22,7 @@ import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportRe
  * Export publication delivery data to google cloud storage. Some parts like stops and parking asynchronously
  */
 @Component
+@Api
 @Produces("application/xml")
 @Path(SERVICES_PATH + "/stop_places/netex/" + ASYNC_JOB_PATH)
 public class AsyncExportResource {

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.collect.Sets;
 import graphql.*;
+import io.swagger.annotations.Api;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.NestedRuntimeException;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
 
 @Component
+@Api
 @Path(SERVICES_PATH + "/stop_places/graphql")
 @Transactional
 public class GraphQLResource {

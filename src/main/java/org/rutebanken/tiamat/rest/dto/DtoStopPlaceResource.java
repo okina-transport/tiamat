@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.rest.dto;
 
+import io.swagger.annotations.Api;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ import java.util.List;
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
 
 @Component
+@Api
 @Produces("application/json")
 @Path(SERVICES_PATH + "/stop_places/mapping/stop_place")
 @Transactional

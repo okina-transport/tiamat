@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.rest.dto;
 
+import io.swagger.annotations.Api;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.repository.QuayRepository;
@@ -21,6 +22,7 @@ import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
 import static org.rutebanken.tiamat.repository.QuayRepositoryImpl.JBV_CODE;
 
 @Component
+@Api
 @Produces("application/json")
 @Path(SERVICES_PATH + "/stop_places/mapping/quay")
 public class DtoQuayResource {

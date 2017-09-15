@@ -2,6 +2,7 @@ package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hazelcast.core.HazelcastInstance;
+import io.swagger.annotations.Api;
 import org.rutebanken.netex.model.Parking;
 import org.rutebanken.netex.model.SiteFrame;
 import org.rutebanken.netex.model.StopPlace;
@@ -53,6 +54,7 @@ import static org.rutebanken.tiamat.rest.netex.publicationdelivery.async.Runnabl
  */
 @Component
 @Produces("application/xml")
+@Api
 @Path(SERVICES_PATH + "/admin/netex")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 public class RestoringImportResource {

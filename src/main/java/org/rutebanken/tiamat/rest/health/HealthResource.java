@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.rest.health;
 
+import io.swagger.annotations.Api;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -12,6 +13,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
 @Component
+@Api
 @Produces("application/json")
 @Path("/health")
 @Transactional

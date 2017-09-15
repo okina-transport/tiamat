@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
+import io.swagger.annotations.Api;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.dtoassembling.disassembler.ChangedStopPlaceSearchDisassembler;
 import org.rutebanken.tiamat.dtoassembling.dto.ChangedStopPlaceSearchDto;
@@ -22,6 +23,7 @@ import java.net.URI;
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
 
 @Component
+@Api
 @Produces("application/xml")
 @Path(SERVICES_PATH + "/stop_places/netex")
 public class ExportResource {

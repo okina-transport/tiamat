@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
+import io.swagger.annotations.Api;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.importer.ImportType;
@@ -28,6 +29,7 @@ import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
  * Import publication deliveries
  */
 @Component
+@Api
 @Produces("application/xml")
 @Path(SERVICES_PATH + "/stop_places/netex")
 public class ImportResource {

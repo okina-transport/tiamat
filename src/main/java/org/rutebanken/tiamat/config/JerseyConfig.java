@@ -1,5 +1,8 @@
 package org.rutebanken.tiamat.config;
 
+import io.swagger.jaxrs.config.BeanConfig;
+import io.swagger.jaxrs.listing.ApiListingResource;
+import io.swagger.jaxrs.listing.SwaggerSerializers;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.rest.dto.DtoJbvCodeMappingResource;
@@ -33,5 +36,24 @@ public class JerseyConfig extends ResourceConfig {
         register(ExportResource.class);
         register(GraphQLResource.class);
         register(GeneralExceptionMapper.class);
+
+        configureSwagger();
+    }
+
+
+    private void configureSwagger() {
+        // Available at localhost:port/api/swagger.json
+        this.register(ApiListingResource.class);
+        this.register(SwaggerSerializers.class);
+
+        BeanConfig config = new BeanConfig();
+        config.setConfigId("tiamat-swagger-doc");
+        config.setTitle("Tiamat API");
+        config.setVersion("v1");
+        config.setSchemes(new String[]{"http", "https"});
+        config.setBasePath(SERVICES_PATH);
+        config.setResourcePackage("org.rutebanken.tiamat");
+        config.setPrettyPrint(true);
+        config.setScan(true);
     }
 }

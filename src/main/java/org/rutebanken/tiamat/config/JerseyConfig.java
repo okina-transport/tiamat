@@ -19,7 +19,7 @@ import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
+import org.glassfish.jersey.servlet.ServletContainer;
 import org.rutebanken.tiamat.rest.dto.DtoJbvCodeMappingResource;
 import org.rutebanken.tiamat.rest.dto.DtoQuayResource;
 import org.rutebanken.tiamat.rest.dto.DtoStopPlaceResource;
@@ -30,6 +30,8 @@ import org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ImportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.RestoringImportResource;
+import org.springframework.boot.web.servlet.ServletRegistrationBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.ws.rs.ApplicationPath;
@@ -44,35 +46,96 @@ public class JerseyConfig extends ResourceConfig {
 
     public static final String SERVICES_STOP_PLACE_PATH = SERVICES_PATH + "/stop_places";
 
-    public JerseyConfig() {
-        register(HealthResource.class);
-        register(DtoStopPlaceResource.class);
-        register(DtoQuayResource.class);
-        register(DtoJbvCodeMappingResource.class);
-        register(ImportResource.class);
-        register(RestoringImportResource.class);
-        register(AsyncExportResource.class);
-        register(ExportResource.class);
-        register(GraphQLResource.class);
-        register(GeneralExceptionMapper.class);
+    private static final String PUBLIC_SWAGGER_SCANNER_ID = "public-scanner";
+    private static final String PUBLIC_SWAGGER_CONFIG_ID = "public-swagger-doc";
 
-        configureSwagger();
+    private static final String ADMIN_SWAGGER_SCANNER_ID = "admin-scanner";
+    private static final String ADMIN_SWAGGER_CONFIG_ID = "admin-swagger-doc";
+
+    @Bean
+    public ServletRegistrationBean publicJersey() {
+
+        ServletRegistrationBean publicServicesJersey = new ServletRegistrationBean(new ServletContainer(new StopPlaceServicesConfig()));
+        publicServicesJersey.addUrlMappings(SERVICES_STOP_PLACE_PATH + "/*");
+        publicServicesJersey.setName("PublicJersey");
+
+        publicServicesJersey.setLoadOnStartup(0);
+        publicServicesJersey.getInitParameters().put("swagger.scanner.id", PUBLIC_SWAGGER_SCANNER_ID);
+        publicServicesJersey.getInitParameters().put("swagger.config.id", PUBLIC_SWAGGER_CONFIG_ID);
+        return publicServicesJersey;
     }
 
+    @Bean
+    public ServletRegistrationBean adminJersey() {
 
-    private void configureSwagger() {
-        // Available at localhost:port/api/swagger.json
-        this.register(ApiListingResource.class);
-        this.register(SwaggerSerializers.class);
+        ServletRegistrationBean adminServicesJersey = new ServletRegistrationBean(new ServletContainer(new AdminServicesConfig()));
+        adminServicesJersey.addUrlMappings(SERVICES_ADMIN_PATH + "/*");
+        adminServicesJersey.setName("AdminJersey");
 
-        BeanConfig config = new BeanConfig();
-        config.setConfigId("tiamat-swagger-doc");
-        config.setTitle("Tiamat API");
-        config.setVersion("v1");
-        config.setSchemes(new String[]{"http", "https"});
-        config.setBasePath(SERVICES_PATH);
-        config.setResourcePackage("org.rutebanken.tiamat");
-        config.setPrettyPrint(true);
-        config.setScan(true);
+        adminServicesJersey.setLoadOnStartup(0);
+        adminServicesJersey.getInitParameters().put("swagger.scanner.id", ADMIN_SWAGGER_SCANNER_ID);
+        adminServicesJersey.getInitParameters().put("swagger.config.id", ADMIN_SWAGGER_CONFIG_ID);
+        return adminServicesJersey;
+    }
+
+    private class StopPlaceServicesConfig extends ResourceConfig {
+
+        public StopPlaceServicesConfig() {
+
+            register(DtoStopPlaceResource.class);
+            register(DtoQuayResource.class);
+            register(ImportResource.class);
+            register(AsyncExportResource.class);
+            register(ExportResource.class);
+            register(GraphQLResource.class);
+
+            register(GeneralExceptionMapper.class);
+            register(HealthResource.class);
+            configureSwagger();
+        }
+
+        private void configureSwagger() {
+            // Available at localhost:port/api/swagger.json
+            this.register(ApiListingResource.class);
+            this.register(SwaggerSerializers.class);
+
+            BeanConfig config = new BeanConfig();
+            config.setConfigId(PUBLIC_SWAGGER_CONFIG_ID);
+            config.setTitle("Tiamat Public API");
+            config.setVersion("v1");
+            config.setSchemes(new String[]{"http", "https"});
+            config.setBasePath(SERVICES_STOP_PLACE_PATH);
+            config.setResourcePackage("org.rutebanken.tiamat");
+            config.setPrettyPrint(true);
+            config.setScan(true);
+        }
+    }
+
+    private class AdminServicesConfig extends ResourceConfig {
+
+        public AdminServicesConfig() {
+            register(DtoJbvCodeMappingResource.class);
+            register(RestoringImportResource.class);
+
+            register(GeneralExceptionMapper.class);
+            register(HealthResource.class);
+            configureSwagger();
+        }
+
+        private void configureSwagger() {
+            // Available at localhost:port/api/swagger.json
+            this.register(ApiListingResource.class);
+            this.register(SwaggerSerializers.class);
+
+            BeanConfig config = new BeanConfig();
+            config.setConfigId(ADMIN_SWAGGER_CONFIG_ID);
+            config.setTitle("Tiamat Admin API");
+            config.setVersion("v1");
+            config.setSchemes(new String[]{"http", "https"});
+            config.setBasePath(SERVICES_ADMIN_PATH);
+            config.setResourcePackage("org.rutebanken.tiamat");
+            config.setPrettyPrint(true);
+            config.setScan(true);
+        }
     }
 }

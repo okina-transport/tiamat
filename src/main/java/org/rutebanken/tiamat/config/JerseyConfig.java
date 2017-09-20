@@ -90,7 +90,6 @@ public class JerseyConfig extends ResourceConfig {
             register(GraphQLResource.class);
 
             register(GeneralExceptionMapper.class);
-            register(HealthResource.class);
             configureSwagger();
         }
 

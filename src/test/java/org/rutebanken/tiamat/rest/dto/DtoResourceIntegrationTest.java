@@ -28,13 +28,15 @@ import java.util.Set;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_ADMIN_PATH;
+import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_STOP_PLACE_PATH;
 import static org.rutebanken.tiamat.repository.QuayRepositoryImpl.JBV_CODE;
 
 public class DtoResourceIntegrationTest extends TiamatIntegrationTest {
 
-    private static final String PATH_MAPPING_STOP_PLACE = "/services/stop_places/mapping/stop_place";
-    private static final String PATH_MAPPING_QUAY = "/services/stop_places/mapping/quay";
-    private static final String PATH_MAPPING_JBV_CODE = "/services/admin/jbv_code_mapping";
+    private static final String PATH_MAPPING_STOP_PLACE = SERVICES_STOP_PLACE_PATH + "/mapping/stop_place";
+    private static final String PATH_MAPPING_QUAY = SERVICES_STOP_PLACE_PATH + "/mapping/quay";
+    private static final String PATH_MAPPING_JBV_CODE = SERVICES_ADMIN_PATH + "/jbv_code_mapping";
 
     @Autowired
     StopPlaceVersionedSaverService saverService;

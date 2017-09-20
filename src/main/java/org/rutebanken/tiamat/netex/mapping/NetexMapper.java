@@ -1,3 +1,18 @@
+/*
+ * Licensed under the EUPL, Version 1.2 or – as soon they will be approved by
+ * the European Commission - subsequent versions of the EUPL (the "Licence");
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ *
+ *   https://joinup.ec.europa.eu/software/page/eupl
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Licence for the specific language governing permissions and
+ * limitations under the Licence.
+ */
+
 package org.rutebanken.tiamat.netex.mapping;
 
 import ma.glasnost.orika.*;
@@ -23,8 +38,8 @@ public class NetexMapper {
     @Autowired
     public NetexMapper(List<Converter> converters, KeyListToKeyValuesMapMapper keyListToKeyValuesMapMapper,
                        DataManagedObjectStructureMapper dataManagedObjectStructureMapper,
-                       NetexIdMapper netexIdMapper,
-                       PublicationDeliveryHelper publicationDeliveryHelper) {
+                       PublicationDeliveryHelper publicationDeliveryHelper,
+                       AccessibilityAssessmentMapper accessibilityAssessmentMapper) {
 
         logger.info("Setting up netexMapper with DI");
 
@@ -130,19 +145,7 @@ public class NetexMapper {
                 .register();
 
         mapperFactory.classMap(AccessibilityAssessment.class, org.rutebanken.tiamat.model.AccessibilityAssessment.class)
-                .customize(new CustomMapper<AccessibilityAssessment, org.rutebanken.tiamat.model.AccessibilityAssessment>() {
-                    @Override
-                    public void mapAtoB(AccessibilityAssessment accessibilityAssessment, org.rutebanken.tiamat.model.AccessibilityAssessment accessibilityAssessment2, MappingContext context) {
-                        super.mapAtoB(accessibilityAssessment, accessibilityAssessment2, context);
-                        netexIdMapper.toTiamatModel(accessibilityAssessment, accessibilityAssessment2);
-                    }
-
-                    @Override
-                    public void mapBtoA(org.rutebanken.tiamat.model.AccessibilityAssessment accessibilityAssessment, AccessibilityAssessment accessibilityAssessment2, MappingContext context) {
-                        super.mapBtoA(accessibilityAssessment, accessibilityAssessment2, context);
-                        netexIdMapper.toNetexModel(accessibilityAssessment, accessibilityAssessment2);
-                    }
-                })
+                .customize(accessibilityAssessmentMapper)
                 .exclude("id")
                 .byDefault()
                 .register();
@@ -165,8 +168,8 @@ public class NetexMapper {
         this(getDefaultConverters(),
                 new KeyListToKeyValuesMapMapper(),
                 new DataManagedObjectStructureMapper(tagRepository, new NetexIdMapper(), new TagKeyValuesMapper(tagRepository)),
-                new NetexIdMapper(),
-                new PublicationDeliveryHelper());
+                new PublicationDeliveryHelper(),
+                new AccessibilityAssessmentMapper());
         logger.info("Setting up netexMapper without DI");
     }
 

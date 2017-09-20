@@ -40,6 +40,10 @@ public class JerseyConfig extends ResourceConfig {
 
     public static final String SERVICES_PATH = "/services";
 
+    public static final String SERVICES_ADMIN_PATH = SERVICES_PATH + "/admin";
+
+    public static final String SERVICES_STOP_PLACE_PATH = SERVICES_PATH + "/stop_places";
+
     public JerseyConfig() {
         register(HealthResource.class);
         register(DtoStopPlaceResource.class);

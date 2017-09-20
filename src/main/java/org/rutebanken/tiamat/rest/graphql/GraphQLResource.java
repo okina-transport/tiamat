@@ -40,10 +40,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
+import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_STOP_PLACE_PATH;
 
 @Component
 @Api
-@Path(SERVICES_PATH + "/stop_places/graphql")
+@Path(SERVICES_STOP_PLACE_PATH + "/graphql")
 @Transactional
 public class GraphQLResource {
 

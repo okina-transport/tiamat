@@ -34,11 +34,12 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
+import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_STOP_PLACE_PATH;
 
 @Component
 @Api
 @Produces("application/json")
-@Path(SERVICES_PATH + "/stop_places/mapping/stop_place")
+@Path(SERVICES_STOP_PLACE_PATH + "/mapping/stop_place")
 @Transactional
 public class DtoStopPlaceResource {
 

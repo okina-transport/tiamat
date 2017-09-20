@@ -36,11 +36,12 @@ import java.io.IOException;
 import java.net.URI;
 
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
+import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_STOP_PLACE_PATH;
 
 @Component
 @Api
 @Produces("application/xml")
-@Path(SERVICES_PATH + "/stop_places/netex")
+@Path(SERVICES_STOP_PLACE_PATH + "/netex")
 public class ExportResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ExportResource.class);

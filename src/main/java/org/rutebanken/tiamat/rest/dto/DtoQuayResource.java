@@ -34,12 +34,13 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
+import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_STOP_PLACE_PATH;
 import static org.rutebanken.tiamat.repository.QuayRepositoryImpl.JBV_CODE;
 
 @Component
 @Api
 @Produces("application/json")
-@Path(SERVICES_PATH + "/stop_places/mapping/quay")
+@Path(SERVICES_STOP_PLACE_PATH + "/mapping/quay")
 public class DtoQuayResource {
 
     private static final Logger logger = LoggerFactory.getLogger(DtoQuayResource.class);

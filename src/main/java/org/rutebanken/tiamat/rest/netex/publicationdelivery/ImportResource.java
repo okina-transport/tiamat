@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
+import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_STOP_PLACE_PATH;
 
 /**
  * Import publication deliveries
@@ -46,7 +47,7 @@ import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
 @Component
 @Api
 @Produces("application/xml")
-@Path(SERVICES_PATH + "/stop_places/netex")
+@Path(SERVICES_STOP_PLACE_PATH + "/netex")
 public class ImportResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportResource.class);

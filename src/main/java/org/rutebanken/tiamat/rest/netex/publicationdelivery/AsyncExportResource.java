@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.util.Collection;
 
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
+import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_STOP_PLACE_PATH;
 import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_JOB_PATH;
 
 /**
@@ -39,7 +40,7 @@ import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportRe
 @Component
 @Api
 @Produces("application/xml")
-@Path(SERVICES_PATH + "/stop_places/netex/" + ASYNC_JOB_PATH)
+@Path(SERVICES_STOP_PLACE_PATH + "/netex/" + ASYNC_JOB_PATH)
 public class AsyncExportResource {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncExportResource.class);

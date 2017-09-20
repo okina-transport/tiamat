@@ -16,6 +16,9 @@
 package org.rutebanken.tiamat.rest.health;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -37,9 +40,24 @@ public class HealthResource {
     private StopPlaceRepository stopPlaceRepository;
 
     @GET
-    @Path("ready")
+    @Path("/ready")
+    @ApiOperation(value = "Returns OK if Tiamat is ready and can read from the database", response = Void.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "application is running")
+    })
     public Response readinessProbe() {
         stopPlaceRepository.findAllByOrderByChangedDesc(new PageRequest(1, 1));
         return Response.status(Response.Status.OK).build();
     }
+
+    @GET
+    @Path("/live")
+    @ApiOperation(value = "Returns 200 OK if Tiamat is running", response = Void.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "application is running")
+    })
+    public Response livenessProbe() {
+        return Response.ok().build();
+    }
+
 }

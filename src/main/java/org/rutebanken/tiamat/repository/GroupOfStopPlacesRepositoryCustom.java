@@ -13,29 +13,16 @@
  * limitations under the Licence.
  */
 
-package org.rutebanken.tiamat.rest.exception;
+package org.rutebanken.tiamat.repository;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import java.util.ArrayList;
+import org.rutebanken.tiamat.exporter.params.GroupOfStopPlacesSearch;
+import org.rutebanken.tiamat.model.GroupOfStopPlaces;
+
 import java.util.List;
 
-@XmlRootElement
-public class ErrorResponseEntity {
+public interface GroupOfStopPlacesRepositoryCustom {
 
-    public ErrorResponseEntity() {
-    }
+    List<GroupOfStopPlaces> findGroupOfStopPlaces(GroupOfStopPlacesSearch search);
 
-    public ErrorResponseEntity(String message) {
-        errors.add(new Error(message));
-    }
-
-    public List<Error> errors = new ArrayList<>();
-
-
-    public static class Error {
-        public String message;
-        public Error(String message) {
-            this.message = message;
-        }
-    }
 }
+

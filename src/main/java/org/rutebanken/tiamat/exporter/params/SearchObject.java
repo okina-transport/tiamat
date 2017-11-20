@@ -13,29 +13,7 @@
  * limitations under the Licence.
  */
 
-package org.rutebanken.tiamat.rest.exception;
+package org.rutebanken.tiamat.exporter.params;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import java.util.ArrayList;
-import java.util.List;
-
-@XmlRootElement
-public class ErrorResponseEntity {
-
-    public ErrorResponseEntity() {
-    }
-
-    public ErrorResponseEntity(String message) {
-        errors.add(new Error(message));
-    }
-
-    public List<Error> errors = new ArrayList<>();
-
-
-    public static class Error {
-        public String message;
-        public Error(String message) {
-            this.message = message;
-        }
-    }
+public interface SearchObject {
 }

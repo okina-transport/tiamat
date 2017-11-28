@@ -117,6 +117,9 @@ public class StopPlaceRegisterGraphQLSchema {
     private DataFetcher<GroupOfStopPlaces> groupOfStopPlacesUpdater;
 
     @Autowired
+    private DataFetcher<Boolean> groupOfStopPlacesDeleterFetcher;
+
+    @Autowired
     DataFetcher pathLinkFetcher;
 
     @Autowired
@@ -344,6 +347,14 @@ public class StopPlaceRegisterGraphQLSchema {
                 .fields(tagOperationsBuilder.getTagOperations())
                 .fields(stopPlaceOperationsBuilder.getStopPlaceOperations(stopPlaceInterface))
                 .fields(multiModalityOperationsBuilder.getMultiModalityOperations(parentStopPlaceObjectType, validBetweenInputObjectType))
+                .field(newFieldDefinition()
+                        .type(GraphQLBoolean)
+                        .name("deleteGroupOfStopPlaces")
+                        .argument(GraphQLArgument.newArgument()
+                                .name(ID)
+                                .type(new GraphQLNonNull(GraphQLString)))
+                        .description("Hard delete group of stop places by ID")
+                        .dataFetcher(groupOfStopPlacesDeleterFetcher))
                 .build();
 
         stopPlaceRegisterSchema = GraphQLSchema.newSchema()
@@ -661,7 +672,7 @@ public class StopPlaceRegisterGraphQLSchema {
         return newInputObject()
                 .name(INPUT_TYPE_GROUP_OF_STOPPLACES)
                 .field(newInputObjectField().name(ID).type(GraphQLString).description("Ignore ID when creating new"))
-                .field(newInputObjectField().name(NAME).type(embeddableMultiLingualStringInputObjectType))
+                .field(newInputObjectField().name(NAME).type(new GraphQLNonNull(embeddableMultiLingualStringInputObjectType)))
                 .field(newInputObjectField().name(SHORT_NAME).type(embeddableMultiLingualStringInputObjectType))
                 .field(newInputObjectField().name(DESCRIPTION).type(embeddableMultiLingualStringInputObjectType))
                 .field(newInputObjectField().name(ALTERNATIVE_NAMES).type(new GraphQLList(alternativeNameInputObjectType)))

@@ -48,13 +48,17 @@ public class SearchHelper {
     }
 
     public void addParams(SQLQuery sqlQuery, Map<String, Object> parameters) {
-        parameters.forEach((parameter, value) -> {
-            if (value instanceof Collection) {
-                sqlQuery.setParameterList(parameter, (Collection) value);
-            } else {
-                sqlQuery.setParameter(parameter, value);
-            }
-        });
+        if(parameters != null && sqlQuery != null) {
+            parameters.forEach((parameter, value) -> {
+                if(value != null) {
+                    if (value instanceof Collection) {
+                        sqlQuery.setParameterList(parameter, (Collection) value);
+                    } else {
+                        sqlQuery.setParameter(parameter, value);
+                    }
+                }
+            });
+        }
     }
 
     public String format(String query) {
@@ -62,6 +66,11 @@ public class SearchHelper {
     }
 
     public void addOrderByStatements(StringBuilder queryString, List<String> orderByStatements) {
+
+        if(orderByStatements.isEmpty()) {
+            return;
+        }
+
         queryString.append( "order by ");
         for (int i = 0; i < orderByStatements.size(); i++) {
             if (i > 0) {

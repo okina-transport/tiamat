@@ -13,30 +13,27 @@
  * limitations under the Licence.
  */
 
-package org.rutebanken.tiamat.rest.exception;
+package org.rutebanken.tiamat.rest.dto;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import java.util.ArrayList;
-import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
-@XmlRootElement
-public class ErrorResponseEntity {
+import java.util.concurrent.Semaphore;
 
-    public ErrorResponseEntity() {
+@Component
+public class DtoMappingSemaphore {
+
+    @Value("${tiamat.dto.mapping.resource.semaphore.permits:3}")
+    public int permits = 3;
+
+    private final Semaphore semaphore = new Semaphore(permits, true);
+
+    public void aquire() throws InterruptedException {
+        semaphore.acquire();
     }
 
-    public ErrorResponseEntity(String message) {
-        errors.add(new Error(message));
-    }
-
-    public List<Error> errors = new ArrayList<>();
-
-
-    public static class Error {
-        public String message;
-
-        public Error(String message) {
-            this.message = message;
-        }
+    public void release() {
+        semaphore.release();
     }
 }

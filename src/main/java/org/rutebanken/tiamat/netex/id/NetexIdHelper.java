@@ -22,7 +22,6 @@ import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.SiteFrame;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
-import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

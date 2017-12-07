@@ -41,6 +41,9 @@ public class ImportParams {
     @QueryParam(value = "importType")
     public ImportType importType = ImportType.MERGE;
 
+    /**
+     * Do not return output netex file.
+     */
     @QueryParam(value = "skipOutput")
     public boolean skipOutput = false;
 

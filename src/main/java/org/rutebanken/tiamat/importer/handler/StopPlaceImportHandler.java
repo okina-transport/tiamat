@@ -34,6 +34,8 @@ import org.rutebanken.tiamat.importer.merging.TransactionalMergingStopPlacesImpo
 import org.rutebanken.tiamat.importer.modifier.StopPlacePostFilterSteps;
 import org.rutebanken.tiamat.importer.modifier.StopPlacePreSteps;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.TramSubmodeEnumeration;
+import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.slf4j.Logger;
@@ -140,7 +142,11 @@ public class StopPlaceImportHandler {
 
             if (importParams.forceStopType != null) {
                 logger.info("Forcing stop type to {}", importParams.forceStopType.toString());
-                tiamatStops.forEach(stopPlace -> stopPlace.setStopPlaceType(importParams.forceStopType));
+                tiamatStops.forEach(stopPlace -> {
+                    stopPlace.setStopPlaceType(importParams.forceStopType);
+                    stopPlace.setTransportMode(VehicleModeEnumeration.TRAM);
+                    stopPlace.setTramSubmode(TramSubmodeEnumeration.CITY_TRAM);
+                });
             }
 
             Collection<org.rutebanken.netex.model.StopPlace> importedOrMatchedNetexStopPlaces;

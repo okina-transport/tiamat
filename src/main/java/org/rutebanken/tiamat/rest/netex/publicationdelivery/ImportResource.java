@@ -18,9 +18,9 @@ package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 import io.swagger.annotations.Api;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.PublicationDeliveryImporter;
-import org.rutebanken.tiamat.importer.ImportParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,12 +34,7 @@ import javax.ws.rs.core.Response;
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-
-import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
-import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_STOP_PLACE_PATH;
 
 /**
  * Import publication deliveries

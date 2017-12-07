@@ -6,4 +6,4 @@ TOKEN=`echo ${RESULT} | sed 's/.*access_token":"//g' | sed 's/".*//g'`;
 echo ${TOKEN};
 
 #POST
-curl -XPOST -H"Content-Type: application/xml" -H"authorization: bearer $TOKEN" -d@$1  https://entur.okina.fr/services/stop_places/netex?importType=INITIAL
+curl -XPOST -H"Content-Type: application/xml" -H"authorization: bearer $TOKEN" -d@$1  https://entur.okina.fr/services/stop_places/netex?importType=MERGE&forceStopType=tramStation

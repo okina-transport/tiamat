@@ -46,13 +46,6 @@ public enum StopTypeEnumeration {
         throw new IllegalArgumentException(value);
     }
 
-    /**
-     * For Jersey query param binding
-     */
-    public static StopTypeEnumeration fromString(final String s) {
-        return StopTypeEnumeration.valueOf(s);
-    }
-
     public String value() {
         return value;
     }

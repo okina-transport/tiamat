@@ -53,10 +53,7 @@ public class ImportParams {
     @QueryParam(value = "allowOnlyStopTypes")
     public Set<StopTypeEnumeration> allowOnlyStopTypes;
 
-    /**
-     * Force stop point type for all stop points in file.
-     * Useful if no modality defined in the netex file.
-     */
+    @ApiParam("Force stop point type for all stop points in file. Useful if no modality defined in the netex file.")
     @QueryParam(value = "forceStopType")
     public StopTypeEnumeration forceStopType;
 

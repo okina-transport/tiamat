@@ -33,10 +33,13 @@ public class NetexIdHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(NetexIdHelper.class);
 
+    // TODO: make it configurable, maybe in ValidPrefixList
+    public static final String REFERENTIAL_PREFIX = "NAQ";
+
     private static Pattern NETEX_ID_PATTERN = Pattern.compile("\\w{3}:\\w{3,}:\\w+");
 
     public static String getNetexId(String type, long id) {
-        return ValidPrefixList.VALID_NETEX_PREFIX + ":" + type + ":" + id;
+        return REFERENTIAL_PREFIX + ":" + type + ":" + id;
     }
 
     /**
@@ -48,8 +51,8 @@ public class NetexIdHelper {
     }
 
     public static boolean isNsrId(String netexId) {
-        if(!netexId.contains(ValidPrefixList.VALID_NETEX_PREFIX)) {
-            logger.debug("The netexId: {} does not start with {}", netexId, ValidPrefixList.VALID_NETEX_PREFIX);
+        if(!netexId.contains(REFERENTIAL_PREFIX)) {
+            logger.debug("The netexId: {} does not start with {}", netexId, REFERENTIAL_PREFIX);
             return false;
         }
 

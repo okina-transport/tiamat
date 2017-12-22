@@ -41,7 +41,7 @@ import java.util.Set;
  */
 @Component
 @Api
-@Produces("application/xml")
+@Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
 @Path("netex")
 public class ImportResource {
 
@@ -73,7 +73,7 @@ public class ImportResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_XML)
-    @Produces(MediaType.APPLICATION_XML)
+    @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
     public Response importPublicationDelivery(InputStream inputStream, @BeanParam ImportParams importParams) throws IOException, JAXBException, SAXException {
         logger.info("Received Netex publication delivery, starting to parse...");
 

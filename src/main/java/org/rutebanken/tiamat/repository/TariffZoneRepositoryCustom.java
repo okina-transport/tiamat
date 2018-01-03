@@ -17,8 +17,6 @@ package org.rutebanken.tiamat.repository;
 
 import org.rutebanken.tiamat.exporter.params.TariffZoneSearch;
 import org.rutebanken.tiamat.model.TariffZone;
-import org.rutebanken.tiamat.model.TopographicPlace;
-import org.rutebanken.tiamat.model.TopographicPlaceTypeEnumeration;
 
 import java.util.Iterator;
 import java.util.List;

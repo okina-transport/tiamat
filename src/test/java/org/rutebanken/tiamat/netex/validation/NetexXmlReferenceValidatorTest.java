@@ -17,8 +17,6 @@ package org.rutebanken.tiamat.netex.validation;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 public class NetexXmlReferenceValidatorTest {
     @Test
     public void validateNetexReferences() throws Exception {

@@ -140,9 +140,7 @@ public class StopPlaceImportHandler {
 
             if (importParams.forceStopType != null) {
                 logger.info("Forcing stop type to {}", importParams.forceStopType.toString());
-                tiamatStops.forEach(stopPlace -> {
-                    stopPlace.setStopPlaceType(importParams.forceStopType);
-                });
+                tiamatStops.forEach(stopPlace -> stopPlace.setStopPlaceType(importParams.forceStopType));
             }
 
             Collection<org.rutebanken.netex.model.StopPlace> importedOrMatchedNetexStopPlaces;

@@ -12,11 +12,11 @@ public class StopPlaceQueryFromSearchBuilderTest {
         stopPlaceQueryFromSearchBuilder.commonWordsToIgnore.add("des");
         stopPlaceQueryFromSearchBuilder.commonWordsToIgnore.add("de");
 
-        String result = stopPlaceQueryFromSearchBuilder.handleCommonWordsInQuery("Gare de dax");
+        String result = stopPlaceQueryFromSearchBuilder.handleCommonWordsAndSpacesInQuery("Gare de dax");
 
         Assertions.assertThat(result).isEqualToIgnoringCase("Gare%dax");
 
-        result = stopPlaceQueryFromSearchBuilder.handleCommonWordsInQuery("Place des cyprès");
+        result = stopPlaceQueryFromSearchBuilder.handleCommonWordsAndSpacesInQuery("Place des cyprès");
 
         Assertions.assertThat(result).isEqualToIgnoringCase("Place%cyprès");
     }

@@ -160,7 +160,7 @@ public class MergingStopPlaceImporter {
         StopPlace copy = stopPlaceVersionedSaverService.createCopy(existingStopPlace, StopPlace.class);
 
         boolean quayChanged = quayMerger.appendImportIds(incomingStopPlace, copy, ADD_NEW_QUAYS, EXISTING_STOP_QUAY_MERGE_SHORT_DISTANCE_CHECK_BEFORE_ID_MATCH);
-        boolean keyValuesChanged = keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy);
+        boolean keyValuesChanged = (keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy) && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy));
         boolean centroidChanged = centroidComputer.computeCentroidForStopPlace(copy);
 
         boolean typeChanged = false;

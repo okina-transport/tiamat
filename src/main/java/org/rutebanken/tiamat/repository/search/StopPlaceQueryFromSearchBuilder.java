@@ -306,7 +306,7 @@ public class StopPlaceQueryFromSearchBuilder {
             }
         } else {
 
-            parameters.put("query", handleCommonWordsInQuery(query));
+            parameters.put("query", handleCommonWordsAndSpacesInQuery(query));
 
             final String startingWithLowerMatchQuerySql = "concat(lower(:query), '%') ";
             final String containsLowerMatchQuerySql = "concat('%', lower(:query), '%') ";
@@ -325,13 +325,14 @@ public class StopPlaceQueryFromSearchBuilder {
     /**
      * Replaces common words and white spaces in query by % sign, allowing a more flexible comparison.
      * A Stop place with the name "Train station of Dax" (common case in french) for example would then match against the "Train station Dax" query.
+     * A Stop place with name "Dax - Train station" will match agains "Dax train station" query.
      * <p>
      * Common words to skip in search to be configured with the "stopPlaces.search.commonWordsToIgnore" property
      *
      * @param query original query
      * @return modified query
      */
-    String handleCommonWordsInQuery(final String query) {
+    String handleCommonWordsAndSpacesInQuery(final String query) {
         if (!commonWordsToIgnore.isEmpty()) {
             return commonWordsToIgnore.stream()
                     .reduce(query, (string, word) ->

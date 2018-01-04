@@ -170,10 +170,11 @@ public class QuayMerger {
     private void updateIfChanged(Quay alreadyAdded, Quay incomingQuay, AtomicInteger updatedQuaysCounter) {
         // The incoming quay could for some reason already have multiple imported IDs.
         boolean idUpdated = alreadyAdded.getOriginalIds().addAll(incomingQuay.getOriginalIds());
+        boolean nameUpdated = alreadyAdded.getOriginalNames().addAll(incomingQuay.getOriginalNames());
         boolean changedByMerge = mergeFields(incomingQuay, alreadyAdded);
 
-        if(idUpdated || changedByMerge) {
-            logger.debug("Quay changed. idUpdated: {}, merged fields? {}. Quay: {}", idUpdated, changedByMerge, alreadyAdded);
+        if(idUpdated || nameUpdated || changedByMerge) {
+            logger.debug("Quay changed. idUpdated: {}, nameUpdated: {}, merged fields? {}. Quay: {}", idUpdated, nameUpdated, changedByMerge, alreadyAdded);
 
             alreadyAdded.setChanged(Instant.now());
             updatedQuaysCounter.incrementAndGet();

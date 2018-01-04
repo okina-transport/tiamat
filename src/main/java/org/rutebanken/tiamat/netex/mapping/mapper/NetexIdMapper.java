@@ -17,9 +17,11 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 
 import com.google.common.base.Strings;
 import org.rutebanken.netex.model.KeyValueStructure;
+import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.tiamat.model.DataManagedObjectStructure;
 import org.rutebanken.tiamat.model.EntityInVersionStructure;
 import org.rutebanken.tiamat.model.EntityStructure;
+import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.rutebanken.tiamat.netex.id.ValidPrefixList;
 import org.slf4j.Logger;
@@ -45,6 +47,7 @@ public class NetexIdMapper {
     private static final Logger logger = LoggerFactory.getLogger(NetexIdMapper.class);
 
     public static final String ORIGINAL_ID_KEY = "imported-id";
+    public static final String ORIGINAL_NAME_KEY = "imported-name";
     public static final String MERGED_ID_KEY = "merged-id";
 
     private static final List<String> IGNORE_KEYS = Arrays.asList(CHANGED_BY, VERSION_COMMENT, IS_PARENT_STOP_PLACE);
@@ -74,6 +77,12 @@ public class NetexIdMapper {
                 moveOriginalIdToKeyValueList((DataManagedObjectStructure) tiamatEntity, netexEntity.getId());
                 tiamatEntity.setNetexId(null);
             }
+            if(netexEntity instanceof org.rutebanken.netex.model.Quay){
+                moveOriginalNameToKeyValueList((DataManagedObjectStructure) tiamatEntity, ((org.rutebanken.netex.model.Quay) netexEntity).getName().getValue());
+            }
+            if(netexEntity instanceof StopPlace){
+                moveOriginalNameToKeyValueList((DataManagedObjectStructure) tiamatEntity, ((StopPlace) netexEntity).getName().getValue());
+            }
         }
         if(netexEntity instanceof org.rutebanken.netex.model.DataManagedObjectStructure && tiamatEntity instanceof DataManagedObjectStructure) {
             logger.debug("Copy key values to tiamat model {}", tiamatEntity.getNetexId());
@@ -101,7 +110,7 @@ public class NetexIdMapper {
                         continue;
                     }
 
-                    boolean ignoreEmptyPostfix = (key.equals(ORIGINAL_ID_KEY) | key.equals(MERGED_ID_KEY));
+                    boolean ignoreEmptyPostfix = (key.equals(ORIGINAL_ID_KEY) | key.equals(MERGED_ID_KEY) | key.equals(ORIGINAL_NAME_KEY));
 
                     if (value.contains(",")) {
                         String[] originalIds = value.split(",");
@@ -142,6 +151,15 @@ public class NetexIdMapper {
      */
     public void moveOriginalIdToKeyValueList(DataManagedObjectStructure dataManagedObjectStructure, String netexId) {
         addKeyValueAvoidEmpty(dataManagedObjectStructure, ORIGINAL_ID_KEY, netexId, true);
+    }
+
+    /**
+     * Writes netex name to keyval in internal Tiamat model
+     * @param dataManagedObjectStructure to set the keyval on (tiamat model)
+     * @param name The name to add to values, using the key #{ORIGINAL_NAME_KEY}
+     */
+    public void moveOriginalNameToKeyValueList(DataManagedObjectStructure dataManagedObjectStructure, String name) {
+        addKeyValueAvoidEmpty(dataManagedObjectStructure, ORIGINAL_NAME_KEY, name, true);
     }
 
 }

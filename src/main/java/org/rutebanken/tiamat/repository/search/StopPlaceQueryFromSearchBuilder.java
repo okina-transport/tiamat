@@ -122,7 +122,7 @@ public class StopPlaceQueryFromSearchBuilder {
     /**
      * Configure some common words to be skipped during stop place search by name.
      */
-    @Value("#{'${stopPlaces.search.commonWordsToIgnore}'.split(',')}")
+    @Value("#{'${stopPlaces.search.commonWordsToIgnore:du,des,de,la,les}'.split(',')}")
     Set<String> commonWordsToIgnore = new LinkedHashSet<>();
 
     @Autowired

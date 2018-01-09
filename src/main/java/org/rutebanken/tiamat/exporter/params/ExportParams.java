@@ -39,6 +39,8 @@ public class ExportParams {
 
     public static final ExportMode DEFAULT_TOPOGRAPHIC_PLACE_EXPORT_MODE = ExportMode.RELEVANT;
 
+    public static final ExportMode DEFAULT_GROUP_OF_STOP_PLACES_EXPORT_MODE = ExportMode.RELEVANT;
+
     @DefaultValue(value = "RELEVANT")
     @QueryParam(value = "topographicPlaceExportMode")
     private ExportMode topographicPlaceExportMode = DEFAULT_TOPOGRAPHIC_PLACE_EXPORT_MODE;
@@ -46,6 +48,10 @@ public class ExportParams {
     @DefaultValue(value = "RELEVANT")
     @QueryParam(value = "tariffZoneExportMode")
     private ExportMode tariffZoneExportMode = DEFAULT_TARIFF_ZONE_EXPORT_MODE;
+
+    @DefaultValue(value = "RELEVANT")
+    @QueryParam(value = "groupOfStopPlacesExportMode")
+    private ExportMode groupOfStopPlacesExportMode = DEFAULT_GROUP_OF_STOP_PLACES_EXPORT_MODE;
 
     @QueryParam(value = "municipalityReference")
     private List<String> municipalityReferences;
@@ -56,9 +62,10 @@ public class ExportParams {
     @BeanParam
     private StopPlaceSearch stopPlaceSearch;
 
-    private ExportParams(ExportMode topographicPlaceExportMode, ExportMode tariffZoneExportMode, List<String> municipalityReferences, List<String> countyReferences, StopPlaceSearch stopPlaceSearch) {
+    private ExportParams(ExportMode topographicPlaceExportMode, ExportMode tariffZoneExportMode, ExportMode groupOfStopPlacesExportMode, List<String> municipalityReferences, List<String> countyReferences, StopPlaceSearch stopPlaceSearch) {
         this.topographicPlaceExportMode = topographicPlaceExportMode;
         this.tariffZoneExportMode = tariffZoneExportMode;
+        this.groupOfStopPlacesExportMode = groupOfStopPlacesExportMode;
         this.municipalityReferences = municipalityReferences;
         this.countyReferences = countyReferences;
         this.stopPlaceSearch = stopPlaceSearch;
@@ -76,6 +83,10 @@ public class ExportParams {
 
     public ExportMode getTariffZoneExportMode() {
         return tariffZoneExportMode;
+    }
+
+    public ExportMode getGroupOfStopPlacesExportMode() {
+        return groupOfStopPlacesExportMode;
     }
 
     public List<String> getMunicipalityReferences() {
@@ -108,6 +119,7 @@ public class ExportParams {
     public static class Builder {
         private ExportMode tariffZoneExportMode = DEFAULT_TARIFF_ZONE_EXPORT_MODE;
         private ExportMode topographicPlaceExportMode = DEFAULT_TOPOGRAPHIC_PLACE_EXPORT_MODE;
+        private ExportMode groupOfStopPlacesExportMode = DEFAULT_GROUP_OF_STOP_PLACES_EXPORT_MODE;
         private List<String> municipalityReferences;
         private List<String> countyReferences;
         private StopPlaceSearch stopPlaceSearch;
@@ -149,8 +161,13 @@ public class ExportParams {
             return  this;
         }
 
+        public Builder setGroupOfStopPlacesExportMode(ExportMode groupOfStopPlacesExportMode) {
+            this.groupOfStopPlacesExportMode = groupOfStopPlacesExportMode;
+            return this;
+        }
+
         public ExportParams build() {
-            return new ExportParams(topographicPlaceExportMode, tariffZoneExportMode, municipalityReferences, countyReferences, stopPlaceSearch);
+            return new ExportParams(topographicPlaceExportMode, tariffZoneExportMode, groupOfStopPlacesExportMode, municipalityReferences, countyReferences, stopPlaceSearch);
         }
     }
 }

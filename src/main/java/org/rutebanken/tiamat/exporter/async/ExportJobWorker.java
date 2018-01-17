@@ -75,7 +75,7 @@ public class ExportJobWorker implements Runnable {
 
             exportToLocalZipFile(localExportZipFile, localExportXmlFile);
 
-            uploadToGcp(localExportZipFile);
+//            uploadToGcp(localExportZipFile);
 
             exportJob.setStatus(JobStatus.FINISHED);
             exportJob.setFinished(Instant.now());

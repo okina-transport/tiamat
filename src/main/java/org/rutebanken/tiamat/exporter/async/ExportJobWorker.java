@@ -92,8 +92,8 @@ public class ExportJobWorker implements Runnable {
             }
         } finally {
             exportJobRepository.save(exportJob);
-            logger.info("Removing local files: {},{}", localExportZipFile, localExportXmlFile);
-            localExportZipFile.delete();
+            logger.info("Removing local file: {},{}", localExportXmlFile);
+//            localExportZipFile.delete();
             localExportXmlFile.delete();
         }
     }
@@ -127,7 +127,7 @@ public class ExportJobWorker implements Runnable {
             try {
                 zipOutputStream.close();
             } catch (IOException e) {
-                throw new IOException("Could not close zipoutput stream for file: "+localZipFile, e);
+                throw new IOException("Could not close zipoutput stream for file: " + localZipFile, e);
             }
         }
     }

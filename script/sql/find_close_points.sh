@@ -4,7 +4,7 @@
 
 ExtractPoints() {
     echo "Extracting points within $1 meters"
-    psql -h localhost -p 5440 -U tiamat -t -A -F"," -c "
+    sudo -su tiamat psql -h localhost -p 5435 -U tiamat -t -A -F"," -c "
     WITH points AS (
             SELECT sp1.id AS point_id, sp1.netex_id AS origin_point_netex_id, sp2.netex_id AS close_point_netex_id, max(sp1.version) AS origin_point_version, max(sp2.version) AS close_point_version
             FROM stop_place sp1, stop_place sp2

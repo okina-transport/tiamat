@@ -8,7 +8,7 @@ ExtractPoints() {
     WITH points AS (
             SELECT sp1.id AS point_id, sp1.netex_id AS origin_point_netex_id, sp2.netex_id AS close_point_netex_id, max(sp1.version) AS origin_point_version, max(sp2.version) AS close_point_version
             FROM stop_place sp1, stop_place sp2
-            WHERE ST_DWithin(sp1.centroid,sp2.centroid, 1, false)
+            WHERE ST_DWithin(sp1.centroid,sp2.centroid, $1, false)
             AND sp1.centroid!='0101000020E610000000000000000000000000000000000000'
             AND sp1.netex_id != sp2.netex_id
             GROUP BY point_id, origin_point_netex_id, close_point_netex_id

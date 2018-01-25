@@ -20,7 +20,7 @@ ExtractPoints() {
     	WHERE spkv.key_values_key='imported-id'
     	AND origin_point_netex_id NOT IN (SELECT netex_reference FROM tag WHERE name LIKE lower('NF') AND removed_by IS NULL)
     	ORDER by origin_point_imported_id, close_point_netex_id
-    " > /home/gfora/tiamat_close_points_$1.csv
+    " > /srv/www/stats/tiamat_close_points_$1.csv
 }
 
 ExtractPoints 30;

@@ -23,8 +23,10 @@ import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
+import org.rutebanken.tiamat.netex.validation.NetexReferenceValidatorException;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
+import org.rutebanken.tiamat.versioning.GroupOfStopPlacesSaverService;
 import org.rutebanken.tiamat.versioning.TariffZoneSaverService;
 import org.rutebanken.tiamat.versioning.TopographicPlaceVersionedSaverService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +36,7 @@ import org.xml.sax.SAXException;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -57,6 +60,9 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
     private TariffZoneSaverService tariffZoneSaverService;
 
     @Autowired
+    private GroupOfStopPlacesSaverService groupOfStopPlacesSaverService;
+
+    @Autowired
     private TopographicPlaceVersionedSaverService topographicPlaceVersionedSaverService;
 
     @Autowired
@@ -69,7 +75,47 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
 
 
     @Test
-    public void streamStopPlaceIntoPublicationDelivery() throws Exception {
+    public void avoidDuplicateTopographicPlaceWhenExportModeAll() throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException, NetexReferenceValidatorException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+        TopographicPlace county = new TopographicPlace(new EmbeddableMultilingualString("county"));
+        county.setTopographicPlaceType(TopographicPlaceTypeEnumeration.COUNTY);
+        county = topographicPlaceVersionedSaverService.saveNewVersion(county);
+
+        TopographicPlace municipality = new TopographicPlace(new EmbeddableMultilingualString("Some municipality"));
+        municipality.setTopographicPlaceType(TopographicPlaceTypeEnumeration.MUNICIPALITY);
+        municipality.setParentTopographicPlaceRef(new TopographicPlaceRefStructure(county.getNetexId(), String.valueOf(county.getVersion()  )));
+        municipality = topographicPlaceVersionedSaverService.saveNewVersion(municipality);
+
+        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("stop place"));
+        stopPlace.setTopographicPlace(municipality);
+        stopPlaceRepository.save(stopPlace);
+
+        stopPlaceRepository.flush();
+
+        ExportParams exportParams = ExportParams.newExportParamsBuilder()
+                .setStopPlaceSearch(
+                        StopPlaceSearch.newStopPlaceSearchBuilder()
+                                .setVersionValidity(ExportParams.VersionValidity.CURRENT_FUTURE)
+                                .build())
+                .setTopographicPlaceExportMode(ExportParams.ExportMode.ALL)
+                .setTariffZoneExportMode(ExportParams.ExportMode.RELEVANT)
+                .build();
+
+        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream);
+
+        String xml = byteArrayOutputStream.toString();
+
+        System.out.println(xml);
+
+        validate(xml);
+        netexXmlReferenceValidator.validateNetexReferences(new ByteArrayInputStream(xml.getBytes()), "publicationDelivery");
+
+
+    }
+
+    @Test
+    public void streamStopPlacesAndRelatedEntitiesIntoPublicationDelivery() throws Exception {
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
@@ -105,6 +151,18 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         stopPlace2 = stopPlaceVersionedSaverService.saveNewVersion(stopPlace2);
         final String stopPlace2NetexId = stopPlace2.getNetexId();
 
+        GroupOfStopPlaces groupOfStopPlaces1 = new GroupOfStopPlaces(new EmbeddableMultilingualString("group of stop places"));
+        groupOfStopPlaces1.getMembers().add(new StopPlaceReference(stopPlace1.getNetexId()));
+
+        groupOfStopPlacesSaverService.saveNewVersion(groupOfStopPlaces1);
+
+        GroupOfStopPlaces groupOfStopPlaces2 = new GroupOfStopPlaces(new EmbeddableMultilingualString("group of stop places number two"));
+        groupOfStopPlaces2.getMembers().add(new StopPlaceReference(stopPlace1.getNetexId()));
+
+        groupOfStopPlacesSaverService.saveNewVersion(groupOfStopPlaces2);
+
+        groupOfStopPlacesRepository.flush();
+
         // Allows setting topographic place without lookup.
         // To have the lookup work, topographic place polygon must exist
         stopPlace1.setTopographicPlace(topographicPlace);
@@ -120,6 +178,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
                                 .build())
                 .setTopographicPlaceExportMode(ExportParams.ExportMode.RELEVANT)
                 .setTariffZoneExportMode(ExportParams.ExportMode.RELEVANT)
+                .setGroupOfStopPlacesExportMode(ExportParams.ExportMode.RELEVANT)
                 .build();
 
         streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream);

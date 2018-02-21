@@ -98,9 +98,9 @@ public class StreamingPublicationDeliveryTest {
         validate(xml);
 
         assertThat(xml)
-                .contains("<StopPlace")
-                .contains("</PublicationDelivery")
-                .contains("</dataObjects>");
+                .contains("StopPlace>")
+                .contains("PublicationDelivery>")
+                .contains("dataObjects>");
     }
 
     @Test
@@ -121,9 +121,9 @@ public class StreamingPublicationDeliveryTest {
         validate(xml);
 
         assertThat(xml)
-                .contains("<Parking")
-                .contains("</PublicationDelivery")
-                .contains("</dataObjects>");
+                .contains("Parking")
+                .contains("PublicationDelivery")
+                .contains("dataObjects>");
     }
 
     @Test
@@ -149,11 +149,10 @@ public class StreamingPublicationDeliveryTest {
         validate(xml);
 
         assertThat(xml)
-                .contains("<StopPlace")
-                .contains("<topographicPlaces")
-                .contains("</topographicPlaces>")
-                .contains("</PublicationDelivery")
-                .contains("</dataObjects>");
+                .contains("StopPlace")
+                .contains("topographicPlaces")
+                .contains("PublicationDelivery")
+                .contains("dataObjects>");
     }
 
     @Test
@@ -188,10 +187,10 @@ public class StreamingPublicationDeliveryTest {
 
         assertThat(xml)
                 .contains("<?xml")
-                .contains("<StopPlace")
-                .contains("<PathLink")
-                .contains("</PublicationDelivery")
-                .contains("</dataObjects>");
+                .contains("StopPlace")
+                .contains("PathLink")
+                .contains("PublicationDelivery")
+                .contains("dataObjects>");
     }
 
     @Test
@@ -243,6 +242,8 @@ public class StreamingPublicationDeliveryTest {
         when(topographicPlaceRepository.scrollTopographicPlaces(any())).thenReturn(topographicPlaces.iterator());
         when(tariffZoneRepository.scrollTariffZones(any())).thenReturn(new ArrayList<TariffZone>().iterator());
         when(tariffZoneRepository.scrollTariffZones()).thenReturn(new ArrayList<TariffZone>().iterator());
+        when(groupOfStopPlacesRepository.scrollGroupOfStopPlaces()).thenReturn(new ArrayList<GroupOfStopPlaces>().iterator());
+        when(groupOfStopPlacesRepository.scrollGroupOfStopPlaces(anySetOf(Long.class))).thenReturn(new ArrayList<GroupOfStopPlaces>().iterator());
 
         streamingPublicationDelivery.stream(ExportParams.newExportParamsBuilder().build(), byteArrayOutputStream);
     }

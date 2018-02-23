@@ -15,11 +15,6 @@
 
 package org.rutebanken.tiamat.exporter;
 
-import org.aspectj.lang.annotation.Before;
-import org.hibernate.FlushMode;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.jpa.HibernateEntityManagerFactory;
 import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
@@ -28,8 +23,8 @@ import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.rutebanken.tiamat.netex.id.ValidPrefixList;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.service.stopplace.ChildStopPlacesFetcher;
 import org.rutebanken.tiamat.repository.search.ChangedStopPlaceSearch;
+import org.rutebanken.tiamat.service.stopplace.ChildStopPlacesFetcher;
 import org.rutebanken.tiamat.service.stopplace.ParentStopPlacesFetcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,8 +33,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.FlushModeType;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -48,8 +41,15 @@ import java.util.stream.StreamSupport;
 
 import static java.util.stream.Collectors.toSet;
 
+/**
+ * This class should be removed.
+ * The reason is that we have two ways of exporting betex (sync and async) in Tiamat, but we want to maintain only one, for reduced complexity.
+ * So, the regular synchronous export has been pointed at @{{@link StreamingPublicationDelivery}}, which also is used for async export.
+ * The remeaining code to migrate is ChangedStopPlaceSearch and the ability to fetch children as @{{@link ChildStopPlacesFetcher}}.
+ */
 @Component
 @Transactional
+@Deprecated
 public class PublicationDeliveryExporter {
     private static final Logger logger = LoggerFactory.getLogger(PublicationDeliveryExporter.class);
     private final StopPlaceRepository stopPlaceRepository;
@@ -59,6 +59,7 @@ public class PublicationDeliveryExporter {
     private final TariffZonesFromStopsExporter tariffZonesFromStopsExporter;
     private final ParentStopPlacesFetcher parentStopPlacesFetcher;
     private final ChildStopPlacesFetcher childStopPlacesFetcher;
+
     private static final AtomicLong publicationDeliveryId = new AtomicLong();
 
     public enum MultiModalFetchMode {CHILDREN, PARENTS}
@@ -73,11 +74,6 @@ public class PublicationDeliveryExporter {
         this.tariffZonesFromStopsExporter = tariffZonesFromStopsExporter;
         this.parentStopPlacesFetcher = parentStopPlacesFetcher;
         this.childStopPlacesFetcher = childStopPlacesFetcher;
-    }
-
-    @Transactional(readOnly = true)
-    public PublicationDeliveryStructure exportStopPlaces(ExportParams exportParams) {
-        return exportPublicationDeliveryWithStops(stopPlaceRepository.findStopPlace(exportParams).getContent(), exportParams);
     }
 
     @Transactional(readOnly = true)
@@ -115,12 +111,6 @@ public class PublicationDeliveryExporter {
         logger.info("Returning publication delivery {} with site frame", publicationDeliveryStructure);
         return publicationDeliveryStructure;
     }
-
-    public PublicationDeliveryStructure exportPublicationDeliveryWithStops(List<StopPlace> stopPlaces, ExportParams exportParams) {
-        return exportPublicationDeliveryWithStops(stopPlaces, exportParams, MultiModalFetchMode.PARENTS);
-    }
-
-
 
     /**
      *

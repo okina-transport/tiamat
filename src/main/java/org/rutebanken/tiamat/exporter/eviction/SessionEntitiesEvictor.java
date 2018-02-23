@@ -13,12 +13,11 @@
  * limitations under the Licence.
  */
 
-package org.rutebanken.tiamat.exporter.async;
+package org.rutebanken.tiamat.exporter.eviction;
 
 import com.google.common.collect.Sets;
 import org.hibernate.engine.spi.EntityKey;
 import org.hibernate.internal.SessionImpl;
-import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.model.tag.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,9 +26,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class EntitiesEvictor {
+public class SessionEntitiesEvictor implements EntitiesEvictor {
 
-    private static final Logger logger = LoggerFactory.getLogger(EntitiesEvictor.class);
+    private static final Logger logger = LoggerFactory.getLogger(SessionEntitiesEvictor.class);
 
     /**
      * Object types that should be evicted every time an entity is evicted.
@@ -42,7 +41,7 @@ public class EntitiesEvictor {
 
     private final SessionImpl session;
 
-    public EntitiesEvictor(SessionImpl session) {
+    public SessionEntitiesEvictor(SessionImpl session) {
         this.session = session;
     }
 
@@ -50,6 +49,7 @@ public class EntitiesEvictor {
     private final AtomicInteger evictCalledCount = new AtomicInteger();
 
     @SuppressWarnings("unchecked")
+    @Override
     public void evictKnownEntitiesFromSession(Object entity) {
         Set<Object> evictEntities = new HashSet<>();
         try {

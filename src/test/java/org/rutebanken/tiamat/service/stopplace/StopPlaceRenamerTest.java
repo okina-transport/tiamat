@@ -65,7 +65,7 @@ public class StopPlaceRenamerTest extends TiamatIntegrationTest {
 
     private StopPlace createAndSaveStopPlace(String name) {
         StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString(name, DEFAULT_LANG));
-        stopPlace.setNetexId("Foo:StopPlace:" + counter);
+        stopPlace.setNetexId("Foo:StopPlace:" + counter++);
         return stopPlaceRepository.save(stopPlace);
     }
 

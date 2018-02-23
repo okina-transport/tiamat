@@ -43,7 +43,6 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 import static javax.xml.bind.JAXBContext.newInstance;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 
 @Component
@@ -118,7 +117,7 @@ public class PublicationDeliveryTestHelper {
                 .flatMap(values -> Stream.of(values))
                 .filter(value -> value.equals(expectedId))
                 .collect(Collectors.toList());
-        assertThat(list).as("Matching original ID "+expectedId).hasSize(1);
+        assertThat(list).as("Matching original ID " + expectedId).hasSize(1);
     }
 
     public List<StopPlace> extractStopPlaces(Response response) throws IOException, JAXBException {
@@ -138,21 +137,20 @@ public class PublicationDeliveryTestHelper {
     }
 
     public List<StopPlace> extractStopPlaces(SiteFrame siteFrame, boolean verifyNotNull) {
-        if(verifyNotNull) {
+        if (verifyNotNull) {
             assertThat(siteFrame.getStopPlaces()).as("Site frame stop places").isNotNull();
             assertThat(siteFrame.getStopPlaces().getStopPlace()).as("Site frame stop places getStopPlace").isNotNull();
-        } else if(siteFrame.getStopPlaces() == null || siteFrame.getStopPlaces().getStopPlace() == null) {
+        } else if (siteFrame.getStopPlaces() == null || siteFrame.getStopPlaces().getStopPlace() == null) {
             return new ArrayList<>();
         }
         return siteFrame.getStopPlaces().getStopPlace();
     }
 
-    public List<GroupOfStopPlaces> extractGroupOfStopPlaces(SiteFrame siteFrame) {
+    public GroupOfStopPlaces extractGroupOfStopPlaces(SiteFrame siteFrame) {
         assertThat(siteFrame.getGroupsOfStopPlaces()).as("site frame groups of stop places").isNotNull();
         assertThat(siteFrame.getGroupsOfStopPlaces().getGroupOfStopPlaces())
                 .as("groups of stop places list")
-                .isNotNull()
-                .isNotEmpty();
+                .isNotNull();
 
         return siteFrame.getGroupsOfStopPlaces().getGroupOfStopPlaces();
     }
@@ -160,7 +158,7 @@ public class PublicationDeliveryTestHelper {
     public List<PathLink> extractPathLinks(PublicationDeliveryStructure publicationDeliveryStructure) {
 
         SiteFrame siteFrame = findSiteFrame(publicationDeliveryStructure);
-        if(siteFrame.getPathLinks() != null && siteFrame.getPathLinks().getPathLink() != null) {
+        if (siteFrame.getPathLinks() != null && siteFrame.getPathLinks().getPathLink() != null) {
             return siteFrame.getPathLinks().getPathLink();
         } else {
             return new ArrayList<>();
@@ -170,7 +168,7 @@ public class PublicationDeliveryTestHelper {
     public List<TopographicPlace> extractTopographicPlace(PublicationDeliveryStructure publicationDeliveryStructure) {
 
         SiteFrame siteFrame = findSiteFrame(publicationDeliveryStructure);
-        if(siteFrame.getTopographicPlaces() != null && siteFrame.getTopographicPlaces().getTopographicPlace() != null) {
+        if (siteFrame.getTopographicPlaces() != null && siteFrame.getTopographicPlaces().getTopographicPlace() != null) {
             return siteFrame.getTopographicPlaces().getTopographicPlace();
         } else {
             return new ArrayList<>();
@@ -204,8 +202,8 @@ public class PublicationDeliveryTestHelper {
     public PublicationDeliveryStructure postAndReturnPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams) throws JAXBException, IOException, SAXException {
         Response response = postPublicationDelivery(publicationDeliveryStructure, importParams);
 
-        if(! (response.getEntity() instanceof StreamingOutput)) {
-            throw new RuntimeException("Response is not instance of streaming output: "+response);
+        if (!(response.getEntity() instanceof StreamingOutput)) {
+            throw new RuntimeException("Response is not instance of streaming output: " + response);
         }
         return fromResponse(response);
     }

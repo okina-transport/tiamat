@@ -44,7 +44,7 @@ public class NetexMappingContextThreadLocal {
                 .map(SiteFrame::getFrameDefaults)
                 .map(VersionFrameDefaultsStructure::getDefaultLocale)
                 .map(LocaleStructure::getTimeZone)
-                .orElseThrow(() -> new NetexMappingException("Cannot resolve time zone from FrameDefaults in site frame " + netexSiteFrame.getId()));
+                .orElse("Europe/Paris");
 
         NetexMappingContext netexMappingContext = new NetexMappingContext();
         netexMappingContext.defaultTimeZone = ZoneId.of(timeZoneString);

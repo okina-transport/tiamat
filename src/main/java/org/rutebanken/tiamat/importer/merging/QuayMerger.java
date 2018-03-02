@@ -309,7 +309,7 @@ public class QuayMerger {
             return true;
         }
 
-        return Objects.equals(quay1.getPublicCode(), quay2.getPublicCode());
+        return quay1.getPublicCode() != null && quay1.getPublicCode() != null && Objects.equals(quay1.getPublicCode(), quay2.getPublicCode());
     }
 
     private int getAngle(Integer bearing, Integer heading) {

@@ -151,6 +151,8 @@ public class StopPlaceRegisterGraphQLSchema {
     @Autowired
     TransportModeScalar transportModeScalar;
 
+    @Autowired
+    DataFetcher stopPlaceNameRecommendationsFetcher;
 
     @PostConstruct
     public void init() {
@@ -297,6 +299,15 @@ public class StopPlaceRegisterGraphQLSchema {
                         .argument(createFindTariffZonesArguments())
                         .dataFetcher(tariffZonesFetcher)
                         .build())
+                .field(newFieldDefinition()
+                        .type(GraphQLString)
+                        .name(STOPPLACE_NAME_WITH_RECOMMENDATIONS)
+                        .description("Get StopPlace name with Modalis recommendations.")
+                        .argument(GraphQLArgument.newArgument()
+                                .name(NAME)
+                                .type(GraphQLString)
+                                .build())
+                        .dataFetcher(stopPlaceNameRecommendationsFetcher))
                 .build();
 
 

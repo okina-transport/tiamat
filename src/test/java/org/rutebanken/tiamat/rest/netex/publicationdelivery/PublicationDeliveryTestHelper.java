@@ -152,7 +152,7 @@ public class PublicationDeliveryTestHelper {
                 .as("groups of stop places list")
                 .isNotNull();
 
-        return siteFrame.getGroupsOfStopPlaces().getGroupOfStopPlaces();
+        return siteFrame.getGroupsOfStopPlaces().getGroupOfStopPlaces().get(0);
     }
 
     public List<PathLink> extractPathLinks(PublicationDeliveryStructure publicationDeliveryStructure) {

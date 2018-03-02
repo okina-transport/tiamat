@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  * sure that not two instances of Hazelcast is running. (Hazelcast reads default config xml if this class is not used)
  * Because this class is initialized before spring DI, we read properties from System.properties.
  */
-public class TiamatHazelcastCacheRegionFactory extends com.hazelcast.hibernate.HazelcastCacheRegionFactory implements RegionFactory {
+public class TiamatHazelcastCacheRegionFactory extends com.hazelcast.hibernate.HazelcastCacheRegionFactory implements RegionFactory{
 
     private static final Logger logger = LoggerFactory.getLogger(TiamatHazelcastCacheRegionFactory.class);
 
@@ -40,21 +40,16 @@ public class TiamatHazelcastCacheRegionFactory extends com.hazelcast.hibernate.H
             String kubernetesUrl = getProperty("rutebanken.kubernetes.url", false);
 
             boolean kuberentesEnabled = getBooleanProperty("rutebanken.kubernetes.enabled", false);
-            boolean swarmModeEnabled = getBooleanProperty("rutebanken.swarm.enabled", false);
-
-            logger.info("Kebernetes enabled : " + kuberentesEnabled);
-            logger.info("Swarm mode enabled : " + swarmModeEnabled);
-            
             String namespace = getProperty("rutebanken.kubernetes.namespace", false);
-            if (namespace == null) {
+            if(namespace == null) {
                 namespace = "default";
             }
 
             String hazelcastManagementUrl = getProperty("rutebanken.hazelcast.management.url", false);
 
             logger.info("Creating kubernetes service");
-            KubernetesService kubernetesService = new KubernetesService(kubernetesUrl, namespace, kuberentesEnabled, swarmModeEnabled);
-            if (kuberentesEnabled) {
+            KubernetesService kubernetesService = new KubernetesService(kubernetesUrl, namespace, kuberentesEnabled);
+            if(kuberentesEnabled) {
                 logger.info("Initiating kubernetes service");
                 kubernetesService.init();
             }
@@ -69,7 +64,6 @@ public class TiamatHazelcastCacheRegionFactory extends com.hazelcast.hibernate.H
         } catch (Exception e) {
             throw new RuntimeException("Error initializing hazelcast service", e);
         }
-
     }
 
     public static HazelcastInstance getHazelCastInstance() {
@@ -79,10 +73,10 @@ public class TiamatHazelcastCacheRegionFactory extends com.hazelcast.hibernate.H
     private static String getProperty(String key, boolean required) {
         String value = System.getProperty(key);
         logger.info("Loaded {}: {}", key, value);
-        if (required && value == null) {
+        if(required && value == null) {
             throw new RuntimeException("Property " + key + " cannot be null");
         }
-        if (value == null) {
+        if(value == null) {
             return null;
         }
         return String.valueOf(value);
@@ -90,7 +84,7 @@ public class TiamatHazelcastCacheRegionFactory extends com.hazelcast.hibernate.H
 
     private static boolean getBooleanProperty(String key, boolean required) {
         String value = getProperty(key, required);
-        if (value == null) {
+        if(value == null) {
             return false;
         }
         return value.equalsIgnoreCase("true");

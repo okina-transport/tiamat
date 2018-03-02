@@ -644,6 +644,10 @@
                                 <env>
                                     <JAVA_APP_JAR>${project.build.finalName}.jar</JAVA_APP_JAR>
                                 </env>
+                                <runCmds>
+                                    <runCmd>mkdir /deployments/data</runCmd>
+                                    <runCmd>chown -R jboss:jboss /deployments/data</runCmd>
+                                </runCmds>
                             </build>
                         </image>
                     </images>

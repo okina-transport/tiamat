@@ -53,7 +53,7 @@ public class ValidityUpdater {
      * @param defaultFromTime
      * @return the new version's valid from date
      */
-    protected <T extends EntityInVersionStructure> Instant updateValidBetween(T existingVersion, T newVersion, Instant defaultFromTime) {
+    public <T extends EntityInVersionStructure> Instant updateValidBetween(T existingVersion, T newVersion, Instant defaultFromTime) {
 
         instantiateValidBetween(newVersion);
 
@@ -77,54 +77,9 @@ public class ValidityUpdater {
         return newVersion.getValidBetween().getFromDate();
     }
 
-    /**
-     * FIXME : any way to have incoming TZ instead of relying on default TZ ?
-     *
-     * Format an instant to human readable string. Used in error messages.
-     *
-     * @param dateToConvert instant to convert, UTC.
-     * @return instant converte to LocalDateTime using default time zone.
-     */
-    private String formatToLocalDateTime(Instant dateToConvert) {
-        return LocalDateTime.from(dateToConvert.atZone(defaultTimeZone.getDefaultTimeZoneId())).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-    }
-
-    /**
-     * Resolve from-date from prevous version, or use default.
-     * If previous version has from- or to-date after defaultFromTime.
-     */
-    private <T extends EntityInVersionStructure> Instant resolveFromDate(T existingVersion, String netexVersion, Instant defaultFromTime) {
-        Instant fromDate = null;
-
-        if (existingVersion != null && existingVersion.getValidBetween() != null) {
-            if (existingVersion.getValidBetween().getToDate() != null) {
-                logger.info("From date not set for new version of entity with ID: {}. Using existing version to date: {}",
-                        netexVersion,
-                        existingVersion.getValidBetween().getToDate());
-                fromDate = existingVersion.getValidBetween().getToDate().plusMillis(1);
-            } else if (existingVersion != null && existingVersion.getValidBetween().getFromDate() != null) {
-                logger.info("From date not set for new version of entity with ID: {}. Using existing version from date: {}",
-                        netexVersion,
-                        existingVersion.getValidBetween().getFromDate());
-                fromDate = existingVersion.getValidBetween().getFromDate().plusMillis(1);
-            }
-        }
-
-        if (fromDate == null) {
-            logger.info("From date not set and cannot be detected from previous version for new version of entity with ID: {}. Setting default from time: {}",
-                    netexVersion, defaultFromTime);
-            fromDate = defaultFromTime;
-        } else if (fromDate.isBefore(defaultFromTime)) {
-            logger.info("Detected from date (from previous version) is before default from time for entity with ID: {}. Setting default from time: {}",
-                    netexVersion, defaultFromTime);
-            fromDate = defaultFromTime;
-        }
-        return fromDate;
-    }
-
-    private void validateNewVersionDateAfter(String messageKey, String entityId, Instant previousVersionDate, Instant newVersionFromDate) {
-        if (previousVersionDate != null && previousVersionDate.isAfter(newVersionFromDate)) {
-            throw new IllegalArgumentException(messages.get(messageKey, entityId, formatToLocalDateTime(previousVersionDate), formatToLocalDateTime(newVersionFromDate)));
+    private void validateNewVersionDateAfter(String description, Instant previousVersionDate, Instant newVersionFromDate) {
+        if(previousVersionDate != null && previousVersionDate.isAfter(newVersionFromDate)) {
+            throw new IllegalArgumentException(description + " " + previousVersionDate + " is after new version's fromdate " + newVersionFromDate);
         }
     }
 

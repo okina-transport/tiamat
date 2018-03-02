@@ -13,18 +13,24 @@
  * limitations under the Licence.
  */
 
-package org.rutebanken.tiamat.versioning;
+package org.rutebanken.tiamat.versioning.save;
 
 import org.rutebanken.tiamat.auth.StopPlaceAuthorizationService;
+import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.EntityChangedListener;
+import org.rutebanken.tiamat.diff.TiamatObjectDiffer;
 import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByQuayOriginalIdFinder;
 import org.rutebanken.tiamat.model.*;
-import org.rutebanken.tiamat.repository.EntityInVersionRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
 import org.rutebanken.tiamat.service.TariffZonesLookupService;
 import org.rutebanken.tiamat.service.TopographicPlaceLookupService;
+import org.rutebanken.tiamat.service.metrics.MetricsService;
+import org.rutebanken.tiamat.versioning.validate.SubmodeValidator;
+import org.rutebanken.tiamat.versioning.ValidityUpdater;
+import org.rutebanken.tiamat.versioning.VersionIncrementor;
+import org.rutebanken.tiamat.versioning.validate.VersionValidator;
 import org.rutebanken.tiamat.versioning.util.AccessibilityAssessmentOptimizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,14 +39,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
+import static org.rutebanken.tiamat.versioning.save.DefaultVersionedSaverService.MILLIS_BETWEEN_VERSIONS;
 
 
 @Transactional
 @Service
-public class StopPlaceVersionedSaverService extends VersionedSaverService<StopPlace> {
+public class StopPlaceVersionedSaverService {
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceVersionedSaverService.class);
 
@@ -77,15 +86,43 @@ public class StopPlaceVersionedSaverService extends VersionedSaverService<StopPl
     @Autowired
     private StopPlaceAuthorizationService stopPlaceAuthorizationService;
 
-    @Override
-    public EntityInVersionRepository<StopPlace> getRepository() {
-        return stopPlaceRepository;
+    @Autowired
+    private ValidityUpdater validityUpdater;
+
+    @Autowired
+    private VersionIncrementor versionIncrementor;
+
+    @Autowired
+    private UsernameFetcher usernameFetcher;
+
+    @Autowired
+    private VersionValidator versionValidator;
+
+    @Autowired
+    private TiamatObjectDiffer tiamatObjectDiffer;
+
+    @Autowired
+    private MetricsService metricsService;
+
+    public StopPlace saveNewVersion(StopPlace existingVersion, StopPlace newVersion, Instant defaultValidFrom) {
+        return saveNewVersion(existingVersion, newVersion, defaultValidFrom, new HashSet<>());
     }
 
-    @Override
-    public StopPlace saveNewVersion(StopPlace existingVersion, StopPlace newVersion, Instant defaultValidFrom) {
+    public StopPlace saveNewVersion(StopPlace existingVersion, StopPlace newVersion, Set<String> childStopsUpdated) {
+        return saveNewVersion(existingVersion, newVersion, Instant.now(), childStopsUpdated);
+    }
 
-        super.validate(existingVersion, newVersion);
+    public StopPlace saveNewVersion(StopPlace existingStopPlace, StopPlace newVersion) {
+        return saveNewVersion(existingStopPlace, newVersion, Instant.now());
+    }
+
+    public StopPlace saveNewVersion(StopPlace newVersion) {
+        return saveNewVersion(null , newVersion);
+    }
+
+    public StopPlace saveNewVersion(StopPlace existingVersion, StopPlace newVersion, Instant defaultValidFrom, Set<String> childStopsUpdated) {
+
+        versionValidator.validate(existingVersion, newVersion);
 
         if (newVersion.getParentSiteRef() != null && !newVersion.isParentStopPlace()) {
             throw new IllegalArgumentException("StopPlace " +
@@ -115,14 +152,14 @@ public class StopPlaceVersionedSaverService extends VersionedSaverService<StopPl
         if (existingVersion == null) {
             logger.debug("Existing version is not present, which means new entity. {}", newVersion);
             newVersion.setCreated(changed);
-            stopPlaceAuthorizationService.assertAuthorizedToEdit(null, newVersion);
+            stopPlaceAuthorizationService.assertAuthorizedToEdit(null, newVersion, childStopsUpdated);
         } else {
             newVersion.setChanged(changed);
             logger.debug("About to terminate previous version for {},{}", existingVersion.getNetexId(), existingVersion.getVersion());
             StopPlace existingVersionRefetched = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingVersion.getNetexId());
             logger.debug("Found previous version {},{}. Terminating it.", existingVersionRefetched.getNetexId(), existingVersionRefetched.getVersion());
             validityUpdater.terminateVersion(existingVersionRefetched, newVersionValidFrom.minusMillis(MILLIS_BETWEEN_VERSIONS));
-            stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersionRefetched, newVersion);
+            stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersionRefetched, newVersion, childStopsUpdated);
         }
 
         newVersion =  versionIncrementor.initiateOrIncrementVersions(newVersion);
@@ -218,6 +255,5 @@ public class StopPlaceVersionedSaverService extends VersionedSaverService<StopPl
         }
         logger.info("Updated {} childs with parent site refs", count);
     }
-
 
 }

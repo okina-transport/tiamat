@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.auth;
 
+import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
@@ -24,8 +25,10 @@ import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.auth.check.TiamatOriganisationChecker;
 import org.rutebanken.tiamat.auth.check.TopographicPlaceChecker;
 import org.rutebanken.tiamat.config.AuthorizationServiceConfig;
+import org.rutebanken.tiamat.diff.TiamatObjectDiffer;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.service.stopplace.MultiModalStopPlaceEditor;
+import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 
@@ -86,6 +89,9 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
     @Autowired
     private TopographicPlaceChecker topographicPlaceChecker;
 
+    @Autowired
+    private VersionCreator versionCreator;
+
     /**
      * Mocked class for extracting role assignments.
      * <p>
@@ -93,6 +99,9 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
      * The {@link StopPlaceAuthorizationService} makes several calls.
      */
     private RoleAssignmentExtractor roleAssignmentExtractor;
+
+    @Autowired
+    private TiamatObjectDiffer tiamatObjectDiffer;
 
     /**
      * Set up stopPlaceAuthorizationService with custom roleAssignmentExtractor.
@@ -109,7 +118,8 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
                 topographicPlaceChecker,
                 tiamatEntityResolver);
 
-        stopPlaceAuthorizationService = new StopPlaceAuthorizationService(reflectionAuthorizationService);
+
+        stopPlaceAuthorizationService = new StopPlaceAuthorizationService(reflectionAuthorizationService, tiamatObjectDiffer);
     }
 
     @Test
@@ -132,10 +142,9 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
 
         setRoleAssignmentReturned(roleAssignment);
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(existingVersion, StopPlace.class);
-        removeAllChildrenExcept(newVersion, onstreetBus.getNetexId());
+        StopPlace newVersion = versionCreator.createCopy(existingVersion, StopPlace.class);
 
-        stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion);
+        stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion, Sets.newHashSet(onstreetBus.getNetexId()));
     }
 
     @Test
@@ -157,13 +166,21 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
 
         RoleAssignment roleAssignment = canOnlyEdit("railStation");
 
+
         setRoleAssignmentReturned(roleAssignment);
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(existingVersion, StopPlace.class);
+        StopPlace newVersion = versionCreator.createCopy(existingVersion, StopPlace.class);
 
-        removeAllChildrenExcept(newVersion, railStation.getNetexId());
+        stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion, Sets.newHashSet(railStation.getNetexId()));
+    }
 
-        stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion);
+    private StopPlace getChildStop(String netexId, StopPlace parentStop) {
+        for (StopPlace child : parentStop.getChildren()) {
+            if(child.getNetexId().equals(netexId)) {
+                return child;
+            }
+        }
+        return null;
     }
 
     @Test
@@ -187,11 +204,10 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
 
         setRoleAssignmentReturned(roleAssignment);
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(existingVersion, StopPlace.class);
-        removeAllChildrenExcept(newVersion, onstreetBus.getNetexId());
+        StopPlace newVersion = versionCreator.createCopy(existingVersion, StopPlace.class);
 
         assertThatThrownBy(() ->
-                stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion))
+                stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion, Sets.newHashSet(onstreetBus.getNetexId())))
                 .isInstanceOf(AccessDeniedException.class);
     }
 
@@ -216,14 +232,13 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
 
         setRoleAssignmentReturned(roleAssignment);
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(existingVersion, StopPlace.class);
-        removeAllChildrenExcept(newVersion, onstreetBus.getNetexId());
+        StopPlace newVersion = versionCreator.createCopy(existingVersion, StopPlace.class);
 
         // Set termination date
         newVersion.setValidBetween(new ValidBetween(null, Instant.now()));
 
         assertThatThrownBy(() ->
-                stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion))
+                stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion, Sets.newHashSet(onstreetBus.getNetexId())))
                 .isInstanceOf(AccessDeniedException.class);
     }
 
@@ -247,14 +262,13 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
 
         setRoleAssignmentReturned(roleAssignment);
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(existingVersion, StopPlace.class);
-        removeAllChildrenExcept(newVersion, onstreetBus.getNetexId());
+        StopPlace newVersion = versionCreator.createCopy(existingVersion, StopPlace.class);
 
-        newVersion.getChildren().iterator().next().setStopPlaceType(StopTypeEnumeration.TRAM_STATION);
+        getChildStop(onstreetBus.getNetexId(), newVersion).setStopPlaceType(StopTypeEnumeration.TRAM_STATION);
 
         // Cannot change stop place type to a type the user is not authorized to change to
         assertThatThrownBy(() ->
-                stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion))
+                stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion, Sets.newHashSet(onstreetBus.getNetexId())))
                 .isInstanceOf(AccessDeniedException.class);
     }
 
@@ -281,13 +295,12 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
 
         setRoleAssignmentReturned(roleAssignment);
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(existingVersion, StopPlace.class);
-        removeAllChildrenExcept(newVersion, onstreetBus.getNetexId());
+        StopPlace newVersion = versionCreator.createCopy(existingVersion, StopPlace.class);
 
         // Change the bus to ferry
-        onstreetBus.setStopPlaceType(StopTypeEnumeration.FERRY_STOP);
+        getChildStop(onstreetBus.getNetexId(), newVersion).setStopPlaceType(StopTypeEnumeration.FERRY_STOP);
 
-        stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion);
+        stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion, Sets.newHashSet(onstreetBus.getNetexId()));
     }
 
     @Test
@@ -307,7 +320,7 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
                 toIdList(childStops),
                 new EmbeddableMultilingualString("Multi modal stop place that should be terminated by an admin user"));
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(existingVersion, StopPlace.class);
+        StopPlace newVersion = versionCreator.createCopy(existingVersion, StopPlace.class);
 
         newVersion.setValidBetween(new ValidBetween(null, Instant.now()));
         stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion);

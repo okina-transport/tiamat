@@ -13,75 +13,73 @@
  * limitations under the Licence.
  */
 
-package org.rutebanken.tiamat.versioning;
+package org.rutebanken.tiamat.versioning.save;
 
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.diff.TiamatObjectDiffer;
 import org.rutebanken.tiamat.model.DataManagedObjectStructure;
 import org.rutebanken.tiamat.model.EntityInVersionStructure;
-import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.EntityInVersionRepository;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
+import org.rutebanken.tiamat.versioning.ValidityUpdater;
+import org.rutebanken.tiamat.versioning.VersionIncrementor;
+import org.rutebanken.tiamat.versioning.validate.VersionValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Arrays;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
 
-public abstract class VersionedSaverService<T extends EntityInVersionStructure> {
+@Service
+public class DefaultVersionedSaverService {
 
-    private static final Logger logger = LoggerFactory.getLogger(VersionedSaverService.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultVersionedSaverService.class);
 
     public static final int MILLIS_BETWEEN_VERSIONS = 1;
 
     @Autowired
-    protected UsernameFetcher usernameFetcher;
+    private UsernameFetcher usernameFetcher;
 
     @Autowired
-    protected ValidityUpdater validityUpdater;
+    private ValidityUpdater validityUpdater;
 
     @Autowired
-    protected TiamatObjectDiffer tiamatObjectDiffer;
+    private TiamatObjectDiffer tiamatObjectDiffer;
 
     @Autowired
-    protected VersionCreator versionCreator;
+    private VersionIncrementor versionIncrementor;
 
     @Autowired
-    protected VersionIncrementor versionIncrementor;
+    private MetricsService metricsService;
 
     @Autowired
-    protected MetricsService metricsService;
+    private ReflectionAuthorizationService authorizationService;
 
     @Autowired
-    protected ReflectionAuthorizationService authorizationService;
+    private VersionValidator versionValidator;
 
-    public abstract EntityInVersionRepository<T> getRepository();
-
-    public <T extends EntityInVersionStructure> T createCopy(T entity, Class<T> type) {
-        return versionCreator.createCopy(entity, type);
+    public <T extends EntityInVersionStructure> T saveNewVersion(T newVersion, EntityInVersionRepository<T> entityInVersionRepository) {
+        return saveNewVersion(null, newVersion, Instant.now(), entityInVersionRepository);
     }
 
-    public T saveNewVersion(T newVersion) {
-        return saveNewVersion(null, newVersion, Instant.now());
+    public <T extends EntityInVersionStructure> T saveNewVersion(T existingVersion, T newVersion, EntityInVersionRepository<T> entityInVersionRepository) {
+        return saveNewVersion(existingVersion, newVersion, Instant.now(), entityInVersionRepository);
     }
 
-    public T saveNewVersion(T existingVersion, T newVersion) {
-        return saveNewVersion(existingVersion, newVersion, Instant.now());
-    }
+    public <T extends EntityInVersionStructure> T saveNewVersion(T existingVersion, T newVersion, Instant defaultValidFrom, EntityInVersionRepository<T> entityInVersionRepository) {
 
-    protected T saveNewVersion(T existingVersion, T newVersion, Instant defaultValidFrom) {
-
-        validate(existingVersion, newVersion);
+        versionValidator.validate(existingVersion, newVersion);
 
         Instant newVersionValidFrom = validityUpdater.updateValidBetween(existingVersion, newVersion, defaultValidFrom);
 
         if(existingVersion == null) {
             if (newVersion.getNetexId() != null) {
-                existingVersion = getRepository().findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
+                existingVersion = entityInVersionRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
                 if (existingVersion != null) {
                     logger.debug("Found existing entity from netexId {}", existingVersion.getNetexId());
                 }
@@ -99,7 +97,7 @@ public abstract class VersionedSaverService<T extends EntityInVersionStructure> 
             newVersion.setVersion(existingVersion.getVersion());
             newVersion.setChanged(defaultValidFrom);
             validityUpdater.terminateVersion(existingVersion, newVersionValidFrom.minusMillis(MILLIS_BETWEEN_VERSIONS));
-            getRepository().save(existingVersion);
+            entityInVersionRepository.save(existingVersion);
         }
 
         versionIncrementor.initiateOrIncrement(newVersion);
@@ -111,7 +109,7 @@ public abstract class VersionedSaverService<T extends EntityInVersionStructure> 
 
         logger.info("Object {}, version {} changed by user {}", newVersion.getNetexId(), newVersion.getVersion(), usernameForAuthenticatedUser);
 
-        newVersion = getRepository().save(newVersion);
+        newVersion = entityInVersionRepository.save(newVersion);
         if(existingVersion != null) {
             tiamatObjectDiffer.logDifference(existingVersion, newVersion);
         }
@@ -119,30 +117,10 @@ public abstract class VersionedSaverService<T extends EntityInVersionStructure> 
         return newVersion;
     }
 
-    protected void authorizeNewVersion(T existingVersion, T newVersion) {
+    private <T extends EntityInVersionStructure> void authorizeNewVersion(T existingVersion, T newVersion) {
         authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(existingVersion, newVersion));
     }
 
-    protected void validate(T existingVersion, T newVersion) {
-
-        if(newVersion == null) {
-            throw new IllegalArgumentException("Cannot save new version if it's null");
-        }
-
-        if (existingVersion == newVersion) {
-            throw new IllegalArgumentException("Existing and new version must be different objects");
-        }
-
-        if(existingVersion != null) {
-            if (existingVersion.getNetexId() == null) {
-                throw new IllegalArgumentException("Existing entity must have netexId set: " + existingVersion);
-            }
-
-            if (!existingVersion.getNetexId().equals(newVersion.getNetexId())) {
-                throw new IllegalArgumentException("Existing and new entity do not match: " + existingVersion.getNetexId() + " != " + newVersion.getNetexId());
-            }
-        }
-    }
 
 
 }

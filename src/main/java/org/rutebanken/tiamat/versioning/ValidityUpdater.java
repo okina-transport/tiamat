@@ -77,9 +77,21 @@ public class ValidityUpdater {
         return newVersion.getValidBetween().getFromDate();
     }
 
-    private void validateNewVersionDateAfter(String description, Instant previousVersionDate, Instant newVersionFromDate) {
+    /**
+     * FIXME : any way to have incoming TZ instead of relying on default TZ ?
+     *
+     * Format an instant to human readable string. Used in error messages.
+     *
+     * @param dateToConvert instant to convert, UTC.
+     * @return instant converte to LocalDateTime using default time zone.
+     */
+    private String formatToLocalDateTime(Instant dateToConvert) {
+        return LocalDateTime.from(dateToConvert.atZone(defaultTimeZone.getDefaultTimeZoneId())).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    }
+
+    private void validateNewVersionDateAfter(String messageKey, String entityId, Instant previousVersionDate, Instant newVersionFromDate) {
         if(previousVersionDate != null && previousVersionDate.isAfter(newVersionFromDate)) {
-            throw new IllegalArgumentException(description + " " + previousVersionDate + " is after new version's fromdate " + newVersionFromDate);
+            throw new IllegalArgumentException(messages.get(messageKey, entityId, formatToLocalDateTime(previousVersionDate), formatToLocalDateTime(newVersionFromDate)));
         }
     }
 

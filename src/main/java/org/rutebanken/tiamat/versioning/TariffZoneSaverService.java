@@ -59,6 +59,7 @@ public class TariffZoneSaverService extends VersionedSaverService<TariffZone> {
         if(existing != null) {
             BeanUtils.copyProperties(newVersion, existing, "id", "created", "version");
             existing.setValidBetween(null);
+            existing.setChanged(Instant.now());
             result = tariffZoneRepository.save(existing);
 
         } else {
@@ -66,6 +67,8 @@ public class TariffZoneSaverService extends VersionedSaverService<TariffZone> {
             newVersion.setVersion(1L);
             result = tariffZoneRepository.save(newVersion);
         }
+
+        result.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
 
         logger.info("Saved tariff zone {}, version {}, name {}", result.getNetexId(), result.getVersion(), result.getName());
 

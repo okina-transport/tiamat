@@ -44,6 +44,7 @@ public class TiamatHazelcastCacheRegionFactory extends com.hazelcast.hibernate.H
             String kubernetesUrl = getProperty("rutebanken.kubernetes.url", false);
 
             boolean kuberentesEnabled = getBooleanProperty("rutebanken.kubernetes.enabled", false);
+            boolean swarmModeEnabled = getBooleanProperty("rutebanken.swarm.enabled", false);
             String namespace = getProperty("rutebanken.kubernetes.namespace", false);
             if (namespace == null) {
                 namespace = "default";
@@ -52,33 +53,20 @@ public class TiamatHazelcastCacheRegionFactory extends com.hazelcast.hibernate.H
             String hazelcastManagementUrl = getProperty("rutebanken.hazelcast.management.url", false);
 
             logger.info("Creating kubernetes service");
-            KubernetesService kubernetesService = new KubernetesService(kubernetesUrl, namespace, kuberentesEnabled);
+            KubernetesService kubernetesService = new KubernetesService(kubernetesUrl, namespace, kuberentesEnabled, swarmModeEnabled);
             if (kuberentesEnabled) {
                 logger.info("Initiating kubernetes service");
                 kubernetesService.init();
             }
 
-
             logger.info("Creating extended hazelcast service");
             ExtendedHazelcastService extendedHazelcastService = new ExtendedHazelcastService(kubernetesService, hazelcastManagementUrl);
             logger.info("Initiating extended hazelcast service");
-
-            if (getBooleanProperty("rutebanken.swarm.enabled", false)) {
-                Config conf =new ClasspathXmlConfig("hazelcast-swarm-config.xml");
-
-                HazelcastInstance hazelcastInstance = HazelcastInstanceFactory
-                        .newHazelcastInstance(conf,"naq-hazelcast",new DefaultNodeContext());
-            } else {
-                extendedHazelcastService.init();
-            }
-
+            extendedHazelcastService.init();
             logger.info(extendedHazelcastService.information());
             return extendedHazelcastService;
 
-        } catch (
-                Exception e)
-
-        {
+        } catch (Exception e) {
             throw new RuntimeException("Error initializing hazelcast service", e);
         }
 

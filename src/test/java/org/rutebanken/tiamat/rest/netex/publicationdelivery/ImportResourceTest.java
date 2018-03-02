@@ -174,6 +174,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
 
         StopPlace stopPlace = new StopPlace()
                 .withId("XYZ:StopPlace:3231")
+                .withName(new MultilingualString().withValue("somewhere"))
                 .withVersion("2");
 
         ImportParams importParams = new ImportParams();
@@ -980,7 +981,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                    </ValidBetween>" +
                 "                    <Name lang=\"no-NO\">Krokstien</Name>\n" +
                 "                    <Centroid>\n" +
-                "                        <Location srsName=\"WGS84\">\n" +
+                "                        <Location srsName=\"EPSG:4326\">\n" +
                 "                            <Longitude>10.8577903</Longitude>\n" +
                 "                            <Latitude>59.910579</Latitude>\n" +
                 "                        </Location>\n" +
@@ -990,7 +991,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                    <quays>\n" +
                 "                        <Quay version=\"01\" created=\"2016-04-21T09:01:00.0Z\" id=\"nhr:Quay:1\">\n" +
                 "                            <Centroid>\n" +
-                "                                <Location srsName=\"WGS84\">\n" +
+                "                                <Location srsName=\"EPSG:4326\">\n" +
                 "                                    <Longitude>10.8577903</Longitude>\n" +
                 "                                    <Latitude>59.910579</Latitude>\n" +
                 "                                </Location>\n" +
@@ -1146,7 +1147,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "               </keyList>\n" +
                 "               <Name lang=\"no\">Arendal</Name>\n" +
                 "               <Centroid>\n" +
-                "                  <Location srsName=\"WGS84\"><!--Match on NRI quays--><Longitude>8.769146</Longitude>\n" +
+                "                  <Location srsName=\"EPSG:4326\"><!--Match on NRI quays--><Longitude>8.769146</Longitude>\n" +
                 "                     <Latitude>58.465256</Latitude>\n" +
                 "                  </Location>\n" +
                 "               </Centroid>\n" +
@@ -1197,7 +1198,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                        </KeyValue>\n" +
                 "                     </keyList>\n" +
                 "                     <Centroid>\n" +
-                "                        <Location srsName=\"WGS84\"><!--Match on NRI quays--><Longitude>8.769146</Longitude>\n" +
+                "                        <Location srsName=\"EPSG:4326\"><!--Match on NRI quays--><Longitude>8.769146</Longitude>\n" +
                 "                           <Latitude>58.465256</Latitude>\n" +
                 "                        </Location>\n" +
                 "                     </Centroid>\n" +
@@ -1274,7 +1275,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "               </keyList>\n" +
                 "               <Name lang=\"no\">Arendal</Name>\n" +
                 "               <Centroid>\n" +
-                "                  <Location srsName=\"WGS84\"><!--Match on NRI quays--><Longitude>8.769146</Longitude>\n" +
+                "                  <Location srsName=\"EPSG:4326\"><!--Match on NRI quays--><Longitude>8.769146</Longitude>\n" +
                 "                     <Latitude>58.465256</Latitude>\n" +
                 "                  </Location>\n" +
                 "               </Centroid>\n" +
@@ -1299,7 +1300,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                        </KeyValue>\n" +
                 "                     </keyList>\n" +
                 "                     <Centroid>\n" +
-                "                        <Location srsName=\"WGS84\"><!--Match on NRI quays--><Longitude>8.769146</Longitude>\n" +
+                "                        <Location srsName=\"EPSG:4326\"><!--Match on NRI quays--><Longitude>8.769146</Longitude>\n" +
                 "                           <Latitude>58.465256</Latitude>\n" +
                 "                        </Location>\n" +
                 "                     </Centroid>\n" +

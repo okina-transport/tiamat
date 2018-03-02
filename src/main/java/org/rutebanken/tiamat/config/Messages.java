@@ -32,7 +32,6 @@ public class Messages {
      * @param messageSource
      */
     public Messages(MessageSource messageSource) {
-        LocaleContextHolder.setDefaultLocale(Locale.FRENCH);
         Locale defaultLocale = LocaleContextHolder.getLocale();
         logger.info("Setting default locale for Messages component : " + defaultLocale);
         this.accessor = new MessageSourceAccessor(messageSource, defaultLocale);

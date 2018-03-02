@@ -123,6 +123,12 @@ public class QuayMerger {
             }
 
             if(!matchingQuay.isPresent()) {
+                matchingQuay = result.stream()
+                        .filter(quay -> incomingQuay.getNetexId().equals(quay.getNetexId()))
+                        .findFirst();
+            }
+
+            if(!matchingQuay.isPresent()) {
                 matchingQuay = findMatchOnOriginalId(incomingQuay, result);
             }
 

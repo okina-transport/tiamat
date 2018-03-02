@@ -50,7 +50,7 @@ public class QuayMerger {
     @Value("${quayMerger.mergeDistanceMeters:3}")
     public final double MERGE_DISTANCE_METERS = 3;
 
-    @Value("${quayMerger.mergeDistanceMetersExtended:30}")
+    @Value("${quayMerger.mergeDistanceMetersExtended:100}")
     public final double MERGE_DISTANCE_METERS_EXTENDED = 100;
 
     @Value("${quayMerger.maxCompassBearingDifference:60}")

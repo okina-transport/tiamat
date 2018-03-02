@@ -245,6 +245,12 @@ public class StopPlaceRegisterGraphQLSchema {
                         .argument(createBboxArguments())
                         .dataFetcher(stopPlaceFetcher))
                 .field(newFieldDefinition()
+                        .type(new GraphQLList(stopPlaceInterface))
+                        .name(STOPPLACE_NAME_WITH_RECOMMENDATIONS)
+                        .description("Get StopPlace name with Modalis recommendations.")
+                        .argument(createStopPlaceNameArgument())
+                        .dataFetcher(stopPlaceFetcher))
+                .field(newFieldDefinition()
                         .name(FIND_TOPOGRAPHIC_PLACE)
                         .type(new GraphQLList(topographicPlaceObjectType))
                         .description("Find topographic places")
@@ -756,6 +762,15 @@ public class StopPlaceRegisterGraphQLSchema {
                     .name(PRIVATE_CODE)
                     .type(privateCodeInputType))
                 .build();
+    }
+
+    private List<GraphQLArgument> createStopPlaceNameArgument() {
+        List<GraphQLArgument> arguments = createPageAndSizeArguments();
+        arguments.add(GraphQLArgument.newArgument()
+                .name(QUERY)
+                .type(GraphQLString)
+                .build());
+        return arguments;
     }
 
 }

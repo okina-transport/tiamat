@@ -26,6 +26,7 @@ import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.rest.graphql.helpers.CleanupHelper;
 import org.rutebanken.tiamat.rest.graphql.mappers.StopPlaceMapper;
 import org.rutebanken.tiamat.service.MutateLock;
+import org.rutebanken.tiamat.service.stopplace.StopPlaceRenamer;
 import org.rutebanken.tiamat.versioning.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +61,9 @@ class StopPlaceUpdater implements DataFetcher {
 
     @Autowired
     private MutateLock mutateLock;
+
+    @Autowired
+    StopPlaceRenamer stopPlaceRenamer;
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
@@ -134,6 +138,8 @@ class StopPlaceUpdater implements DataFetcher {
                         throw new IllegalArgumentException("Updated stop place must have name set: " + updatedStopPlace);
                     }
 
+                    verifyCorrectStopPlaceName(updatedStopPlace.getName().getValue(), stopPlaceRenamer.renameIfNeeded(updatedStopPlace.getName().getValue()));
+
                     updatedStopPlace = stopPlaceVersionedSaverService.saveNewVersion(existingVersion, updatedStopPlace);
 
                     return updatedStopPlace;
@@ -204,4 +210,11 @@ class StopPlaceUpdater implements DataFetcher {
                 existingParentStop.getVersion());
 
     }
+
+    private void verifyCorrectStopPlaceName(String updatedStopPlaceName, String correctName) {
+        if(updatedStopPlaceName.equals(correctName)){
+            throw new IllegalArgumentException("For respect the Modalis recommendations, the correct stop place name is : " + correctName);
+        }
+    }
+
 }

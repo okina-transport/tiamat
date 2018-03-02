@@ -47,9 +47,9 @@ public class H2Functions implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-
+        Connection connection = null;
         try {
-            Connection connection = jdbcTemplate.getDataSource().getConnection();
+            connection = jdbcTemplate.getDataSource().getConnection();
             if (connection.getMetaData().getDatabaseProductName().contains("H2")) {
                 logger.info("H2 detected. Creating alias to method similarityOveridden.");
                 jdbcTemplate.execute("CREATE ALIAS IF NOT EXISTS similarity FOR \"org.rutebanken.tiamat.config.H2Functions.similarity\"");
@@ -57,10 +57,12 @@ public class H2Functions implements InitializingBean {
                 logger.info("H2. Creating alias to method generate_series");
                 jdbcTemplate.execute("CREATE ALIAS IF NOT EXISTS generate_series FOR \"org.rutebanken.tiamat.config.H2Functions.generateSeries\"");
             }
-            connection.close();
         } catch (SQLException sqlException) {
             logger.warn("Cannot create h2 aliases", sqlException);
-
+        } finally {
+            if (connection != null) {
+                connection.close();
+            }
         }
     }
 
@@ -74,6 +76,7 @@ public class H2Functions implements InitializingBean {
     /**
      * Function for mimicking postgres similarity by using levenshtein distanc.
      * The return value can be overridden by calling ${setSimilarityOveridden}
+     *
      * @param value1
      * @param value2
      * @return similarity calculated from levenshteinDistance or overridden value
@@ -81,13 +84,13 @@ public class H2Functions implements InitializingBean {
     public static double similarity(String value1, String value2) {
 
         double similarityToReturn;
-        if(similarityOveridden != 1) {
+        if (similarityOveridden != 1) {
             similarityToReturn = similarityOveridden;
             similarityOveridden = 1;
         } else {
             int distance = StringUtils.getLevenshteinDistance(value1, value2);
             logger.info("Calculated levenshteinDistance {}", distance);
-            similarityToReturn = 1 -((double) distance) / (Math.max(value1.length(), value2.length()));
+            similarityToReturn = 1 - ((double) distance) / (Math.max(value1.length(), value2.length()));
         }
 
         logger.info("Return similarity {}", similarityToReturn);

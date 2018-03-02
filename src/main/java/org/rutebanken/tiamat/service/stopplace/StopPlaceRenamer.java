@@ -16,13 +16,13 @@
 package org.rutebanken.tiamat.service.stopplace;
 
 import org.apache.commons.lang.WordUtils;
+import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.AlternativeName;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.NameTypeEnumeration;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.service.AlternativeNameUpdater;
-import org.rutebanken.tiamat.service.MutateLock;
 import org.rutebanken.tiamat.versioning.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

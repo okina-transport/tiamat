@@ -45,7 +45,7 @@ public class PublicationDeliveryImporter {
     private static final Logger logger = LoggerFactory.getLogger(PublicationDeliveryImporter.class);
 
     public static final String IMPORT_CORRELATION_ID = "importCorrelationId";
-    private static final String KC_ROLE_PREFIX = "ROLE_";
+    public static final String KC_ROLE_PREFIX = "ROLE_";
 
 
     private final PublicationDeliveryHelper publicationDeliveryHelper;

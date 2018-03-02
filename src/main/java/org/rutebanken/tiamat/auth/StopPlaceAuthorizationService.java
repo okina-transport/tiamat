@@ -23,12 +23,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
+import static org.rutebanken.tiamat.importer.PublicationDeliveryImporter.KC_ROLE_PREFIX;
 
 /**
  * This authorization service is implemented mainly for handling multi modal stops.
@@ -99,9 +101,11 @@ public class StopPlaceAuthorizationService {
                         existingChildrenIds, newVersion.getNetexId(), mustBeAuthorizedToEditTheseChildren);
             }
         } else {
-            authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(newVersion));
+            if (SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream().noneMatch(
+                    authority -> (KC_ROLE_PREFIX + ROLE_EDIT_STOPS).equals(authority.getAuthority()))) {
+                authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(newVersion));
+            }
         }
-
     }
 
     private boolean compareChild(StopPlace newVersionOfChild, StopPlace existingVersion) {

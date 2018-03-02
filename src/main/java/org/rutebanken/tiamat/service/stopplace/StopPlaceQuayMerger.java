@@ -18,10 +18,12 @@ package org.rutebanken.tiamat.service.stopplace;
 import com.google.api.client.util.Preconditions;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.config.Messages;
+import org.rutebanken.tiamat.lock.MutateLock;
+import org.rutebanken.tiamat.model.Quay;
+import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.service.ObjectMerger;
-import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.service.merge.AlternativeNamesMerger;
 import org.rutebanken.tiamat.service.merge.KeyValuesMerger;
 import org.rutebanken.tiamat.service.merge.PlaceEquipmentMerger;
@@ -35,9 +37,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Optional;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
+import static org.rutebanken.tiamat.config.Messages.ERROR_QUAY_DOES_NOT_EXIST_ON_STOP_PLACE;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.MERGED_ID_KEY;
 import static org.rutebanken.tiamat.service.stopplace.StopPlaceMerger.IGNORE_PROPERTIES_ON_MERGE;
 
@@ -74,6 +78,9 @@ public class StopPlaceQuayMerger {
     @Autowired
     private MutateLock mutateLock;
 
+    @Autowired
+    private Messages messages;
+
     public StopPlace mergeQuays(final String stopPlaceId, String fromQuayId, String toQuayId, String versionComment, boolean isDryRun) {
 
         return mutateLock.executeInLock(() -> {
@@ -94,8 +101,8 @@ public class StopPlaceQuayMerger {
             Optional<Quay> fromQuayOpt = stopPlaceCopies.getCopiedEntity().getQuays().stream().filter(quay -> quay.getNetexId().equals(fromQuayId)).findFirst();
             Optional<Quay> toQuayOpt = stopPlaceCopies.getCopiedEntity().getQuays().stream().filter(quay -> quay.getNetexId().equals(toQuayId)).findFirst();
 
-            Preconditions.checkArgument(fromQuayOpt.isPresent(), "Quay does not exist on StopPlace", fromQuayId);
-            Preconditions.checkArgument(toQuayOpt.isPresent(), "Quay does not exist on StopPlace", toQuayId);
+            Preconditions.checkArgument(fromQuayOpt.isPresent(), messages.get(ERROR_QUAY_DOES_NOT_EXIST_ON_STOP_PLACE, fromQuayId));
+            Preconditions.checkArgument(toQuayOpt.isPresent(), messages.get(ERROR_QUAY_DOES_NOT_EXIST_ON_STOP_PLACE, toQuayId));
 
             Quay fromQuay = fromQuayOpt.get();
             Quay toQuay = toQuayOpt.get();

@@ -16,6 +16,7 @@ public class Messages {
     public static final String VALIDATION_TO_DATE_AFTER_NEXT_VERSION_FROM_DATE = "validation.existing-version-to-date-after-new-version-from-date";
     public static final String VALIDATION_FROM_DATE_AFTER_NEXT_VERSION_FROM_DATE = "validation.existing-version-from-date-after-new-version-from-date";
     public static final String VALIDATION_CANNOT_TERMINATE_FOR_NULL = "validation.cannot-terminate-for-null";
+    public static final String ERROR_QUAY_DOES_NOT_EXIST_ON_STOP_PLACE = "errors.quay-does-not-exist-on-stop-place";
 
     MessageSourceAccessor accessor;
 

@@ -80,7 +80,7 @@ public class ExportJobWorker implements Runnable {
 
             exportToLocalZipFile(localExportZipFile, localExportXmlFile);
 
-//            uploadToGcp(localExportZipFile);
+            uploadToGcp(localExportZipFile);
 
             exportJob.setStatus(JobStatus.FINISHED);
             exportJob.setFinished(Instant.now());
@@ -98,7 +98,7 @@ public class ExportJobWorker implements Runnable {
         } finally {
             exportJobRepository.save(exportJob);
             logger.info("Removing local file: {},{}", localExportXmlFile);
-//            localExportZipFile.delete();
+            localExportZipFile.delete();
             localExportXmlFile.delete();
         }
     }

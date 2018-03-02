@@ -126,9 +126,11 @@ public class QuayMerger {
             }
 
             if(!matchingQuay.isPresent()) {
-                matchingQuay = result.stream()
-                        .filter(quay -> incomingQuay.getNetexId().equals(quay.getNetexId()))
-                        .findFirst();
+                if (incomingQuay != null && incomingQuay    .getNetexId() != null) {
+                    matchingQuay = result.stream()
+                            .filter(quay -> incomingQuay.getNetexId().equals(quay.getNetexId()))
+                            .findFirst();
+                }
             }
 
             if (!matchingQuay.isPresent()) {
@@ -150,7 +152,7 @@ public class QuayMerger {
             } else {
                 logger.warn("No match for quay belonging to stop place {}. Quay: {}. Full incoming quay toString: {}. Was looking in list of quays for match: {}",
                         newStopPlace != null ? newStopPlace.importedIdAndNameToString() : null,
-                        incomingQuay.getOriginalIds(),
+                        incomingQuay!= null ? incomingQuay.getOriginalIds() : null,
                         incomingQuay, result);
             }
         }

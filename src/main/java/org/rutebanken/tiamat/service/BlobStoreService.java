@@ -47,15 +47,19 @@ public class BlobStoreService {
         this.projectId = projectId;
     }
 
-    public void upload(String fileName, InputStream inputStream) {
+    public void upload(String fileName, InputStream inputStream, boolean makePublic) {
         Storage storage = getStorage();
         String blobIdName = createBlobIdName(blobPath, fileName);
         try {
-            logger.info("Uploading {} to path {} in bucket {}", fileName, blobPath, bucketName);
-            BlobStoreHelper.uploadBlob(storage, bucketName, blobIdName, inputStream, false);
+            logger.info("Uploading {} to path {} in bucket {} with public access set to {}", fileName, blobPath, bucketName, makePublic);
+            BlobStoreHelper.uploadBlob(storage, bucketName, blobIdName, inputStream, makePublic);
         } catch (RuntimeException e) {
             throw new RuntimeException("Error uploading file " + fileName + ", blobIdName " + blobIdName + " to bucket " + bucketName, e);
         }
+    }
+
+    public void upload(String fileName, InputStream inputStream) {
+        upload(fileName, inputStream, false);
     }
 
     private Storage getStorage() {

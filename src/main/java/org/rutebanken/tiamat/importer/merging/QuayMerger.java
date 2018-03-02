@@ -50,8 +50,8 @@ public class QuayMerger {
     @Value("${quayMerger.mergeDistanceMeters:3}")
     public final double MERGE_DISTANCE_METERS = 3;
 
-    @Value("${quayMerger.mergeDistanceMetersExtended:100}")
-    public final double MERGE_DISTANCE_METERS_EXTENDED = 100;
+    @Value("${quayMerger.mergeDistanceMetersExtended:30}")
+    public final double MERGE_DISTANCE_METERS_EXTENDED = 30;
 
     @Value("${quayMerger.maxCompassBearingDifference:60}")
     private final int maxCompassBearingDifference = 60;
@@ -126,7 +126,7 @@ public class QuayMerger {
             }
 
             if(!matchingQuay.isPresent()) {
-                if (incomingQuay != null && incomingQuay    .getNetexId() != null) {
+                if (incomingQuay != null && incomingQuay.getNetexId() != null) {
                     matchingQuay = result.stream()
                             .filter(quay -> incomingQuay.getNetexId().equals(quay.getNetexId()))
                             .findFirst();
@@ -214,7 +214,7 @@ public class QuayMerger {
                 && nameMatch) {
             logger.trace("Matches: nameMatch true, haveSimilarOrAnyNullCompassBearing: true");
             return true;
-        } else if (nameMatch && haveSimilarOrNullCompassBearing) {
+        } else if (nameMatch && haveMatchingPublicCodeOrOneIsMissing(incomingQuay, alreadyAdded) && haveSimilarOrNullCompassBearing) {
             logger.trace("Name and compass bearing match (or null). Will compare with a greater limit of distance between quays. {}  {}", incomingQuay, alreadyAdded);
             return areClose(incomingQuay, alreadyAdded, MERGE_DISTANCE_METERS_EXTENDED);
         }

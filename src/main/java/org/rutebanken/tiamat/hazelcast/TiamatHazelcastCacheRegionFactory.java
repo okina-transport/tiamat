@@ -16,11 +16,7 @@
 package org.rutebanken.tiamat.hazelcast;
 
 
-import com.hazelcast.config.ClasspathXmlConfig;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.DefaultNodeContext;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import org.hibernate.cache.spi.RegionFactory;
 import org.rutebanken.hazelcasthelper.service.KubernetesService;
 import org.slf4j.Logger;
@@ -45,6 +41,10 @@ public class TiamatHazelcastCacheRegionFactory extends com.hazelcast.hibernate.H
 
             boolean kuberentesEnabled = getBooleanProperty("rutebanken.kubernetes.enabled", false);
             boolean swarmModeEnabled = getBooleanProperty("rutebanken.swarm.enabled", false);
+
+            logger.info("Kebernetes enabled : " + kuberentesEnabled);
+            logger.info("Swarm mode enabled : " + swarmModeEnabled);
+            
             String namespace = getProperty("rutebanken.kubernetes.namespace", false);
             if (namespace == null) {
                 namespace = "default";

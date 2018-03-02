@@ -47,9 +47,7 @@ public class H2Functions implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        Connection connection = null;
-        try {
-            connection = jdbcTemplate.getDataSource().getConnection();
+        try (Connection connection = jdbcTemplate.getDataSource().getConnection()) {
             if (connection.getMetaData().getDatabaseProductName().contains("H2")) {
                 logger.info("H2 detected. Creating alias to method similarityOveridden.");
                 jdbcTemplate.execute("CREATE ALIAS IF NOT EXISTS similarity FOR \"org.rutebanken.tiamat.config.H2Functions.similarity\"");
@@ -59,10 +57,6 @@ public class H2Functions implements InitializingBean {
             }
         } catch (SQLException sqlException) {
             logger.warn("Cannot create h2 aliases", sqlException);
-        } finally {
-            if (connection != null) {
-                connection.close();
-            }
         }
     }
 

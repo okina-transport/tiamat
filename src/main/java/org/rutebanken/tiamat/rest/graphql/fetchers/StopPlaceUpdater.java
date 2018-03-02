@@ -25,19 +25,16 @@ import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.rest.graphql.helpers.CleanupHelper;
 import org.rutebanken.tiamat.rest.graphql.mappers.StopPlaceMapper;
 import org.rutebanken.tiamat.lock.MutateLock;
-import org.rutebanken.tiamat.service.stopplace.StopPlaceRenamer;
-import org.rutebanken.tiamat.versioning.StopPlaceVersionedSaverService;
+import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
+import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
 
 @Service("stopPlaceUpdater")
@@ -60,6 +57,9 @@ class StopPlaceUpdater implements DataFetcher {
 
     @Autowired
     StopPlaceRenamer stopPlaceRenamer;
+
+    @Autowired
+    private VersionCreator versionCreator;
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
@@ -110,7 +110,7 @@ class StopPlaceUpdater implements DataFetcher {
                             "Attempting to update stop place which has parent [id = %s]. Edit the parent instead. (Parent %s)", netexId, existingVersion.getParentSiteRef());
                 }
 
-                updatedStopPlace = stopPlaceVersionedSaverService.createCopy(existingVersion, StopPlace.class);
+                updatedStopPlace = versionCreator.createCopy(existingVersion, StopPlace.class);
 
             } else {
                 Preconditions.checkArgument(!mutateParent,
@@ -123,8 +123,12 @@ class StopPlaceUpdater implements DataFetcher {
             if (updatedStopPlace != null) {
                 boolean hasValuesChanged = stopPlaceMapper.populateStopPlaceFromInput(input, updatedStopPlace);
 
+                Set<String> childStopsUpdated;
                 if (updatedStopPlace.isParentStopPlace()) {
-                    hasValuesChanged |= handleChildStops(input, updatedStopPlace);
+                    childStopsUpdated = handleChildStops(input, updatedStopPlace);
+                    hasValuesChanged |= !childStopsUpdated.isEmpty();
+                } else {
+                    childStopsUpdated = new HashSet<>();
                 }
 
                 if (hasValuesChanged) {
@@ -134,7 +138,7 @@ class StopPlaceUpdater implements DataFetcher {
 
                     verifyCorrectStopPlaceName(updatedStopPlace.getName().getValue(), stopPlaceRenamer.renameIfNeeded(updatedStopPlace.getName().getValue()));
 
-                    updatedStopPlace = stopPlaceVersionedSaverService.saveNewVersion(existingVersion, updatedStopPlace);
+                    updatedStopPlace = stopPlaceVersionedSaverService.saveNewVersion(existingVersion, updatedStopPlace, childStopsUpdated);
 
                     return updatedStopPlace;
                 }
@@ -143,10 +147,9 @@ class StopPlaceUpdater implements DataFetcher {
         return existingVersion;
     }
 
-    private boolean handleChildStops(Map input, StopPlace updatedParentStopPlace) {
-        boolean updated = false;
+    private Set<String> handleChildStops(Map input, StopPlace updatedParentStopPlace) {
+        Set<String> childStopsUpdated = new HashSet<>();
 
-        int updatedCount = 0;
         if (input.get(CHILDREN) != null) {
             List childObjects = (List) input.get(CHILDREN);
             logger.info("Incoming child stop objects: {}", childObjects);
@@ -163,17 +166,20 @@ class StopPlaceUpdater implements DataFetcher {
                 StopPlace existingChildStopPlace = updatedParentStopPlace.getChildren().stream().filter(c -> c.getNetexId().equals(childNetexId)).findFirst().orElse(null);
                 verifyStopPlaceNotNull(existingChildStopPlace, childNetexId);
 
-                // Next line is not strictly required. As the child will alway belong to the parent.
+                // Next line is not strictly required. As the child will always belong to the parent.
                 verifyCorrectParentSet(existingChildStopPlace, updatedParentStopPlace);
 
                 logger.info("Populating changes for child stop {} (parent: {})", childNetexId, updatedParentStopPlace.getNetexId());
-                updated |= stopPlaceMapper.populateStopPlaceFromInput((Map) childStopMap, existingChildStopPlace);
-                updatedCount++;
+                boolean wasUpdated = stopPlaceMapper.populateStopPlaceFromInput((Map) childStopMap, existingChildStopPlace);;
+
+                if (wasUpdated) {
+                    childStopsUpdated.add(existingChildStopPlace.getNetexId());
+                }
             }
 
-            logger.info("Applied changes for {} child stops. Parent stop contains {} child stops", updatedCount, updatedParentStopPlace.getChildren().size());
+            logger.info("Applied changes for {} child stops. Parent stop contains {} child stops", childStopsUpdated.size(), updatedParentStopPlace.getChildren().size());
         }
-        return updated;
+        return childStopsUpdated;
     }
 
     private StopPlace findAndVerify(String netexId) {

@@ -13,12 +13,13 @@
  * limitations under the Licence.
  */
 
-package org.rutebanken.tiamat.versioning;
+package org.rutebanken.tiamat.versioning.save;
 
 import org.junit.Ignore;
 import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -35,7 +36,7 @@ import java.util.Map;
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.rutebanken.tiamat.versioning.VersionedSaverService.MILLIS_BETWEEN_VERSIONS;
+import static org.rutebanken.tiamat.versioning.save.DefaultVersionedSaverService.MILLIS_BETWEEN_VERSIONS;
 
 @Transactional
 public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
@@ -132,7 +133,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
 
         String newName = "EspaBoller";
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(oldVersion, StopPlace.class);
+        StopPlace newVersion = versionCreator.createCopy(oldVersion, StopPlace.class);
         newVersion.setName(new EmbeddableMultilingualString(newName));
 
         newVersion = stopPlaceVersionedSaverService.saveNewVersion(oldVersion, newVersion);
@@ -158,7 +159,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         stopPlace.setValidBetween(new ValidBetween(Instant.EPOCH));
         stopPlace = stopPlaceRepository.save(stopPlace);
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(stopPlace, StopPlace.class);
+        StopPlace newVersion = versionCreator.createCopy(stopPlace, StopPlace.class);
 
         Instant now = Instant.now();
 
@@ -182,7 +183,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         oldVersion.setValidBetween(new ValidBetween(Instant.EPOCH));
         oldVersion = stopPlaceRepository.save(oldVersion);
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(oldVersion, StopPlace.class);
+        StopPlace newVersion = versionCreator.createCopy(oldVersion, StopPlace.class);
 
         newVersion.setValidBetween(new ValidBetween(null));
 
@@ -282,7 +283,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         String stopPlaceName = null;
         for (int i = 0; i < 3; i++) {
             stopPlaceName = "test " + i;
-            StopPlace sp = stopPlaceVersionedSaverService.createCopy(actualStopPlace, StopPlace.class);
+            StopPlace sp = versionCreator.createCopy(actualStopPlace, StopPlace.class);
             sp.setName(new EmbeddableMultilingualString(stopPlaceName));
             actualStopPlace = stopPlaceVersionedSaverService.saveNewVersion(actualStopPlace, sp);
 
@@ -377,7 +378,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
 
         stopPlace = stopPlaceRepository.save(stopPlace);
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(stopPlace, StopPlace.class);
+        StopPlace newVersion = versionCreator.createCopy(stopPlace, StopPlace.class);
 
         stopPlaceVersionedSaverService.saveNewVersion(stopPlace, newVersion);
         assertThat(newVersion.getVersion()).isEqualTo(2L);
@@ -402,7 +403,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
 
         StopPlace stopPlace2 = stopPlaceVersionedSaverService.saveNewVersion(stopPlace);
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(stopPlace2, StopPlace.class);
+        StopPlace newVersion = versionCreator.createCopy(stopPlace2, StopPlace.class);
 
         // Save it. Reference to topographic place should be kept.
         StopPlace stopPlace3 = stopPlaceVersionedSaverService.saveNewVersion(stopPlace2, newVersion);
@@ -421,7 +422,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         child.setVersion(1L);
         child.setParentSiteRef(new SiteRefStructure(stopPlace.getNetexId(), stopPlace.getNetexId()));
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(stopPlace, StopPlace.class);
+        StopPlace newVersion = versionCreator.createCopy(stopPlace, StopPlace.class);
 
         newVersion.getChildren().add(child);
 
@@ -455,7 +456,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
 
         StopPlace stopPlace2 = stopPlaceVersionedSaverService.saveNewVersion(stopPlace);
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(stopPlace2, StopPlace.class);
+        StopPlace newVersion = versionCreator.createCopy(stopPlace2, StopPlace.class);
 
         final String mockUser = "mockUser";
 
@@ -487,7 +488,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
 
         StopPlace stopPlace2 = stopPlaceVersionedSaverService.saveNewVersion(stopPlace);
 
-        StopPlace newVersion = stopPlaceVersionedSaverService.createCopy(stopPlace2, StopPlace.class);
+        StopPlace newVersion = versionCreator.createCopy(stopPlace2, StopPlace.class);
 
         // Save it. Reference to topographic place should be kept.
         StopPlace stopPlace3 = stopPlaceVersionedSaverService.saveNewVersion(stopPlace2, newVersion);

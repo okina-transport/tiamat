@@ -48,12 +48,13 @@ public class HealthResource {
             @ApiResponse(code = 200, message = "application is running")
     })
     public Response readinessProbe() {
-        logger.debug("Checking readiness...");
-        if (dbStatusChecker.isDbUp()) {
-            return Response.ok().build();
-        } else {
-            return Response.serverError().build();
-        }
+//        logger.debug("Checking readiness...");
+//        if (dbStatusChecker.isDbUp()) {
+//            return Response.ok().build();
+//        } else {
+//            return Response.serverError().build();
+//        }
+        return Response.ok().build();
     }
 
     @GET

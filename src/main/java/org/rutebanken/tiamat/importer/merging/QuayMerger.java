@@ -47,8 +47,8 @@ public class QuayMerger {
     @Value("${quayMerger.mergeDistanceMetersIgnoreIdMatch:3}")
     public final double MERGE_DISTANCE_METERS_IGNORE_ID_MATCH = 3;
 
-    @Value("${quayMerger.mergeDistanceMeters:3}")
-    public final double MERGE_DISTANCE_METERS = 3;
+    @Value("${quayMerger.mergeDistanceMeters:8}")
+    public final double MERGE_DISTANCE_METERS = 8;
 
     @Value("${quayMerger.mergeDistanceMetersExtended:30}")
     public final double MERGE_DISTANCE_METERS_EXTENDED = 30;

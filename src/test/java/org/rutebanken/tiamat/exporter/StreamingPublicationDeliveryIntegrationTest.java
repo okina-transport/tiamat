@@ -25,11 +25,13 @@ import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.netex.validation.NetexReferenceValidatorException;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
+import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryTestHelper;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.rutebanken.tiamat.versioning.GroupOfStopPlacesSaverService;
 import org.rutebanken.tiamat.versioning.TariffZoneSaverService;
 import org.rutebanken.tiamat.versioning.TopographicPlaceVersionedSaverService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
 import org.xml.sax.SAXException;
 
@@ -53,6 +55,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Transactional
 public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrationTest {
 
+    @Qualifier("syncStreamingPublicationDelivery")
     @Autowired
     private StreamingPublicationDelivery streamingPublicationDelivery;
 
@@ -71,8 +74,45 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
     @Autowired
     private PublicationDeliveryHelper publicationDeliveryHelper;
 
+    @Autowired
+    private PublicationDeliveryTestHelper publicationDeliveryTestHelper;
+
     private NetexXmlReferenceValidator netexXmlReferenceValidator = new NetexXmlReferenceValidator(true);
 
+
+    /**
+     * Export more than default page size to check that default paging is overriden
+     * @throws InterruptedException
+     * @throws IOException
+     * @throws XMLStreamException
+     * @throws SAXException
+     * @throws JAXBException
+     */
+    @Test
+    public void exportMoreThanDefaultPageSize() throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
+
+        final int numberOfStopPlaces = StopPlaceSearch.DEFAULT_PAGE_SIZE + 1;
+        for(int i = 0; i < numberOfStopPlaces; i++) {
+            StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("stop place numbber " + i));
+            stopPlace.setVersion(1L);
+            stopPlaceRepository.save(stopPlace);
+        }
+        stopPlaceRepository.flush();
+
+
+        ExportParams exportParams = ExportParams.newExportParamsBuilder()
+                .setStopPlaceSearch(
+                        StopPlaceSearch.newStopPlaceSearchBuilder()
+                        .build())
+                .build();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, true);
+
+        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.fromString(byteArrayOutputStream.toString());
+        List<org.rutebanken.netex.model.StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure);
+        assertThat(stopPlaces).hasSize(numberOfStopPlaces);
+    }
 
     @Test
     public void avoidDuplicateTopographicPlaceWhenExportModeAll() throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException, NetexReferenceValidatorException {

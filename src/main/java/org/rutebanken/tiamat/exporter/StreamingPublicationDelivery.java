@@ -20,6 +20,8 @@ import org.hibernate.internal.SessionImpl;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.netex.validation.NeTExValidator;
 import org.rutebanken.tiamat.exporter.async.*;
+import org.rutebanken.tiamat.exporter.eviction.EntitiesEvictor;
+import org.rutebanken.tiamat.exporter.eviction.SessionEntitiesEvictor;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.GroupOfStopPlaces;
@@ -103,6 +105,10 @@ public class StreamingPublicationDelivery {
     }
 
     public void stream(ExportParams exportParams, OutputStream outputStream) throws JAXBException, XMLStreamException, IOException, InterruptedException, SAXException {
+        stream(exportParams, outputStream, false);
+    }
+
+    public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging) throws JAXBException, XMLStreamException, IOException, InterruptedException, SAXException {
 
         org.rutebanken.tiamat.model.SiteFrame siteFrame = tiamatSiteFrameExporter.createTiamatSiteFrame("Site frame " + exportParams);
 
@@ -121,7 +127,7 @@ public class StreamingPublicationDelivery {
         // To avoid marshalling empty parking element and to be able to gather relevant topographic places
         // The primary ID represents a stop place with a certain version
 
-        final Set<Long> stopPlacePrimaryIds = stopPlaceRepository.getDatabaseIds(exportParams);
+        final Set<Long> stopPlacePrimaryIds = stopPlaceRepository.getDatabaseIds(exportParams, ignorePaging);
         logger.info("Got {} stop place IDs from stop place search", stopPlacePrimaryIds.size());
 
         //TODO: stream path links, handle export mode
@@ -206,9 +212,9 @@ public class StreamingPublicationDelivery {
     private void prepareStopPlaces(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedStopPlaceCount, SiteFrame netexSiteFrame, EntitiesEvictor evicter) {
         // Override lists with custom iterator to be able to scroll database results on the fly.
         if (!stopPlacePrimaryIds.isEmpty()) {
-
-            final Iterator<org.rutebanken.tiamat.model.StopPlace> stopPlaceIterator = stopPlaceRepository.scrollStopPlaces(exportParams);
             logger.info("There are stop places to export");
+
+            final Iterator<org.rutebanken.tiamat.model.StopPlace> stopPlaceIterator = stopPlaceRepository.scrollStopPlaces(stopPlacePrimaryIds);
             StopPlacesInFrame_RelStructure stopPlacesInFrame_relStructure = new StopPlacesInFrame_RelStructure();
 
             // Use Listening iterator to collect stop place IDs.
@@ -288,9 +294,14 @@ public class StreamingPublicationDelivery {
     private EntitiesEvictor instantiateEvictor() {
         if (entityManager != null) {
             Session currentSession = entityManager.unwrap(Session.class);
-            return new EntitiesEvictor((SessionImpl) currentSession);
+            return new SessionEntitiesEvictor((SessionImpl) currentSession);
         } else {
-            return null;
+            return new EntitiesEvictor() {
+                @Override
+                public void evictKnownEntitiesFromSession(Object entity) {
+                    // Intentionally left blank
+                }
+            };
         }
     }
 
@@ -310,7 +321,9 @@ public class StreamingPublicationDelivery {
 
     private static JAXBContext createContext(Class clazz) {
         try {
-            return newInstance(clazz);
+            JAXBContext jaxbContext = newInstance(clazz);
+            logger.info("Created context {}", jaxbContext.getClass());
+            return jaxbContext;
         } catch (JAXBException e) {
             String message = "Could not create instance of jaxb context for class " + clazz;
             logger.warn(message, e);

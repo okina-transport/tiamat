@@ -15,6 +15,9 @@
 
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Point;
+import org.assertj.core.api.AbstractListAssert;
 import org.glassfish.jersey.uri.internal.JerseyUriBuilder;
 import org.junit.Assert;
 import org.junit.Test;
@@ -32,15 +35,19 @@ import org.xml.sax.SAXException;
 
 import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.JAXBException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static javax.xml.bind.JAXBContext.newInstance;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.rutebanken.tiamat.exporter.params.ExportParams.newExportParamsBuilder;
 import static org.rutebanken.tiamat.exporter.params.StopPlaceSearch.newStopPlaceSearchBuilder;
 
@@ -114,11 +121,18 @@ public class ExportResourceTest extends TiamatIntegrationTest {
 
         org.rutebanken.tiamat.model.StopPlace stopPlace = new org.rutebanken.tiamat.model.StopPlace();
         stopPlace.setName(new EmbeddableMultilingualString("stopPlace"));
+        stopPlace.setCentroid(point(60.000, 10.78));
         stopPlaceVersionedSaverService.saveNewVersion(stopPlace);
+
+        org.rutebanken.tiamat.model.StopPlace stopPlace2 = new org.rutebanken.tiamat.model.StopPlace();
+        stopPlace2.setName(new EmbeddableMultilingualString("stopPlace 2"));
+        stopPlace2.setCentroid(point(61.000, 11.78));
+        stopPlaceVersionedSaverService.saveNewVersion(stopPlace2);
 
         org.rutebanken.tiamat.model.GroupOfStopPlaces groupOfStopPlaces = new org.rutebanken.tiamat.model.GroupOfStopPlaces();
         groupOfStopPlaces.getMembers().add(new StopPlaceReference(stopPlace.getNetexId()));
-        groupOfStopPlaces.setChangedBy("Solem");
+        groupOfStopPlaces.getMembers().add(new StopPlaceReference(stopPlace2.getNetexId()));
+        groupOfStopPlaces.setChangedBy("mr. Solem");
         groupOfStopPlaces.setCreated(Instant.now());
         groupOfStopPlaces.setChanged(Instant.now());
         groupOfStopPlaces.setName(new EmbeddableMultilingualString("oh my gosp"));
@@ -146,9 +160,9 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         SiteFrame siteFrame = publicationDeliveryTestHelper.findSiteFrame(publicationDeliveryStructure);
 
         List<StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(siteFrame);
-        Assert.assertEquals(1, stopPlaces.size());
+        Assert.assertEquals(2, stopPlaces.size());
 
-        GroupOfStopPlaces netexGroupOfStopPlaces = publicationDeliveryTestHelper.extractGroupOfStopPlaces(siteFrame);
+        GroupOfStopPlaces netexGroupOfStopPlaces = publicationDeliveryTestHelper.extractGroupOfStopPlaces(siteFrame).get(0);
 
         assertThat(netexGroupOfStopPlaces).isNotNull();
 
@@ -171,7 +185,9 @@ public class ExportResourceTest extends TiamatIntegrationTest {
                 .isNotEmpty()
                 .extracting(StopPlaceRefStructure::getRef)
                 .as("reference to stop place id")
-                .containsOnly(stopPlace.getNetexId());
+                .containsOnly(stopPlace.getNetexId(), stopPlace2.getNetexId());
+
+        assertThat(netexGroupOfStopPlaces.getCentroid()).as("centroid").isNotNull();
 
         assertThat(netexGroupOfStopPlaces.getChanged()).as("changed").isNotNull();
         assertThat(netexGroupOfStopPlaces.getVersion()).as("version").isEqualTo(String.valueOf(groupOfStopPlaces.getVersion()));
@@ -181,24 +197,24 @@ public class ExportResourceTest extends TiamatIntegrationTest {
     public void exportStopPlacesWithEffectiveChangedInPeriod() throws Exception {
         LocalDateTime validFrom = LocalDateTime.now().minusDays(3);
         StopPlace stopPlace1 = new StopPlace()
-                                       .withId("XYZ:Stopplace:1")
-                                       .withVersion("1")
-                                       .withName(new MultilingualString().withValue("Changed stop1"))
-                                       .withValidBetween(new ValidBetween().withFromDate(validFrom))
-                                       .withCentroid(new SimplePoint_VersionStructure()
-                                                             .withLocation(new LocationStructure()
-                                                                                   .withLatitude(new BigDecimal("59.914353"))
-                                                                                   .withLongitude(new BigDecimal("10.806387"))));
+                .withId("XYZ:Stopplace:1")
+                .withVersion("1")
+                .withName(new MultilingualString().withValue("Changed stop1"))
+                .withValidBetween(new ValidBetween().withFromDate(validFrom))
+                .withCentroid(new SimplePoint_VersionStructure()
+                        .withLocation(new LocationStructure()
+                                .withLatitude(new BigDecimal("59.914353"))
+                                .withLongitude(new BigDecimal("10.806387"))));
 
         StopPlace stopPlace2 = new StopPlace()
-                                       .withId("XYZ:Stopplace:2")
-                                       .withVersion("1")
-                                       .withName(new MultilingualString().withValue("Changed stop2"))
-                                       .withValidBetween(new ValidBetween().withFromDate(validFrom.plusDays(1)))
-                                       .withCentroid(new SimplePoint_VersionStructure()
-                                                             .withLocation(new LocationStructure()
-                                                                                   .withLatitude(new BigDecimal("22.914353"))
-                                                                                   .withLongitude(new BigDecimal("11.806387"))));
+                .withId("XYZ:Stopplace:2")
+                .withVersion("1")
+                .withName(new MultilingualString().withValue("Changed stop2"))
+                .withValidBetween(new ValidBetween().withFromDate(validFrom.plusDays(1)))
+                .withCentroid(new SimplePoint_VersionStructure()
+                        .withLocation(new LocationStructure()
+                                .withLatitude(new BigDecimal("22.914353"))
+                                .withLongitude(new BigDecimal("11.806387"))));
 
 
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace1, stopPlace2);
@@ -249,5 +265,9 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
     }
 
-
+    private Point point(double longitude, double latitude) {
+        return
+                geometryFactory.createPoint(
+                        new Coordinate(longitude, latitude));
+    }
 }

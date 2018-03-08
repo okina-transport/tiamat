@@ -332,7 +332,7 @@ public class GraphQLNames {
 
     public static final String FIND_STOPPLACE = "stopPlace";
 
-    public static final String STOPPLACE_NAME_WITH_RECOMMENDATIONS = "stopPlaceName";
+    public static final String STOPPLACE_NAME_WITH_RECOMMENDATIONS = "stopPlaceNameRecommendations";
 
     /** Check if authorized to edit entity */
     public static final String CHECK_AUTHORIZED = "checkAuthorized";

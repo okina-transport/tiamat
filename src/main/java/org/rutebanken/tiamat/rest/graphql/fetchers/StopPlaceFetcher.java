@@ -25,7 +25,6 @@ import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.service.stopplace.ParentStopPlacesFetcher;
-import org.rutebanken.tiamat.service.stopplace.StopPlaceRenamer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,9 +65,6 @@ class StopPlaceFetcher implements DataFetcher {
     @Autowired
     private ParentStopPlacesFetcher parentStopPlacesFetcher;
 
-    @Autowired
-    private StopPlaceRenamer stopPlaceRenamer;
-
     @Override
     @Transactional
     public Object get(DataFetchingEnvironment environment) {
@@ -95,12 +91,7 @@ class StopPlaceFetcher implements DataFetcher {
         setIfNonNull(environment, WITH_NEARBY_SIMILAR_DUPLICATES, stopPlaceSearchBuilder::setWithNearbySimilarDuplicates);
         setIfNonNull(environment, WITH_TAGS, stopPlaceSearchBuilder::setWithTags);
 
-        if(environment.getArgument(STOPPLACE_NAME_WITH_RECOMMENDATIONS) != null){
-            String nameRenamed = stopPlaceRenamer.renameIfNeeded(environment.getArgument(STOPPLACE_NAME_WITH_RECOMMENDATIONS));
-            return nameRenamed;
-        }
-
-        Instant pointInTime ;
+        Instant pointInTime;
         if (environment.getArgument(POINT_IN_TIME) != null) {
             pointInTime = environment.getArgument(POINT_IN_TIME);
         } else {
@@ -111,7 +102,7 @@ class StopPlaceFetcher implements DataFetcher {
 
             try {
                 List<StopPlace> stopPlace;
-                if(version != null && version > 0) {
+                if (version != null && version > 0) {
                     stopPlace = Arrays.asList(stopPlaceRepository.findFirstByNetexIdAndVersion(netexId, version));
                     stopPlacesPage = new PageImpl<>(stopPlace, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), 1L);
                 } else {

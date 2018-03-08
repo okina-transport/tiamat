@@ -545,18 +545,6 @@
             <artifactId>activemq-kahadb-store</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.google.api-client</groupId>
-            <artifactId>google-api-client</artifactId>
-            <version>1.23.0</version>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/com.google.cloud/google-cloud-storage -->
-        <dependency>
-            <groupId>com.google.cloud</groupId>
-            <artifactId>google-cloud-storage</artifactId>
-            <version>1.15.0</version>
-        </dependency>
-
     </dependencies>
 
 

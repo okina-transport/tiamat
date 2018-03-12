@@ -91,7 +91,7 @@ class StopPlaceFetcher implements DataFetcher {
         setIfNonNull(environment, WITH_NEARBY_SIMILAR_DUPLICATES, stopPlaceSearchBuilder::setWithNearbySimilarDuplicates);
         setIfNonNull(environment, WITH_TAGS, stopPlaceSearchBuilder::setWithTags);
 
-        Instant pointInTime ;
+        Instant pointInTime;
         if (environment.getArgument(POINT_IN_TIME) != null) {
             pointInTime = environment.getArgument(POINT_IN_TIME);
         } else {
@@ -102,7 +102,7 @@ class StopPlaceFetcher implements DataFetcher {
 
             try {
                 List<StopPlace> stopPlace;
-                if(version != null && version > 0) {
+                if (version != null && version > 0) {
                     stopPlace = Arrays.asList(stopPlaceRepository.findFirstByNetexIdAndVersion(netexId, version));
                     stopPlacesPage = new PageImpl<>(stopPlace, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), 1L);
                 } else {

@@ -139,7 +139,7 @@ public class StopPlaceImportHandler {
             }
 
             if (importParams.forceStopType != null) {
-                logger.info("Forcing stop type to {}", importParams.forceStopType.toString());
+                logger.info("Forcing stop type to " + importParams.forceStopType);
                 tiamatStops.forEach(stopPlace -> stopPlace.setStopPlaceType(importParams.forceStopType));
             }
 

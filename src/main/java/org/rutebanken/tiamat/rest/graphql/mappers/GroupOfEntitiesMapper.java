@@ -15,21 +15,19 @@
 
 package org.rutebanken.tiamat.rest.graphql.mappers;
 
-import org.rutebanken.tiamat.model.*;
-import org.rutebanken.tiamat.service.AlternativeNameUpdater;
+import org.rutebanken.tiamat.model.GroupOfEntities_VersionStructure;
+import org.rutebanken.tiamat.model.SiteElement;
+import org.rutebanken.tiamat.model.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
 import static org.rutebanken.tiamat.rest.graphql.mappers.EmbeddableMultilingualStringMapper.getEmbeddableString;
-import static org.rutebanken.tiamat.rest.graphql.mappers.PrivateCodeMapper.getPrivateCodeStructure;
 
 @Component
 public class GroupOfEntitiesMapper {

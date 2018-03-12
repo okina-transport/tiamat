@@ -29,6 +29,10 @@ public class ValidPrefixList {
 
     public static final String ANY_PREFIX = "*";
 
+    @Value("${netex.validPrefix:NSR}")
+    public static String VALID_NETEX_PREFIX = "NSR";
+
+
     private static final Logger logger = LoggerFactory.getLogger(ValidPrefixList.class);
     private final Map<String, List<String>> validPrefixesPerType;
 
@@ -53,7 +57,7 @@ public class ValidPrefixList {
 
     public boolean isValidPrefixForType(String prefix, String type) {
 
-        if (prefix.equals(NetexIdHelper.REFERENTIAL_PREFIX)) {
+        if (prefix.equals(VALID_NETEX_PREFIX)) {
             return true;
         }
 

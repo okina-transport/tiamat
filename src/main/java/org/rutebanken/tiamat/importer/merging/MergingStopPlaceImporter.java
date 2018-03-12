@@ -170,8 +170,17 @@ public class MergingStopPlaceImporter {
             typeChanged = true;
         }
 
-        if (quayChanged || keyValuesChanged || centroidChanged || typeChanged) {
-            logger.info("Updating existing stop place. quays changed {}, key values changed: {}, centroid changed: {}, type changed:{} - {}",
+        boolean alternativeNameChanged = false;
+        if(incomingStopPlace.getAlternativeNames() != null){
+            StopPlace alternativeNamesToCopy = copy;
+            incomingStopPlace.getAlternativeNames().forEach(incomingAlternativeName -> {
+                alternativeNamesToCopy.getAlternativeNames().add(incomingAlternativeName);
+            });
+            alternativeNameChanged = true;
+        }
+
+        if (quayChanged || keyValuesChanged || centroidChanged || typeChanged || alternativeNameChanged) {
+            logger.info("Updating existing stop place. quays changed {}, key values changed: {}, centroid changed: {}, type changed:{} - {}, alternative names changed: {}",
                     quayChanged, keyValuesChanged, centroidChanged, typeChanged, existingStopPlace);
             copy = stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, copy);
             return updateCache(copy);

@@ -151,6 +151,8 @@ public class StopPlaceRegisterGraphQLSchema {
     @Autowired
     TransportModeScalar transportModeScalar;
 
+    @Autowired
+    DataFetcher stopPlaceNameRecommendationsFetcher;
 
     @PostConstruct
     public void init() {
@@ -164,9 +166,9 @@ public class StopPlaceRegisterGraphQLSchema {
                 .type(equipmentType)
                 .dataFetcher(env -> {
                     if (env.getSource() instanceof StopPlace) {
-                        return ((StopPlace)env.getSource()).getPlaceEquipments();
+                        return ((StopPlace) env.getSource()).getPlaceEquipments();
                     } else if (env.getSource() instanceof Quay) {
-                        return ((Quay)env.getSource()).getPlaceEquipments();
+                        return ((Quay) env.getSource()).getPlaceEquipments();
                     }
                     return null;
                 })
@@ -199,9 +201,9 @@ public class StopPlaceRegisterGraphQLSchema {
         GraphQLObjectType parentStopPlaceObjectType = parentStopPlaceObjectTypeCreator.create(stopPlaceInterface, stopPlaceInterfaceFields, commonFieldsList, stopPlaceObjectType);
 
         stopPlaceTypeResolver.setResolveFunction(object -> {
-            if(object instanceof StopPlace) {
+            if (object instanceof StopPlace) {
                 StopPlace stopPlace = (StopPlace) object;
-                if(stopPlace.isParentStopPlace()) {
+                if (stopPlace.isParentStopPlace()) {
                     return parentStopPlaceObjectType;
                 } else {
                     return stopPlaceObjectType;
@@ -237,7 +239,7 @@ public class StopPlaceRegisterGraphQLSchema {
                         .description("Search for StopPlaces")
                         .argument(createFindStopPlaceArguments(allVersionsArgument))
                         .dataFetcher(stopPlaceFetcher))
-                        //Search by BoundingBox
+                //Search by BoundingBox
                 .field(newFieldDefinition()
                         .type(new GraphQLList(stopPlaceInterface))
                         .name(FIND_STOPPLACE_BY_BBOX)
@@ -278,9 +280,9 @@ public class StopPlaceRegisterGraphQLSchema {
                         .type(new GraphQLList(tagObjectTypeCreator.create()))
                         .description(TAGS_DESCRIPTION)
                         .argument(GraphQLArgument.newArgument()
-                            .name(TAG_NAME)
-                            .description(TAG_NAME_DESCRIPTION)
-                            .type(new GraphQLNonNull(GraphQLString)))
+                                .name(TAG_NAME)
+                                .description(TAG_NAME_DESCRIPTION)
+                                .type(new GraphQLNonNull(GraphQLString)))
                         .dataFetcher(tagFetcher)
                         .build())
                 .field(newFieldDefinition()
@@ -297,6 +299,15 @@ public class StopPlaceRegisterGraphQLSchema {
                         .argument(createFindTariffZonesArguments())
                         .dataFetcher(tariffZonesFetcher)
                         .build())
+                .field(newFieldDefinition()
+                        .type(GraphQLString)
+                        .name(STOPPLACE_NAME_WITH_RECOMMENDATIONS)
+                        .description("Get StopPlace name with Modalis recommendations.")
+                        .argument(GraphQLArgument.newArgument()
+                                .name(NAME)
+                                .type(GraphQLString)
+                                .build())
+                        .dataFetcher(stopPlaceNameRecommendationsFetcher))
                 .build();
 
 
@@ -467,7 +478,7 @@ public class StopPlaceRegisterGraphQLSchema {
     private List<GraphQLArgument> createFindStopPlaceArguments(GraphQLArgument allVersionsArgument) {
         List<GraphQLArgument> arguments = createPageAndSizeArguments();
         arguments.add(allVersionsArgument);
-                //Search
+        //Search
         arguments.add(GraphQLArgument.newArgument()
                 .name(ID)
                 .type(GraphQLString)
@@ -564,7 +575,7 @@ public class StopPlaceRegisterGraphQLSchema {
 
     private List<GraphQLArgument> createBboxArguments() {
         List<GraphQLArgument> arguments = createPageAndSizeArguments();
-                //BoundingBox
+        //BoundingBox
         arguments.add(GraphQLArgument.newArgument()
                 .name(LONGITUDE_MIN)
                 .description("Bottom left longitude (xMin).")
@@ -623,19 +634,19 @@ public class StopPlaceRegisterGraphQLSchema {
 
     private GraphQLObjectType createQuayObjectType(List<GraphQLFieldDefinition> commonFieldsList) {
         return newObject()
-                    .name(OUTPUT_TYPE_QUAY)
-                    .fields(commonFieldsList)
-                    .field(newFieldDefinition()
-                            .name(COMPASS_BEARING)
-                            .type(GraphQLBigDecimal))
-                    .field(newFieldDefinition()
-                            .name(PUBLIC_CODE)
-                            .type(GraphQLString))
-                    .field(privateCodeFieldDefinition)
-                    .field(newFieldDefinition()
-                            .name(ALTERNATIVE_NAMES)
-                            .type(new GraphQLList(alternativeNameObjectType)))
-                    .build();
+                .name(OUTPUT_TYPE_QUAY)
+                .fields(commonFieldsList)
+                .field(newFieldDefinition()
+                        .name(COMPASS_BEARING)
+                        .type(GraphQLBigDecimal))
+                .field(newFieldDefinition()
+                        .name(PUBLIC_CODE)
+                        .type(GraphQLString))
+                .field(privateCodeFieldDefinition)
+                .field(newFieldDefinition()
+                        .name(ALTERNATIVE_NAMES)
+                        .type(new GraphQLList(alternativeNameObjectType)))
+                .build();
     }
 
     private GraphQLObjectType createValidBetweenObjectType() {
@@ -753,8 +764,8 @@ public class StopPlaceRegisterGraphQLSchema {
                         .name(PUBLIC_CODE)
                         .type(GraphQLString))
                 .field(newInputObjectField()
-                    .name(PRIVATE_CODE)
-                    .type(privateCodeInputType))
+                        .name(PRIVATE_CODE)
+                        .type(privateCodeInputType))
                 .build();
     }
 

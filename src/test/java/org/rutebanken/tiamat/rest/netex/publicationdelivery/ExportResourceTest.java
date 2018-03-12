@@ -17,7 +17,6 @@ package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Point;
-import org.assertj.core.api.AbstractListAssert;
 import org.glassfish.jersey.uri.internal.JerseyUriBuilder;
 import org.junit.Assert;
 import org.junit.Test;
@@ -35,19 +34,15 @@ import org.xml.sax.SAXException;
 
 import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.JAXBException;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static javax.xml.bind.JAXBContext.newInstance;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.rutebanken.tiamat.exporter.params.ExportParams.newExportParamsBuilder;
 import static org.rutebanken.tiamat.exporter.params.StopPlaceSearch.newStopPlaceSearchBuilder;
 
@@ -162,7 +157,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         List<StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(siteFrame);
         Assert.assertEquals(2, stopPlaces.size());
 
-        GroupOfStopPlaces netexGroupOfStopPlaces = publicationDeliveryTestHelper.extractGroupOfStopPlaces(siteFrame).get(0);
+        GroupOfStopPlaces netexGroupOfStopPlaces = publicationDeliveryTestHelper.extractGroupOfStopPlaces(siteFrame);
 
         assertThat(netexGroupOfStopPlaces).isNotNull();
 
@@ -197,24 +192,24 @@ public class ExportResourceTest extends TiamatIntegrationTest {
     public void exportStopPlacesWithEffectiveChangedInPeriod() throws Exception {
         LocalDateTime validFrom = LocalDateTime.now().minusDays(3);
         StopPlace stopPlace1 = new StopPlace()
-                                       .withId("XYZ:Stopplace:1")
-                                       .withVersion("1")
-                                       .withName(new MultilingualString().withValue("Changed stop1"))
-                                       .withValidBetween(new ValidBetween().withFromDate(validFrom))
-                                       .withCentroid(new SimplePoint_VersionStructure()
-                                                             .withLocation(new LocationStructure()
-                                                                                   .withLatitude(new BigDecimal("59.914353"))
-                                                                                   .withLongitude(new BigDecimal("10.806387"))));
+                .withId("XYZ:Stopplace:1")
+                .withVersion("1")
+                .withName(new MultilingualString().withValue("Changed stop1"))
+                .withValidBetween(new ValidBetween().withFromDate(validFrom))
+                .withCentroid(new SimplePoint_VersionStructure()
+                        .withLocation(new LocationStructure()
+                                .withLatitude(new BigDecimal("59.914353"))
+                                .withLongitude(new BigDecimal("10.806387"))));
 
         StopPlace stopPlace2 = new StopPlace()
-                                       .withId("XYZ:Stopplace:2")
-                                       .withVersion("1")
-                                       .withName(new MultilingualString().withValue("Changed stop2"))
-                                       .withValidBetween(new ValidBetween().withFromDate(validFrom.plusDays(1)))
-                                       .withCentroid(new SimplePoint_VersionStructure()
-                                                             .withLocation(new LocationStructure()
-                                                                                   .withLatitude(new BigDecimal("22.914353"))
-                                                                                   .withLongitude(new BigDecimal("11.806387"))));
+                .withId("XYZ:Stopplace:2")
+                .withVersion("1")
+                .withName(new MultilingualString().withValue("Changed stop2"))
+                .withValidBetween(new ValidBetween().withFromDate(validFrom.plusDays(1)))
+                .withCentroid(new SimplePoint_VersionStructure()
+                        .withLocation(new LocationStructure()
+                                .withLatitude(new BigDecimal("22.914353"))
+                                .withLongitude(new BigDecimal("11.806387"))));
 
 
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace1, stopPlace2);

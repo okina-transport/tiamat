@@ -57,15 +57,16 @@ public class TopographicPlaceRepositoryImpl implements TopographicPlaceRepositor
 
 		Map<String, Object> parameters = new HashMap<>();
 
-		if(!Strings.isNullOrEmpty(name)) {
-			sql.append("AND LOWER(tp.name.value) LIKE CONCAT('%', LOWER(:name), '%')");
-			parameters.put("name", name);
-		}
+        if(topographicPlaceType != null) {
+            sql.append("AND tp.topographicPlaceType = :topographicPlaceType ");
+            parameters.put("topographicPlaceType", topographicPlaceType);
+        }
 
-		if(topographicPlaceType != null) {
-			sql.append("AND tp.topographicPlaceType = :topographicPlaceType ");
-			parameters.put("topographicPlaceType", topographicPlaceType);
-		}
+        if(!Strings.isNullOrEmpty(name)) {
+            sql.append("AND similarity(tp.name.value, :name) > 0.2 ");
+            parameters.put("name", name);
+            sql.append("ORDER BY SIMILARITY(tp.name.value, :name) DESC");
+        }
 
 		TypedQuery<TopographicPlace> query = entityManager.createQuery(sql.toString(), TopographicPlace.class);
 		parameters.forEach(query::setParameter);

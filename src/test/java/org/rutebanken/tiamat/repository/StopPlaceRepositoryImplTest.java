@@ -361,14 +361,14 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
         stopPlaceRepository.save(stopPlace);
 
-        H2Functions.setSimilarity(0.61);
+        H2Functions.setSimilarityOveridden(0.61);
         Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
 
         String result = stopPlaceRepository.findNearbyStopPlace(envelope, "Nesbru N", StopTypeEnumeration.ONSTREET_BUS);
         assertThat(result).isNotNull();
         StopPlace actual = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(result);
         assertThat(actual.getName().getValue()).isEqualTo(stopPlace.getName().getValue());
-        H2Functions.setSimilarity(1);
+        H2Functions.setSimilarityOveridden(1);
     }
 
     @Test
@@ -393,13 +393,13 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
         stopPlaceRepository.save(stopPlace);
 
-        H2Functions.setSimilarity(0.1);
+        H2Functions.setSimilarityOveridden(0.1);
         // Stop place coordinates within envelope
         Envelope envelope = new Envelope(14, 16, 50, 70);
 
         String result = stopPlaceRepository.findNearbyStopPlace(envelope, "Another stop place which does not exist", StopTypeEnumeration.ONSTREET_BUS);
         assertThat(result).isNull();
-        H2Functions.setSimilarity(1);
+        H2Functions.setSimilarityOveridden(1);
     }
 
     @Test
@@ -1027,6 +1027,36 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
         // No imported-ids are valid for point in time 300 seconds ago
         Assert.assertTrue(CollectionUtils.isEmpty(stopPlaceRepository.findStopPlaceFromQuayOriginalId(orgIdSuffix, now.minusSeconds(300))));
+    }
+
+    @Test
+    public void listStopPlaceIdsAndQuayIds() {
+        Instant now = Instant.now();
+        Instant startOfPeriod = now.minusSeconds(100);
+        Instant endOfPeriod = now.plusSeconds(100);
+        StopPlace stopPlace1 = saveStop("NSR:StopPlace:1", 1l, startOfPeriod, endOfPeriod);
+        saveQuay(stopPlace1, "NSR:Quay:11", 1l, ORIGINAL_ID_KEY, "XXX:Quay:11");
+        saveQuay(stopPlace1, "NSR:Quay:12", 1l, ORIGINAL_ID_KEY, "XXX:Quay:12");
+        saveQuay(stopPlace1, "NSR:Quay:13", 1l, ORIGINAL_ID_KEY, "XXX:Quay:13");
+
+        StopPlace stopPlace2 = saveStop("NSR:StopPlace:2", 1l, startOfPeriod, endOfPeriod);
+        saveQuay(stopPlace2, "NSR:Quay:21", 1l, ORIGINAL_ID_KEY, "XXX:Quay:21");
+        saveQuay(stopPlace2, "NSR:Quay:22", 1l, ORIGINAL_ID_KEY, "XXX:Quay:22");
+        saveQuay(stopPlace2, "NSR:Quay:23", 1l, ORIGINAL_ID_KEY, "XXX:Quay:23");
+        saveQuay(stopPlace2, "NSR:Quay:24", 1l, ORIGINAL_ID_KEY, "XXX:Quay:24");
+
+        StopPlace stopPlace3 = saveStop("NSR:StopPlace:3", 1l, startOfPeriod, endOfPeriod);
+        saveQuay(stopPlace3, "NSR:Quay:31", 1l, ORIGINAL_ID_KEY, "XXX:Quay:31");
+
+        Map<String, Set<String>> stops = stopPlaceRepository.listStopPlaceIdsAndQuayIds(now, null);
+        Assert.assertEquals(3, stops.size());
+        Assert.assertTrue(stops.containsKey("NSR:StopPlace:1"));
+        Assert.assertTrue(stops.containsKey("NSR:StopPlace:2"));
+        Assert.assertTrue(stops.containsKey("NSR:StopPlace:3"));
+        Assert.assertEquals(3, stops.get("NSR:StopPlace:1").size());
+        Assert.assertEquals(4, stops.get("NSR:StopPlace:2").size());
+        Assert.assertEquals(1, stops.get("NSR:StopPlace:3").size());
+
     }
 
     @Test

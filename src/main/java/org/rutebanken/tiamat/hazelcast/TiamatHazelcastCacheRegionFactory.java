@@ -40,8 +40,6 @@ public class TiamatHazelcastCacheRegionFactory extends com.hazelcast.hibernate.H
             String kubernetesUrl = getProperty("rutebanken.kubernetes.url", false);
 
             boolean kuberentesEnabled = getBooleanProperty("rutebanken.kubernetes.enabled", false);
-            boolean swarmModeEnabled = getBooleanProperty("rutebanken.swarm.enabled", false);
-
             String namespace = getProperty("rutebanken.kubernetes.namespace", false);
             if(namespace == null) {
                 namespace = "default";
@@ -50,7 +48,7 @@ public class TiamatHazelcastCacheRegionFactory extends com.hazelcast.hibernate.H
             String hazelcastManagementUrl = getProperty("rutebanken.hazelcast.management.url", false);
 
             logger.info("Creating kubernetes service");
-            KubernetesService kubernetesService = new KubernetesService(namespace, kuberentesEnabled, swarmModeEnabled);
+            KubernetesService kubernetesService = new KubernetesService(kubernetesUrl, namespace, kuberentesEnabled);
             if(kuberentesEnabled) {
                 logger.info("Initiating kubernetes service");
                 kubernetesService.init();

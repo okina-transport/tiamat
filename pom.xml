@@ -84,8 +84,8 @@
         <docker.maven.plugin.version>0.21.0</docker.maven.plugin.version>
         <spring-boot-plugin.version>1.5.6.RELEASE</spring-boot-plugin.version>
         <spring-boot.version>1.5.6.RELEASE</spring-boot.version>
-        <spring.security.version>4.2.3.RELEASE</spring.security.version>
-        <keycloak.version>3.1.0.Final</keycloak.version>
+        <spring.security.version>4.2.4.RELEASE</spring.security.version>
+        <keycloak.version>3.3.0.Final</keycloak.version>
         <postgresql.version>42.1.4</postgresql.version>
         <geodb.version>0.8</geodb.version>
         <geotools.version>17.2</geotools.version>
@@ -101,7 +101,7 @@
         <assertj-core.version>3.8.0</assertj-core.version>
         <rest-assured.version>3.0.3</rest-assured.version>
         <javax.el.version>3.0.0</javax.el.version>
-        <com.h2database.version>1.4.196</com.h2database.version>
+        <com.h2database.version>1.4.197</com.h2database.version>
         <hikariCP.version>2.6.3</hikariCP.version>
         <commons.lang3.version>3.6</commons.lang3.version>
         <orika-core.version>1.5.1</orika-core.version>
@@ -131,15 +131,15 @@
     -->
     <repositories>
         <repository>
-            <id>central</id>
-            <name>Maven Repository Switchboard</name>
-            <layout>default</layout>
-            <url>http://repo1.maven.org/maven2</url>
+            <id>maven2</id>
+            <name>central</name>
+            <url>https://repo.maven.apache.org/maven2</url>
         </repository>
-
         <repository>
-            <id>geo-solutions.it</id>
-            <url>http://maven.geo-solutions.it</url>
+            <id>repo.boundlessgeo.com-releases</id>
+            <name>repo.boundlessgeo.com-releases</name>
+            <url>http://repo.boundlessgeo.com/main</url>
+            <layout>default</layout>
         </repository>
     </repositories>
 
@@ -577,13 +577,11 @@
                         <configuration>
                             <tasks>
                                 <mkdir dir="${basedir}/src/test/groovy"/>
-                                <taskdef name="groovyc"
-                                         classname="org.codehaus.groovy.ant.Groovyc">
+                                <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
                                     <classpath refid="maven.test.classpath"/>
                                 </taskdef>
                                 <mkdir dir="${project.build.testOutputDirectory}"/>
-                                <groovyc destdir="${project.build.testOutputDirectory}"
-                                         srcdir="${basedir}/src/test/groovy/" listfiles="true">
+                                <groovyc destdir="${project.build.testOutputDirectory}" srcdir="${basedir}/src/test/groovy/" listfiles="true">
                                     <classpath refid="maven.test.classpath"/>
                                 </groovyc>
                             </tasks>
@@ -659,6 +657,20 @@
                         </image>
                     </images>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

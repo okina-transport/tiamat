@@ -13,20 +13,17 @@
  * limitations under the Licence.
  */
 
-package org.rutebanken.tiamat.versioning;
+package org.rutebanken.tiamat.versioning.save;
 
 
 import org.rutebanken.tiamat.model.TopographicPlace;
-import org.rutebanken.tiamat.repository.EntityInVersionRepository;
 import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
 import org.rutebanken.tiamat.service.TopographicPlaceLookupService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TopographicPlaceVersionedSaverService extends VersionedSaverService<TopographicPlace> {
+public class TopographicPlaceVersionedSaverService {
 
     @Autowired
     private TopographicPlaceRepository topographicPlaceRepository;
@@ -34,16 +31,12 @@ public class TopographicPlaceVersionedSaverService extends VersionedSaverService
     @Autowired
     private TopographicPlaceLookupService topographicPlaceLookupService;
 
-    @Override
-    public TopographicPlace saveNewVersion(TopographicPlace existingVersion, TopographicPlace newVersion) {
-        TopographicPlace saved = super.saveNewVersion(existingVersion, newVersion);
-        topographicPlaceLookupService.reset();
-        metricsService.registerEntitySaved(newVersion.getClass());
-        return saved;
-    }
+    @Autowired
+    private DefaultVersionedSaverService defaultVersionedSaverService;
 
-    @Override
-    public EntityInVersionRepository<TopographicPlace> getRepository() {
-        return topographicPlaceRepository;
+    public TopographicPlace saveNewVersion(TopographicPlace newVersion) {
+        TopographicPlace saved = defaultVersionedSaverService.saveNewVersion(newVersion, topographicPlaceRepository);
+        topographicPlaceLookupService.reset();
+        return saved;
     }
 }

@@ -23,7 +23,8 @@ import org.rutebanken.tiamat.model.NameTypeEnumeration;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.service.AlternativeNameUpdater;
-import org.rutebanken.tiamat.versioning.StopPlaceVersionedSaverService;
+import org.rutebanken.tiamat.versioning.VersionCreator;
+import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +53,10 @@ public class StopPlaceRenamer {
     @Autowired
     private MutateLock mutateLock;
 
+    @Autowired
+    private VersionCreator versionCreator;
+
+
 
     /**
      * Update stop places with Modalis recommendations
@@ -79,7 +84,7 @@ public class StopPlaceRenamer {
                 StopPlace updatedStopPlace;
 
                 existingStopPlace = stopPlace;
-                updatedStopPlace = stopPlaceVersionedSaverService.createCopy(existingStopPlace, StopPlace.class);
+                updatedStopPlace = versionCreator.createCopy(existingStopPlace, StopPlace.class);
 
                 AlternativeName otherAlternativeName = new AlternativeName();
                 otherAlternativeName.setName(new EmbeddableMultilingualString(existingStopPlace.getName().getValue(), "fr"));
@@ -112,7 +117,7 @@ public class StopPlaceRenamer {
 
                     else if (shouldSave && updatedStopPlace.getParentSiteRef() != null){
                         StopPlace existingStopPlaceParent = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(updatedStopPlace.getParentSiteRef().getRef());
-                        StopPlace updatedStopPlaceParent = stopPlaceVersionedSaverService.createCopy(existingStopPlaceParent, StopPlace.class);
+                        StopPlace updatedStopPlaceParent = versionCreator.createCopy(existingStopPlaceParent, StopPlace.class);
                         updatedStopPlaceParent.getChildren().forEach(stopPlaceChildren -> {
                             if(stopPlaceChildren.getNetexId().equals(updatedStopPlace.getNetexId())){
                                 updatedStopPlaceParent.getChildren().remove(stopPlaceChildren);

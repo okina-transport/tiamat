@@ -20,7 +20,7 @@
 
     <groupId>org.rutebanken</groupId>
     <artifactId>tiamat</artifactId>
-    <version>0.0.2-SNAPSHOT</version>
+    <version>0.0.3-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Tiamat</name>
@@ -84,8 +84,8 @@
         <docker.maven.plugin.version>0.21.0</docker.maven.plugin.version>
         <spring-boot-plugin.version>1.5.6.RELEASE</spring-boot-plugin.version>
         <spring-boot.version>1.5.6.RELEASE</spring-boot.version>
-        <spring.security.version>4.2.3.RELEASE</spring.security.version>
-        <keycloak.version>3.1.0.Final</keycloak.version>
+        <spring.security.version>4.2.4.RELEASE</spring.security.version>
+        <keycloak.version>3.3.0.Final</keycloak.version>
         <postgresql.version>42.1.4</postgresql.version>
         <geodb.version>0.8</geodb.version>
         <geotools.version>17.2</geotools.version>
@@ -101,7 +101,7 @@
         <assertj-core.version>3.8.0</assertj-core.version>
         <rest-assured.version>3.0.3</rest-assured.version>
         <javax.el.version>3.0.0</javax.el.version>
-        <com.h2database.version>1.4.196</com.h2database.version>
+        <com.h2database.version>1.4.197</com.h2database.version>
         <hikariCP.version>2.6.3</hikariCP.version>
         <commons.lang3.version>3.6</commons.lang3.version>
         <orika-core.version>1.5.1</orika-core.version>
@@ -118,7 +118,7 @@
 
         <!-- NB: Concious choice of using snapshot version. This is to keep in
             sync, and fail fast if incompatibilities -->
-        <netex-java-model.version>1.0.8-SNAPSHOT</netex-java-model.version>
+        <netex-java-model.version>1.0.9-SNAPSHOT</netex-java-model.version>
         <hazelcast-helper.version>0.0.3-SNAPSHOT</hazelcast-helper.version>
         <rutebanken-gcp-storage.version>0.0.3-SNAPSHOT</rutebanken-gcp-storage.version>
         <rutebanken-organisation.version>0.0.3-SNAPSHOT</rutebanken-organisation.version>
@@ -131,15 +131,15 @@
     -->
     <repositories>
         <repository>
-            <id>central</id>
-            <name>Maven Repository Switchboard</name>
-            <layout>default</layout>
-            <url>http://repo1.maven.org/maven2</url>
+            <id>maven2</id>
+            <name>central</name>
+            <url>https://repo.maven.apache.org/maven2</url>
         </repository>
-
         <repository>
-            <id>geo-solutions.it</id>
-            <url>http://maven.geo-solutions.it</url>
+            <id>repo.boundlessgeo.com-releases</id>
+            <name>repo.boundlessgeo.com-releases</name>
+            <url>http://repo.boundlessgeo.com/main</url>
+            <layout>default</layout>
         </repository>
     </repositories>
 
@@ -312,6 +312,12 @@
                     <artifactId>tomcat-embed-el</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <version>${spring-boot.version}</version>
         </dependency>
 
         <dependency>
@@ -571,13 +577,11 @@
                         <configuration>
                             <tasks>
                                 <mkdir dir="${basedir}/src/test/groovy"/>
-                                <taskdef name="groovyc"
-                                         classname="org.codehaus.groovy.ant.Groovyc">
+                                <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
                                     <classpath refid="maven.test.classpath"/>
                                 </taskdef>
                                 <mkdir dir="${project.build.testOutputDirectory}"/>
-                                <groovyc destdir="${project.build.testOutputDirectory}"
-                                         srcdir="${basedir}/src/test/groovy/" listfiles="true">
+                                <groovyc destdir="${project.build.testOutputDirectory}" srcdir="${basedir}/src/test/groovy/" listfiles="true">
                                     <classpath refid="maven.test.classpath"/>
                                 </groovyc>
                             </tasks>
@@ -594,6 +598,7 @@
                 <version>${spring-boot-plugin.version}</version>
                 <configuration>
                     <mainClass>org.rutebanken.tiamat.TiamatApplication</mainClass>
+                    <excludeDevtools>false</excludeDevtools>
                 </configuration>
                 <executions>
                     <execution>
@@ -653,6 +658,20 @@
                     </images>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -701,6 +720,15 @@
             </properties>
             <build>
                 <defaultGoal>clean install docker:build fabric8:json fabric8:apply</defaultGoal>
+            </build>
+        </profile>
+        <profile>
+            <id>local-docker</id>
+            <properties>
+                <fabric8.recreate>true</fabric8.recreate>
+            </properties>
+            <build>
+                <defaultGoal>clean install docker:build</defaultGoal>
             </build>
         </profile>
     </profiles>

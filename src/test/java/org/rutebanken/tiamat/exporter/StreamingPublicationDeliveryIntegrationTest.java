@@ -27,9 +27,9 @@ import org.rutebanken.tiamat.netex.validation.NetexReferenceValidatorException;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryTestHelper;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
-import org.rutebanken.tiamat.versioning.GroupOfStopPlacesSaverService;
-import org.rutebanken.tiamat.versioning.TariffZoneSaverService;
-import org.rutebanken.tiamat.versioning.TopographicPlaceVersionedSaverService;
+import org.rutebanken.tiamat.versioning.save.GroupOfStopPlacesSaverService;
+import org.rutebanken.tiamat.versioning.save.TariffZoneSaverService;
+import org.rutebanken.tiamat.versioning.save.TopographicPlaceVersionedSaverService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
@@ -359,7 +359,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
 
         StopPlace stopPlacev1 = new StopPlace(new EmbeddableMultilingualString("name"));
         stopPlacev1 = stopPlaceVersionedSaverService.saveNewVersion(stopPlacev1);
-        StopPlace stopPlacev2 = stopPlaceVersionedSaverService.createCopy(stopPlacev1, StopPlace.class);
+        StopPlace stopPlacev2 = versionCreator.createCopy(stopPlacev1, StopPlace.class);
 
         stopPlacev2.setValidBetween(new ValidBetween(Instant.now().plus(10, ChronoUnit.DAYS)));
 

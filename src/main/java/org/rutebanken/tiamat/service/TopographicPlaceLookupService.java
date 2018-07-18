@@ -18,6 +18,8 @@ package org.rutebanken.tiamat.service;
 import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.rutebanken.tiamat.exporter.params.ExportParams;
+import org.rutebanken.tiamat.exporter.params.TopographicPlaceSearch;
 import org.rutebanken.tiamat.general.ResettableMemoizer;
 import org.rutebanken.tiamat.model.Site_VersionStructure;
 import org.rutebanken.tiamat.model.TopographicPlace;
@@ -59,22 +61,32 @@ public class TopographicPlaceLookupService {
         Optional<TopographicPlace> topographicPlace = findTopographicPlace(siteVersionStructure.getCentroid());
 
         if (topographicPlace.isPresent()) {
-            logger.debug("Found topographic place {} for site {}", siteVersionStructure.getTopographicPlace(), siteVersionStructure);
+            logger.trace("Found topographic place {} for site {}", siteVersionStructure.getTopographicPlace(), siteVersionStructure);
             TopographicPlace topographicPlaceMatch = topographicPlace.get();
 
             if(siteVersionStructure.getTopographicPlace() != null) {
 
-                if(siteVersionStructure.getTopographicPlace().getId() == topographicPlaceMatch.getId()) {
+                if(siteVersionStructure.getTopographicPlace().getId() == topographicPlaceMatch.getId()
+                        && siteVersionStructure.getTopographicPlace().getVersion() == topographicPlaceMatch.getVersion()) {
+                    logger.trace("Version and id is the same for {}-{} not doing update", topographicPlaceMatch.getNetexId(), topographicPlaceMatch.getVersion());
                     return false;
                 }
-                logger.trace("Changed topographic place from {}-{} to {}-{} for {}-{}",
+                logger.debug("Changed topographic place from {}-{} to {}-{} for {}-{}",
                         siteVersionStructure.getTopographicPlace().getNetexId(),
                         siteVersionStructure.getTopographicPlace().getVersion(),
                         topographicPlaceMatch.getNetexId(),
                         topographicPlaceMatch.getVersion(),
                         siteVersionStructure.getNetexId(),
                         siteVersionStructure.getVersion());
+            } else {
+                logger.debug("Set topographic place to {}-{} for {}-{}",
+                        topographicPlaceMatch.getNetexId(),
+                        topographicPlaceMatch.getVersion(),
+                        siteVersionStructure.getNetexId(),
+                        siteVersionStructure.getVersion());
             }
+
+
 
             siteVersionStructure.setTopographicPlace(topographicPlaceMatch);
 
@@ -117,8 +129,13 @@ public class TopographicPlaceLookupService {
 
     private Supplier<List<ImmutableTriple<String, TopographicPlaceTypeEnumeration, Polygon>>> getTopographicPlaceSupplier() {
         return () -> {
+
+            TopographicPlaceSearch topographicPlaceSearch = TopographicPlaceSearch.newTopographicPlaceSearchBuilder()
+                    .versionValidity(ExportParams.VersionValidity.CURRENT_FUTURE)
+                    .build();
+
             logger.info("Fetching topographic places from repository");
-            List<ImmutableTriple<String, TopographicPlaceTypeEnumeration, Polygon>> topographicPlaces = topographicPlaceRepository.findAllMaxVersion()
+            List<ImmutableTriple<String, TopographicPlaceTypeEnumeration, Polygon>> topographicPlaces = topographicPlaceRepository.findTopographicPlace(topographicPlaceSearch)
                     .stream()
                     .filter(topographicPlace -> topographicPlace.getPolygon() != null)
                     .filter(topographicPlace -> ADMIN_LEVEL_ORDER.contains(topographicPlace.getTopographicPlaceType()))

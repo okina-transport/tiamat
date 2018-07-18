@@ -328,7 +328,7 @@ public class QuayMergerTest {
         quay1.setCentroid(geometryFactory.createPoint(new Coordinate(59.858690, 10.493860)));
 
         Quay quay2 = new Quay();
-        quay2.setCentroid(geometryFactory.createPoint(new Coordinate(59.858616, 10.493858)));
+        quay2.setCentroid(geometryFactory.createPoint(new Coordinate(59.858674,10.493818)));
         assertThat(quayMerger.areClose(quay1, quay2)).isTrue();
     }
 

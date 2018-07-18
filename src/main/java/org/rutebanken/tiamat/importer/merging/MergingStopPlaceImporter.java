@@ -210,7 +210,7 @@ public class MergingStopPlaceImporter {
 
             Optional<StopPlace> nearbyExistingStopPlace = existingStopPlaces.stream()
                     .filter(existingStopPlace -> {
-                        if (zoneDistanceChecker.exceedsLimit(newStopPlace, existingStopPlace)) {
+                        if (zoneDistanceChecker.exceedsLimit(newStopPlace, existingStopPlace, 100)) {
                             logger.warn("Found stop place, but the distance between incoming and found stop place is too far in meters: {}. Incoming: {}. Found: {}",
                                     ZoneDistanceChecker.DEFAULT_MAX_DISTANCE,
                                     newStopPlace, existingStopPlace);

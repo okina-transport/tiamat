@@ -180,12 +180,17 @@ public class MergingStopPlaceImporter {
         }
 
         boolean alternativeNameChanged = false;
-        if(incomingStopPlace.getAlternativeNames() != null){
+        if(incomingStopPlace.getAlternativeNames() != null && incomingStopPlace.getAlternativeNames().size() != 0){
             StopPlace alternativeNamesToCopy = copy;
+            int sizeList = alternativeNamesToCopy.getAlternativeNames().size();
             incomingStopPlace.getAlternativeNames().forEach(incomingAlternativeName -> {
-                alternativeNamesToCopy.getAlternativeNames().add(incomingAlternativeName);
+                if (!alternativeNamesToCopy.getAlternativeNames().contains(incomingAlternativeName)){
+                    alternativeNamesToCopy.getAlternativeNames().add(incomingAlternativeName);
+                }
             });
-            alternativeNameChanged = true;
+            if(alternativeNamesToCopy.getAlternativeNames().size() != sizeList){
+                alternativeNameChanged = true;
+            }
         }
 
         if (quayChanged || keyValuesChanged || centroidChanged || typeChanged || alternativeNameChanged) {

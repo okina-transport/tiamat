@@ -204,7 +204,7 @@ public class MergingStopPlaceImporter {
                 Set<String> childStopsUpdated = new HashSet<>();
                 childStopsUpdated.add(copy.getNetexId());
                 parentCopy = stopPlaceVersionedSaverService.saveNewVersion(parentExistingVersion, parentCopy, childStopsUpdated);
-                copy = parentCopy.getChildren().stream().findFirst().get();
+                copy = parentCopy.getChildren().stream().filter(stopPlace -> stopPlace.getId().equals(existingStopPlace.getId())).findFirst().get();
             }
             else{
                 copy = stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, copy);

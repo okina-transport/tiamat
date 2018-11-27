@@ -200,8 +200,6 @@ public class MergingStopPlaceImporter {
             if(copy.getParentSiteRef() != null){
                 StopPlace parentExistingVersion = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(copy.getParentSiteRef().getRef());
                 StopPlace parentCopy = versionCreator.createCopy(parentExistingVersion, StopPlace.class);
-                parentCopy.getChildren().removeIf(stopPlace -> stopPlace.getNetexId().equals(existingStopPlace.getNetexId()));
-                parentCopy.getChildren().add(copy);
 
                 Set<String> childStopsUpdated = new HashSet<>();
                 childStopsUpdated.add(copy.getNetexId());

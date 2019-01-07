@@ -78,9 +78,9 @@ public abstract class DataManagedObjectStructure
         return getOrCreateValues(NetexIdMapper.ORIGINAL_ID_KEY);
     }
 
-    public Set<String> getOriginalNames() {
-        return getOrCreateValues(NetexIdMapper.ORIGINAL_NAME_KEY);
-    }
+    public Set<String> getOriginalNames() { return getOrCreateValues(NetexIdMapper.ORIGINAL_NAME_KEY); }
+
+    public Set<String> getOriginalStopCodes() { return getOrCreateValues(NetexIdMapper.ORIGINAL_STOPCODE_KEY); }
 
     public String getVersionComment() {
         return versionComment;

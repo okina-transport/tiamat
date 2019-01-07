@@ -48,6 +48,7 @@ public class NetexIdMapper {
 
     public static final String ORIGINAL_ID_KEY = "imported-id";
     public static final String ORIGINAL_NAME_KEY = "imported-name";
+    public static final String ORIGINAL_STOPCODE_KEY = "imported-stopcode";
     public static final String MERGED_ID_KEY = "merged-id";
 
     private static final List<String> IGNORE_KEYS = Arrays.asList(CHANGED_BY, VERSION_COMMENT, IS_PARENT_STOP_PLACE);
@@ -90,6 +91,9 @@ public class NetexIdMapper {
                 if (netexQuay.getName() != null && StringUtils.isNotEmpty(netexQuay.getName().getValue())) {
                     moveOriginalNameToKeyValueList((DataManagedObjectStructure) tiamatEntity, netexQuay.getName().getValue());
                 }
+                if (netexQuay.getPublicCode() != null && StringUtils.isNotEmpty(netexQuay.getPublicCode())) {
+                    moveOriginalStopCodeToKeyValueList((DataManagedObjectStructure) tiamatEntity, netexQuay.getPublicCode());
+                }
             }
             if (netexEntity instanceof StopPlace) {
                 StopPlace netexStopPlace = (StopPlace) netexEntity;
@@ -124,7 +128,7 @@ public class NetexIdMapper {
                         continue;
                     }
 
-                    boolean ignoreEmptyPostfix = (key.equals(ORIGINAL_ID_KEY) | key.equals(MERGED_ID_KEY) | key.equals(ORIGINAL_NAME_KEY));
+                    boolean ignoreEmptyPostfix = (key.equals(ORIGINAL_ID_KEY) | key.equals(MERGED_ID_KEY) | key.equals(ORIGINAL_NAME_KEY) || key.equals(ORIGINAL_STOPCODE_KEY));
 
                     if (value.contains(",")) {
                         String[] originalIds = value.split(",");
@@ -176,6 +180,17 @@ public class NetexIdMapper {
      */
     public void moveOriginalNameToKeyValueList(DataManagedObjectStructure dataManagedObjectStructure, String name) {
         addKeyValueAvoidEmpty(dataManagedObjectStructure, ORIGINAL_NAME_KEY, name, true);
+    }
+
+
+    /**
+     * Writes netex name to keyval in internal Tiamat model
+     *
+     * @param dataManagedObjectStructure to set the keyval on (tiamat model)
+     * @param stopCode                       The name to add to values, using the key #{ORIGINAL_STOPCODE_KEY}
+     */
+    public void moveOriginalStopCodeToKeyValueList(DataManagedObjectStructure dataManagedObjectStructure, String stopCode) {
+        addKeyValueAvoidEmpty(dataManagedObjectStructure, ORIGINAL_STOPCODE_KEY, stopCode, true);
     }
 
 }

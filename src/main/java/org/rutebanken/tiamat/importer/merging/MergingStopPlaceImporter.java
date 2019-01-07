@@ -23,6 +23,7 @@ import org.rutebanken.tiamat.importer.finder.StopPlaceFromOriginalIdFinder;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
+import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
@@ -36,10 +37,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -168,7 +166,8 @@ public class MergingStopPlaceImporter {
 
         StopPlace copy = versionCreator.createCopy(existingStopPlace, StopPlace.class);
 
-        boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, ADD_NEW_QUAYS, EXISTING_STOP_QUAY_MERGE_SHORT_DISTANCE_CHECK_BEFORE_ID_MATCH);
+        boolean stopPlaceAlone = quayMerger.checkNumberProducers(existingStopPlace.getKeyValues(), incomingStopPlace.getKeyValues());
+        boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, ADD_NEW_QUAYS, EXISTING_STOP_QUAY_MERGE_SHORT_DISTANCE_CHECK_BEFORE_ID_MATCH, stopPlaceAlone);
         boolean keyValuesChanged = (keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy) && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy));
         boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
 
@@ -193,9 +192,15 @@ public class MergingStopPlaceImporter {
             }
         }
 
-        if (quayChanged || keyValuesChanged || centroidChanged || typeChanged || alternativeNameChanged) {
-            logger.info("Updating existing stop place. quays changed {}, key values changed: {}, centroid changed: {}, type changed:{} - {}, alternative names changed: {}",
-                    quayChanged, keyValuesChanged, centroidChanged, typeChanged, existingStopPlace);
+        boolean nameChanged = false;
+        if(!incomingStopPlace.getName().equals(existingStopPlace.getName()) && stopPlaceAlone){
+            copy.setName(incomingStopPlace.getName());
+            nameChanged = true;
+        }
+
+        if (quayChanged || keyValuesChanged || centroidChanged || typeChanged || alternativeNameChanged || nameChanged) {
+            logger.info("Updating existing stop place. quays changed {}, key values changed: {}, centroid changed: {}, type changed:{} - {}, alternative names changed: {}, nameChanged: {}",
+                    quayChanged, keyValuesChanged, centroidChanged, typeChanged, alternativeNameChanged, nameChanged, existingStopPlace);
 
             if(copy.getParentSiteRef() != null){
                 StopPlace parentExistingVersion = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(copy.getParentSiteRef().getRef());
@@ -218,7 +223,6 @@ public class MergingStopPlaceImporter {
         return existingStopPlace;
 
     }
-
     private StopPlace updateCache(StopPlace stopPlace) {
         // Keep the attached stop place reference in case it is merged.
 

@@ -30,11 +30,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 
 @Component
 public class QuayMerger {
@@ -64,14 +63,14 @@ public class QuayMerger {
     }
 
     public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays) {
-        return mergeQuays(newStopPlace, existingStopPlace, addNewQuays, true);
+        return mergeQuays(newStopPlace, existingStopPlace, addNewQuays, true, true);
     }
 
 
     /**
      * Inspect quays from incoming AND matching stop place. If they do not exist from before, add them.
      */
-    public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch) {
+    public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch, boolean stopPlaceAlone) {
 
         AtomicInteger updatedQuays = new AtomicInteger();
         AtomicInteger addedQuays = new AtomicInteger();
@@ -82,7 +81,7 @@ public class QuayMerger {
             newStopPlace.setQuays(new HashSet<>());
         }
 
-        Set<Quay> result = mergeQuays(newStopPlace, newStopPlace.getQuays(), existingStopPlace.getQuays(), updatedQuays, addedQuays, addNewQuays, lowDistanceCheckBeforeIdMatch);
+        Set<Quay> result = mergeQuays(newStopPlace, newStopPlace.getQuays(), existingStopPlace.getQuays(), updatedQuays, addedQuays, addNewQuays, lowDistanceCheckBeforeIdMatch, stopPlaceAlone);
 
         existingStopPlace.setQuays(result);
 
@@ -91,11 +90,11 @@ public class QuayMerger {
     }
 
     public Set<Quay> mergeQuays(Set<Quay> newQuays, Set<Quay> existingQuays, AtomicInteger updatedQuaysCounter, AtomicInteger addedQuaysCounter, boolean addNewQuays) {
-        return mergeQuays(null, newQuays, existingQuays, updatedQuaysCounter, addedQuaysCounter, addNewQuays, true);
+        return mergeQuays(null, newQuays, existingQuays, updatedQuaysCounter, addedQuaysCounter, addNewQuays, true, false);
     }
 
     public Set<Quay> mergeQuays(StopPlace newStopPlace, Set<Quay> newQuays, Set<Quay> existingQuays, AtomicInteger updatedQuaysCounter, AtomicInteger addedQuaysCounter, boolean addNewQuays) {
-        return mergeQuays(newStopPlace, newQuays, existingQuays, updatedQuaysCounter, addedQuaysCounter, addNewQuays, true);
+        return mergeQuays(newStopPlace, newQuays, existingQuays, updatedQuaysCounter, addedQuaysCounter, addNewQuays, true, false);
     }
 
     /**
@@ -109,7 +108,7 @@ public class QuayMerger {
      * @param addNewQuays         if allowed to add quays if not match found
      * @return the resulting set of quays after matching, appending and adding.
      */
-    public Set<Quay> mergeQuays(StopPlace newStopPlace, Set<Quay> newQuays, Set<Quay> existingQuays, AtomicInteger updatedQuaysCounter, AtomicInteger addedQuaysCounter, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch) {
+    public Set<Quay> mergeQuays(StopPlace newStopPlace, Set<Quay> newQuays, Set<Quay> existingQuays, AtomicInteger updatedQuaysCounter, AtomicInteger addedQuaysCounter, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch, boolean stopPlaceAlone) {
 
         Set<Quay> result = new HashSet<>();
         if (existingQuays != null) {
@@ -125,7 +124,7 @@ public class QuayMerger {
                 matchingQuay = Optional.empty();
             }
 
-            if(!matchingQuay.isPresent()) {
+            if (!matchingQuay.isPresent()) {
                 if (incomingQuay != null && incomingQuay.getNetexId() != null) {
                     matchingQuay = result.stream()
                             .filter(quay -> incomingQuay.getNetexId().equals(quay.getNetexId()))
@@ -142,7 +141,7 @@ public class QuayMerger {
             }
 
             if (matchingQuay.isPresent()) {
-                updateIfChanged(matchingQuay.get(), incomingQuay, updatedQuaysCounter);
+                updateIfChanged(matchingQuay.get(), incomingQuay, updatedQuaysCounter, stopPlaceAlone);
             } else if (addNewQuays) {
                 logger.info("Found no match for existing quay {}. Adding it!", incomingQuay);
                 result.add(incomingQuay);
@@ -152,7 +151,7 @@ public class QuayMerger {
             } else {
                 logger.warn("No match for quay belonging to stop place {}. Quay: {}. Full incoming quay toString: {}. Was looking in list of quays for match: {}",
                         newStopPlace != null ? newStopPlace.importedIdAndNameToString() : null,
-                        incomingQuay!= null ? incomingQuay.getOriginalIds() : null,
+                        incomingQuay != null ? incomingQuay.getOriginalIds() : null,
                         incomingQuay, result);
             }
         }
@@ -178,19 +177,83 @@ public class QuayMerger {
         return Optional.empty();
     }
 
-    private void updateIfChanged(Quay alreadyAdded, Quay incomingQuay, AtomicInteger updatedQuaysCounter) {
+    private void updateIfChanged(Quay alreadyAdded, Quay incomingQuay, AtomicInteger updatedQuaysCounter, boolean stopPlaceAlone) {
         // The incoming quay could for some reason already have multiple imported IDs.
+        boolean quayAlone = checkNumberProducers(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
+        boolean multipleIds = checkNumberId(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
         boolean idUpdated = alreadyAdded.getOriginalIds().addAll(incomingQuay.getOriginalIds());
         boolean nameUpdated = alreadyAdded.getOriginalNames().addAll(incomingQuay.getOriginalNames());
         boolean changedByMerge = mergeFields(incomingQuay, alreadyAdded);
+        boolean centroidUpdated = updateCentroid(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone, multipleIds);
+        boolean stopCodeUpdated = updateCodes(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone);
 
-        if (idUpdated || nameUpdated || changedByMerge) {
-            logger.debug("Quay changed. idUpdated: {}, nameUpdated: {}, merged fields? {}. Quay: {}", idUpdated, nameUpdated, changedByMerge, alreadyAdded);
+        if (idUpdated || nameUpdated || changedByMerge || centroidUpdated || stopCodeUpdated) {
+            logger.debug("Quay changed. idUpdated: {}, nameUpdated: {}, merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}. Quay: {}", idUpdated, nameUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded);
 
             alreadyAdded.setChanged(Instant.now());
             updatedQuaysCounter.incrementAndGet();
         }
     }
+
+    private boolean updateCodes(Quay alreadyAdded, Quay incomingQuay, boolean stopPlaceAlone, boolean quayAlone) {
+        boolean codesUpdated = false;
+        if (!alreadyAdded.getOriginalStopCodes().contains(incomingQuay.getPublicCode())) {
+            codesUpdated = alreadyAdded.getOriginalStopCodes().add(alreadyAdded.getPublicCode());
+        }
+
+        if (incomingQuay.getPublicCode() != null && !incomingQuay.getPublicCode().equals(alreadyAdded.getPublicCode())) {
+            codesUpdated = alreadyAdded.getOriginalStopCodes().add(incomingQuay.getPublicCode());
+            if (stopPlaceAlone && quayAlone) {
+                alreadyAdded.setPublicCode(incomingQuay.getPublicCode());
+            }
+        }
+
+        if (incomingQuay.getPrivateCode() != null && !incomingQuay.getPrivateCode().equals(alreadyAdded.getPrivateCode()) && stopPlaceAlone && quayAlone) {
+            alreadyAdded.setPrivateCode(incomingQuay.getPrivateCode());
+            codesUpdated = true;
+        }
+
+        return codesUpdated;
+    }
+
+    private boolean updateCentroid(Quay alreadyAdded, Quay incomingQuay, boolean stopPlaceAlone, boolean quayAlone, boolean multipleIds) {
+        if (alreadyAdded.getCentroid() != null && incomingQuay.getCentroid() != null && stopPlaceAlone && quayAlone && multipleIds) {
+            if (!incomingQuay.getCentroid().equals(alreadyAdded.getCentroid())) {
+                alreadyAdded.setCentroid(incomingQuay.getCentroid());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean checkNumberProducers(Map<String, org.rutebanken.tiamat.model.Value> existing, Map<String, org.rutebanken.tiamat.model.Value> incoming) {
+        Set<String> prefixProducersList = new HashSet<>();
+
+        for (String key : existing.get(ORIGINAL_ID_KEY).getItems()) {
+            String[] prefixList = key.split(":");
+            String prefix = prefixList[0];
+            prefixProducersList.add(prefix);
+        }
+
+        for (String key : incoming.get(ORIGINAL_ID_KEY).getItems()) {
+            String[] prefixList = key.split(":");
+            String prefix = prefixList[0];
+            prefixProducersList.add(prefix);
+        }
+
+        return prefixProducersList.size() == 1;
+    }
+
+
+    public boolean checkNumberId(Map<String, org.rutebanken.tiamat.model.Value> existing, Map<String, org.rutebanken.tiamat.model.Value> incoming) {
+        Set<String> idsList = new HashSet<>();
+
+        idsList.addAll(existing.get(ORIGINAL_ID_KEY).getItems());
+        idsList.addAll(incoming.get(ORIGINAL_ID_KEY).getItems());
+
+        return idsList.size() == 1;
+    }
+
 
     private boolean mergeFields(Quay from, Quay to) {
         boolean changed = false;

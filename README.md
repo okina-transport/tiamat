@@ -305,3 +305,7 @@ https://github.com/entur/tiamat-scripts
 Tiamat is built using CircleCI. See the .circleci folder.
 
 
+
+
+##Versions
+0.0.4 : allow chouette to update stop places during import

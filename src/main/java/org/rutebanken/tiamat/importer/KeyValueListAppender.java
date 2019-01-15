@@ -35,7 +35,7 @@ public class KeyValueListAppender {
         boolean changed = false;
         for(String newOriginalId : newObjectIds) {
             if(!existingObjectIds.contains(newOriginalId)) {
-                logger.debug("Adding new original ID '{}' to existing object {}", newOriginalId, existingObject);
+                logger.debug("Adding new {} '{}' to existing object {}", key, newOriginalId, existingObject);
                 existingObjectIds.add(newOriginalId);
                 changed = true;
             }

@@ -16,7 +16,6 @@
 package org.rutebanken.tiamat.service;
 
 import com.google.cloud.storage.Storage;
-import com.google.common.io.ByteStreams;
 import org.rutebanken.helper.gcp.BlobStoreHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +47,7 @@ public class BlobStoreService {
         this.projectId = projectId;
     }
 
-    public void upload(String fileName, InputStream inputStream) {
+    public void upload(String fileName, InputStream inputStream, boolean makePublic) {
         Storage storage = getStorage();
         String blobIdName = createBlobIdName(blobPath, fileName);
         try {
@@ -57,6 +56,10 @@ public class BlobStoreService {
         } catch (Exception e) {
             throw new RuntimeException("Error uploading file " + fileName + ", blobIdName " + blobIdName + " to bucket " + bucketName, e);
         }
+    }
+
+    public void upload(String fileName, InputStream inputStream) {
+        upload(fileName, inputStream, false);
     }
 
     private Storage getStorage() {

@@ -119,13 +119,6 @@ public class StopPlaceQueryFromSearchBuilder {
 //                     "  AND similarity(s.name_value , s2.name_value) > :similarityThreshold ";
 
 
-
-    /**
-     * Configure some common words to be skipped during stop place search by name.
-     */
-    @Value("#{'${stopPlaces.search.commonWordsToIgnore}'.split(',')}")
-    Set<String> commonWordsToIgnore = new LinkedHashSet<>();
-
     private static final String WHITE_SPACE = " ";
     private static final String JOKER = "%";
 

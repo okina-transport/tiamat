@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.service.stopplace;
 
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.text.WordUtils;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.AlternativeName;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
@@ -57,9 +57,9 @@ public class StopPlaceRenamer {
     private VersionCreator versionCreator;
 
 
-
     /**
      * Update stop places with Modalis recommendations
+     *
      * @param shouldSave
      * @return
      */
@@ -115,11 +115,11 @@ public class StopPlaceRenamer {
 
                     // If stop place have a parent stop, update the parent stop place
 
-                    else if (shouldSave && updatedStopPlace.getParentSiteRef() != null){
+                    else if (shouldSave && updatedStopPlace.getParentSiteRef() != null) {
                         StopPlace existingStopPlaceParent = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(updatedStopPlace.getParentSiteRef().getRef());
                         StopPlace updatedStopPlaceParent = versionCreator.createCopy(existingStopPlaceParent, StopPlace.class);
                         updatedStopPlaceParent.getChildren().forEach(stopPlaceChildren -> {
-                            if(stopPlaceChildren.getNetexId().equals(updatedStopPlace.getNetexId())){
+                            if (stopPlaceChildren.getNetexId().equals(updatedStopPlace.getNetexId())) {
                                 updatedStopPlaceParent.getChildren().remove(stopPlaceChildren);
                                 updatedStopPlaceParent.getChildren().add(updatedStopPlace);
                             }

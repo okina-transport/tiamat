@@ -23,12 +23,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
+import static org.rutebanken.tiamat.importer.PublicationDeliveryImporter.KC_ROLE_PREFIX;
 
 /**
  * This authorization service is implemented mainly for handling multi modal stops.
@@ -62,8 +64,9 @@ public class StopPlaceAuthorizationService {
      * If the newVersion of the stop place contains all current children, and the user does not have authorization to edit those stop places, authorization is not granted.
      * <p>
      * If the stop place is a normal mono modal stop place, the {@link ReflectionAuthorizationService} will be called directly.
-     *  @param existingVersion the current version of the stop place, persisted
-     * @param newVersion      the new version of the same stop place, containing the changed state. If type is parent stop place, only child stops that the user would be authorized to change and edit, should be present.
+     *
+     * @param existingVersion   the current version of the stop place, persisted
+     * @param newVersion        the new version of the same stop place, containing the changed state. If type is parent stop place, only child stops that the user would be authorized to change and edit, should be present.
      * @param childStopsUpdated
      */
     public void assertAuthorizedToEdit(StopPlace existingVersion, StopPlace newVersion, Set<String> childStopsUpdated) {
@@ -72,7 +75,10 @@ public class StopPlaceAuthorizationService {
             // Only child stops that the user has access to should be provided with the new version
             // If the stop place already contains children the user does not have access to, the user does not have access to terminate the stop place.
 
-            boolean accessToAllChildren = authorizationService.isAuthorized(ROLE_EDIT_STOPS, existingVersion.getChildren());
+            boolean accessToAllChildren =
+                    authorizationService.isAuthorized(ROLE_EDIT_STOPS, existingVersion.getChildren()) ||
+                            SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream().anyMatch(
+                                    authority -> (KC_ROLE_PREFIX + ROLE_EDIT_STOPS).equals(authority.getAuthority()));
             if (!accessToAllChildren) {
                 // This user does not have access to all children.
                 // Could the user still be allowed to edit a child?
@@ -99,9 +105,11 @@ public class StopPlaceAuthorizationService {
                         existingChildrenIds, newVersion.getNetexId(), mustBeAuthorizedToEditTheseChildren);
             }
         } else {
-            authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(newVersion));
+            if (SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream().noneMatch(
+                    authority -> (KC_ROLE_PREFIX + ROLE_EDIT_STOPS).equals(authority.getAuthority()))) {
+                authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(newVersion));
+            }
         }
-
     }
 
     private boolean compareChild(StopPlace newVersionOfChild, StopPlace existingVersion) {

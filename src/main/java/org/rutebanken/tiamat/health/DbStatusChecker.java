@@ -13,23 +13,26 @@
  * limitations under the Licence.
  */
 
-package org.rutebanken.tiamat.repository;
+package org.rutebanken.tiamat.health;
 
-import org.rutebanken.tiamat.exporter.params.TariffZoneSearch;
-import org.rutebanken.tiamat.model.TariffZone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+//@Service
+public class DbStatusChecker {
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
+//    @Autowired
+//    private EntityManager entityManager;
 
-public interface TariffZoneRepositoryCustom extends DataManagedObjectStructureRepository<TariffZone> {
-
-    List<TariffZone> findTariffZones(TariffZoneSearch search);
-
-    List<TariffZone> getTariffZonesFromStopPlaceIds(Set<Long> stopPlaceIds);
-
-    Iterator<TariffZone> scrollTariffZones(Set<Long> stopPlaceDbIds);
-
-    Iterator<TariffZone> scrollTariffZones();
+    public boolean isDbUp() {
+//        try {
+//            if ((Integer) entityManager.createNativeQuery("SELECT 1").getSingleResult() == 1) {
+//                return true;
+//            }
+//        } catch (RuntimeException e) {
+//            logger.warn("Failed while testing DB connection", e);
+//        }
+        return false;
+    }
 }

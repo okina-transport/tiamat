@@ -92,7 +92,7 @@ class StopPlaceFetcher implements DataFetcher {
         setIfNonNull(environment, HAS_PARKING, stopPlaceSearchBuilder::setHasParking);
         setIfNonNull(environment, WITH_TAGS, stopPlaceSearchBuilder::setWithTags);
 
-        Instant pointInTime ;
+        Instant pointInTime;
         if (environment.getArgument(POINT_IN_TIME) != null) {
             pointInTime = environment.getArgument(POINT_IN_TIME);
         } else {
@@ -108,7 +108,7 @@ class StopPlaceFetcher implements DataFetcher {
 
             try {
                 List<StopPlace> stopPlace;
-                if(version != null && version > 0) {
+                if (version != null && version > 0) {
                     stopPlace = Arrays.asList(stopPlaceRepository.findFirstByNetexIdAndVersion(netexId, version));
                     stopPlacesPage = new PageImpl<>(stopPlace, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), 1L);
                 } else {
@@ -130,13 +130,11 @@ class StopPlaceFetcher implements DataFetcher {
         } else {
 
             if (key != null && values != null) {
-                Set<String> valueSet = new HashSet<>();
-                valueSet.addAll(values);
+                Set<String> valueSet = new HashSet<>(values);
 
                 Set<String> stopPlaceNetexId = stopPlaceRepository.findByKeyValues(key, valueSet, true);
                 if (stopPlaceNetexId != null && !stopPlaceNetexId.isEmpty()) {
-                    List<String> idList = new ArrayList<>();
-                    idList.addAll(stopPlaceNetexId);
+                    List<String> idList = new ArrayList<>(stopPlaceNetexId);
                     stopPlaceSearchBuilder.setNetexIdList(idList);
                 } else {
                     //Search for key/values returned no results
@@ -152,7 +150,7 @@ class StopPlaceFetcher implements DataFetcher {
                 List<StopTypeEnumeration> stopTypes = environment.getArgument(STOP_PLACE_TYPE);
                 if (stopTypes != null && !stopTypes.isEmpty()) {
                     stopPlaceSearchBuilder.setStopTypeEnumerations(stopTypes.stream()
-                            .filter(type -> type != null)
+                            .filter(Objects::nonNull)
                             .collect(Collectors.toList())
                     );
                 }

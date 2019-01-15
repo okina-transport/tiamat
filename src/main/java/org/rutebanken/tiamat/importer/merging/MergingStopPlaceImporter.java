@@ -25,6 +25,7 @@ import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.slf4j.Logger;
@@ -35,6 +36,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -78,12 +80,14 @@ public class MergingStopPlaceImporter {
 
     private final VersionCreator versionCreator;
 
+    private final StopPlaceRepository stopPlaceRepository;
+
     @Autowired
     public MergingStopPlaceImporter(StopPlaceFromOriginalIdFinder stopPlaceFromOriginalIdFinder,
                                     NearbyStopsWithSameTypeFinder nearbyStopsWithSameTypeFinder, NearbyStopPlaceFinder nearbyStopPlaceFinder,
                                     StopPlaceCentroidComputer stopPlaceCentroidComputer,
                                     KeyValueListAppender keyValueListAppender, QuayMerger quayMerger, NetexMapper netexMapper,
-                                    StopPlaceVersionedSaverService stopPlaceVersionedSaverService, ZoneDistanceChecker zoneDistanceChecker, VersionCreator versionCreator) {
+                                    StopPlaceVersionedSaverService stopPlaceVersionedSaverService, ZoneDistanceChecker zoneDistanceChecker, VersionCreator versionCreator, StopPlaceRepository stopPlaceRepository) {
         this.stopPlaceFromOriginalIdFinder = stopPlaceFromOriginalIdFinder;
         this.nearbyStopsWithSameTypeFinder = nearbyStopsWithSameTypeFinder;
         this.nearbyStopPlaceFinder = nearbyStopPlaceFinder;
@@ -94,6 +98,7 @@ public class MergingStopPlaceImporter {
         this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
         this.zoneDistanceChecker = zoneDistanceChecker;
         this.versionCreator = versionCreator;
+        this.stopPlaceRepository = stopPlaceRepository;
     }
 
     /**
@@ -144,7 +149,7 @@ public class MergingStopPlaceImporter {
         }
 
         if (incomingStopPlace.getQuays() != null) {
-            Set<Quay> quays = quayMerger.appendImportIds(incomingStopPlace.getQuays(), null, new AtomicInteger(), new AtomicInteger(), ADD_NEW_QUAYS);
+            Set<Quay> quays = quayMerger.mergeQuays(incomingStopPlace.getQuays(), null, new AtomicInteger(), new AtomicInteger(), ADD_NEW_QUAYS);
             incomingStopPlace.setQuays(quays);
             logger.trace("Importing quays for new stop place {}", incomingStopPlace);
         }
@@ -163,8 +168,8 @@ public class MergingStopPlaceImporter {
 
         StopPlace copy = versionCreator.createCopy(existingStopPlace, StopPlace.class);
 
-        boolean quayChanged = quayMerger.appendImportIds(incomingStopPlace, copy, ADD_NEW_QUAYS, EXISTING_STOP_QUAY_MERGE_SHORT_DISTANCE_CHECK_BEFORE_ID_MATCH);
-        boolean keyValuesChanged = keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy);
+        boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, ADD_NEW_QUAYS, EXISTING_STOP_QUAY_MERGE_SHORT_DISTANCE_CHECK_BEFORE_ID_MATCH);
+        boolean keyValuesChanged = (keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy) && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy));
         boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
 
         boolean typeChanged = false;
@@ -174,10 +179,38 @@ public class MergingStopPlaceImporter {
             typeChanged = true;
         }
 
-        if (quayChanged || keyValuesChanged || centroidChanged || typeChanged) {
-            logger.info("Updating existing stop place. quays changed {}, key values changed: {}, centroid changed: {}, type changed:{} - {}",
+        boolean alternativeNameChanged = false;
+        if(incomingStopPlace.getAlternativeNames() != null && incomingStopPlace.getAlternativeNames().size() != 0){
+            StopPlace alternativeNamesToCopy = copy;
+            int sizeList = alternativeNamesToCopy.getAlternativeNames().size();
+            incomingStopPlace.getAlternativeNames().forEach(incomingAlternativeName -> {
+                if (!alternativeNamesToCopy.getAlternativeNames().contains(incomingAlternativeName)){
+                    alternativeNamesToCopy.getAlternativeNames().add(incomingAlternativeName);
+                }
+            });
+            if(alternativeNamesToCopy.getAlternativeNames().size() != sizeList){
+                alternativeNameChanged = true;
+            }
+        }
+
+        if (quayChanged || keyValuesChanged || centroidChanged || typeChanged || alternativeNameChanged) {
+            logger.info("Updating existing stop place. quays changed {}, key values changed: {}, centroid changed: {}, type changed:{} - {}, alternative names changed: {}",
                     quayChanged, keyValuesChanged, centroidChanged, typeChanged, existingStopPlace);
-            copy = stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, copy);
+
+            if(copy.getParentSiteRef() != null){
+                StopPlace parentExistingVersion = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(copy.getParentSiteRef().getRef());
+                StopPlace parentCopy = versionCreator.createCopy(parentExistingVersion, StopPlace.class);
+                parentCopy.getChildren().removeIf(stopPlace -> stopPlace.getNetexId().equals(existingStopPlace.getNetexId()));
+                parentCopy.getChildren().add(copy);
+
+                Set<String> childStopsUpdated = new HashSet<>();
+                childStopsUpdated.add(copy.getNetexId());
+                parentCopy = stopPlaceVersionedSaverService.saveNewVersion(parentExistingVersion, parentCopy, childStopsUpdated);
+                copy = parentCopy.getChildren().stream().filter(stopPlace -> stopPlace.getNetexId().equals(existingStopPlace.getNetexId())).findFirst().get();
+            }
+            else{
+                copy = stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, copy);
+            }
             return updateCache(copy);
         }
 

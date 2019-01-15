@@ -17,17 +17,20 @@ package org.rutebanken.tiamat.importer;
 
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
-import org.rutebanken.netex.model.*;
+import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.netex.model.SiteFrame;
 import org.rutebanken.tiamat.exporter.PublicationDeliveryExporter;
 import org.rutebanken.tiamat.importer.handler.*;
 import org.rutebanken.tiamat.importer.log.ImportLogger;
 import org.rutebanken.tiamat.importer.log.ImportLoggerTask;
-import org.rutebanken.tiamat.netex.mapping.*;
+import org.rutebanken.tiamat.netex.mapping.NetexMapper;
+import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.service.batch.BackgroundJobs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Timer;
@@ -42,6 +45,7 @@ public class PublicationDeliveryImporter {
     private static final Logger logger = LoggerFactory.getLogger(PublicationDeliveryImporter.class);
 
     public static final String IMPORT_CORRELATION_ID = "importCorrelationId";
+    public static final String KC_ROLE_PREFIX = "ROLE_";
 
 
     private final PublicationDeliveryHelper publicationDeliveryHelper;
@@ -83,9 +87,12 @@ public class PublicationDeliveryImporter {
     @SuppressWarnings("unchecked")
     public PublicationDeliveryStructure importPublicationDelivery(PublicationDeliveryStructure incomingPublicationDelivery, ImportParams importParams) {
 
-        if(roleAssignmentExtractor.getRoleAssignmentsForUser()
+        if (roleAssignmentExtractor.getRoleAssignmentsForUser()
                 .stream()
-                .noneMatch(roleAssignment -> roleAssignment.r.equals(ROLE_EDIT_STOPS))) {
+                .noneMatch(roleAssignment -> roleAssignment.r.equals(ROLE_EDIT_STOPS)) &&
+                SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                        .stream()
+                        .noneMatch(authority -> authority.getAuthority().equals(KC_ROLE_PREFIX + ROLE_EDIT_STOPS))) {
             throw new NotAuthenticatedException("Role: '" + ROLE_EDIT_STOPS + "' required for import!");
         }
 
@@ -128,13 +135,13 @@ public class PublicationDeliveryImporter {
 
             responseSiteframe.withId(requestId + "-response").withVersion("1");
 
-            topographicPlaceImportHandler.handleTopographicPlaces(netexSiteFrame, importParams, topographicPlaceCounter ,responseSiteframe);
+            topographicPlaceImportHandler.handleTopographicPlaces(netexSiteFrame, importParams, topographicPlaceCounter, responseSiteframe);
             tariffZoneImportHandler.handleTariffZones(netexSiteFrame, importParams, tariffZoneCounter, responseSiteframe);
             stopPlaceImportHandler.handleStops(netexSiteFrame, importParams, stopPlaceCounter, responseSiteframe);
             parkingsImportHandler.handleParkings(netexSiteFrame, importParams, parkingCounter, responseSiteframe);
             pathLinkImportHandler.handlePathLinks(netexSiteFrame, importParams, pathLinkCounter, responseSiteframe);
 
-            if(responseSiteframe.getTariffZones() != null || responseSiteframe.getTopographicPlaces() != null) {
+            if (responseSiteframe.getTariffZones() != null || responseSiteframe.getTopographicPlaces() != null) {
                 backgroundJobs.triggerStopPlaceUpdate();
             }
             return publicationDeliveryExporter.createPublicationDelivery(responseSiteframe);

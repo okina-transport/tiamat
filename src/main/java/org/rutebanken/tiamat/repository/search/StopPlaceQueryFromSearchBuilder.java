@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.repository.search;
 
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.model.Quay;
@@ -44,6 +45,8 @@ import static org.rutebanken.tiamat.repository.StopPlaceRepositoryImpl.*;
 public class StopPlaceQueryFromSearchBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceQueryFromSearchBuilder.class);
+
+    public static final ExportParams.VersionValidity DEFAULT_VERSION_VALIDITY = ExportParams.VersionValidity.CURRENT;
 
     /**
      * If searching for single tag in the query parameter, prefixed by #
@@ -116,8 +119,6 @@ public class StopPlaceQueryFromSearchBuilder {
 //                     "  AND similarity(s.name_value , s2.name_value) > :similarityThreshold ";
 
 
-    private static final String WHITE_SPACE = " ";
-    private static final String JOKER = "%";
 
     /**
      * Configure some common words to be skipped during stop place search by name.
@@ -125,12 +126,61 @@ public class StopPlaceQueryFromSearchBuilder {
     @Value("#{'${stopPlaces.search.commonWordsToIgnore}'.split(',')}")
     Set<String> commonWordsToIgnore = new LinkedHashSet<>();
 
+    private static final String WHITE_SPACE = " ";
+    private static final String JOKER = "%";
+
+    /**
+     * Check in imported name to filter by data space code
+     */
+    private static final String SQL_SEARCH_BY_CODE = "s.id in (select id from stop_place sp" +
+            " join stop_place_key_values spkv on sp.id = spkv.stop_place_id " +
+            " join value_items vi on vi.value_id = spkv.key_values_id" +
+            " where substring(vi.items, 4, 1) = ':' and lower(substring(vi.items, 1, 3)) = :codeSpace)";
+
+    /**
+     * Default version validity for searches where pointInTime is not given.
+     */
+    private static final ExportParams.VersionValidity defaultVersionValidity = ExportParams.VersionValidity.CURRENT;
+
+
+
     @Autowired
     private SearchHelper searchHelper;
 
+    @Autowired
+    private NetexIdHelper netexIdHelper;
+
+    /**
+     * Configure some common words to be skipped during stop place search by name.
+     */
+    private final Set<String> commonWordsToIgnore;
+
+    private final ExportParamsAndStopPlaceSearchValidator exportParamsAndStopPlaceSearchValidator;
+
+    @Autowired
+    public StopPlaceQueryFromSearchBuilder(@Value(" ${stopPlaces.search.commonWordsToIgnore:}") String commonWordsToIgnore,
+                                           ExportParamsAndStopPlaceSearchValidator exportParamsAndStopPlaceSearchValidator) {
+        this.commonWordsToIgnore = StringUtils.isNotEmpty(commonWordsToIgnore) ? new HashSet<>(Arrays.asList(commonWordsToIgnore.split(","))) : new HashSet<>();
+        this.exportParamsAndStopPlaceSearchValidator = exportParamsAndStopPlaceSearchValidator;
+    }
+
     public Pair<String, Map<String, Object>> buildQueryString(ExportParams exportParams) {
 
+        this.exportParamsAndStopPlaceSearchValidator.validateExportParams(exportParams);
+
         StopPlaceSearch stopPlaceSearch = exportParams.getStopPlaceSearch();
+
+        final ExportParams.VersionValidity versionValidity;
+        if(stopPlaceSearch.getPointInTime() == null
+                && stopPlaceSearch.getVersionValidity() == null
+                && !stopPlaceSearch.isAllVersions()
+                && stopPlaceSearch.getVersion() == null) {
+            logger.debug("Parameters pointInTime, versionValidity, allVersions or version not set. Defaulting to version validity " + defaultVersionValidity);
+            versionValidity = defaultVersionValidity;
+        } else {
+            versionValidity = stopPlaceSearch.getVersionValidity();
+        }
+
 
         StringBuilder queryString = new StringBuilder("select s.* from stop_place s ");
 
@@ -157,7 +207,7 @@ public class StopPlaceQueryFromSearchBuilder {
                 operators.add("and");
             }
 
-            if(stopPlaceSearch.getSubmode() != null) {
+            if (stopPlaceSearch.getSubmode() != null) {
                 wheres.add("(s.air_submode = :submode OR s.bus_submode = :submode OR s.coach_submode = :submode OR s.funicular_submode = :submode OR s.metro_submode = :submode OR s.rail_submode = :submode OR s.telecabin_submode = :submode OR s.tram_submode = :submode OR s.water_submode = :submode)");
                 parameters.put("submode", stopPlaceSearch.getSubmode());
                 operators.add("and");
@@ -190,38 +240,46 @@ public class StopPlaceQueryFromSearchBuilder {
                 wheres.add("(s." + countyQuery + " or " + "p." + countyQuery + ")" + suffix);
                 parameters.put("countyId", exportParams.getCountyReferences());
             }
+
+            boolean hasCode = exportParams.getCodeSpace() != null;
+
+            if (hasCode) {
+                operators.add("and");
+                wheres.add(SQL_SEARCH_BY_CODE);
+                parameters.put("codeSpace", exportParams.getCodeSpace());
+            }
+
         }
 
+        // Parameters: version, pointInTime, versionValidity, allVersions. Should not be combined. See the exportParamsAndStopPlaceSearchValidator
         if (stopPlaceSearch.getVersion() != null) {
             operators.add("and");
             wheres.add("s.version = :version");
             parameters.put("version", stopPlaceSearch.getVersion());
-        } else if (!stopPlaceSearch.isAllVersions()
-                && stopPlaceSearch.getPointInTime() == null &&
-                (stopPlaceSearch.getVersionValidity() == null || ExportParams.VersionValidity.ALL.equals(stopPlaceSearch.getVersionValidity()))) {
-            operators.add("and");
-            wheres.add("s.version = (select max(sv.version) from stop_place sv where sv.netex_id = s.netex_id)");
-        }
-
-        if (stopPlaceSearch.getPointInTime() != null) {
+        } else if (stopPlaceSearch.getPointInTime() != null) {
             operators.add("and");
             //(from- and toDate is NULL), or (fromDate is set and toDate IS NULL or set)
             String pointInTimeCondition = createPointInTimeCondition("s", "p");
             parameters.put("pointInTime", Timestamp.from(stopPlaceSearch.getPointInTime()));
             wheres.add(pointInTimeCondition);
-        } else if (stopPlaceSearch.getVersionValidity() != null) {
+        } else if (ExportParams.VersionValidity.CURRENT.equals(versionValidity)) {
             operators.add("and");
+            parameters.put("pointInTime", Date.from(Instant.now()));
+            String currentQuery = "(%s.from_date <= :pointInTime AND (%s.to_date >= :pointInTime or %s.to_date IS NULL))";
+            wheres.add("(" + formatRepeatedValue(currentQuery, "s", 3) + " or " + formatRepeatedValue(currentQuery, "p", 3) + ")");
+        } else if (ExportParams.VersionValidity.CURRENT_FUTURE.equals(versionValidity)) {
+            operators.add("and");
+            parameters.put("pointInTime", Date.from(Instant.now()));
+            String futureQuery = "p.netex_id is null and (s.to_date >= :pointInTime OR s.to_date IS NULL)";
+            String parentFutureQuery = "p.netex_id is not null and (p.to_date >= :pointInTime OR p.to_date IS NULL)";
+            wheres.add("((" + futureQuery + ") or (" + parentFutureQuery + "))");
+        } else if (!stopPlaceSearch.isAllVersions() && ExportParams.VersionValidity.MAX_VERSION.equals(stopPlaceSearch.getVersionValidity())) {
 
-            if (ExportParams.VersionValidity.CURRENT.equals(stopPlaceSearch.getVersionValidity())) {
-                parameters.put("pointInTime", Date.from(Instant.now()));
-                String currentQuery = "(%s.from_date <= :pointInTime AND (%s.to_date >= :pointInTime or %s.to_date IS NULL))";
-                wheres.add("(" + formatRepeatedValue(currentQuery, "s", 3) + " or " + formatRepeatedValue(currentQuery, "p", 3) + ")");
-            } else if (ExportParams.VersionValidity.CURRENT_FUTURE.equals(stopPlaceSearch.getVersionValidity())) {
-                parameters.put("pointInTime", Date.from(Instant.now()));
-                String futureQuery = "p.netex_id is null and (s.to_date >= :pointInTime OR s.to_date IS NULL)";
-                String parentFutureQuery = "p.netex_id is not null and (p.to_date >= :pointInTime OR p.to_date IS NULL)";
-                wheres.add("((" + futureQuery + ") or (" + parentFutureQuery + "))");
-            }
+            // This part of query can cause issues finding matches in older versions of stop place
+            // See the task https://enturas.atlassian.net/browse/ROR-572
+
+            operators.add("and");
+            wheres.add("s.version = (select max(sv.version) from stop_place sv where sv.netex_id = s.netex_id)");
         }
 
         if (stopPlaceSearch.isWithoutLocationOnly()) {
@@ -234,7 +292,13 @@ public class StopPlaceQueryFromSearchBuilder {
             wheres.add("not exists (select sq.quays_id from stop_place_quays sq where sq.stop_place_id = s.id)");
         }
 
-        if (stopPlaceSearch.isWithTags()) {
+        if (stopPlaceSearch.isHasParking()) {
+            operators.add("and");
+            wheres.add("exists (select * from parking p where p.parent_site_ref=s.netex_id)");
+        }
+
+
+        if(stopPlaceSearch.isWithTags()) {
             operators.add("and");
             wheres.add(SQL_WITH_TAGS);
         }
@@ -282,10 +346,10 @@ public class StopPlaceQueryFromSearchBuilder {
         } else if (NetexIdHelper.isNetexId(query)) {
             String netexId = query;
 
-            String netexIdType = NetexIdHelper.extractIdType(netexId);
+            String netexIdType = netexIdHelper.extractIdType(netexId);
             parameters.put("query", query);
 
-            if (!NetexIdHelper.isNsrId(query)) {
+            if (!netexIdHelper.isNsrId(query)) {
 
                 // Detect non NSR NetexId and search in original ID
                 parameters.put("originalIdKey", ORIGINAL_ID_KEY);
@@ -297,7 +361,7 @@ public class StopPlaceQueryFromSearchBuilder {
                 } else if (Quay.class.getSimpleName().equals(netexIdType)) {
                     wheres.add("s.id in (select spq.stop_place_id from stop_place_quays spq inner join quay_key_values qkv on spq.quays_id = qkv.quay_id inner join value_items v on qkv.key_values_id = v.value_id where (qkv.key_values_key = :originalIdKey OR qkv.key_values_key = :mergedIdKey) and v.items = :query)");
                 } else {
-                    logger.warn("Detected NeTEx ID {}, but type is not supported: {}", netexId, NetexIdHelper.extractIdType(netexId));
+                    logger.warn("Detected NeTEx ID {}, but type is not supported: {}", netexId, netexIdHelper.extractIdType(netexId));
                 }
             } else {
                 // NSR ID detected
@@ -307,7 +371,7 @@ public class StopPlaceQueryFromSearchBuilder {
                 } else if (Quay.class.getSimpleName().equals(netexIdType)) {
                     wheres.add("s.id in (select spq.stop_place_id from stop_place_quays spq inner join quay q on spq.quays_id = q.id and q.netex_id = :query)");
                 } else {
-                    logger.warn("Detected NeTEx ID {}, but type is not supported: {}", netexId, NetexIdHelper.extractIdType(netexId));
+                    logger.warn("Detected NeTEx ID {}, but type is not supported: {}", netexId, netexIdHelper.extractIdType(netexId));
                 }
             }
         } else {
@@ -341,7 +405,7 @@ public class StopPlaceQueryFromSearchBuilder {
         if (!commonWordsToIgnore.isEmpty()) {
             return commonWordsToIgnore.stream()
                     .reduce(query, (string, word) ->
-                            string.replaceFirst("\\s*" + word + "\\s*", JOKER))
+                            string.replaceFirst("\\s+" + word + "\\s+", JOKER))
                     .replace(WHITE_SPACE, JOKER);
         } else {
             return query;

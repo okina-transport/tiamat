@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.service.stopplace;
 
-import com.vividsolutions.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Coordinate;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
@@ -52,7 +52,7 @@ public class StopPlaceDeleterIntegrationTest extends TiamatIntegrationTest {
         //Saving two versions to verify that both are deleted
         StopPlace tmpStopPlace = stopPlaceVersionedSaverService.saveNewVersion(stopPlace);
         StopPlace savedStopPlace = stopPlaceVersionedSaverService.saveNewVersion(tmpStopPlace,
-                stopPlaceVersionedSaverService.createCopy(tmpStopPlace, StopPlace.class));
+                versionCreator.createCopy(tmpStopPlace, StopPlace.class));
 
         Assertions.assertThat(tmpStopPlace.getNetexId()).isEqualTo(savedStopPlace.getNetexId());
         Assertions.assertThat(tmpStopPlace.getVersion()).isLessThan(savedStopPlace.getVersion());

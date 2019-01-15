@@ -17,8 +17,11 @@ package org.rutebanken.tiamat.netex.id;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
+import org.hibernate.Hibernate;
 import org.hibernate.SQLQuery;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.jpa.HibernateEntityManagerFactory;
 import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
@@ -27,7 +30,10 @@ import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,8 +46,11 @@ import static org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService.LOW_LEVEL
 
 public class GaplessIdGeneratorServiceTest extends TiamatIntegrationTest {
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @Autowired
-    private HibernateEntityManagerFactory hibernateEntityManagerFactory;
+    private NetexIdHelper netexIdHelper;
 
     @Test
     public void verifyNetexIdAssignedToStop() {
@@ -83,17 +92,17 @@ public class GaplessIdGeneratorServiceTest extends TiamatIntegrationTest {
     }
 
     private long selectSingleInsertedId(String tableName, long expectedId) {
-        Session session = hibernateEntityManagerFactory.getSessionFactory().openSession();
-        SQLQuery query = session.createSQLQuery("SELECT id_value FROM id_generator WHERE table_name = '" + tableName + "' AND id_value = '" + expectedId + "'");
 
-        List list = query.list();
+        Query query = entityManager.createNativeQuery("SELECT id_value FROM id_generator WHERE table_name = '" + tableName + "' AND id_value = '" + expectedId + "'");
+
+        List list = query.getResultList();
         assertThat(list).hasSize(1);
         BigInteger actual = (BigInteger) list.get(0);
         return actual.longValue();
     }
 
     private Quay insertQuay(long wantedId, Quay quay) {
-        String wantedNetexIdId = NetexIdHelper.getNetexId("Quay", wantedId);
+        String wantedNetexIdId = netexIdHelper.getNetexId("Quay", wantedId);
         quay.setNetexId(wantedNetexIdId);
         quayRepository.save(quay);
         return quay;
@@ -105,14 +114,14 @@ public class GaplessIdGeneratorServiceTest extends TiamatIntegrationTest {
         // Use first 500 IDs
         for (long explicitId = 1; explicitId <= 30; explicitId++) {
             Quay quay = new Quay();
-            quay.setNetexId(NetexIdHelper.getNetexId(Quay.class.getSimpleName(), explicitId));
+            quay.setNetexId(netexIdHelper.getNetexId(Quay.class.getSimpleName(), explicitId));
             quayRepository.save(quay);
             System.out.println("Saved quay: " + quay.getNetexId());
         }
 
         Quay quay = new Quay();
         quayRepository.save(quay);
-        assertThat(NetexIdHelper.extractIdPostfixNumeric(quay.getNetexId())).isEqualTo(31);
+        assertThat(netexIdHelper.extractIdPostfixNumeric(quay.getNetexId())).isEqualTo(31);
     }
 
     @Test

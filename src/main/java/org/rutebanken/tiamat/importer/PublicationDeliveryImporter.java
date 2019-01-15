@@ -15,26 +15,25 @@
 
 package org.rutebanken.tiamat.importer;
 
+import org.rutebanken.helper.organisation.NotAuthenticatedException;
+import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.exporter.PublicationDeliveryExporter;
 import org.rutebanken.tiamat.importer.handler.*;
 import org.rutebanken.tiamat.importer.log.ImportLogger;
 import org.rutebanken.tiamat.importer.log.ImportLoggerTask;
 import org.rutebanken.tiamat.netex.mapping.*;
+import org.rutebanken.tiamat.service.batch.BackgroundJobs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.ZoneId;
-import java.util.List;
-import java.util.Optional;
-import java.util.TimeZone;
 import java.util.Timer;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 
+import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
 import static org.rutebanken.tiamat.netex.mapping.NetexMappingContextThreadLocal.updateMappingContext;
 
 @Service
@@ -47,12 +46,13 @@ public class PublicationDeliveryImporter {
 
     private final PublicationDeliveryHelper publicationDeliveryHelper;
     private final PublicationDeliveryExporter publicationDeliveryExporter;
-    private final NetexMapper netexMapper;
     private final PathLinkImportHandler pathLinkImportHandler;
     private final TariffZoneImportHandler tariffZoneImportHandler;
     private final StopPlaceImportHandler stopPlaceImportHandler;
     private final ParkingsImportHandler parkingsImportHandler;
     private final TopographicPlaceImportHandler topographicPlaceImportHandler;
+    private final RoleAssignmentExtractor roleAssignmentExtractor;
+    private final BackgroundJobs backgroundJobs;
 
     @Autowired
     public PublicationDeliveryImporter(PublicationDeliveryHelper publicationDeliveryHelper, NetexMapper netexMapper,
@@ -61,15 +61,18 @@ public class PublicationDeliveryImporter {
                                        TopographicPlaceImportHandler topographicPlaceImportHandler,
                                        TariffZoneImportHandler tariffZoneImportHandler,
                                        StopPlaceImportHandler stopPlaceImportHandler,
-                                       ParkingsImportHandler parkingsImportHandler) {
+                                       ParkingsImportHandler parkingsImportHandler,
+                                       RoleAssignmentExtractor roleAssignmentExtractor,
+                                       BackgroundJobs backgroundJobs) {
         this.publicationDeliveryHelper = publicationDeliveryHelper;
-        this.netexMapper = netexMapper;
         this.parkingsImportHandler = parkingsImportHandler;
         this.publicationDeliveryExporter = publicationDeliveryExporter;
         this.pathLinkImportHandler = pathLinkImportHandler;
         this.topographicPlaceImportHandler = topographicPlaceImportHandler;
         this.tariffZoneImportHandler = tariffZoneImportHandler;
         this.stopPlaceImportHandler = stopPlaceImportHandler;
+        this.roleAssignmentExtractor = roleAssignmentExtractor;
+        this.backgroundJobs = backgroundJobs;
     }
 
 
@@ -79,6 +82,13 @@ public class PublicationDeliveryImporter {
 
     @SuppressWarnings("unchecked")
     public PublicationDeliveryStructure importPublicationDelivery(PublicationDeliveryStructure incomingPublicationDelivery, ImportParams importParams) {
+
+        if(roleAssignmentExtractor.getRoleAssignmentsForUser()
+                .stream()
+                .noneMatch(roleAssignment -> roleAssignment.r.equals(ROLE_EDIT_STOPS))) {
+            throw new NotAuthenticatedException("Role: '" + ROLE_EDIT_STOPS + "' required for import!");
+        }
+
         if (incomingPublicationDelivery.getDataObjects() == null) {
             String responseMessage = "Received publication delivery but it does not contain any data objects.";
             logger.warn(responseMessage);
@@ -91,7 +101,9 @@ public class PublicationDeliveryImporter {
             validate(importParams);
         }
 
-        logger.info("Got publication delivery with {} site frames", incomingPublicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame().size());
+        logger.info("Got publication delivery with {} site frames and description {}",
+                incomingPublicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame().size(),
+                incomingPublicationDelivery.getDescription());
 
         AtomicInteger stopPlaceCounter = new AtomicInteger(0);
         AtomicInteger parkingCounter = new AtomicInteger(0);
@@ -122,6 +134,9 @@ public class PublicationDeliveryImporter {
             parkingsImportHandler.handleParkings(netexSiteFrame, importParams, parkingCounter, responseSiteframe);
             pathLinkImportHandler.handlePathLinks(netexSiteFrame, importParams, pathLinkCounter, responseSiteframe);
 
+            if(responseSiteframe.getTariffZones() != null || responseSiteframe.getTopographicPlaces() != null) {
+                backgroundJobs.triggerStopPlaceUpdate();
+            }
             return publicationDeliveryExporter.createPublicationDelivery(responseSiteframe);
         } finally {
             MDC.remove(IMPORT_CORRELATION_ID);

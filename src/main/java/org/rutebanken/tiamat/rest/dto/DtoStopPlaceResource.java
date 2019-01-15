@@ -32,12 +32,12 @@ import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.time.Instant;
-import java.time.Period;
-import java.time.temporal.TemporalUnit;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Component
-@Api
+@Api(tags = {"Stop place resource"}, produces = "text/plain")
 @Produces("application/json")
 @Path("/")
 @Transactional
@@ -100,5 +100,13 @@ public class DtoStopPlaceResource {
         Instant validFrom = Instant.now();
         Instant validTo = includeFuture ? null : validFrom;
         return String.join("\n", stopPlaceRepository.findUniqueStopPlaceIds(validFrom, validTo));
+    }
+
+    @GET
+    @Path("/list/stop_place_quays")
+    public Map<String, Set<String>> listStopPlaceQuays(@QueryParam("includeFuture") boolean includeFuture) {
+        Instant validFrom = Instant.now();
+        Instant validTo = includeFuture ? null : validFrom;
+        return stopPlaceRepository.listStopPlaceIdsAndQuayIds(validFrom, validTo);
     }
 }

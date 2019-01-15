@@ -16,9 +16,9 @@
 package org.rutebanken.tiamat.importer.merging;
 
 import com.google.common.collect.Sets;
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.Point;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.geotools.referencing.GeodeticCalculator;
 import org.junit.Test;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
@@ -26,6 +26,8 @@ import org.rutebanken.tiamat.importer.matching.OriginalIdMatcher;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.netex.id.NetexIdHelper;
+import org.rutebanken.tiamat.netex.id.ValidPrefixList;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 
 import java.awt.geom.Point2D;
@@ -39,7 +41,8 @@ public class QuayMergerTest {
 
     private GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
-    private QuayMerger quayMerger = new QuayMerger(new OriginalIdMatcher());
+    private NetexIdHelper netexIdHelper = new NetexIdHelper(new ValidPrefixList("NSR", new HashMap<>()));
+    private QuayMerger quayMerger = new QuayMerger(new OriginalIdMatcher(netexIdHelper));
 
     @Test
     public void disableMatchingQuaysWithinLowDistanceBeforeIdMatch() {

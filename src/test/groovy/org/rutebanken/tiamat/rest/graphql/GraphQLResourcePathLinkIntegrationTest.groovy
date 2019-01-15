@@ -16,10 +16,10 @@
 package org.rutebanken.tiamat.rest.graphql
 
 import com.google.common.collect.Sets
-import com.vividsolutions.jts.geom.Coordinate
-import com.vividsolutions.jts.geom.CoordinateSequence
-import com.vividsolutions.jts.geom.LineString
-import com.vividsolutions.jts.geom.impl.CoordinateArraySequence
+import org.locationtech.jts.geom.Coordinate
+import org.locationtech.jts.geom.CoordinateSequence
+import org.locationtech.jts.geom.LineString
+import org.locationtech.jts.geom.impl.CoordinateArraySequence
 import io.restassured.response.ValidatableResponse
 import org.junit.Test
 import org.rutebanken.tiamat.auth.MockedRoleAssignmentExtractor
@@ -156,7 +156,7 @@ class GraphQLResourcePathLinkIntegrationTest extends AbstractGraphQLResourceInte
 
     @Test
     void createNewPathLinkByUserWithoutAuthorizationForStopPlaceType() throws Exception {
-        mockedRoleAssignmentExtractor.setNextReturnedRoleAssignmentList(
+        mockedRoleAssignmentExtractor.setNextReturnedRoleAssignment(
                 RoleAssignmentListBuilder.builder().withStopPlaceOfType(StopTypeEnumeration.BUS_STATION).build())
         PathLinkQuery query = createNewPathLinkQuery(StopTypeEnumeration.FERRY_STOP)
         executeGraphqQLQueryOnly(query.query, HttpStatus.FORBIDDEN.value())
@@ -164,7 +164,7 @@ class GraphQLResourcePathLinkIntegrationTest extends AbstractGraphQLResourceInte
 
     @Test
     void createNewPathLinkByUserWithCorrectAuthorizationForStopPlaceType() throws Exception {
-        mockedRoleAssignmentExtractor.setNextReturnedRoleAssignmentList(
+        mockedRoleAssignmentExtractor.setNextReturnedRoleAssignment(
                 RoleAssignmentListBuilder.builder().withStopPlaceOfType(StopTypeEnumeration.BUS_STATION).build())
         PathLinkQuery query = createNewPathLinkQuery(StopTypeEnumeration.BUS_STATION)
 
@@ -201,35 +201,33 @@ class GraphQLResourcePathLinkIntegrationTest extends AbstractGraphQLResourceInte
 
         String query = """mutation {
                            pathLink: ${MUTATE_PATH_LINK} (PathLink: [{
-                                    from: {placeRef: {ref: "${firstQuay.getNetexId()}", version:"${
-            firstQuay.getVersion()
-        }"}},
-                                        to: {placeRef: {ref: "${secondQuay.getNetexId()}"}}
-                                        geometry: {
-                                            type: LineString, coordinates: [[10.3, 59.9], [10.3, 59.9], [10.3, 59.9], [10.3, 59.9], [10.3, 59.9]]
-                                        }
-                                    }]) {
+                                from: {placeRef: {ref: "${firstQuay.getNetexId()}", version:"${firstQuay.getVersion()}"}},
+                                    to: {placeRef: {ref: "${secondQuay.getNetexId()}"}}
+                                    geometry: {
+                                        type: LineString, coordinates: [[10.3, 59.9], [10.3, 59.9], [10.3, 59.9], [10.3, 59.9], [10.3, 59.9]]
+                                    }
+                                }]) {
+                                id
+                                geometry {
+                                    type
+                                    coordinates
+                                }
+                                from {
                                     id
-                                    geometry {
-                                        type
-                                        coordinates
-                                    }
-                                    from {
-                                        id
-                                        placeRef {
-                                            ref
-                                            version
-                                        }
-                                    }
-                                    to {
-                                        id
-                                        placeRef {
-                                            ref
-                                            version
-                                        }
+                                    placeRef {
+                                        ref
+                                        version
                                     }
                                 }
-                            }}"""
+                                to {
+                                    id
+                                    placeRef {
+                                        ref
+                                        version
+                                    }
+                                }
+                            }
+                           }"""
         return new PathLinkQuery(firstQuay, secondQuay, query)
     }
 

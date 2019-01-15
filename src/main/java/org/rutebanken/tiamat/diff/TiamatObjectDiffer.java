@@ -16,12 +16,11 @@
 package org.rutebanken.tiamat.diff;
 
 import com.google.common.collect.Sets;
-import com.vividsolutions.jts.geom.Geometry;
+import org.locationtech.jts.geom.Geometry;
 import org.rutebanken.tiamat.diff.generic.Difference;
 import org.rutebanken.tiamat.diff.generic.GenericDiffConfig;
 import org.rutebanken.tiamat.diff.generic.GenericObjectDiffer;
 import org.rutebanken.tiamat.model.DataManagedObjectStructure;
-import org.rutebanken.tiamat.model.EntityInVersionStructure;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +52,10 @@ public class TiamatObjectDiffer {
                 .ignoreFields(DIFF_IGNORE_FIELDS)
                 .onlyDoEqualsCheck(Sets.newHashSet(Geometry.class))
                 .build();
+    }
+
+    public List<Difference> compareObjects(IdentifiedEntity oldObject, IdentifiedEntity newObject) throws IllegalAccessException {
+        return genericObjectDiffer.compareObjects(oldObject, newObject, genericDiffConfig);
     }
 
     public void logDifference(IdentifiedEntity oldObject, IdentifiedEntity newObject) {

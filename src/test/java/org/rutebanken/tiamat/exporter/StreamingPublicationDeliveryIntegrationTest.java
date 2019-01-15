@@ -21,15 +21,24 @@ import org.rutebanken.netex.validation.NeTExValidator;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.GroupOfStopPlaces;
+import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.StopPlaceReference;
+import org.rutebanken.tiamat.model.TariffZone;
+import org.rutebanken.tiamat.model.TariffZoneRef;
+import org.rutebanken.tiamat.model.TopographicPlace;
+import org.rutebanken.tiamat.model.TopographicPlaceRefStructure;
+import org.rutebanken.tiamat.model.TopographicPlaceTypeEnumeration;
+import org.rutebanken.tiamat.model.ValidBetween;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.netex.validation.NetexReferenceValidatorException;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryTestHelper;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
-import org.rutebanken.tiamat.versioning.GroupOfStopPlacesSaverService;
-import org.rutebanken.tiamat.versioning.TariffZoneSaverService;
-import org.rutebanken.tiamat.versioning.TopographicPlaceVersionedSaverService;
+import org.rutebanken.tiamat.versioning.save.GroupOfStopPlacesSaverService;
+import org.rutebanken.tiamat.versioning.save.TariffZoneSaverService;
+import org.rutebanken.tiamat.versioning.save.TopographicPlaceVersionedSaverService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +52,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static javax.xml.bind.JAXBContext.newInstance;
@@ -102,8 +113,10 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
 
         ExportParams exportParams = ExportParams.newExportParamsBuilder()
                 .setStopPlaceSearch(
-                        StopPlaceSearch.newStopPlaceSearchBuilder()
-                        .build())
+                        StopPlaceSearch
+                                .newStopPlaceSearchBuilder()
+                                .setVersionValidity(ExportParams.VersionValidity.ALL)
+                                .build())
                 .build();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
@@ -152,6 +165,55 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         netexXmlReferenceValidator.validateNetexReferences(new ByteArrayInputStream(xml.getBytes()), "publicationDelivery");
 
 
+    }
+
+    /**
+     * Set export modes to none, to see that export netex is valid
+     */
+    @Test
+    public void handleExportModeSetToNone() throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException, NetexReferenceValidatorException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+        TopographicPlace county = new TopographicPlace(new EmbeddableMultilingualString("county"));
+        county.setTopographicPlaceType(TopographicPlaceTypeEnumeration.COUNTY);
+        county = topographicPlaceVersionedSaverService.saveNewVersion(county);
+
+        TopographicPlace municipality = new TopographicPlace(new EmbeddableMultilingualString("Some municipality"));
+        municipality.setTopographicPlaceType(TopographicPlaceTypeEnumeration.MUNICIPALITY);
+        municipality.setParentTopographicPlaceRef(new TopographicPlaceRefStructure(county.getNetexId(), String.valueOf(county.getVersion()  )));
+        municipality = topographicPlaceVersionedSaverService.saveNewVersion(municipality);
+
+        TariffZone tariffZone = new TariffZone();
+        tariffZone.setVersion(1L);
+        tariffZone = tariffZoneRepository.save(tariffZone);
+
+        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("stop place"));
+        stopPlace.setTopographicPlace(municipality);
+        stopPlace.getTariffZones().add(new TariffZoneRef(tariffZone));
+        stopPlaceRepository.save(stopPlace);
+
+        stopPlaceRepository.flush();
+
+        GroupOfStopPlaces groupOfStopPlaces = new GroupOfStopPlaces(new EmbeddableMultilingualString("group"));
+        groupOfStopPlaces.getMembers().add(new StopPlaceReference(stopPlace.getNetexId()));
+        groupOfStopPlacesSaverService.saveNewVersion(groupOfStopPlaces);
+
+        ExportParams exportParams = ExportParams.newExportParamsBuilder()
+                .setStopPlaceSearch(
+                        StopPlaceSearch.newStopPlaceSearchBuilder()
+                                .setVersionValidity(ExportParams.VersionValidity.CURRENT_FUTURE)
+                                .build())
+                .setTopographicPlaceExportMode(ExportParams.ExportMode.NONE)
+                .setTariffZoneExportMode(ExportParams.ExportMode.NONE)
+                .setGroupOfStopPlacesExportMode(ExportParams.ExportMode.NONE)
+                .build();
+
+        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream);
+
+        String xml = byteArrayOutputStream.toString();
+        System.out.println(xml);
+
+        netexXmlReferenceValidator.validateNetexReferences(new ByteArrayInputStream(xml.getBytes()), "publicationDelivery");
     }
 
     @Test
@@ -296,11 +358,46 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
 
     }
 
+    /**
+     * Reproduce ROR-277, missing current stop place, when there is a future version.
+     */
+    @Test
+    public void keepCurrentVersionOfStopPlaceWhenFutureVersionExist() throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+        StopPlace stopPlacev1 = new StopPlace(new EmbeddableMultilingualString("name"));
+        stopPlacev1 = stopPlaceVersionedSaverService.saveNewVersion(stopPlacev1);
+        StopPlace stopPlacev2 = versionCreator.createCopy(stopPlacev1, StopPlace.class);
+
+        stopPlacev2.setValidBetween(new ValidBetween(Instant.now().plus(10, ChronoUnit.DAYS)));
+
+        stopPlaceVersionedSaverService.saveNewVersion(stopPlacev1, stopPlacev2);
+
+        stopPlaceRepository.flush();
+
+        ExportParams exportParams = ExportParams.newExportParamsBuilder()
+                .setStopPlaceSearch(
+                        StopPlaceSearch.newStopPlaceSearchBuilder()
+                                .setVersionValidity(ExportParams.VersionValidity.CURRENT_FUTURE)
+                                .build())
+                .setTopographicPlaceExportMode(ExportParams.ExportMode.NONE)
+                .setTariffZoneExportMode(ExportParams.ExportMode.NONE)
+                .build();
+
+        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream);
+
+        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryUnmarshaller.unmarshal(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
+
+        List<org.rutebanken.netex.model.StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure);
+        assertThat(stopPlaces).hasSize(2);
+    }
+
     private void validate(String xml) throws JAXBException, IOException, SAXException {
         JAXBContext publicationDeliveryContext = newInstance(PublicationDeliveryStructure.class);
         Unmarshaller unmarshaller = publicationDeliveryContext.createUnmarshaller();
 
-        NeTExValidator neTExValidator = new NeTExValidator();
+        NeTExValidator neTExValidator =  NeTExValidator.getNeTExValidator();
         unmarshaller.setSchema(neTExValidator.getSchema());
         unmarshaller.unmarshal(new StringReader(xml));
     }

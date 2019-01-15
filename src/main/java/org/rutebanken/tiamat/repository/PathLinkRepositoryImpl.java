@@ -16,12 +16,13 @@
 package org.rutebanken.tiamat.repository;
 
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.model.PathLink;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ import java.util.Set;
 
 public class PathLinkRepositoryImpl implements PathLinkRepositoryCustom {
 
-    @Autowired
+    @PersistenceContext
     private EntityManager entityManager;
 
     public Long findByKeyValue(String key, Set<String> values) {

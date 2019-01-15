@@ -52,12 +52,12 @@ class StopPlaceFetcher implements DataFetcher {
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceFetcher.class);
 
-    private static final Page<StopPlace> EMPTY_STOPS_RESULT = new PageImpl<>(new ArrayList<>());;
+    private static final Page<StopPlace> EMPTY_STOPS_RESULT = new PageImpl<>(new ArrayList<>());
 
     /**
-     * Wether to keep childs when resolving parent stop places. False, because with graphql it's possible to fetch children from parent.
+     * Whether to keep children when resolving parent stop places. False, because with graphql it's possible to fetch children from parent.
      */
-    private static final boolean KEEP_CHILDS = false;
+    private static final boolean KEEP_CHILDREN = false;
 
     @Autowired
     private StopPlaceRepository stopPlaceRepository;
@@ -89,6 +89,7 @@ class StopPlaceFetcher implements DataFetcher {
         setIfNonNull(environment, WITHOUT_QUAYS_ONLY, stopPlaceSearchBuilder::setWithoutQuaysOnly);
         setIfNonNull(environment, WITH_DUPLICATED_QUAY_IMPORTED_IDS, stopPlaceSearchBuilder::setWithDuplicatedQuayImportedIds);
         setIfNonNull(environment, WITH_NEARBY_SIMILAR_DUPLICATES, stopPlaceSearchBuilder::setWithNearbySimilarDuplicates);
+        setIfNonNull(environment, HAS_PARKING, stopPlaceSearchBuilder::setHasParking);
         setIfNonNull(environment, WITH_TAGS, stopPlaceSearchBuilder::setWithTags);
 
         Instant pointInTime ;
@@ -96,6 +97,11 @@ class StopPlaceFetcher implements DataFetcher {
             pointInTime = environment.getArgument(POINT_IN_TIME);
         } else {
             pointInTime = null;
+        }
+
+        if(environment.getArgument(VERSION_VALIDITY_ARG) != null) {
+            ExportParams.VersionValidity versionValidity = ExportParams.VersionValidity.valueOf(ExportParams.VersionValidity.class, environment.getArgument(VERSION_VALIDITY_ARG));
+            stopPlaceSearchBuilder.setVersionValidity(versionValidity);
         }
 
         if (netexId != null && !netexId.isEmpty()) {
@@ -169,6 +175,11 @@ class StopPlaceFetcher implements DataFetcher {
                     );
                 }
 
+                if (environment.getArgument(SEARCH_WITH_CODE_SPACE) != null) {
+                    String code = environment.getArgument(SEARCH_WITH_CODE_SPACE);
+                    exportParamsBuilder.setCodeSpace(code.toLowerCase());
+                }
+
                 setIfNonNull(environment, TAGS, stopPlaceSearchBuilder::setTags);
 
                 stopPlaceSearchBuilder.setQuery(environment.getArgument(QUERY));
@@ -196,7 +207,6 @@ class StopPlaceFetcher implements DataFetcher {
                 if (environment.getArgument(INCLUDE_EXPIRED)) {
                     pointInTime = null;
                 }
-
                 stopPlacesPage = stopPlaceRepository.findStopPlacesWithin(boundingBox.xMin, boundingBox.yMin, boundingBox.xMax,
                         boundingBox.yMax, ignoreStopPlaceId, pointInTime, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)));
             } else {
@@ -205,7 +215,7 @@ class StopPlaceFetcher implements DataFetcher {
         }
 
 
-        List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(stopPlacesPage.getContent(), KEEP_CHILDS);
+        List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(stopPlacesPage.getContent(), KEEP_CHILDREN);
         return new PageImpl<>(parentsResolved, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), parentsResolved.size());
     }
 

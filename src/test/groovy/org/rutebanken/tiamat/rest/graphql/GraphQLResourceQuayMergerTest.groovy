@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.rest.graphql
 
-import com.vividsolutions.jts.geom.Coordinate
+import org.locationtech.jts.geom.Coordinate
 import org.junit.Test
 import org.rutebanken.tiamat.model.*
 
@@ -82,7 +82,6 @@ class GraphQLResourceQuayMergerTest extends AbstractGraphQLResourceIntegrationTe
                                 }
                             }
                         }
-                   }
                  }"""
 
 

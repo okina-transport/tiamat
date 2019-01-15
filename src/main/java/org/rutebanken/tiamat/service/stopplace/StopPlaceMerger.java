@@ -17,18 +17,19 @@ package org.rutebanken.tiamat.service.stopplace;
 
 import com.google.api.client.util.Preconditions;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
+import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.TariffZoneRef;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.service.ObjectMerger;
-import org.rutebanken.tiamat.service.MutateLock;
 import org.rutebanken.tiamat.service.merge.AlternativeNamesMerger;
 import org.rutebanken.tiamat.service.merge.KeyValuesMerger;
 import org.rutebanken.tiamat.service.merge.PlaceEquipmentMerger;
-import org.rutebanken.tiamat.versioning.CopiedEntity;
-import org.rutebanken.tiamat.versioning.StopPlaceVersionedSaverService;
 import org.rutebanken.tiamat.versioning.ValidityUpdater;
+import org.rutebanken.tiamat.versioning.VersionCreator;
+import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
+import org.rutebanken.tiamat.versioning.util.CopiedEntity;
 import org.rutebanken.tiamat.versioning.util.StopPlaceCopyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,7 @@ import java.util.Optional;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.MERGED_ID_KEY;
-import static org.rutebanken.tiamat.versioning.VersionedSaverService.MILLIS_BETWEEN_VERSIONS;
+import static org.rutebanken.tiamat.versioning.save.DefaultVersionedSaverService.MILLIS_BETWEEN_VERSIONS;
 
 @Service
 public class StopPlaceMerger {
@@ -51,7 +52,7 @@ public class StopPlaceMerger {
     /**
      * Properties to ignore on merge.
      */
-    public static final String[] IGNORE_PROPERTIES_ON_MERGE = {"keyValues", "placeEquipments", "accessibilityAssessment", "tariffZones", "alternativeNames"};
+    public static final String[] IGNORE_PROPERTIES_ON_MERGE = {"keyValues", "placeEquipments", "accessibilityAssessment", "tariffZones", "alternativeNames", "transportMode", "airSubmode", "busSubmode", "funicularSubmode", "metroSubmode", "tramSubmode", "telecabinSubmode", "railSubmode", "waterSubmode"};
 
     @Autowired
     private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
@@ -80,6 +81,10 @@ public class StopPlaceMerger {
     @Autowired
     private MutateLock mutateLock;
 
+    @Autowired
+    private VersionCreator versionCreator;
+
+
     public StopPlace mergeStopPlaces(String fromStopPlaceId, String toStopPlaceId, String fromVersionComment, String toVersionComment, boolean isDryRun) {
 
         return mutateLock.executeInLock(() -> {
@@ -92,7 +97,7 @@ public class StopPlaceMerger {
 
             authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(fromStopPlace, toStopPlace));
 
-            StopPlace fromStopPlaceToTerminate = stopPlaceVersionedSaverService.createCopy(fromStopPlace, StopPlace.class);
+            StopPlace fromStopPlaceToTerminate = versionCreator.createCopy(fromStopPlace, StopPlace.class);
 
             CopiedEntity<StopPlace> mergedStopPlaceCopy = stopPlaceCopyHelper.createCopies(toStopPlace);
 
@@ -174,7 +179,7 @@ public class StopPlaceMerger {
 
     private void transferQuays(StopPlace fromStopPlaceToTerminate, StopPlace mergedStopPlace) {
         fromStopPlaceToTerminate.getQuays().stream()
-                .forEach(quay -> mergedStopPlace.getQuays().add(stopPlaceVersionedSaverService.createCopy(quay, Quay.class)));
+                .forEach(quay -> mergedStopPlace.getQuays().add(versionCreator.createCopy(quay, Quay.class)));
     }
 
 }

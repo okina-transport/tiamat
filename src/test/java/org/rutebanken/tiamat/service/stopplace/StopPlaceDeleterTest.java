@@ -15,18 +15,15 @@
 
 package org.rutebanken.tiamat.service.stopplace;
 
-import com.hazelcast.core.HazelcastInstance;
 import org.junit.Test;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.EntityChangedListener;
 import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.service.MutateLock;
+import org.rutebanken.tiamat.lock.MutateLock;
 
 import java.util.Arrays;
-import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -54,7 +51,7 @@ public class StopPlaceDeleterTest {
     public void doNotDeleteParent() {
         StopPlace parent = new StopPlace();
         parent.setParentStopPlace(true);
-        parent.setNetexId(NetexIdHelper.generateRandomizedNetexId(parent));
+        parent.setNetexId("NSR:StopPlace:1");
 
         when(stopPlaceRepository.findAll(anyListOf(String.class))).thenReturn(Arrays.asList(parent));
 
@@ -64,7 +61,7 @@ public class StopPlaceDeleterTest {
     @Test
     public void deleteMonomodalStopPlace() {
         StopPlace monoModalStopPlace = new StopPlace();
-        monoModalStopPlace.setNetexId(NetexIdHelper.generateRandomizedNetexId(monoModalStopPlace));
+        monoModalStopPlace.setNetexId("NSR:StopPlace:");
 
         when(stopPlaceRepository.findAll(anyListOf(String.class))).thenReturn(Arrays.asList(monoModalStopPlace));
         when(usernameFetcher.getUserNameForAuthenticatedUser()).thenReturn("Rambo");
@@ -73,7 +70,7 @@ public class StopPlaceDeleterTest {
 
         assertThat(deleted).isTrue();
 
-        verify(stopPlaceRepository, times(1)).delete(anyList());
+        verify(stopPlaceRepository, times(1)).deleteAll(anyList());
     }
 
 }

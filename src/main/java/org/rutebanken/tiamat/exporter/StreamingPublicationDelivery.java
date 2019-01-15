@@ -17,16 +17,34 @@ package org.rutebanken.tiamat.exporter;
 
 import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
-import org.rutebanken.netex.model.*;
+import org.rutebanken.netex.model.GroupsOfStopPlacesInFrame_RelStructure;
+import org.rutebanken.netex.model.ObjectFactory;
+import org.rutebanken.netex.model.Parking;
+import org.rutebanken.netex.model.ParkingsInFrame_RelStructure;
+import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.netex.model.SiteFrame;
+import org.rutebanken.netex.model.StopPlace;
+import org.rutebanken.netex.model.StopPlacesInFrame_RelStructure;
+import org.rutebanken.netex.model.TariffZone;
+import org.rutebanken.netex.model.TariffZonesInFrame_RelStructure;
+import org.rutebanken.netex.model.TopographicPlacesInFrame_RelStructure;
 import org.rutebanken.netex.validation.NeTExValidator;
-import org.rutebanken.tiamat.exporter.async.*;
+import org.rutebanken.tiamat.exporter.async.NetexMappingIterator;
+import org.rutebanken.tiamat.exporter.async.NetexMappingIteratorList;
+import org.rutebanken.tiamat.exporter.async.NetexReferenceRemovingIterator;
+import org.rutebanken.tiamat.exporter.async.ParentStopFetchingIterator;
+import org.rutebanken.tiamat.exporter.async.ParentTreeTopographicPlaceFetchingIterator;
 import org.rutebanken.tiamat.exporter.eviction.EntitiesEvictor;
 import org.rutebanken.tiamat.exporter.eviction.SessionEntitiesEvictor;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
-import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.GroupOfStopPlaces;
+import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
-import org.rutebanken.tiamat.repository.*;
+import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
+import org.rutebanken.tiamat.repository.ParkingRepository;
+import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.repository.TariffZoneRepository;
+import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +54,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.xml.sax.SAXException;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -72,7 +91,7 @@ public class StreamingPublicationDelivery {
     private final TariffZoneRepository tariffZoneRepository;
     private final TopographicPlaceRepository topographicPlaceRepository;
     private final GroupOfStopPlacesRepository groupOfStopPlacesRepository;
-    private final NeTExValidator neTExValidator = new NeTExValidator();
+    private final NeTExValidator neTExValidator = NeTExValidator.getNeTExValidator();
 
     /**
      * Validate against netex schema using the {@link NeTExValidator}
@@ -80,7 +99,7 @@ public class StreamingPublicationDelivery {
      */
     private final boolean validateAgainstSchema;
 
-    @Autowired
+    @PersistenceContext
     private EntityManager entityManager;
 
     @Autowired
@@ -121,7 +140,7 @@ public class StreamingPublicationDelivery {
 
         EntitiesEvictor entitiesEvictor = instantiateEvictor();
 
-        logger.info("Async export initiated. Export params: {}", exportParams);
+        logger.info("Streaming export initiated. Export params: {}", exportParams);
 
         // We need to know these IDs before marshalling begins.
         // To avoid marshalling empty parking element and to be able to gather relevant topographic places
@@ -221,7 +240,7 @@ public class StreamingPublicationDelivery {
             ParentStopFetchingIterator parentStopFetchingIterator = new ParentStopFetchingIterator(stopPlaceIterator, stopPlaceRepository);
             NetexMappingIterator<org.rutebanken.tiamat.model.StopPlace, StopPlace> netexMappingIterator = new NetexMappingIterator<>(netexMapper, parentStopFetchingIterator, StopPlace.class, mappedStopPlaceCount, evicter);
 
-            List<StopPlace> stopPlaces = new NetexMappingIteratorList<>(() -> netexMappingIterator);
+            List<StopPlace> stopPlaces = new NetexMappingIteratorList<>(() -> new NetexReferenceRemovingIterator(netexMappingIterator, exportParams));
             setField(StopPlacesInFrame_RelStructure.class, "stopPlace", stopPlacesInFrame_relStructure, stopPlaces);
             netexSiteFrame.setStopPlaces(stopPlacesInFrame_relStructure);
         } else {

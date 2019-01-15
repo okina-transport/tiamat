@@ -65,7 +65,7 @@ public class ParentStopFetchingIterator implements Iterator<StopPlace> {
             String parentRefString = refString(stopPlace.getParentSiteRef());
             if (!parents.containsKey(parentRefString)) {
                 parent = stopPlaceRepository.findFirstByNetexIdAndVersion(stopPlace.getParentSiteRef().getRef(), Long.parseLong(stopPlace.getParentSiteRef().getVersion()));
-                logger.info("Fetched parent during iteration: {} - {}", parent.getNetexId(), parent.getVersion());
+                logger.debug("Fetched parent during iteration: {} - {}", parent.getNetexId(), parent.getVersion());
                 parents.put(parentRefString, parent.getName());
             }
             copyNameFromParentIfMissing(parentRefString, parents.get(parentRefString), stopPlace);
@@ -75,9 +75,13 @@ public class ParentStopFetchingIterator implements Iterator<StopPlace> {
         return stopPlace;
     }
 
+    public boolean hasNextParent() {
+        return parent != null;
+    }
+
     public void copyNameFromParentIfMissing(String parentRefString, EmbeddableMultilingualString parentName, StopPlace childStopPlace) {
         if (childStopPlace.getName() == null || Strings.isNullOrEmpty(childStopPlace.getName().getValue())) {
-            logger.info("Copying name: {} from parent {} to child stop: {}", parentName, parentRefString, childStopPlace.getNetexId());
+            logger.debug("Copying name: {} from parent {} to child stop: {}", parentName, parentRefString, childStopPlace.getNetexId());
             childStopPlace.setName(parentName);
         }
     }

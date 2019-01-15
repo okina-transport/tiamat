@@ -16,8 +16,8 @@
 package org.rutebanken.tiamat.repository;
 
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.SQLQuery;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
@@ -36,6 +36,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.util.*;
 
@@ -45,7 +46,7 @@ public class TariffZoneRepositoryImpl implements TariffZoneRepositoryCustom {
 
     private static final Logger logger = LoggerFactory.getLogger(TariffZoneRepositoryImpl.class);
 
-    @Autowired
+    @PersistenceContext
     private EntityManager entityManager;
 
     @Autowired

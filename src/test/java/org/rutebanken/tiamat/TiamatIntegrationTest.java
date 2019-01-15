@@ -16,16 +16,19 @@
 package org.rutebanken.tiamat;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.vividsolutions.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.GeneratedIdState;
 import org.rutebanken.tiamat.repository.*;
-import org.rutebanken.tiamat.versioning.GroupOfStopPlacesSaverService;
-import org.rutebanken.tiamat.versioning.ParkingVersionedSaverService;
-import org.rutebanken.tiamat.versioning.StopPlaceVersionedSaverService;
+import org.rutebanken.tiamat.service.TariffZonesLookupService;
+import org.rutebanken.tiamat.service.TopographicPlaceLookupService;
+import org.rutebanken.tiamat.versioning.save.GroupOfStopPlacesSaverService;
+import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
+import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
+import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,6 +97,18 @@ public abstract class TiamatIntegrationTest {
     @Autowired
     protected EntityManagerFactory entityManagerFactory;
 
+    @Autowired
+    private TopographicPlaceLookupService topographicPlaceLookupService;
+
+    @Autowired
+    private TariffZonesLookupService tariffZonesLookupService;
+
+    @Autowired
+    private TagRepository tagRepository;
+
+    @Autowired
+    protected VersionCreator versionCreator;
+
     @Value("${local.server.port}")
     protected int port;
 
@@ -124,14 +139,19 @@ public abstract class TiamatIntegrationTest {
 
         topographicPlaceRepository.deleteAll();
         topographicPlaceRepository.flush();
+        topographicPlaceLookupService.reset();
 
         parkingRepository.deleteAll();
         parkingRepository.flush();
 
         tariffZoneRepository.deleteAll();
         tariffZoneRepository.flush();
+        tariffZonesLookupService.reset();
 
         clearIdGeneration();
+
+        tagRepository.deleteAll();
+        tagRepository.flush();
     }
 
     /**

@@ -17,9 +17,9 @@ package org.rutebanken.tiamat.repository;
 
 
 import com.google.common.collect.Sets;
-import com.vividsolutions.jts.geom.Envelope;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.hibernate.*;
 import org.hibernate.engine.jdbc.internal.BasicFormatterImpl;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
@@ -41,10 +41,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
+import javax.persistence.*;
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -117,7 +115,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
      */
     protected static final String SQL_IGNORE_STOP_PLACE_ID = "(s.netex_id != :ignoreStopPlaceId AND (p.netex_id IS NULL OR p.netex_id != :ignoreStopPlaceId)) ";
 
-    @Autowired
+    @PersistenceContext
     private EntityManager entityManager;
 
     @Autowired
@@ -180,7 +178,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
             query.setParameter("pointInTime", Date.from(pointInTime));
         }
 
-        query.setFirstResult(pageable.getOffset());
+        query.setFirstResult(Math.toIntExact(pageable.getOffset()));
         query.setMaxResults(pageable.getPageSize());
         List<StopPlace> stopPlaces = query.getResultList();
         return new PageImpl<>(stopPlaces, pageable, stopPlaces.size());
@@ -475,6 +473,47 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         }
     }
 
+    @Override
+    public Map<String, Set<String>> listStopPlaceIdsAndQuayIds(Instant validFrom, Instant validTo) {
+        String sql = "SELECT DISTINCT s.netex_id as stop_place_id, q.netex_id as quay_id " +
+                "FROM stop_place s " +
+                "  INNER JOIN stop_place_quays spq " +
+                "    ON s.id = spq.stop_place_id " +
+                "  INNER JOIN quay q " +
+                "    ON spq.quays_id = q.id " +
+                SQL_LEFT_JOIN_PARENT_STOP +
+                " WHERE " +
+                SQL_STOP_PLACE_OR_PARENT_IS_VALID_IN_INTERVAL;
+
+        if (validTo == null) {
+            // Assuming 1000 years into the future is the same as forever
+            validTo = Instant.from(ZonedDateTime.now().plusYears(1000).toInstant());
+        }
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("validTo", Date.from(validTo));
+        query.setParameter("validFrom",  Date.from(validFrom));
+
+        try {
+            @SuppressWarnings("unchecked")
+            List<String[]> results = query.getResultList();
+            if (results.isEmpty()) {
+                return Collections.emptyMap();
+            } else {
+                HashMap<String, Set<String>> result = new HashMap<>();
+                for (Object[] strings : results) {
+                    String stopplaceId = (String) strings[0];
+                    String quayId = (String) strings[1];
+                    Set<String> quays = result.computeIfAbsent(stopplaceId, s -> new HashSet<>());
+                    quays.add(quayId);
+                }
+                return result;
+            }
+        } catch (NoResultException noResultException) {
+            return null;
+        }
+    }
+
 
     @Override
     public Iterator<StopPlace> scrollStopPlaces() {
@@ -557,7 +596,8 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         SQLQuery query = session.createSQLQuery("SELECT sub.id from (" + pair.getFirst() + ") sub");
 
         if(!ignorePaging) {
-            query.setFirstResult(exportParams.getStopPlaceSearch().getPageable().getOffset());
+            long firstResult = exportParams.getStopPlaceSearch().getPageable().getOffset();
+            query.setFirstResult(Math.toIntExact(firstResult));
             query.setMaxResults(exportParams.getStopPlaceSearch().getPageable().getPageSize());
         }
         searchHelper.addParams(query, pair.getSecond());
@@ -579,7 +619,8 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         final Query nativeQuery = entityManager.createNativeQuery(queryWithParams.getFirst(), StopPlace.class);
 
         queryWithParams.getSecond().forEach(nativeQuery::setParameter);
-        nativeQuery.setFirstResult(exportParams.getStopPlaceSearch().getPageable().getOffset());
+        long firstResult = exportParams.getStopPlaceSearch().getPageable().getOffset();
+        nativeQuery.setFirstResult(Math.toIntExact(firstResult));
         nativeQuery.setMaxResults(exportParams.getStopPlaceSearch().getPageable().getPageSize());
 
         List<StopPlace> stopPlaces = nativeQuery.getResultList();
@@ -610,10 +651,13 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
      */
     public Page<StopPlace> findStopPlacesWithEffectiveChangeInPeriod(ChangedStopPlaceSearch search) {
         final String queryString = "select sp.* " + STOP_PLACE_WITH_EFFECTIVE_CHANGE_QUERY_BASE + " order by sp.from_Date";
+
+        long firstResult = search.getPageable().getOffset();
+
         List<StopPlace> stopPlaces = entityManager.createNativeQuery(queryString, StopPlace.class)
                                              .setParameter("from", Date.from(search.getFrom()))
                                              .setParameter("to", Date.from(search.getTo()))
-                                             .setFirstResult(search.getPageable().getOffset())
+                                             .setFirstResult(Math.toIntExact(firstResult))
                                              .setMaxResults(search.getPageable().getPageSize())
                                              .getResultList();
 

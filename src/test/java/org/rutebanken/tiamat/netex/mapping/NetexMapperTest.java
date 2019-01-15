@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.netex.mapping;
 
-import com.vividsolutions.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Coordinate;
 import ma.glasnost.orika.MappingContext;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -35,6 +35,7 @@ import org.rutebanken.tiamat.model.NameTypeEnumeration;
 import org.rutebanken.tiamat.model.PathLink;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.SiteFrame;
+import org.rutebanken.tiamat.model.SiteRefStructure;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopPlacesInFrame_RelStructure;
 import org.rutebanken.tiamat.model.TopographicPlace;
@@ -560,5 +561,34 @@ public class NetexMapperTest extends TiamatIntegrationTest {
 
         assertThat(netexPathLink.getTo().getPlaceRef().getRef()).isEqualTo(pathLink.getTo().getPlaceRef().getRef());
         assertThat(netexPathLink.getTo().getPlaceRef().getVersion()).isEqualTo(pathLink.getTo().getPlaceRef().getVersion());
+    }
+
+    @Test
+    public void mapAdjacentSitesToNetex() throws Exception {
+
+        StopPlace stopPlace = new StopPlace();
+        stopPlace.getAdjacentSites().add(new SiteRefStructure("NSR:StopPlace:1"));
+
+        org.rutebanken.netex.model.StopPlace netexStopPlace = netexMapper.mapToNetexModel(stopPlace);
+
+        SiteRefs_RelStructure siteRefs_relStructure = netexStopPlace.getAdjacentSites();
+
+
+        assertThat(siteRefs_relStructure).isNotNull();
+
+        assertThat(siteRefs_relStructure.getSiteRef()).isNotEmpty();
+
+        org.rutebanken.netex.model.SiteRefStructure firstSiteRef = siteRefs_relStructure.
+                getSiteRef().
+                get(0)
+                .getValue();
+
+        assertThat(firstSiteRef)
+                .as("First site ref")
+                .isNotNull();
+
+        assertThat(
+                firstSiteRef.getRef())
+                .isEqualTo("NSR:StopPlace:1");
     }
 }

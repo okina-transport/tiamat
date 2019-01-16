@@ -60,8 +60,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- Docker & Fabric8 Configs -->
-        <docker.from>registry.okina.fr/na/java-base-image</docker.from>
-        <docker.image>registry.okina.fr/na/${project.artifactId}:${project.version}</docker.image>
+        <docker.from>registry.okina.fr/ref/java-base-image</docker.from>
+        <docker.image>registry.okina.fr/lro/${project.artifactId}:${project.version}</docker.image>
         <docker.cleanup>none</docker.cleanup>
         <!--<docker.port.container.jolokia>8778</docker.port.container.jolokia>-->
 
@@ -654,43 +654,13 @@
 
     <profiles>
         <profile>
-            <id>rutebanken</id>
-            <properties>
-                <fabric8.imagePullPolicySnapshot>Always</fabric8.imagePullPolicySnapshot>
-                <fabric8.recreate>true</fabric8.recreate>
-            </properties>
+            <id>docker-build-push</id>
             <build>
-                <!-- Missing fabric8:apply, as this crashed (probably due to missing fabric8) -->
-                <defaultGoal>clean install docker:build docker:push fabric8:json</defaultGoal>
+                <defaultGoal>clean install docker:build docker:push</defaultGoal>
             </build>
         </profile>
         <profile>
-            <id>f8-build</id>
-            <build>
-                <defaultGoal>clean install docker:build fabric8:json</defaultGoal>
-            </build>
-        </profile>
-        <profile>
-            <id>f8-deploy</id>
-            <properties>
-                <fabric8.imagePullPolicySnapshot>Always</fabric8.imagePullPolicySnapshot>
-                <fabric8.recreate>true</fabric8.recreate>
-            </properties>
-            <build>
-                <defaultGoal>clean install docker:build docker:push fabric8:json fabric8:apply</defaultGoal>
-            </build>
-        </profile>
-        <profile>
-            <id>f8-local-deploy</id>
-            <properties>
-                <fabric8.recreate>true</fabric8.recreate>
-            </properties>
-            <build>
-                <defaultGoal>clean install docker:build fabric8:json fabric8:apply</defaultGoal>
-            </build>
-        </profile>
-        <profile>
-            <id>local-docker</id>
+            <id>docker-build</id>
             <properties>
                 <fabric8.recreate>true</fabric8.recreate>
             </properties>

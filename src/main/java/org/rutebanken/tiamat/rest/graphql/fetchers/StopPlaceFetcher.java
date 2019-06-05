@@ -110,7 +110,7 @@ class StopPlaceFetcher implements DataFetcher {
                 List<StopPlace> stopPlace;
                 if (version != null && version > 0) {
                     stopPlace = Arrays.asList(stopPlaceRepository.findFirstByNetexIdAndVersion(netexId, version));
-                    stopPlacesPage = new PageImpl<>(stopPlace, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), 1L);
+                    stopPlacesPage = getStopPlaces(environment, stopPlace, 1L);
                 } else {
                     stopPlaceSearchBuilder.setNetexIdList(Arrays.asList(netexId));
                     stopPlacesPage = stopPlaceRepository.findStopPlace(exportParamsBuilder.setStopPlaceSearch(stopPlaceSearchBuilder.build()).build());
@@ -206,15 +206,28 @@ class StopPlaceFetcher implements DataFetcher {
                     pointInTime = null;
                 }
                 stopPlacesPage = stopPlaceRepository.findStopPlacesWithin(boundingBox.xMin, boundingBox.yMin, boundingBox.xMax,
-                        boundingBox.yMax, ignoreStopPlaceId, pointInTime, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)));
+                        boundingBox.yMax, ignoreStopPlaceId, pointInTime, PageRequest.of(environment.getArgument(PAGE), environment.getArgument(SIZE)));
             } else {
                 stopPlacesPage = stopPlaceRepository.findStopPlace(exportParamsBuilder.setStopPlaceSearch(stopPlaceSearchBuilder.build()).build());
             }
         }
 
+        final List<StopPlace> stopPlaces = stopPlacesPage.getContent();
+        boolean onlyMonomodalStopplaces= false;
+        if (environment.getArgument(ONLY_MONOMODAL_STOPPLACES) != null) {
+            onlyMonomodalStopplaces = environment.getArgument(ONLY_MONOMODAL_STOPPLACES);
+        }
+        //By default stop should resolve parent stops
+        if (onlyMonomodalStopplaces) {
+            return getStopPlaces(environment, stopPlaces, stopPlaces.size());
+        } else {
+            List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(stopPlaces, KEEP_CHILDREN);
+            return getStopPlaces(environment,parentsResolved,parentsResolved.size());
+        }
+    }
 
-        List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(stopPlacesPage.getContent(), KEEP_CHILDREN);
-        return new PageImpl<>(parentsResolved, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), parentsResolved.size());
+    private PageImpl<StopPlace> getStopPlaces(DataFetchingEnvironment environment, List<StopPlace> stopPlaces, long size) {
+        return new PageImpl<>(stopPlaces, PageRequest.of(environment.getArgument(PAGE), environment.getArgument(SIZE)), size);
     }
 
     private <T> T setIfNonNull(DataFetchingEnvironment environment, String argumentName, Consumer<T> consumer) {

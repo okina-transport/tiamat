@@ -654,7 +654,11 @@
 
     <profiles>
         <profile>
-            <id>docker-build-push</id>
+            <id>rutebanken</id>
+            <properties>
+                <fabric8.imagePullPolicySnapshot>Always</fabric8.imagePullPolicySnapshot>
+                <fabric8.recreate>true</fabric8.recreate>
+            </properties>
             <build>
                 <defaultGoal>clean install docker:build docker:push</defaultGoal>
             </build>

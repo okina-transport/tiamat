@@ -62,8 +62,8 @@
         <maven.compiler.source>1.8</maven.compiler.source>
 
         <!-- Docker & Fabric8 Configs -->
-        <docker.from>registry.okina.fr/na/java-base-image</docker.from>
-        <docker.image>registry.okina.fr/na/${project.artifactId}:${project.version}</docker.image>
+        <docker.from>registry.okina.fr/okina/java-base-image</docker.from>
+        <docker.image>registry.okina.fr/mosaic/${project.artifactId}:${project.version}</docker.image>
         <docker.cleanup>none</docker.cleanup>
         <!--<docker.port.container.jolokia>8778</docker.port.container.jolokia>-->
 

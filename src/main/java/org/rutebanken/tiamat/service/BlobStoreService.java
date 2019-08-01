@@ -37,7 +37,7 @@ public class BlobStoreService {
 
 
     public BlobStoreService(@Value("${blobstore.gcs.credential.path}") String credentialPath,
-                            @Value("${blobstore.gcs.bucket.name}") String bucketName,
+                            @Value("${blobstore.gcs.container.name}") String bucketName,
                             @Value("${blobstore.gcs.blob.path}") String blobPath,
                             @Value("${blobstore.gcs.project.id}") String projectId) {
 

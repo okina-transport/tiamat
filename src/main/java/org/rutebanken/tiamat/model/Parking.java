@@ -65,6 +65,10 @@ public class Parking
     protected Boolean overnightParkingPermitted;
     protected Boolean prohibitedForHazardousMaterials;
     protected Boolean rechargingAvailable;
+    protected BigInteger numberOfRechargingPlaces;
+    protected Boolean carpoolingAvailable;
+    protected Boolean carsharingAvailable;
+    protected BigInteger numberOfCarsharingPlaces;
     protected Boolean secure;
     protected Boolean realTimeOccupancyAvailable;
     protected ParkingReservationEnumeration parkingReservation;
@@ -187,6 +191,34 @@ public class Parking
     public void setRechargingAvailable(Boolean value) {
         this.rechargingAvailable = value;
     }
+
+    public BigInteger getNumberOfRechargingPlaces() {
+        return numberOfRechargingPlaces;
+    }
+
+    public void setNumberOfRechargingPlaces(BigInteger value) {
+        this.numberOfRechargingPlaces = value;
+    }
+
+    public Boolean isCarpoolingAvailable() {
+        return carpoolingAvailable;
+    }
+
+    public void setCarpoolingAvailable(Boolean value) {
+        this.carpoolingAvailable = value;
+    }
+
+    public Boolean isCarsharingAvailable() {
+        return carsharingAvailable;
+    }
+
+    public void setCarsharingAvailable(Boolean value) {
+        this.carsharingAvailable = value;
+    }
+
+    public BigInteger getNumberOfCarsharingPlaces() { return numberOfCarsharingPlaces; }
+
+    public void setNumberOfCarsharingPlaces(BigInteger value) { this.numberOfCarsharingPlaces = value; }
 
     public Boolean isSecure() {
         return secure;

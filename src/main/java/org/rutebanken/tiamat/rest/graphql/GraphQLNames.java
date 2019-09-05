@@ -369,6 +369,10 @@ public class GraphQLNames {
     public static final String PRINCIPAL_CAPACITY = "principalCapacity";
     public static final String OVERNIGHT_PARKING_PERMITTED = "overnightParkingPermitted";
     public static final String RECHARGING_AVAILABLE = "rechargingAvailable";
+    public static final String NUMBER_OF_RECHARGING_PLACES = "numberOfRechargingPlaces";
+    public static final String CARPOOLING_AVAILABLE = "carpoolingAvailable";
+    public static final String CARSHARING_AVAILABLE = "carsharingAvailable";
+    public static final String NUMBER_OF_CARSHARING_PLACES = "numberOfCarsharingPlaces";
     public static final String SECURE = "secure";
     public static final String REAL_TIME_OCCUPANCY_AVAILABLE = "realTimeOccupancyAvailable";
     public static final String PARKING_RESERVATION = "parkingReservation";

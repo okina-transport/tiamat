@@ -20,6 +20,7 @@ import com.google.api.client.util.Preconditions;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.rutebanken.tiamat.model.ModificationEnumeration;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
@@ -99,6 +100,10 @@ class StopPlaceUpdater implements DataFetcher {
                 logger.info("About to update StopPlace {}", netexId);
 
                 existingVersion = findAndVerify(netexId);
+
+                if (existingVersion.getModificationEnumeration() != null && existingVersion.getModificationEnumeration().equals(ModificationEnumeration.DELETE)) {
+                    throw new IllegalArgumentException("Attempting to update/reactivate terminated StopPlace: " + existingVersion);
+                }
 
                 if (mutateParent) {
                     Preconditions.checkArgument(existingVersion.isParentStopPlace(),

@@ -181,6 +181,18 @@ class ParkingUpdater implements DataFetcher {
             updatedParking.setRechargingAvailable(rechargingAvailable);
         }
 
+        if (input.get(CARPOOLING_AVAILABLE) != null) {
+            Boolean carpoolingAvailable = (Boolean) input.get(CARPOOLING_AVAILABLE);
+            isUpdated = isUpdated || (!carpoolingAvailable.equals(updatedParking.isCarpoolingAvailable()));
+            updatedParking.setCarpoolingAvailable(carpoolingAvailable);
+        }
+
+        if (input.get(CARSHARING_AVAILABLE) != null) {
+            Boolean carsharingAvailable = (Boolean) input.get(CARSHARING_AVAILABLE);
+            isUpdated = isUpdated || (!carsharingAvailable.equals(updatedParking.isCarsharingAvailable()));
+            updatedParking.setCarsharingAvailable(carsharingAvailable);
+        }
+
         if (input.get(SECURE) != null) {
             Boolean isSecure = (Boolean) input.get(SECURE);
             isUpdated = isUpdated || (!isSecure.equals(updatedParking.isSecure()));
@@ -278,6 +290,7 @@ class ParkingUpdater implements DataFetcher {
         capacity.setParkingStayType((ParkingStayEnumeration) input.get(PARKING_STAY_TYPE));
         capacity.setNumberOfSpaces((BigInteger) input.get(NUMBER_OF_SPACES));
         capacity.setNumberOfSpacesWithRechargePoint((BigInteger) input.get(NUMBER_OF_SPACES_WITH_RECHARGE_POINT));
+        capacity.setNumberOfCarsharingSpaces((BigInteger) input.get(NUMBER_OF_CARSHARING_SPACES));
         return capacity;
     }
 

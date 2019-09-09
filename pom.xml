@@ -20,7 +20,7 @@
 
     <groupId>org.rutebanken</groupId>
     <artifactId>tiamat</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Tiamat</name>
@@ -252,7 +252,7 @@
         </dependency>
 
         <dependency>
-            <groupId>org.entur</groupId>
+            <groupId>com.okina</groupId>
             <artifactId>netex-java-model</artifactId>
             <version>${netex-java-model.version}</version>
         </dependency>
@@ -637,6 +637,19 @@
                             </build>
                         </image>
                     </images>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>6.0.1</version>
+                <configuration>
+                    <url>jdbc:postgresql://localhost:5432/tiamat</url>
+                    <user>tiamat</user>
+                    <password>tiamat</password>
+                    <schemas>
+                        <schema>tiamat</schema>
+                    </schemas>
                 </configuration>
             </plugin>
         </plugins>

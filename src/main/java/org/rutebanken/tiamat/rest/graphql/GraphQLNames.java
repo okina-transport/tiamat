@@ -259,6 +259,8 @@ public class GraphQLNames {
 
     public static final String NUMBER_OF_SPACES_WITH_RECHARGE_POINT = "numberOfSpacesWithRechargePoint";
 
+    public static final String NUMBER_OF_CARSHARING_SPACES = "numberOfCarsharingSpaces";
+
     public static final String OUTPUT_TYPE_PRIVATE_CODE = "PrivateCode";
     public static final String PRIVATE_CODE = "privateCode";
     public static final String INPUT_TYPE_PRIVATE_CODE = OUTPUT_TYPE_PRIVATE_CODE + INPUT_TYPE_POSTFIX;
@@ -375,6 +377,8 @@ public class GraphQLNames {
     public static final String PRINCIPAL_CAPACITY = "principalCapacity";
     public static final String OVERNIGHT_PARKING_PERMITTED = "overnightParkingPermitted";
     public static final String RECHARGING_AVAILABLE = "rechargingAvailable";
+    public static final String CARPOOLING_AVAILABLE = "carpoolingAvailable";
+    public static final String CARSHARING_AVAILABLE = "carsharingAvailable";
     public static final String SECURE = "secure";
     public static final String REAL_TIME_OCCUPANCY_AVAILABLE = "realTimeOccupancyAvailable";
     public static final String PARKING_RESERVATION = "parkingReservation";

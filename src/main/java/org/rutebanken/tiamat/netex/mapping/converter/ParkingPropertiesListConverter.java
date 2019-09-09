@@ -54,6 +54,7 @@ public class ParkingPropertiesListConverter extends BidirectionalConverter<List<
                         parkingCapacity.withParkingUserType(netexParkingUserType);
                         parkingCapacity.withNumberOfSpaces(space.getNumberOfSpaces());
                         parkingCapacity.withNumberOfSpacesWithRechargePoint(space.getNumberOfSpacesWithRechargePoint());
+                        parkingCapacity.withNumberOfCarsharingSpaces(space.getNumberOfCarsharingSpaces());
                         parkingCapacity.setId(space.getNetexId());
                         parkingCapacity.setVersion(String.valueOf(space.getVersion()));
                         parkingCapacityList.add(parkingCapacity);

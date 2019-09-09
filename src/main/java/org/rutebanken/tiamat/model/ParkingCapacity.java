@@ -33,6 +33,7 @@ public class ParkingCapacity
     protected ParkingStayEnumeration parkingStayType;
     protected BigInteger numberOfSpaces;
     protected BigInteger numberOfSpacesWithRechargePoint;
+    protected BigInteger numberOfCarsharingSpaces;
 
     public SiteElementRefStructure getParentRef() {
         return parentRef;
@@ -80,6 +81,12 @@ public class ParkingCapacity
 
     public void setNumberOfSpacesWithRechargePoint(BigInteger numberOfSpacesWithRechargePoint) {
         this.numberOfSpacesWithRechargePoint = numberOfSpacesWithRechargePoint;
+    }
+
+    public BigInteger getNumberOfCarsharingSpaces() { return numberOfCarsharingSpaces; }
+
+    public void setNumberOfCarsharingSpaces(BigInteger numberOfCarsharingSpaces) {
+        this.numberOfCarsharingSpaces = numberOfCarsharingSpaces;
     }
 
 

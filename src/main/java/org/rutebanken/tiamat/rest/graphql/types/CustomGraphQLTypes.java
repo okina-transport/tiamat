@@ -680,6 +680,9 @@ public class CustomGraphQLTypes {
             .field(newFieldDefinition()
                     .name(NUMBER_OF_SPACES_WITH_RECHARGE_POINT)
                     .type(GraphQLBigInteger))
+            .field(newFieldDefinition()
+                    .name(NUMBER_OF_CARSHARING_SPACES)
+                    .type(GraphQLBigInteger))
             .build();
 
 
@@ -699,6 +702,9 @@ public class CustomGraphQLTypes {
                     .type(GraphQLBigInteger))
             .field(newInputObjectField()
                     .name(NUMBER_OF_SPACES_WITH_RECHARGE_POINT)
+                    .type(GraphQLBigInteger))
+            .field(newInputObjectField()
+                    .name(NUMBER_OF_CARSHARING_SPACES)
                     .type(GraphQLBigInteger))
             .build();
 
@@ -814,6 +820,12 @@ public class CustomGraphQLTypes {
                         .name(RECHARGING_AVAILABLE)
                         .type(GraphQLBoolean))
                 .field(newFieldDefinition()
+                        .name(CARPOOLING_AVAILABLE)
+                        .type(GraphQLBoolean))
+                .field(newFieldDefinition()
+                        .name(CARSHARING_AVAILABLE)
+                        .type(GraphQLBoolean))
+                .field(newFieldDefinition()
                         .name(SECURE)
                         .type(GraphQLBoolean))
                 .field(newFieldDefinition()
@@ -873,6 +885,12 @@ public class CustomGraphQLTypes {
                         .type(GraphQLBoolean))
                 .field(newInputObjectField()
                         .name(RECHARGING_AVAILABLE)
+                        .type(GraphQLBoolean))
+                .field(newInputObjectField()
+                        .name(CARPOOLING_AVAILABLE)
+                        .type(GraphQLBoolean))
+                .field(newInputObjectField()
+                        .name(CARSHARING_AVAILABLE)
                         .type(GraphQLBoolean))
                 .field(newInputObjectField()
                         .name(SECURE)

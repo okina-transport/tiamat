@@ -128,7 +128,7 @@ public class NetexIdMapper {
                         continue;
                     }
 
-                    boolean ignoreEmptyPostfix = (key.equals(ORIGINAL_ID_KEY) | key.equals(MERGED_ID_KEY) | key.equals(ORIGINAL_NAME_KEY) || key.equals(ORIGINAL_STOPCODE_KEY));
+                    boolean ignoreEmptyPostfix = (key.equals(ORIGINAL_ID_KEY) | key.equals(MERGED_ID_KEY) | key.equals(ORIGINAL_NAME_KEY) | key.equals(ORIGINAL_STOPCODE_KEY));
 
                     if (value.contains(",")) {
                         String[] originalIds = value.split(",");

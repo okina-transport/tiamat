@@ -197,6 +197,9 @@ public class MergingStopPlaceImporter {
             copy.setName(incomingStopPlace.getName());
             nameChanged = true;
         }
+        else if(!incomingStopPlace.getName().equals(existingStopPlace.getName()) && !stopPlaceAlone){
+            nameChanged = copy.getOriginalNames().add(incomingStopPlace.getName().getValue());
+        }
 
         if (quayChanged || keyValuesChanged || centroidChanged || typeChanged || alternativeNameChanged || nameChanged) {
             logger.info("Updating existing stop place. quays changed {}, key values changed: {}, centroid changed: {}, type changed:{} - {}, alternative names changed: {}, nameChanged: {}",

@@ -141,7 +141,7 @@ public class QuayMerger {
             }
 
             if (matchingQuay.isPresent()) {
-                updateIfChanged(matchingQuay.get(), incomingQuay, updatedQuaysCounter, stopPlaceAlone);
+                updateIfChanged(matchingQuay.get(), incomingQuay, updatedQuaysCounter, stopPlaceAlone, newStopPlace);
             } else if (addNewQuays) {
                 logger.info("Found no match for existing quay {}. Adding it!", incomingQuay);
                 result.add(incomingQuay);
@@ -177,12 +177,12 @@ public class QuayMerger {
         return Optional.empty();
     }
 
-    private void updateIfChanged(Quay alreadyAdded, Quay incomingQuay, AtomicInteger updatedQuaysCounter, boolean stopPlaceAlone) {
+    private void updateIfChanged(Quay alreadyAdded, Quay incomingQuay, AtomicInteger updatedQuaysCounter, boolean stopPlaceAlone, StopPlace newStopPlace) {
         // The incoming quay could for some reason already have multiple imported IDs.
         boolean quayAlone = checkNumberProducers(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
         boolean multipleIds = checkNumberId(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
         boolean idUpdated = alreadyAdded.getOriginalIds().addAll(incomingQuay.getOriginalIds());
-        boolean nameUpdated = alreadyAdded.getOriginalNames().addAll(incomingQuay.getOriginalNames());
+        boolean nameUpdated = updateName(alreadyAdded, incomingQuay, newStopPlace);
         boolean changedByMerge = mergeFields(incomingQuay, alreadyAdded);
         boolean centroidUpdated = updateCentroid(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone, multipleIds);
         boolean stopCodeUpdated = updateCodes(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone);
@@ -195,25 +195,36 @@ public class QuayMerger {
         }
     }
 
+    private boolean updateName(Quay alreadyAdded, Quay incomingQuay, StopPlace newStopPlace) {
+        if(incomingQuay.getOriginalNames() != null && !incomingQuay.getOriginalNames().isEmpty()){
+            return alreadyAdded.getOriginalNames().addAll(incomingQuay.getOriginalNames());
+        }
+        else if(incomingQuay.getName().getValue() != null){
+            return alreadyAdded.getOriginalNames().add(incomingQuay.getName().getValue());
+        }
+        else{
+            return alreadyAdded.getOriginalNames().add(newStopPlace.getName().getValue());
+        }
+    }
+
     private boolean updateCodes(Quay alreadyAdded, Quay incomingQuay, boolean stopPlaceAlone, boolean quayAlone) {
-        boolean codesUpdated = false;
         if (!alreadyAdded.getOriginalStopCodes().contains(incomingQuay.getPublicCode())) {
-            codesUpdated = alreadyAdded.getOriginalStopCodes().add(alreadyAdded.getPublicCode());
+            return alreadyAdded.getOriginalStopCodes().add(alreadyAdded.getPublicCode());
         }
 
         if (incomingQuay.getPublicCode() != null && !incomingQuay.getPublicCode().equals(alreadyAdded.getPublicCode())) {
-            codesUpdated = alreadyAdded.getOriginalStopCodes().add(incomingQuay.getPublicCode());
             if (stopPlaceAlone && quayAlone) {
                 alreadyAdded.setPublicCode(incomingQuay.getPublicCode());
             }
+            return alreadyAdded.getOriginalStopCodes().add(incomingQuay.getPublicCode());
         }
 
         if (incomingQuay.getPrivateCode() != null && !incomingQuay.getPrivateCode().equals(alreadyAdded.getPrivateCode()) && stopPlaceAlone && quayAlone) {
             alreadyAdded.setPrivateCode(incomingQuay.getPrivateCode());
-            codesUpdated = true;
+            return true;
         }
 
-        return codesUpdated;
+        return false;
     }
 
     private boolean updateCentroid(Quay alreadyAdded, Quay incomingQuay, boolean stopPlaceAlone, boolean quayAlone, boolean multipleIds) {

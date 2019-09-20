@@ -312,6 +312,8 @@ public class GraphQLNames {
     public static final String WITH_NEARBY_SIMILAR_DUPLICATES = "withNearbySimilarDuplicates";
     public static final String WITH_NEARBY_SIMILAR_DUPLICATES_ARG_DESCRIPTION = "withNearbySimilarDuplicates";
 
+    public static final String HAS_PARKING = "hasParking";
+
     public static final String LONGITUDE_MIN = "lonMin";
     public static final String LATITUDE_MIN = "latMin";
     public static final String LONGITUDE_MAX = "lonMax";

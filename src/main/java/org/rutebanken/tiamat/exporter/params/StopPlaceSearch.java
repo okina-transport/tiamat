@@ -92,6 +92,10 @@ public class StopPlaceSearch implements SearchObject {
     @ApiParam(value = WITH_NEARBY_SIMILAR_DUPLICATES_ARG_DESCRIPTION)
     private boolean withNearbySimilarDuplicates;
 
+    @QueryParam(value = "hasParking")
+    @ApiParam(value = HAS_PARKING)
+    private boolean hasParking;
+
     @QueryParam(value = "version")
     @ApiParam(value = GraphQLNames.VERSION_ARG_DESCRIPTION)
     private Long version;
@@ -118,6 +122,7 @@ public class StopPlaceSearch implements SearchObject {
                             boolean withoutQuaysOnly,
                             boolean withDuplicatedQuayImportedIds,
                             boolean withNearbySimilarDuplicates,
+                            boolean hasParking,
                             Instant pointInTime,
                             Long version,
                             ExportParams.VersionValidity versionValidity,
@@ -133,6 +138,7 @@ public class StopPlaceSearch implements SearchObject {
         this.withoutQuaysOnly = withoutQuaysOnly;
         this.withDuplicatedQuayImportedIds = withDuplicatedQuayImportedIds;
         this.withNearbySimilarDuplicates = withNearbySimilarDuplicates;
+        this.hasParking = hasParking;
         this.pointInTime = pointInTime;
         this.version = version;
         this.versionValidity = versionValidity;
@@ -185,6 +191,10 @@ public class StopPlaceSearch implements SearchObject {
 
     public boolean isWithNearbySimilarDuplicates() {
         return withNearbySimilarDuplicates;
+    }
+
+    public boolean isHasParking() {
+        return hasParking;
     }
 
     public boolean isWithTags() {
@@ -240,6 +250,7 @@ public class StopPlaceSearch implements SearchObject {
         private boolean withoutQuaysOnly;
         private boolean withDuplicatedQuayImportedIds;
         private boolean withNearbySimilarDuplicates;
+        private boolean hasParking;
         private boolean withTags;
         private Long version;
         private Instant pointInTime;
@@ -304,6 +315,10 @@ public class StopPlaceSearch implements SearchObject {
             this.withNearbySimilarDuplicates = withNearbySimilarDuplicates;
         }
 
+        public void setHasParking(boolean hasParking) {
+            this.hasParking = hasParking;
+        }
+
         public Builder setVersion(Long version) {
             this.version = version;
             return this;
@@ -338,6 +353,7 @@ public class StopPlaceSearch implements SearchObject {
                     withoutQuaysOnly,
                     withDuplicatedQuayImportedIds,
                     withNearbySimilarDuplicates,
+                    hasParking,
                     pointInTime,
                     version,
                     versionValidity,

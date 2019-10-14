@@ -87,6 +87,10 @@ public class StopPlace
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<TariffZoneRef> tariffZones = new HashSet<>();
 
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "provider_id", nullable = false)
+    private Provider provider;
+
     public StopPlace(EmbeddableMultilingualString name) {
         super(name);
     }

@@ -198,6 +198,7 @@
             <version>${flyway-core.version}</version>
         </dependency>
 
+
         <!-- https://mvnrepository.com/artifact/com.vividsolutions/jts -->
         <dependency>
             <groupId>com.vividsolutions</groupId>
@@ -593,7 +594,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>io.fabric8</groupId>
                 <artifactId>fabric8-maven-plugin</artifactId>
@@ -615,7 +615,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
@@ -643,8 +642,14 @@
                     </images>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>${flyway-core.version}</version>
+            </plugin>
 
-<!--            <plugin>-->
+
+            <!--            <plugin>-->
 <!--                <groupId>org.owasp</groupId>-->
 <!--                <artifactId>dependency-check-maven</artifactId>-->
 <!--                <version>3.2.1</version>-->

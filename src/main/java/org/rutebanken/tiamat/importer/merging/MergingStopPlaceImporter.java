@@ -16,19 +16,18 @@
 package org.rutebanken.tiamat.importer.merging;
 
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
+import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.NearbyStopsWithSameTypeFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceFromOriginalIdFinder;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
-import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.rutebanken.tiamat.versioning.VersionCreator;
+import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +36,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -193,7 +195,7 @@ public class MergingStopPlaceImporter {
         }
 
         boolean nameChanged = false;
-        if(!incomingStopPlace.getName().equals(existingStopPlace.getName()) && stopPlaceAlone){
+        if(incomingStopPlace.getName() != null && !incomingStopPlace.getName().equals(existingStopPlace.getName()) && stopPlaceAlone){
             copy.setName(incomingStopPlace.getName());
             nameChanged = true;
         }

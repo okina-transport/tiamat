@@ -17,6 +17,15 @@ public class Provider {
     @Column(name = "name", nullable = false)
     String name;
 
+    public Provider() {
+        // Default constructor for Hibernate, do not suppress
+    }
+
+    public Provider(Long id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
     public Long getId() {
         return id;
     }

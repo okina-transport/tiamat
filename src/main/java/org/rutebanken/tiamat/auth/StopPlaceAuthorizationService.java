@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -71,13 +72,14 @@ public class StopPlaceAuthorizationService {
      */
     public void assertAuthorizedToEdit(StopPlace existingVersion, StopPlace newVersion, Set<String> childStopsUpdated) {
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (newVersion.isParentStopPlace() && existingVersion != null) {
             // Only child stops that the user has access to should be provided with the new version
             // If the stop place already contains children the user does not have access to, the user does not have access to terminate the stop place.
 
             boolean accessToAllChildren =
                     authorizationService.isAuthorized(ROLE_EDIT_STOPS, existingVersion.getChildren()) ||
-                            SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream().anyMatch(
+                            authentication.getAuthorities().stream().anyMatch(
                                     authority -> (KC_ROLE_PREFIX + ROLE_EDIT_STOPS).equals(authority.getAuthority()));
             if (!accessToAllChildren) {
                 // This user does not have access to all children.
@@ -105,9 +107,9 @@ public class StopPlaceAuthorizationService {
                         existingChildrenIds, newVersion.getNetexId(), mustBeAuthorizedToEditTheseChildren);
             }
         } else {
-            if (SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream().noneMatch(
+            if (authentication == null || authentication.getAuthorities().stream().noneMatch(
                     authority -> (KC_ROLE_PREFIX + ROLE_EDIT_STOPS).equals(authority.getAuthority()))) {
-                authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(newVersion));
+                authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Collections.singletonList(newVersion));
             }
         }
     }

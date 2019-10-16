@@ -26,12 +26,21 @@ import org.rutebanken.tiamat.auth.check.TiamatOriganisationChecker;
 import org.rutebanken.tiamat.auth.check.TopographicPlaceChecker;
 import org.rutebanken.tiamat.config.AuthorizationServiceConfig;
 import org.rutebanken.tiamat.diff.TiamatObjectDiffer;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.BusSubmodeEnumeration;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.Provider;
+import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.StopTypeEnumeration;
+import org.rutebanken.tiamat.model.ValidBetween;
 import org.rutebanken.tiamat.service.stopplace.MultiModalStopPlaceEditor;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.security.Principal;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -103,6 +112,8 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
     @Autowired
     private TiamatObjectDiffer tiamatObjectDiffer;
 
+    private Provider provider;
+
     /**
      * Set up stopPlaceAuthorizationService with custom roleAssignmentExtractor.
      * Borrowing the config class to get field mappings.
@@ -120,6 +131,11 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
 
 
         stopPlaceAuthorizationService = new StopPlaceAuthorizationService(reflectionAuthorizationService, tiamatObjectDiffer);
+
+        provider = providerRepository.save(new Provider(1L, "Provider name"));
+
+        Authentication auth = new TestingAuthenticationToken((Principal) () -> "test", null);
+        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 
     @Test
@@ -366,12 +382,14 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
     private StopPlace createOnstreetBus() {
         StopPlace onstreetBus = new StopPlace(new EmbeddableMultilingualString("onstreetBus"));
         onstreetBus.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        onstreetBus.setProvider(provider);
         return onstreetBus;
     }
 
     private StopPlace createRailStation() {
         StopPlace railStation = new StopPlace(new EmbeddableMultilingualString("railStation"));
         railStation.setStopPlaceType(StopTypeEnumeration.RAIL_STATION);
+        railStation.setProvider(provider);
         return railStation;
     }
 
@@ -379,6 +397,7 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
         StopPlace railReplacementBus = new StopPlace(new EmbeddableMultilingualString("railReplacementBus"));
         railReplacementBus.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
         railReplacementBus.setBusSubmode(BusSubmodeEnumeration.RAIL_REPLACEMENT_BUS);
+        railReplacementBus.setProvider(provider);
         return railReplacementBus;
     }
 }

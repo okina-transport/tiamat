@@ -87,7 +87,7 @@ public class StopPlace
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<TariffZoneRef> tariffZones = new HashSet<>();
 
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "provider_id", nullable = false)
     private Provider provider;
 
@@ -279,6 +279,13 @@ public class StopPlace
         this.parentStopPlace = parentStopPlace;
     }
 
+    public Provider getProvider() {
+        return provider;
+    }
+
+    public void setProvider(Provider provider) {
+        this.provider = provider;
+    }
     @Override
     public boolean equals(Object object) {
         if (this == object) {
@@ -322,4 +329,6 @@ public class StopPlace
                 .add("children", children == null ? 0 : children.size())
                 .toString();
     }
+
+
 }

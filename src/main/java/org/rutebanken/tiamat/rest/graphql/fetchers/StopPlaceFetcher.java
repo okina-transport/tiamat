@@ -17,6 +17,8 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.rutebanken.helper.organisation.RoleAssignment;
+import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.dtoassembling.dto.BoundingBoxDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
@@ -37,13 +39,45 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.rutebanken.tiamat.exporter.params.ExportParams.newExportParamsBuilder;
 import static org.rutebanken.tiamat.exporter.params.StopPlaceSearch.newStopPlaceSearchBuilder;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.ALL_VERSIONS;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.COUNTY_REF;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.HAS_PARKING;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.ID;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.IGNORE_STOPPLACE_ID;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.IMPORTED_ID_QUERY;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.INCLUDE_EXPIRED;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.KEY;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.LATITUDE_MAX;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.LATITUDE_MIN;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.LONGITUDE_MAX;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.LONGITUDE_MIN;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.MUNICIPALITY_REF;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.PAGE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.POINT_IN_TIME;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.QUERY;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.SEARCH_WITH_CODE_SPACE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.SIZE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.STOP_PLACE_TYPE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.TAGS;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.VALUES;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.VERSION;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.VERSION_VALIDITY_ARG;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.WITHOUT_LOCATION_ONLY;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.WITHOUT_QUAYS_ONLY;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.WITH_DUPLICATED_QUAY_IMPORTED_IDS;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.WITH_NEARBY_SIMILAR_DUPLICATES;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.WITH_TAGS;
 
 @Service("stopPlaceFetcher")
 @Transactional
@@ -65,13 +99,18 @@ class StopPlaceFetcher implements DataFetcher {
     @Autowired
     private ParentStopPlacesFetcher parentStopPlacesFetcher;
 
+    @Autowired
+    private RoleAssignmentExtractor roleAssignmentExtractor;
+
     @Override
     @Transactional
     public Object get(DataFetchingEnvironment environment) {
         ExportParams.Builder exportParamsBuilder = newExportParamsBuilder();
         StopPlaceSearch.Builder stopPlaceSearchBuilder = newStopPlaceSearchBuilder();
+        List<String> userOrgs = roleAssignmentExtractor.getRoleAssignmentsForUser().stream().map(RoleAssignment::getOrganisation).collect(Collectors.toList());
 
         logger.info("Searching for StopPlaces with arguments {}", environment.getArguments());
+        logger.info("User organisations : {}", userOrgs);
 
         Page<StopPlace> stopPlacesPage = new PageImpl<>(new ArrayList<>());
 
@@ -99,7 +138,7 @@ class StopPlaceFetcher implements DataFetcher {
             pointInTime = null;
         }
 
-        if(environment.getArgument(VERSION_VALIDITY_ARG) != null) {
+        if (environment.getArgument(VERSION_VALIDITY_ARG) != null) {
             ExportParams.VersionValidity versionValidity = ExportParams.VersionValidity.valueOf(ExportParams.VersionValidity.class, environment.getArgument(VERSION_VALIDITY_ARG));
             stopPlaceSearchBuilder.setVersionValidity(versionValidity);
         }
@@ -212,13 +251,18 @@ class StopPlaceFetcher implements DataFetcher {
             }
         }
 
+        // Remove SP not belonging to user orgs
+        if (!stopPlacesPage.getContent().isEmpty()) {
+            List<StopPlace> userOrgFilteredStopPlaces = stopPlacesPage.getContent().stream().filter(stopPlace -> userOrgs.contains(stopPlace.getProvider().getName())).collect(Collectors.toList());
+            stopPlacesPage = new PageImpl<>(userOrgFilteredStopPlaces, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), 1L);
+        }
 
         List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(stopPlacesPage.getContent(), KEEP_CHILDS);
         return new PageImpl<>(parentsResolved, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), parentsResolved.size());
     }
 
     private <T> T setIfNonNull(DataFetchingEnvironment environment, String argumentName, Consumer<T> consumer) {
-        if(environment.getArgument(argumentName) != null) {
+        if (environment.getArgument(argumentName) != null) {
             T value = environment.getArgument(argumentName);
             consumer.accept(value);
             return value;

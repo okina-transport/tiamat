@@ -20,8 +20,10 @@ import com.google.api.client.util.Preconditions;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.repository.ProviderRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.rest.graphql.helpers.CleanupHelper;
 import org.rutebanken.tiamat.rest.graphql.mappers.StopPlaceMapper;
@@ -34,9 +36,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CHILDREN;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CREATE_MULTI_MODAL_STOPPLACE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.ID;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.MUTATE_PARENT_STOPPLACE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.MUTATE_STOPPLACE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.OUTPUT_TYPE_PARENT_STOPPLACE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.OUTPUT_TYPE_STOPPLACE;
 
 @Service("stopPlaceUpdater")
 @Transactional
@@ -61,6 +73,12 @@ class StopPlaceUpdater implements DataFetcher {
 
     @Autowired
     private VersionCreator versionCreator;
+
+    @Autowired
+    private RoleAssignmentExtractor roleAssignmentExtractor;
+
+    @Autowired
+    private ProviderRepository providerRepository;
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
@@ -120,6 +138,11 @@ class StopPlaceUpdater implements DataFetcher {
                 logger.info("Creating new StopPlace");
                 updatedStopPlace = new StopPlace();
             }
+
+            // Assign provider to stop place.
+            // TODO : allow provider selection in UI, for now taking first in line in user credentials.
+            roleAssignmentExtractor.getRoleAssignmentsForUser().stream().findFirst().flatMap(roleAssignment -> providerRepository.findByName(roleAssignment.getOrganisation()).stream().findFirst()).ifPresent(updatedStopPlace::setProvider);
+
 
             if (updatedStopPlace != null) {
                 boolean hasValuesChanged = stopPlaceMapper.populateStopPlaceFromInput(input, updatedStopPlace);

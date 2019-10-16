@@ -20,6 +20,7 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.GeneratedIdState;
 import org.rutebanken.tiamat.repository.*;
@@ -108,6 +109,9 @@ public abstract class TiamatIntegrationTest {
 
     @Autowired
     protected VersionCreator versionCreator;
+
+    @Autowired
+    protected RoleAssignmentExtractor roleAssignmentExtractor;
 
     @Value("${local.server.port}")
     protected int port;

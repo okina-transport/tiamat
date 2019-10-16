@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.service.stopplace;
 import org.hibernate.Session;
 import org.junit.Before;
 import org.junit.Test;
+import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 
@@ -39,6 +40,7 @@ public class ParentStopPlacesFetcherTest {
 
     private EntityManager entityManager = mock(EntityManager.class);
     private ParentStopPlacesFetcher parentStopPlacesFetcher = new ParentStopPlacesFetcher(stopPlaceRepository, entityManager);
+    private RoleAssignmentExtractor roleAssignmentExtractor = mock(RoleAssignmentExtractor.class);
 
     @Before
     public void before() {

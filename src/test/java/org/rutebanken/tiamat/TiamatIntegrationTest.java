@@ -23,13 +23,22 @@ import org.junit.runner.RunWith;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.GeneratedIdState;
-import org.rutebanken.tiamat.repository.*;
+import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
+import org.rutebanken.tiamat.repository.ParkingRepository;
+import org.rutebanken.tiamat.repository.PathJunctionRepository;
+import org.rutebanken.tiamat.repository.PathLinkRepository;
+import org.rutebanken.tiamat.repository.ProviderRepository;
+import org.rutebanken.tiamat.repository.QuayRepository;
+import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.repository.TagRepository;
+import org.rutebanken.tiamat.repository.TariffZoneRepository;
+import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
 import org.rutebanken.tiamat.service.TariffZonesLookupService;
 import org.rutebanken.tiamat.service.TopographicPlaceLookupService;
+import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.GroupOfStopPlacesSaverService;
 import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
-import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,6 +121,9 @@ public abstract class TiamatIntegrationTest {
 
     @Autowired
     protected RoleAssignmentExtractor roleAssignmentExtractor;
+
+    @Autowired
+    protected ProviderRepository providerRepository;
 
     @Value("${local.server.port}")
     protected int port;

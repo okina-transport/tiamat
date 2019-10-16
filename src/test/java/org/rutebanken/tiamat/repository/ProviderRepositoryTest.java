@@ -15,12 +15,10 @@ public class ProviderRepositoryTest extends TiamatIntegrationTest {
 
     @Test
     public void findByName() {
-        Provider provider = new Provider();
-        provider.setId(1L);
-        provider.setName("yolo");
+        Provider provider = new Provider(1L, "Provider name");
         providerRepository.save(provider);
 
-        List<Provider> foundProvider = providerRepository.findByName("yolo");
+        List<Provider> foundProvider = providerRepository.findByName(provider.getName());
 
         Assertions.assertThat(foundProvider.get(0)).isEqualToComparingFieldByField(provider);
     }

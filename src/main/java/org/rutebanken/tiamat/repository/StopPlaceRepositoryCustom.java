@@ -19,6 +19,7 @@ import com.vividsolutions.jts.geom.Envelope;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
+import org.rutebanken.tiamat.model.Provider;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -66,7 +67,7 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     Set<String> getNetexIds(ExportParams exportParams);
 
-    Set<Long> getDatabaseIds(ExportParams exportParams, boolean ignorePaging);
+    Set<Long> getDatabaseIds(ExportParams exportParams, boolean ignorePaging, Provider provider);
 
     Page<StopPlace> findStopPlace(ExportParams exportParams);
 

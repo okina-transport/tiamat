@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.List;
 
 import static javax.xml.bind.JAXBContext.newInstance;
@@ -111,7 +112,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
                 .build();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
-        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, true);
+        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, true, null);
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.fromString(byteArrayOutputStream.toString());
         List<org.rutebanken.netex.model.StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure);
@@ -146,7 +147,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
                 .setTariffZoneExportMode(ExportParams.ExportMode.RELEVANT)
                 .build();
 
-        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream);
+        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, null);
 
         String xml = byteArrayOutputStream.toString();
 
@@ -199,7 +200,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
                 .setGroupOfStopPlacesExportMode(ExportParams.ExportMode.NONE)
                 .build();
 
-        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream);
+        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, null);
 
         String xml = byteArrayOutputStream.toString();
         System.out.println(xml);
@@ -274,7 +275,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
                 .setGroupOfStopPlacesExportMode(ExportParams.ExportMode.RELEVANT)
                 .build();
 
-        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream);
+        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, null);
 
         String xml = byteArrayOutputStream.toString();
 
@@ -376,7 +377,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
                 .setTariffZoneExportMode(ExportParams.ExportMode.NONE)
                 .build();
 
-        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream);
+        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, null);
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryUnmarshaller.unmarshal(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
 
@@ -391,6 +392,60 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         NeTExValidator neTExValidator = new NeTExValidator();
         unmarshaller.setSchema(neTExValidator.getSchema());
         unmarshaller.unmarshal(new StringReader(xml));
+    }
+
+
+    /**
+     * Export more than default page size to check that default paging is overriden
+     * @throws InterruptedException
+     * @throws IOException
+     * @throws XMLStreamException
+     * @throws SAXException
+     * @throws JAXBException
+     */
+    @Test
+    public void exportIDFM() throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
+
+        final int numberOfStopPlaces = StopPlaceSearch.DEFAULT_PAGE_SIZE + 1;
+        for(int i = 0; i < numberOfStopPlaces; i++) {
+            StopPlace stopPlace1 = new StopPlace(new EmbeddableMultilingualString("stop place number " + i));
+            Quay quay1 = new Quay();
+
+            StopPlace stopPlace2 = new StopPlace(new EmbeddableMultilingualString("stop place number " + i));
+            Quay quay2 = new Quay();
+
+            HashSet<Quay> quaysList1 = new HashSet<>();
+            HashSet<Quay> quaysList2 = new HashSet<>();
+
+            quaysList1.add(quay1);
+            quaysList2.add(quay2);
+
+            stopPlace1.setQuays(quaysList1);
+            stopPlace1.setVersion(1L);
+
+            stopPlace2.setQuays(quaysList2);
+            stopPlace2.setVersion(1L);
+
+            stopPlaceRepository.save(stopPlace1);
+            stopPlaceRepository.save(stopPlace2);
+        }
+        stopPlaceRepository.flush();
+
+
+        ExportParams exportParams = ExportParams.newExportParamsBuilder()
+                .setStopPlaceSearch(
+                        StopPlaceSearch
+                                .newStopPlaceSearchBuilder()
+                                .setVersionValidity(ExportParams.VersionValidity.ALL)
+                                .build())
+                .build();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, true, null);
+
+        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.fromString(byteArrayOutputStream.toString());
+//        List<org.rutebanken.netex.model.StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure);
+//        assertThat(stopPlaces).hasSize(numberOfStopPlaces);
     }
 
 }

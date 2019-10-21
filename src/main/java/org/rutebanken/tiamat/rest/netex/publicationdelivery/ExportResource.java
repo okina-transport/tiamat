@@ -75,7 +75,7 @@ public class ExportResource {
 
         StreamingOutput streamingOutput = outputStream -> {
             try {
-                streamingPublicationDelivery.stream(exportParams, outputStream);
+                streamingPublicationDelivery.stream(exportParams, outputStream, null);
             } catch (Exception e) {
                 logger.warn("Could not stream site frame. {}", e.getMessage(), e);
                 throw new RuntimeException(e);

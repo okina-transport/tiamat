@@ -17,6 +17,9 @@ public class Provider {
     @Column(name = "name", nullable = false)
     String name;
 
+    @Column(name = "code", nullable = false)
+    String code;
+
     public Provider() {
         // Default constructor for Hibernate, do not suppress
     }
@@ -40,5 +43,13 @@ public class Provider {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 }

@@ -76,6 +76,7 @@ public class ImportResource {
     @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
     public Response importPublicationDelivery(InputStream inputStream, @BeanParam ImportParams importParams) throws IOException, JAXBException, SAXException {
         logger.info("Received Netex publication delivery, starting to parse...");
+        logger.info(".........................................................(importParams.providerCode = " + importParams.providerCode +")");
 
         ImportType effectiveImportType = safeGetImportType(importParams);
         if (!enabledImportTypes.contains(effectiveImportType)) {

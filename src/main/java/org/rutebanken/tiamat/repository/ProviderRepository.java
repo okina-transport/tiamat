@@ -23,5 +23,7 @@ import java.util.List;
 public interface ProviderRepository extends CrudRepository<Provider, Long> {
 
     public List<Provider> findByName(String name);
+
+    public List<Provider> findByCode(String code);
 }
 

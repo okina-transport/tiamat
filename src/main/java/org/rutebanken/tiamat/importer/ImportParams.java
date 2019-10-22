@@ -41,6 +41,9 @@ public class ImportParams {
     @QueryParam(value = "importType")
     public ImportType importType = ImportType.MERGE;
 
+    @QueryParam(value = "providerCode")
+    public String providerCode;
+
     /**
      * Do not return output netex file.
      */

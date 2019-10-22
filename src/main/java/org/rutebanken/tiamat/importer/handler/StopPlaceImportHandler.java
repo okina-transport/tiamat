@@ -33,9 +33,11 @@ import org.rutebanken.tiamat.importer.matching.StopPlaceIdMatcher;
 import org.rutebanken.tiamat.importer.merging.TransactionalMergingStopPlacesImporter;
 import org.rutebanken.tiamat.importer.modifier.StopPlacePostFilterSteps;
 import org.rutebanken.tiamat.importer.modifier.StopPlacePreSteps;
+import org.rutebanken.tiamat.model.Provider;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
+import org.rutebanken.tiamat.repository.ProviderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +48,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
@@ -104,10 +107,22 @@ public class StopPlaceImportHandler {
     @Autowired
     private HazelcastInstance hazelcastInstance;
 
+    @Autowired
+    private ProviderRepository providerRepository;
+
+
     // TODO: Use ExportParams to control what is returned?
     public void handleStops(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger stopPlacesCreatedMatchedOrUpdated, SiteFrame responseSiteframe) {
         if (publicationDeliveryHelper.hasStops(netexSiteFrame)) {
             List<StopPlace> tiamatStops = netexMapper.mapStopsToTiamatModel(netexSiteFrame.getStopPlaces().getStopPlace());
+
+            Optional<Provider> provider = providerRepository.findByName(importParams.providerCode).stream().findFirst();
+            if (provider.isPresent()) {
+                tiamatStops.forEach(stop -> stop.setProvider(provider.get()));
+            } else {
+                throw new ProviderException("No provider defined");
+            }
+
 
             tiamatStops = stopPlaceTypeFilter.filter(tiamatStops, importParams.allowOnlyStopTypes);
 

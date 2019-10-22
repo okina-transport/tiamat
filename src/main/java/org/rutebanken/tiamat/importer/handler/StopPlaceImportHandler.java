@@ -116,7 +116,7 @@ public class StopPlaceImportHandler {
         if (publicationDeliveryHelper.hasStops(netexSiteFrame)) {
             List<StopPlace> tiamatStops = netexMapper.mapStopsToTiamatModel(netexSiteFrame.getStopPlaces().getStopPlace());
 
-            Optional<Provider> provider = providerRepository.findByName(importParams.providerCode).stream().findFirst();
+            Optional<Provider> provider = providerRepository.findByCode(importParams.providerCode).stream().findFirst();
             if (provider.isPresent()) {
                 tiamatStops.forEach(stop -> stop.setProvider(provider.get()));
             } else {

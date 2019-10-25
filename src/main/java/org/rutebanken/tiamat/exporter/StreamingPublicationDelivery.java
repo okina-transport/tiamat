@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.exporter;
 
+import net.opengis.gml._3.DirectPositionType;
 import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
 import org.rutebanken.netex.model.*;
@@ -24,6 +25,10 @@ import org.rutebanken.tiamat.exporter.eviction.EntitiesEvictor;
 import org.rutebanken.tiamat.exporter.eviction.SessionEntitiesEvictor;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.IDFMNetexIdentifiants;
+import org.rutebanken.tiamat.exporter.params.IDFMVehicleModeStopPlacetypeMapping;
+import org.rutebanken.tiamat.geo.geo.Lambert;
+import org.rutebanken.tiamat.geo.geo.LambertPoint;
+import org.rutebanken.tiamat.geo.geo.LambertZone;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Provider;
 import org.rutebanken.tiamat.model.TopographicPlace;
@@ -48,11 +53,13 @@ import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -122,7 +129,7 @@ public class StreamingPublicationDelivery {
 
         IDFMNetexIdentifiants idfmNetexIdentifiants = new IDFMNetexIdentifiants();
 
-        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame();
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame(idfmNetexIdentifiants.getNameSite(provider.getName()));
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
         AtomicInteger mappedParkingCount = new AtomicInteger();
@@ -150,7 +157,6 @@ public class StreamingPublicationDelivery {
 
         // On surcharge la version du generalFrame car il accepte des strings (pas dans le tiamatGeneralFrame) voir si il faut ré-adapter toute la gestion de la version
         netexGeneralFrame.setVersion("any");
-        netexGeneralFrame.setModification(ModificationEnumeration.NEW);
 
         logger.info("Preparing scrollable iterators");
         // TODO vérifier l'intérêt de garder le code commenté ci-dessous dans le cas du netex IFDM (ou l'adapter si nécessaire)
@@ -159,9 +165,8 @@ public class StreamingPublicationDelivery {
 //        prepareStopPlaces(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexGeneralFrame, entitiesEvictor);
 //        prepareParkings(exportParams, stopPlacePrimaryIds, mappedParkingCount, netexSiteFrame, entitiesEvictor);
 //        prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, netexSiteFrame, entitiesEvictor);
-        prepareQuays(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexGeneralFrame, entitiesEvictor);
+        prepareQuays(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexGeneralFrame, entitiesEvictor, idfmNetexIdentifiants.getNameSite(provider.getName()));
 
-        // TODO modifier le test et re-modifier cette ligne ensuite en tapant sur les providers
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame, idfmNetexIdentifiants.getIdSite(provider.getName()));
 
         Marshaller marshaller = createMarshaller();
@@ -176,118 +181,146 @@ public class StreamingPublicationDelivery {
                 mappedTariffZonesCount);
     }
 
-    private void prepareQuays(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedStopPlaceCount, GeneralFrame netexGeneralFrame, EntitiesEvictor evicter) {
+    private void prepareQuays(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedStopPlaceCount, GeneralFrame netexGeneralFrame, EntitiesEvictor evicter, String providerName) {
         // Override lists with custom iterator to be able to scroll database results on the fly.
         if (!stopPlacePrimaryIds.isEmpty()) {
             logger.info("There are stop places to export");
 
-            final Iterator<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaceIterator = stopPlaceRepository.scrollStopPlaces(stopPlacePrimaryIds);
             final Iterator<org.rutebanken.tiamat.model.StopPlace> netexStopPlaceIterator = stopPlaceRepository.scrollStopPlaces(stopPlacePrimaryIds);
-            Quays_RelStructure quays_relStructure = new Quays_RelStructure();
 
-            List<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaces = new ArrayList<>();
-
-            while (tiamatStopPlaceIterator.hasNext()) {
-                tiamatStopPlaces.add(tiamatStopPlaceIterator.next());
-            }
-
-            //Traitement pour valoriser correctement les données
-            List<org.rutebanken.tiamat.model.Quay> tiamatQuays = tiamatStopPlaces
-                    .stream()
-                    .flatMap(tiamatStopPlace -> tiamatStopPlace.getQuays().stream())
-                    .collect(Collectors.toList());
-
-            tiamatQuays.forEach(tiamatQuay -> {
-                String name = tiamatQuay
-                        .getOriginalNames()
-                        .stream()
-                        .findFirst()
-                        .orElse("");
-
-                tiamatQuay.setName(new EmbeddableMultilingualString(name));
-
-                String zdep = tiamatQuay
-                        .getOriginalZDEP()
-                        .stream()
-                        .findFirst()
-                        .orElse(String.valueOf(tiamatQuay.getId()));
-
-                tiamatQuay.setNetexId("FR::Quay:" + zdep + ":FR1");
-
-                String stopCode = tiamatQuay
-                        .getOriginalStopCodes()
-                        .stream()
-                        .findFirst()
-                        .orElse("");
-
-                org.rutebanken.tiamat.model.PrivateCodeStructure privateCodeStructure = new org.rutebanken.tiamat.model.PrivateCodeStructure();
-                privateCodeStructure.setValue(stopCode);
-                tiamatQuay.setPrivateCode(privateCodeStructure);
-            });
-
+            prepareTiamatQuays(stopPlacePrimaryIds);
 
             // Use Listening iterator to collect stop place IDs.
             ParentStopFetchingIterator parentStopFetchingIterator = new ParentStopFetchingIterator(netexStopPlaceIterator, stopPlaceRepository);
             NetexMappingIterator<org.rutebanken.tiamat.model.StopPlace, StopPlace> netexMappingIterator = new NetexMappingIterator<>(netexMapper, parentStopFetchingIterator, StopPlace.class, mappedStopPlaceCount, evicter);
 
-            // Code commenté car utilisé dans la génération du netex norvégien
+            prepareNetexQuays(netexMappingIterator, providerName, netexGeneralFrame);
+
+            // Code commenté car ne fonctionne que dans la génération du netex norvégien
             // List<StopPlace> stopPlaces = new NetexMappingIteratorList<>(() -> new NetexReferenceRemovingIterator(netexMappingIterator, exportParams));
 
-            // Utilisé pour le test exportIDFM
-            List<StopPlace> netexStopPlaces = new ArrayList<>();
-            List<Quay> netexQuays = new ArrayList<>();
-
-            while (netexMappingIterator.hasNext()) {
-                netexStopPlaces.add(netexMappingIterator.next());
-            }
-
-            netexStopPlaces.forEach(netexStopPlace ->
-                netexStopPlace.getQuays().getQuayRefOrQuay().forEach(quay -> netexQuays.add((Quay) quay))
-            );
-
-            if(!netexQuays.isEmpty()){
-                setField(Quays_RelStructure.class, "quayRefOrQuay", quays_relStructure, netexQuays);
-
-//                netexQuays.forEach(quay -> {
-//                    quay.setVersion("any");
-//                    quay.withKeyList(null);
-////                    PostalAddress postalAddress = new PostalAddress();
-////                    postalAddress.setId("NSR:PostalAdress:1234");
-////                    postalAddress.setVersion("any");
-////                    postalAddress.setPostalRegion("75000");
-////                    quay.withPostalAddress(new PostalAddress());
-//                    quay.getCentroid().getLocation().withSrsName("EPSG:27572");
-//                });
-
-                List<JAXBElement<? extends EntityStructure>> listOfJaxbQuays = netexQuays.stream()
-                        .map(quay -> {
-                            // Preparation pre-export
-                            quay.setVersion("any");
-                            quay.withKeyList(null);
-//                    PostalAddress postalAddress = new PostalAddress();
-//                    postalAddress.setId("NSR:PostalAdress:1234");
-//                    postalAddress.setVersion("any");
-//                    postalAddress.setPostalRegion("75000");
-//                    quay.withPostalAddress(new PostalAddress());
-                            /*
-                            coords = Lambert.convert....
-                            .withPos(
-                                        new DirectPositionType()
-                                                .withValue(coords.x, coords.y)
-                                                .withSrsName("EPSG:27572"))
-                             */
-                            quay.getCentroid().getLocation().withSrsName("EPSG:27572");
-
-                            return netexObjectFactory.createQuay(quay);
-                        })
-                        .collect(Collectors.toList());
-                netexGeneralFrame.getMembers().withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(listOfJaxbQuays);
-            }
-            else {
-                logger.info("No quays to export");
-            }
         } else {
             logger.info("No stop places to export");
+        }
+    }
+
+    /**
+     * Traitements sur les quays Tiamat (avant mapping avec les quays Netex)
+     */
+    private void prepareTiamatQuays(Set<Long> stopPlacePrimaryIds) {
+        final Iterator<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaceIterator = stopPlaceRepository.scrollStopPlaces(stopPlacePrimaryIds);
+
+        List<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaces = new ArrayList<>();
+
+        while (tiamatStopPlaceIterator.hasNext()) {
+            tiamatStopPlaces.add(tiamatStopPlaceIterator.next());
+        }
+
+        IDFMVehicleModeStopPlacetypeMapping idfmVehicleModeStopPlacetypeMapping = new IDFMVehicleModeStopPlacetypeMapping();
+
+        //Traitement pour valoriser correctement les données
+        List<org.rutebanken.tiamat.model.Quay> tiamatQuays = tiamatStopPlaces
+                .stream()
+                .flatMap(tiamatStopPlace -> tiamatStopPlace
+                        .getQuays()
+                        .stream()
+                        .peek(quay -> quay
+                                .setTransportMode(idfmVehicleModeStopPlacetypeMapping
+                                        .getVehicleModeEnumeration(tiamatStopPlace.getStopPlaceType())))
+                )
+                .collect(Collectors.toList());
+
+        tiamatQuays.forEach(tiamatQuay -> {
+            String name = tiamatQuay
+                    .getOriginalNames()
+                    .stream()
+                    .findFirst()
+                    .orElse("");
+
+            tiamatQuay.setName(new EmbeddableMultilingualString(name));
+
+            String zdep = tiamatQuay
+                    .getOriginalZDEP()
+                    .stream()
+                    .findFirst()
+                    .orElse(String.valueOf(tiamatQuay.getId()));
+
+            tiamatQuay.setNetexId("FR::Quay:" + zdep + ":FR1");
+
+            String stopCode = tiamatQuay
+                    .getOriginalStopCodes()
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+
+            if (stopCode != null) {
+                org.rutebanken.tiamat.model.PrivateCodeStructure privateCodeStructure = new org.rutebanken.tiamat.model.PrivateCodeStructure();
+                privateCodeStructure.setValue(stopCode);
+                tiamatQuay.setPrivateCode(privateCodeStructure);
+            }
+        });
+    }
+
+    /**
+     * Traitements sur les quays Netex
+     */
+    private void prepareNetexQuays(NetexMappingIterator<org.rutebanken.tiamat.model.StopPlace, StopPlace> netexMappingIterator, String providerName, org.rutebanken.netex.model.GeneralFrame netexGeneralFrame) {
+        Quays_RelStructure quays_relStructure = new Quays_RelStructure();
+
+        // Utilisé pour le test exportIDFM et pour en integ actuellement
+        List<StopPlace> netexStopPlaces = new ArrayList<>();
+        List<Quay> netexQuays = new ArrayList<>();
+
+        while (netexMappingIterator.hasNext()) {
+            netexStopPlaces.add(netexMappingIterator.next());
+        }
+
+        netexStopPlaces.forEach(netexStopPlace -> {
+            if (netexStopPlace.getQuays() != null && netexStopPlace.getQuays().getQuayRefOrQuay() != null)
+                netexStopPlace.getQuays().getQuayRefOrQuay().forEach(quay -> netexQuays.add((Quay) quay));
+        });
+
+        if (!netexQuays.isEmpty()) {
+            setField(Quays_RelStructure.class, "quayRefOrQuay", quays_relStructure, netexQuays);
+
+            List<JAXBElement<? extends EntityStructure>> listOfJaxbQuays = netexQuays.stream()
+                    .map(quay -> {
+
+                        quay.setVersion("any");
+                        quay.withKeyList(null);
+
+                        // TODO Conversion en lambert 2 étendu ne fonctionne pas, en discuter avec IDFM pour voir les solutions possibles
+//                        LocationStructure locationOrDefault = Optional
+//                                .ofNullable(quay.getCentroid().getLocation())
+//                                .orElse(new LocationStructure()
+//                                        .withLatitude(BigDecimal.ZERO)
+//                                        .withLongitude(BigDecimal.ZERO));
+
+//                            LambertPoint lambertPoint = Lambert.convertToLambert(locationOrDefault.getLatitude().doubleValue(), locationOrDefault.getLongitude().doubleValue(), LambertZone.LambertII);
+//
+//                            quay.getCentroid().setLocation(new LocationStructure()
+//                                    .withPos(
+//                                            new DirectPositionType()
+//                                                    .withValue(lambertPoint.getX(), lambertPoint.getY())
+//                                                    .withSrsName("EPSG:27572")));
+
+                        PostalAddress postalAddress = new PostalAddress();
+                        String[] zdep = quay.getId().split(":");
+                        postalAddress.setId(providerName + ":Postal:" + zdep[3] + ":");
+                        postalAddress.setPostalRegion("75000");
+                        postalAddress.setVersion("any");
+                        quay.setPostalAddress(postalAddress);
+
+                        quay.setModification(null);
+
+                        return netexObjectFactory.createQuay(quay);
+                    })
+                    .collect(Collectors.toList());
+
+            netexGeneralFrame.getMembers().withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(listOfJaxbQuays);
+        }
+        else {
+        logger.info("No quays to export");
         }
     }
 
@@ -368,16 +401,6 @@ public class StreamingPublicationDelivery {
         } else {
             logger.info("No stop places to export");
         }
-    }
-
-    public static void main(String[] args) {
-        StopPlace netexStopPlace = new StopPlace();
-        JAXBElement<StopPlace> jaxbStopPlace = netexObjectFactory.createStopPlace(netexStopPlace);
-        Collection<JAXBElement<? extends EntityStructure>> collec = new ArrayList();
-        collec.add(jaxbStopPlace);
-        General_VersionFrameStructure netexGeneralFrame = new General_VersionFrameStructure();
-        netexGeneralFrame.setMembers(new General_VersionFrameStructure.Members());
-        netexGeneralFrame.getMembers().withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(collec);
     }
 
     private void prepareTopographicPlaces(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedTopographicPlacesCount, SiteFrame netexSiteFrame, EntitiesEvictor evicter) {
@@ -487,7 +510,7 @@ public class StreamingPublicationDelivery {
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         marshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, "");
 
-        if(validateAgainstSchema) {
+        if (validateAgainstSchema) {
             marshaller.setSchema(neTExValidator.getSchema());
         }
 

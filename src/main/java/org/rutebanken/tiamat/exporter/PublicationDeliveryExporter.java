@@ -110,12 +110,10 @@ public class PublicationDeliveryExporter {
     }
 
     public PublicationDeliveryStructure createPublicationDelivery(String idSite) {
-        PublicationDeliveryStructure publicationDeliveryStructure = new PublicationDeliveryStructure()
+        return new PublicationDeliveryStructure()
                 .withVersion("1.04:FR1-NETEX-2.0")
                 .withPublicationTimestamp(LocalDateTime.now())
-                .withParticipantRef(idSite)
-                .withParticipantRef(validPrefixList.getValidNetexPrefix());
-        return publicationDeliveryStructure;
+                .withParticipantRef(idSite);
     }
 
     @SuppressWarnings("unchecked")

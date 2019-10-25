@@ -89,11 +89,11 @@ public class AsyncPublicationDeliveryExporter {
         this.providerRepository = providerRepository;
 
         File exportFolder = new File(localExportPath);
-        if(!exportFolder.exists() && !exportFolder.mkdirs()) {
+        if (!exportFolder.exists() && !exportFolder.mkdirs()) {
             throw new RuntimeException("Cannot find or create export directory from path: " + localExportPath +
                     ". Please create the directory with correct permissions, or configure a different path with the property async.export.path");
         }
-        if(!exportFolder.canWrite()) {
+        if (!exportFolder.canWrite()) {
             throw new RuntimeException("Cannot write to path: " + localExportPath +
                     ". Please create the directory with correct permissions, or configure a different path with the property async.export.path");
         }
@@ -102,6 +102,7 @@ public class AsyncPublicationDeliveryExporter {
 
     /**
      * Start export job with upload to google cloud storage
+     *
      * @param exportParams search params for stops
      * @return export job with information about the started process
      */
@@ -114,20 +115,18 @@ public class AsyncPublicationDeliveryExporter {
         ExportJob exportJob = new ExportJob(JobStatus.PROCESSING);
 
         providers.forEach(provider -> {
-            if(provider.getId().equals(11L)) {
-                exportJob.setStarted(Instant.now());
-                exportJob.setExportParams(exportParams);
-                exportJob.setSubFolder(generateSubFolderName());
+            exportJob.setStarted(Instant.now());
+            exportJob.setExportParams(exportParams);
+            exportJob.setSubFolder(generateSubFolderName());
 
-                exportJobRepository.save(exportJob);
-                String fileNameWithoutExtention = createFileNameWithoutExtention(exportJob.getStarted(), idfmNetexIdentifiants.getIdSite(provider.getName()), idfmNetexIdentifiants.getNameSite(provider.getName()));
-                exportJob.setFileName(fileNameWithoutExtention + ".zip");
+            exportJobRepository.save(exportJob);
+            String fileNameWithoutExtention = createFileNameWithoutExtention(exportJob.getStarted(), idfmNetexIdentifiants.getIdSite(provider.getName()), idfmNetexIdentifiants.getNameSite(provider.getName()));
+            exportJob.setFileName(fileNameWithoutExtention + ".zip");
 
-                ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider);
-                exportService.submit(exportJobWorker);
-                logger.info("Returning started export job {}", exportJob);
-                setJobUrl(exportJob);
-            }
+            ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider);
+            exportService.submit(exportJobWorker);
+            logger.info("Returning started export job {}", exportJob);
+            setJobUrl(exportJob);
         });
 
         return exportJob;
@@ -140,7 +139,7 @@ public class AsyncPublicationDeliveryExporter {
     public ExportJob getExportJob(long exportJobId) {
 
         Optional<ExportJob> exportJob = exportJobRepository.findById(exportJobId);
-        if(exportJob.isPresent()) {
+        if (exportJob.isPresent()) {
             return setJobUrl(exportJob.get());
         }
         return null;

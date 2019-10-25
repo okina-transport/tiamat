@@ -84,7 +84,6 @@ public class NetexMapper {
                 .fieldAToB("topographicPlaceRef.version", "topographicPlace.version")
                 // TODO: Excluding some fields while waiting for NRP-1354
                 .exclude("localServices")
-                .exclude("postalAddress")
                 .exclude("roadAddress")
                 .customize(new StopPlaceMapper(publicationDeliveryHelper))
                 .byDefault()
@@ -92,8 +91,8 @@ public class NetexMapper {
 
         mapperFactory.classMap(Quay.class, org.rutebanken.tiamat.model.Quay.class)
                 .exclude("localServices")
-                .exclude("postalAddress")
                 .exclude("roadAddress")
+                .exclude("otherTransportModes")
                 .customize(new QuayMapper())
                 .byDefault()
                 .register();

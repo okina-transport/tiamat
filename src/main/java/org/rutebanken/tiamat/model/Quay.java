@@ -35,7 +35,7 @@ public class Quay extends StopPlaceSpace_VersionStructure {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private final List<BoardingPosition> boardingPositions = new ArrayList<>();
-    protected String publicCode;
+    protected String publicCode;;
 
     /**
      * TODO: reconsider data type for compass bearing.

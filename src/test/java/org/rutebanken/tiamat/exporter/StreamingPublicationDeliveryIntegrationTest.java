@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.exporter;
 
+import com.vividsolutions.jts.geom.Coordinate;
 import org.junit.Test;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.validation.NeTExValidator;
@@ -25,6 +26,7 @@ import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.netex.validation.NetexReferenceValidatorException;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
+import org.rutebanken.tiamat.repository.ProviderRepository;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryTestHelper;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.rutebanken.tiamat.versioning.save.GroupOfStopPlacesSaverService;
@@ -79,6 +81,9 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
 
     @Autowired
     private PublicationDeliveryTestHelper publicationDeliveryTestHelper;
+
+    @Autowired
+    private ProviderRepository providerRepository;
 
     private NetexXmlReferenceValidator netexXmlReferenceValidator = new NetexXmlReferenceValidator(true);
 
@@ -396,7 +401,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
 
 
     /**
-     * Export more than default page size to check that default paging is overriden
+     * Test export IDFM
      * @throws InterruptedException
      * @throws IOException
      * @throws XMLStreamException
@@ -406,31 +411,38 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
     @Test
     public void exportIDFM() throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
 
+        Provider provider = new Provider();
+        provider.setId(1L);
+        provider.setCode("1");
+        provider.setName("TEST");
+
+        provider = providerRepository.save(provider);
+
         final int numberOfStopPlaces = StopPlaceSearch.DEFAULT_PAGE_SIZE + 1;
         for(int i = 0; i < numberOfStopPlaces; i++) {
             StopPlace stopPlace1 = new StopPlace(new EmbeddableMultilingualString("stop place number " + i));
             Quay quay1 = new Quay();
 
-            StopPlace stopPlace2 = new StopPlace(new EmbeddableMultilingualString("stop place number " + i));
-            Quay quay2 = new Quay();
+            quay1.setCentroid(geometryFactory.createPoint(new Coordinate(2.061942,48.769338)));
+            quay1.getOriginalZDEP().add("zdepTest" + i);
+            quay1.getOriginalNames().add("TestName" + i);
+
+            PrivateCodeStructure privateCodeStructure = new PrivateCodeStructure();
+            privateCodeStructure.setValue("TestPrivateCode" + i);
+            quay1.setPrivateCode(privateCodeStructure);
+
 
             HashSet<Quay> quaysList1 = new HashSet<>();
-            HashSet<Quay> quaysList2 = new HashSet<>();
 
             quaysList1.add(quay1);
-            quaysList2.add(quay2);
 
             stopPlace1.setQuays(quaysList1);
             stopPlace1.setVersion(1L);
-
-            stopPlace2.setQuays(quaysList2);
-            stopPlace2.setVersion(1L);
+            stopPlace1.setProvider(provider);
+            stopPlace1.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
 
             stopPlaceRepository.save(stopPlace1);
-            stopPlaceRepository.save(stopPlace2);
         }
-        stopPlaceRepository.flush();
-
 
         ExportParams exportParams = ExportParams.newExportParamsBuilder()
                 .setStopPlaceSearch(
@@ -441,7 +453,9 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
                 .build();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
-        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, true, null);
+
+
+        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, true, provider);
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.fromString(byteArrayOutputStream.toString());
 //        List<org.rutebanken.netex.model.StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure);

@@ -115,18 +115,20 @@ public class AsyncPublicationDeliveryExporter {
         ExportJob exportJob = new ExportJob(JobStatus.PROCESSING);
 
         providers.forEach(provider -> {
-            exportJob.setStarted(Instant.now());
-            exportJob.setExportParams(exportParams);
-            exportJob.setSubFolder(generateSubFolderName());
+            if(provider.getId().equals(11L)) {
+                exportJob.setStarted(Instant.now());
+                exportJob.setExportParams(exportParams);
+                exportJob.setSubFolder(generateSubFolderName());
 
-            exportJobRepository.save(exportJob);
-            String fileNameWithoutExtention = createFileNameWithoutExtention(exportJob.getStarted(), idfmNetexIdentifiants.getIdSite(provider.getName()), idfmNetexIdentifiants.getNameSite(provider.getName()));
-            exportJob.setFileName(fileNameWithoutExtention + ".zip");
+                exportJobRepository.save(exportJob);
+                String fileNameWithoutExtention = createFileNameWithoutExtention(exportJob.getStarted(), idfmNetexIdentifiants.getIdSite(provider.getName()), idfmNetexIdentifiants.getNameSite(provider.getName()));
+                exportJob.setFileName(fileNameWithoutExtention + ".zip");
 
-            ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider);
-            exportService.submit(exportJobWorker);
-            logger.info("Returning started export job {}", exportJob);
-            setJobUrl(exportJob);
+                ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider);
+                exportService.submit(exportJobWorker);
+                logger.info("Returning started export job {}", exportJob);
+                setJobUrl(exportJob);
+            }
         });
 
         return exportJob;

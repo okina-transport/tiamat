@@ -93,6 +93,12 @@ class StopPlaceFetcher implements DataFetcher {
      */
     private static final boolean KEEP_CHILDS = false;
 
+    /**
+     * User with role starting with this prefix will be considered as admin => do not filter stop places based on org.
+     * TODO : probably already implemented somewhere else, have to find.
+     */
+    protected static final String ROLE_ADMIN_PREFIX = "admin";
+
     @Autowired
     private StopPlaceRepository stopPlaceRepository;
 
@@ -108,6 +114,7 @@ class StopPlaceFetcher implements DataFetcher {
         ExportParams.Builder exportParamsBuilder = newExportParamsBuilder();
         StopPlaceSearch.Builder stopPlaceSearchBuilder = newStopPlaceSearchBuilder();
         List<String> userOrgs = roleAssignmentExtractor.getRoleAssignmentsForUser().stream().map(RoleAssignment::getOrganisation).collect(Collectors.toList());
+        boolean isUserAdmin = roleAssignmentExtractor.getRoleAssignmentsForUser().stream().anyMatch(roleAssignment -> roleAssignment.getRole().startsWith(ROLE_ADMIN_PREFIX));
 
         logger.info("Searching for StopPlaces with arguments {}", environment.getArguments());
         logger.info("User organisations : {}", userOrgs);
@@ -252,7 +259,7 @@ class StopPlaceFetcher implements DataFetcher {
         }
 
         // Remove SP not belonging to user orgs
-        if (!stopPlacesPage.getContent().isEmpty()) {
+        if (!stopPlacesPage.getContent().isEmpty() && !isUserAdmin) {
             List<StopPlace> userOrgFilteredStopPlaces = stopPlacesPage.getContent().stream().filter(stopPlace -> userOrgs.contains(stopPlace.getProvider().getName())).collect(Collectors.toList());
             stopPlacesPage = new PageImpl<>(userOrgFilteredStopPlaces, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), 1L);
         }

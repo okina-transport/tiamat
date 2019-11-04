@@ -170,7 +170,11 @@ public class MergingStopPlaceImporter {
 
         boolean stopPlaceAlone = quayMerger.checkNumberProducers(existingStopPlace.getKeyValues(), incomingStopPlace.getKeyValues());
         boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, ADD_NEW_QUAYS, EXISTING_STOP_QUAY_MERGE_SHORT_DISTANCE_CHECK_BEFORE_ID_MATCH, stopPlaceAlone);
-        boolean keyValuesChanged = (keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy) && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy));
+        boolean keyValuesChanged = (
+                keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy)
+                        && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy)
+                        && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_STOPCODE_KEY, incomingStopPlace, copy)
+        );
         boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
 
         boolean typeChanged = false;

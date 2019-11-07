@@ -19,7 +19,6 @@ import org.rutebanken.tiamat.rest.graphql.scalars.DateScalar;
 
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.MERGED_ID_KEY;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
-import static org.rutebanken.tiamat.repository.search.StopPlaceQueryFromSearchBuilder.DEFAULT_VERSION_VALIDITY;
 import static org.rutebanken.tiamat.rest.graphql.StopPlaceRegisterGraphQLSchema.DEFAULT_PAGE_VALUE;
 import static org.rutebanken.tiamat.rest.graphql.StopPlaceRegisterGraphQLSchema.DEFAULT_SIZE_VALUE;
 import static org.rutebanken.tiamat.rest.graphql.scalars.DateScalar.DATE_TIME_PATTERN;
@@ -332,6 +331,7 @@ public class GraphQLNames {
 
     public static final String SEARCH_WITH_CODE_SPACE = "code";
     public static final String SEARCH_WITH_CODE_SPACE_ARG_DESCRIPTION = "Filter results by data producer code space - i.e. code from original imported ID";
+    public static final String SEARCH_WITH_PROVIDER_ID_ARG_DESCRIPTION = "Filter results by provider id";
 
     public static final String NAME = "name";
     public static final String NAME_TYPE = "nameType";

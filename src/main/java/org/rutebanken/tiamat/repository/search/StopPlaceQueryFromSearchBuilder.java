@@ -189,6 +189,12 @@ public class StopPlaceQueryFromSearchBuilder {
             wheres.add("(s.netex_id in :netexIdList OR p.netex_id in :netexIdList)");
             parameters.put("netexIdList", stopPlaceSearch.getNetexIdList());
         } else {
+
+            if(exportParams.getProviderId() != null) {
+                wheres.add("s.provider_id = :providerId");
+                parameters.put("providerId", exportParams.getProviderId());
+            }
+
             if (stopPlaceSearch.getQuery() != null) {
                 createAndAddQueryCondition(stopPlaceSearch, operators, parameters, wheres, orderByStatements);
             }

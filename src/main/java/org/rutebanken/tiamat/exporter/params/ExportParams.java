@@ -27,6 +27,7 @@ import java.util.List;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.COUNTY_REF_ARG_DESCRIPTION;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.MUNICIPALITY_REF_ARG_DESCRIPTION;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.SEARCH_WITH_CODE_SPACE_ARG_DESCRIPTION;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.SEARCH_WITH_PROVIDER_ID_ARG_DESCRIPTION;
 
 /**
  * Export parameters.
@@ -71,10 +72,14 @@ public class ExportParams {
     @ApiParam(value = SEARCH_WITH_CODE_SPACE_ARG_DESCRIPTION)
     private String codeSpace;
 
+    @QueryParam(value = "providerId")
+    @ApiParam(value = SEARCH_WITH_PROVIDER_ID_ARG_DESCRIPTION)
+    private Long providerId;
+
     @BeanParam
     private StopPlaceSearch stopPlaceSearch;
 
-    private ExportParams(ExportMode topographicPlaceExportMode, ExportMode tariffZoneExportMode, ExportMode groupOfStopPlacesExportMode, List<String> municipalityReferences, List<String> countyReferences, StopPlaceSearch stopPlaceSearch, String codeSpace) {
+    private ExportParams(ExportMode topographicPlaceExportMode, ExportMode tariffZoneExportMode, ExportMode groupOfStopPlacesExportMode, List<String> municipalityReferences, List<String> countyReferences, StopPlaceSearch stopPlaceSearch, String codeSpace, Long providerId) {
         this.topographicPlaceExportMode = topographicPlaceExportMode;
         this.tariffZoneExportMode = tariffZoneExportMode;
         this.groupOfStopPlacesExportMode = groupOfStopPlacesExportMode;
@@ -82,6 +87,7 @@ public class ExportParams {
         this.countyReferences = countyReferences;
         this.stopPlaceSearch = stopPlaceSearch;
         this.codeSpace = codeSpace;
+        this.providerId = providerId;
     }
 
     public ExportParams(StopPlaceSearch stopPlaceSearch) {
@@ -119,6 +125,10 @@ public class ExportParams {
         return codeSpace;
     }
 
+    public Long getProviderId() {
+        return providerId;
+    }
+
     public static ExportParams.Builder newExportParamsBuilder() {
         return new Builder();
     }
@@ -133,6 +143,7 @@ public class ExportParams {
                 .add("stopPlaceSearch", stopPlaceSearch)
                 .add("tariffZoneExportMode", tariffZoneExportMode)
                 .add("codeSpace", codeSpace)
+                .add("providerId", providerId)
                 .toString();
     }
 
@@ -144,6 +155,7 @@ public class ExportParams {
         private List<String> countyReferences;
         private StopPlaceSearch stopPlaceSearch;
         private String codeSpace;
+        private Long providerId;
 
         private Builder() {
         }
@@ -193,8 +205,13 @@ public class ExportParams {
             return this;
         }
 
+        public Builder setProviderId(Long providerId) {
+            this.providerId = providerId;
+            return this;
+        }
+
         public ExportParams build() {
-            return new ExportParams(topographicPlaceExportMode, tariffZoneExportMode, groupOfStopPlacesExportMode, municipalityReferences, countyReferences, stopPlaceSearch, codeSpace);
+            return new ExportParams(topographicPlaceExportMode, tariffZoneExportMode, groupOfStopPlacesExportMode, municipalityReferences, countyReferences, stopPlaceSearch, codeSpace, providerId);
         }
     }
 }

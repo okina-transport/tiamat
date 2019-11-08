@@ -21,7 +21,6 @@ import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.NearbyStopsWithSameTypeFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceFromOriginalIdFinder;
-import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
@@ -41,7 +40,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 @Qualifier("mergingStopPlaceImporter")
@@ -148,11 +146,12 @@ public class MergingStopPlaceImporter {
             }
         }
 
-        if (incomingStopPlace.getQuays() != null) {
-            Set<Quay> quays = quayMerger.mergeQuays(incomingStopPlace.getQuays(), null, new AtomicInteger(), new AtomicInteger(), ADD_NEW_QUAYS);
-            incomingStopPlace.setQuays(quays);
-            logger.trace("Importing quays for new stop place {}", incomingStopPlace);
-        }
+        // TODO OKINA : to check
+//        if (incomingStopPlace.getQuays() != null) {
+//            Set<Quay> quays = quayMerger.mergeQuays(incomingStopPlace.getQuays(), null, new AtomicInteger(), new AtomicInteger(), ADD_NEW_QUAYS);
+//            incomingStopPlace.setQuays(quays);
+//            logger.trace("Importing quays for new stop place {}", incomingStopPlace);
+//        }
 
         stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
         // Ignore incoming version. Always set version to 1 for new stop places.

@@ -48,7 +48,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
     private static final Logger logger = LoggerFactory.getLogger(TransactionalMatchingAppendingStopPlaceImporter.class);
 
-    private static final boolean CREATE_NEW_QUAYS = false;
+    private static final boolean CREATE_NEW_QUAYS = true;
 
     private static final boolean ALLOW_OTHER_TYPE_AS_ANY_MATCH = true;
 

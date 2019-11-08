@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.exporter;
 
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
@@ -34,6 +35,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
 
@@ -83,5 +85,17 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
 
             }
         }
+    }
+
+    @Test
+    public void testName() {
+        // GIVEN
+        Instant instant = Instant.now();
+
+        // WHEN
+        String sqybus = asyncPublicationDeliveryExporter.createFileNameWithoutExtention(instant, "41", "SQYBUS");
+
+        // THEN
+        Assert.assertTrue(sqybus.length() > 0);
     }
 }

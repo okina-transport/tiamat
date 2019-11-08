@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -24,10 +25,10 @@ public class TiamatGeneralFrameExporter {
     public TiamatGeneralFrameExporter(){
     }
 
-    public org.rutebanken.tiamat.model.GeneralFrame createTiamatGeneralFrame(String siteName) {
+    public org.rutebanken.tiamat.model.GeneralFrame createTiamatGeneralFrame(String siteName, LocalDateTime localDateTime) {
         // Frame <GeneralFrame>
         org.rutebanken.tiamat.model.GeneralFrame generalFrame = new org.rutebanken.tiamat.model.GeneralFrame();
-        generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_ARRET_IDF_" + Instant.now() + ":LOC");
+        generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_ARRET_IDF_" + localDateTime + ":LOC");
         generalFrame.setModification(ModificationEnumeration.REVISE);
 
         logger.info("Adding {} generalFrame", generalFrame);
@@ -39,8 +40,8 @@ public class TiamatGeneralFrameExporter {
     public void setFramesDefault(GeneralFrame generalFrame) {
         // Frame <TypeOfFrameRef>
         TypeOfFrameRefStructure typeOfFrameRefStructure = new TypeOfFrameRefStructure();
-        typeOfFrameRefStructure.setRef("FR:TypeOfFrame:NETEX_ARRET");
-        typeOfFrameRefStructure.setValue("version=\"1.04 :FR1-NETEX_ARRET_IDF-2.1\"");
+        typeOfFrameRefStructure.setRef("FR1:TypeOfFrame:NETEX_ARRET");
+        typeOfFrameRefStructure.setValue("version=\"1.04:FR1-NETEX_ARRET_IDF-2.1\"");
         generalFrame.setTypeOfFrameRef(typeOfFrameRefStructure);
 
         logger.info("Adding {} typeOfFrameRefStructure in generalFrame", typeOfFrameRefStructure);

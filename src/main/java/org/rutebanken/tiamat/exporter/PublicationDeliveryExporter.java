@@ -112,7 +112,14 @@ public class PublicationDeliveryExporter {
     public PublicationDeliveryStructure createPublicationDelivery(String idSite) {
         return new PublicationDeliveryStructure()
                 .withVersion("1.04:FR1-NETEX-2.0")
-                .withPublicationTimestamp(LocalDateTime.now())
+                .withPublicationTimestamp(LocalDateTime.now().withNano(0))
+                .withParticipantRef(idSite);
+    }
+
+    public PublicationDeliveryStructure createPublicationDelivery(String idSite, LocalDateTime localDateTime) {
+        return new PublicationDeliveryStructure()
+                .withVersion("1.04:FR1-NETEX-2.0")
+                .withPublicationTimestamp(localDateTime)
                 .withParticipantRef(idSite);
     }
 
@@ -127,8 +134,8 @@ public class PublicationDeliveryExporter {
         return publicationDeliveryStructure;
     }
 
-    public PublicationDeliveryStructure createPublicationDelivery(org.rutebanken.netex.model.GeneralFrame generalFrame, String idSite) {
-        PublicationDeliveryStructure publicationDeliveryStructure = createPublicationDelivery(idSite);
+    public PublicationDeliveryStructure createPublicationDelivery(org.rutebanken.netex.model.GeneralFrame generalFrame, String idSite, LocalDateTime localDateTime) {
+        PublicationDeliveryStructure publicationDeliveryStructure = createPublicationDelivery(idSite, localDateTime);
         publicationDeliveryStructure.withDataObjects(
                 new PublicationDeliveryStructure.DataObjects()
                         .withCompositeFrameOrCommonFrame(new ObjectFactory().createGeneralFrame(generalFrame)));

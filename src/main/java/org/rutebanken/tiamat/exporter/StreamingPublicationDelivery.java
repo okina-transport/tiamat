@@ -19,6 +19,7 @@ import javassist.bytecode.ExceptionTable;
 import net.opengis.gml._3.DirectPositionType;
 import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
+import org.joda.time.DateTime;
 import org.rutebanken.netex.model.AccessibilityAssessment;
 import org.rutebanken.netex.model.AccessibilityLimitation;
 import org.rutebanken.netex.model.EntityStructure;
@@ -94,6 +95,8 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -168,7 +171,8 @@ public class StreamingPublicationDelivery {
 
         IDFMNetexIdentifiants idfmNetexIdentifiants = new IDFMNetexIdentifiants();
 
-        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame(idfmNetexIdentifiants.getNameSite(provider.getName()));
+        LocalDateTime localDateTime = LocalDateTime.now().withNano(0);
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame(idfmNetexIdentifiants.getNameSite(provider.getName()), localDateTime);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
         AtomicInteger mappedParkingCount = new AtomicInteger();
@@ -206,7 +210,7 @@ public class StreamingPublicationDelivery {
 //        prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, netexSiteFrame, entitiesEvictor);
         prepareQuays(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexGeneralFrame, entitiesEvictor, idfmNetexIdentifiants.getNameSite(provider.getName()));
 
-        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame, idfmNetexIdentifiants.getIdSite(provider.getName()));
+        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame, idfmNetexIdentifiants.getIdSite(provider.getName()), localDateTime);
 
         Marshaller marshaller = createMarshaller();
 
@@ -400,8 +404,8 @@ public class StreamingPublicationDelivery {
                                         .withLongitude(BigDecimal.ZERO));
 
                         LambertPoint lambertPoint = Lambert.convertToLambert(locationOrDefault.getLatitude().doubleValue(), locationOrDefault.getLongitude().doubleValue(), LambertZone.Lambert93);
-                        double x = lambertPoint.getX();
-                        double y = lambertPoint.getY();
+                        double x = round(lambertPoint.getX(), 1);
+                        double y = round(lambertPoint.getY(), 1);
                             quay.getCentroid().setLocation(new LocationStructure()
                                     .withPos(
                                             new DirectPositionType()
@@ -411,7 +415,7 @@ public class StreamingPublicationDelivery {
 
                         PostalAddress postalAddress = new PostalAddress();
                         String[] zdep = quay.getId().split(":");
-                        postalAddress.setId(providerName + ":Postal:" + zdep[3] + ":");
+                        postalAddress.setId(providerName + ":PostalAddress:" + zdep[3] + ":");
                         postalAddress.setPostalRegion("75000");
                         postalAddress.setVersion("any");
                         quay.setPostalAddress(postalAddress);
@@ -468,6 +472,13 @@ public class StreamingPublicationDelivery {
             netexSiteFrame.setTariffZones(null);
         }
 
+    }
+
+    private static double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+        BigDecimal bd = new BigDecimal(Double.toString(value));
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
 
     private void prepareParkings(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedParkingCount, SiteFrame netexSiteFrame, EntitiesEvictor evicter) {

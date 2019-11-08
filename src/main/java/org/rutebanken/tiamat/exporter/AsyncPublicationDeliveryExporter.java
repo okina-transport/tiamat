@@ -34,15 +34,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.File;
+import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.temporal.ChronoField;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -110,8 +108,6 @@ public class AsyncPublicationDeliveryExporter {
 
         Iterable<Provider> providers = providerRepository.findAll();
 
-        IDFMNetexIdentifiants idfmNetexIdentifiants = new IDFMNetexIdentifiants();
-
         ExportJob exportJob = new ExportJob(JobStatus.PROCESSING);
 
         providers.forEach(provider -> {
@@ -121,7 +117,7 @@ public class AsyncPublicationDeliveryExporter {
                 exportJob.setSubFolder(generateSubFolderName());
 
                 exportJobRepository.save(exportJob);
-                String fileNameWithoutExtention = createFileNameWithoutExtention(exportJob.getStarted(), idfmNetexIdentifiants.getIdSite(provider.getName()), idfmNetexIdentifiants.getNameSite(provider.getName()));
+                String fileNameWithoutExtention = createFileNameWithoutExtention(exportJob.getStarted(), IDFMNetexIdentifiants.getIdSite(provider.getName()), IDFMNetexIdentifiants.getNameSite(provider.getName()));
                 exportJob.setFileName(fileNameWithoutExtention + ".zip");
 
                 ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider);

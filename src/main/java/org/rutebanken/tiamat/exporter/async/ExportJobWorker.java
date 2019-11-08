@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.exporter.async;
 
 import org.h2.util.IOUtils;
 import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
+import org.rutebanken.tiamat.model.Provider;
 import org.rutebanken.tiamat.model.job.ExportJob;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
@@ -48,6 +49,7 @@ public class ExportJobWorker implements Runnable {
     private final BlobStoreService blobStoreService;
     private final ExportJobRepository exportJobRepository;
     private final NetexXmlReferenceValidator netexXmlReferenceValidator;
+    private final Provider provider;
 
     public ExportJobWorker(ExportJob exportJob,
                            StreamingPublicationDelivery streamingPublicationDelivery,
@@ -55,7 +57,8 @@ public class ExportJobWorker implements Runnable {
                            String fileNameWithoutExtention,
                            BlobStoreService blobStoreService,
                            ExportJobRepository exportJobRepository,
-                           NetexXmlReferenceValidator netexXmlReferenceValidator) {
+                           NetexXmlReferenceValidator netexXmlReferenceValidator,
+                           Provider provider) {
         this.exportJob = exportJob;
         this.streamingPublicationDelivery = streamingPublicationDelivery;
         this.localExportPath = localExportPath;
@@ -63,6 +66,7 @@ public class ExportJobWorker implements Runnable {
         this.blobStoreService = blobStoreService;
         this.exportJobRepository = exportJobRepository;
         this.netexXmlReferenceValidator = netexXmlReferenceValidator;
+        this.provider = provider;
     }
 
 
@@ -72,7 +76,7 @@ public class ExportJobWorker implements Runnable {
         File localExportXmlFile = new File(localExportPath + File.separator + fileNameWithoutExtention + ".xml");
         try {
 
-            exportToLocalXmlFile(localExportXmlFile);
+            exportToLocalXmlFile(localExportXmlFile, provider);
 
             netexXmlReferenceValidator.validateNetexReferences(localExportXmlFile);
 
@@ -103,10 +107,10 @@ public class ExportJobWorker implements Runnable {
         }
     }
 
-    private void exportToLocalXmlFile(File localExportXmlFile) throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
+    private void exportToLocalXmlFile(File localExportXmlFile, Provider provider) throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.stream(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING);
+        streamingPublicationDelivery.stream(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING, provider);
     }
 
     private void uploadToGcp(File localExportFile) throws FileNotFoundException {

@@ -25,6 +25,7 @@ import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.repository.search.ChangedStopPlaceSearch;
 import org.rutebanken.tiamat.service.stopplace.ChildStopPlacesFetcher;
 import org.rutebanken.tiamat.service.stopplace.ParentStopPlacesFetcher;
+import org.rutebanken.tiamat.time.ExportTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +33,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -62,6 +65,10 @@ public class PublicationDeliveryExporter {
     private final ParentStopPlacesFetcher parentStopPlacesFetcher;
     private final ChildStopPlacesFetcher childStopPlacesFetcher;
     private final ValidPrefixList validPrefixList;
+    private final ExportTimeZone exportTimeZone;
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
 
     public enum MultiModalFetchMode {CHILDREN, PARENTS}
 
@@ -73,7 +80,7 @@ public class PublicationDeliveryExporter {
                                        TariffZonesFromStopsExporter tariffZonesFromStopsExporter,
                                        ParentStopPlacesFetcher parentStopPlacesFetcher,
                                        ChildStopPlacesFetcher childStopPlacesFetcher,
-                                       ValidPrefixList validPrefixList) {
+                                       ValidPrefixList validPrefixList, ExportTimeZone exportTimeZone) {
         this.stopPlaceRepository = stopPlaceRepository;
         this.netexMapper = netexMapper;
         this.tiamatSiteFrameExporter = tiamatSiteFrameExporter;
@@ -82,6 +89,7 @@ public class PublicationDeliveryExporter {
         this.parentStopPlacesFetcher = parentStopPlacesFetcher;
         this.childStopPlacesFetcher = childStopPlacesFetcher;
         this.validPrefixList = validPrefixList;
+        this.exportTimeZone = exportTimeZone;
     }
 
     @Transactional(readOnly = true)
@@ -101,22 +109,31 @@ public class PublicationDeliveryExporter {
         return publicationDeliveryStructure;
     }
 
-    public PublicationDeliveryStructure createPublicationDelivery() {
-        PublicationDeliveryStructure publicationDeliveryStructure = new PublicationDeliveryStructure()
-                .withVersion(String.valueOf(publicationDeliveryId.incrementAndGet()))
+    public PublicationDeliveryStructure createPublicationDelivery(String idSite) {
+        return new PublicationDeliveryStructure()
+                .withVersion("1.04:FR1-NETEX-2.0")
                 .withPublicationTimestamp(LocalDateTime.now())
-                .withParticipantRef(validPrefixList.getValidNetexPrefix());
-        return publicationDeliveryStructure;
+                .withParticipantRef(idSite);
     }
 
     @SuppressWarnings("unchecked")
     public PublicationDeliveryStructure createPublicationDelivery(org.rutebanken.netex.model.SiteFrame siteFrame) {
-        PublicationDeliveryStructure publicationDeliveryStructure = createPublicationDelivery();
+        PublicationDeliveryStructure publicationDeliveryStructure = createPublicationDelivery("");
         publicationDeliveryStructure.withDataObjects(
                 new PublicationDeliveryStructure.DataObjects()
                         .withCompositeFrameOrCommonFrame(new ObjectFactory().createSiteFrame(siteFrame)));
 
         logger.info("Returning publication delivery {} with site frame", publicationDeliveryStructure);
+        return publicationDeliveryStructure;
+    }
+
+    public PublicationDeliveryStructure createPublicationDelivery(org.rutebanken.netex.model.GeneralFrame generalFrame, String idSite) {
+        PublicationDeliveryStructure publicationDeliveryStructure = createPublicationDelivery(idSite);
+        publicationDeliveryStructure.withDataObjects(
+                new PublicationDeliveryStructure.DataObjects()
+                        .withCompositeFrameOrCommonFrame(new ObjectFactory().createGeneralFrame(generalFrame)));
+
+        logger.info("Returning publication delivery {} with general frame", publicationDeliveryStructure);
         return publicationDeliveryStructure;
     }
 

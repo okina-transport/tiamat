@@ -49,6 +49,7 @@ public class NetexIdMapper {
     public static final String ORIGINAL_ID_KEY = "imported-id";
     public static final String ORIGINAL_NAME_KEY = "imported-name";
     public static final String ORIGINAL_STOPCODE_KEY = "imported-stopcode";
+    public static final String ORIGINAL_ZDEP_KEY = "zdep";
     public static final String MERGED_ID_KEY = "merged-id";
 
     private static final List<String> IGNORE_KEYS = Arrays.asList(CHANGED_BY, VERSION_COMMENT, IS_PARENT_STOP_PLACE);
@@ -191,6 +192,17 @@ public class NetexIdMapper {
      */
     public void moveOriginalStopCodeToKeyValueList(DataManagedObjectStructure dataManagedObjectStructure, String stopCode) {
         addKeyValueAvoidEmpty(dataManagedObjectStructure, ORIGINAL_STOPCODE_KEY, stopCode, true);
+    }
+
+
+    /**
+     * Writes netex name to keyval in internal Tiamat model
+     *
+     * @param dataManagedObjectStructure to set the keyval on (tiamat model)
+     * @param zdep                       The name to add to values, using the key #{ORIGINAL_ZDEP_KEY}
+     */
+    public void moveOriginalZDEPToKeyValueList(DataManagedObjectStructure dataManagedObjectStructure, String zdep) {
+        addKeyValueAvoidEmpty(dataManagedObjectStructure, ORIGINAL_ZDEP_KEY, zdep, true);
     }
 
 }

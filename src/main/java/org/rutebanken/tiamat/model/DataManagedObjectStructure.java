@@ -82,6 +82,8 @@ public abstract class DataManagedObjectStructure
 
     public Set<String> getOriginalStopCodes() { return getOrCreateValues(NetexIdMapper.ORIGINAL_STOPCODE_KEY); }
 
+    public Set<String> getOriginalZDEP() { return getOrCreateValues(NetexIdMapper.ORIGINAL_ZDEP_KEY); }
+
     public String getVersionComment() {
         return versionComment;
     }

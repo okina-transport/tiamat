@@ -18,5 +18,14 @@ package org.rutebanken.tiamat.model;
 public class TypeOfFrameRefStructure
         extends TypeOfValueRefStructure {
 
+    private String value;
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
 
 }

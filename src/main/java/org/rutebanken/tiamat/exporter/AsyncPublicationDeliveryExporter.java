@@ -115,7 +115,7 @@ public class AsyncPublicationDeliveryExporter {
         ExportJob exportJob = new ExportJob(JobStatus.PROCESSING);
 
         providers.forEach(provider -> {
-            if(provider.getId().equals(11L)) {
+            if(provider != null) {
                 exportJob.setStarted(Instant.now());
                 exportJob.setExportParams(exportParams);
                 exportJob.setSubFolder(generateSubFolderName());
@@ -135,7 +135,10 @@ public class AsyncPublicationDeliveryExporter {
     }
 
     public String createFileNameWithoutExtention(Instant started, String idSite, String nameSite) {
-        return "ARRET_" + idSite + "_" + nameSite + "_T_" + started.atZone(exportTimeZone.getDefaultTimeZoneId()).format(DATE_TIME_FORMATTER);
+        String retour = "ARRET_" + idSite + "_" + nameSite + "_T_" + started.atZone(exportTimeZone.getDefaultTimeZoneId()).format(DATE_TIME_FORMATTER);
+        retour = retour.replace("-", "");
+        retour = retour.replace(":", "");
+        return retour;
     }
 
     public ExportJob getExportJob(long exportJobId) {

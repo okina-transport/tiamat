@@ -63,7 +63,7 @@ public class QuayMerger {
     }
 
     public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays) {
-        return mergeQuays(newStopPlace, existingStopPlace, addNewQuays, true, true);
+        return mergeQuays(newStopPlace, existingStopPlace, addNewQuays, false, true);
     }
 
 

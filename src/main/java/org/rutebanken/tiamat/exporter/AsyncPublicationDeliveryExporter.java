@@ -18,10 +18,13 @@ package org.rutebanken.tiamat.exporter;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.rutebanken.tiamat.exporter.async.ExportJobWorker;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
+import org.rutebanken.tiamat.exporter.params.IDFMNetexIdentifiants;
+import org.rutebanken.tiamat.model.Provider;
 import org.rutebanken.tiamat.model.job.ExportJob;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
 import org.rutebanken.tiamat.repository.ExportJobRepository;
+import org.rutebanken.tiamat.repository.ProviderRepository;
 import org.rutebanken.tiamat.service.BlobStoreService;
 import org.rutebanken.tiamat.time.ExportTimeZone;
 import org.slf4j.Logger;
@@ -36,7 +39,10 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,7 +58,7 @@ public class AsyncPublicationDeliveryExporter {
     private static final ExecutorService exportService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("exporter-%d").build());
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("YYYYMMdd-HHmmss");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
     private final ExportJobRepository exportJobRepository;
 
@@ -66,25 +72,28 @@ public class AsyncPublicationDeliveryExporter {
 
     private final String localExportPath;
 
+    private final ProviderRepository providerRepository;
+
     @Autowired
     public AsyncPublicationDeliveryExporter(ExportJobRepository exportJobRepository,
                                             BlobStoreService blobStoreService,
                                             @Qualifier("asyncStreamingPublicationDelivery") StreamingPublicationDelivery streamingPublicationDelivery,
                                             NetexXmlReferenceValidator netexXmlReferenceValidator, ExportTimeZone exportTimeZone,
-                                            @Value("${async.export.path:/deployments/data/}") String localExportPath) {
+                                            @Value("${async.export.path:/deployments/data/}") String localExportPath, ProviderRepository providerRepository) {
         this.exportJobRepository = exportJobRepository;
         this.blobStoreService = blobStoreService;
         this.streamingPublicationDelivery = streamingPublicationDelivery;
         this.netexXmlReferenceValidator = netexXmlReferenceValidator;
         this.exportTimeZone = exportTimeZone;
         this.localExportPath = localExportPath;
+        this.providerRepository = providerRepository;
 
         File exportFolder = new File(localExportPath);
-        if(!exportFolder.exists() && !exportFolder.mkdirs()) {
+        if (!exportFolder.exists() && !exportFolder.mkdirs()) {
             throw new RuntimeException("Cannot find or create export directory from path: " + localExportPath +
                     ". Please create the directory with correct permissions, or configure a different path with the property async.export.path");
         }
-        if(!exportFolder.canWrite()) {
+        if (!exportFolder.canWrite()) {
             throw new RuntimeException("Cannot write to path: " + localExportPath +
                     ". Please create the directory with correct permissions, or configure a different path with the property async.export.path");
         }
@@ -93,35 +102,46 @@ public class AsyncPublicationDeliveryExporter {
 
     /**
      * Start export job with upload to google cloud storage
+     *
      * @param exportParams search params for stops
      * @return export job with information about the started process
      */
     public ExportJob startExportJob(ExportParams exportParams) {
 
+        Iterable<Provider> providers = providerRepository.findAll();
+
+        IDFMNetexIdentifiants idfmNetexIdentifiants = new IDFMNetexIdentifiants();
+
         ExportJob exportJob = new ExportJob(JobStatus.PROCESSING);
-        exportJob.setStarted(Instant.now());
-        exportJob.setExportParams(exportParams);
-        exportJob.setSubFolder(generateSubFolderName());
 
-        exportJobRepository.save(exportJob);
-        String fileNameWithoutExtention = createFileNameWithoutExtention(exportJob.getId(), exportJob.getStarted());
-        exportJob.setFileName(fileNameWithoutExtention + ".zip");
+        providers.forEach(provider -> {
+            if(provider.getId().equals(11L)) {
+                exportJob.setStarted(Instant.now());
+                exportJob.setExportParams(exportParams);
+                exportJob.setSubFolder(generateSubFolderName());
 
-        ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator);
-        exportService.submit(exportJobWorker);
-        logger.info("Returning started export job {}", exportJob);
-        setJobUrl(exportJob);
+                exportJobRepository.save(exportJob);
+                String fileNameWithoutExtention = createFileNameWithoutExtention(exportJob.getStarted(), idfmNetexIdentifiants.getIdSite(provider.getName()), idfmNetexIdentifiants.getNameSite(provider.getName()));
+                exportJob.setFileName(fileNameWithoutExtention + ".zip");
+
+                ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider);
+                exportService.submit(exportJobWorker);
+                logger.info("Returning started export job {}", exportJob);
+                setJobUrl(exportJob);
+            }
+        });
+
         return exportJob;
     }
 
-    public String createFileNameWithoutExtention(long exportJobId, Instant started) {
-        return "tiamat-export-" + started.atZone(exportTimeZone.getDefaultTimeZoneId()).format(DATE_TIME_FORMATTER) + "-" +exportJobId;
+    public String createFileNameWithoutExtention(Instant started, String idSite, String nameSite) {
+        return "ARRET_" + idSite + "_" + nameSite + "_T_" + started.atZone(exportTimeZone.getDefaultTimeZoneId()).format(DATE_TIME_FORMATTER);
     }
 
     public ExportJob getExportJob(long exportJobId) {
 
         Optional<ExportJob> exportJob = exportJobRepository.findById(exportJobId);
-        if(exportJob.isPresent()) {
+        if (exportJob.isPresent()) {
             return setJobUrl(exportJob.get());
         }
         return null;

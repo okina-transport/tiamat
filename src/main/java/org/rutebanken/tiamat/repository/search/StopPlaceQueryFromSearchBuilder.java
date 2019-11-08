@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.repository.search;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
+import org.rutebanken.tiamat.model.Provider;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -308,6 +309,176 @@ public class StopPlaceQueryFromSearchBuilder {
 
         if (stopPlaceSearch.isWithNearbySimilarDuplicates()) {
             createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements);
+        }
+
+        operators.add("and");
+        wheres.add(SQL_NOT_PARENT_STOP_PLACE);
+
+        searchHelper.addWheres(queryString, wheres, operators);
+
+        orderByStatements.add("s.netex_id, s.version asc");
+
+        searchHelper.addOrderByStatements(queryString, orderByStatements);
+
+        final String generatedSql = searchHelper.format(queryString.toString());
+
+        searchHelper.logIfLoggable(generatedSql, parameters, stopPlaceSearch, logger);
+
+        return Pair.of(generatedSql, parameters);
+    }
+
+    public Pair<String, Map<String, Object>> buildQueryStringByProvider(ExportParams exportParams, Provider provider) {
+
+        this.exportParamsAndStopPlaceSearchValidator.validateExportParams(exportParams);
+
+        StopPlaceSearch stopPlaceSearch = exportParams.getStopPlaceSearch();
+
+        final ExportParams.VersionValidity versionValidity;
+        if(stopPlaceSearch.getPointInTime() == null
+                && stopPlaceSearch.getVersionValidity() == null
+                && !stopPlaceSearch.isAllVersions()
+                && stopPlaceSearch.getVersion() == null) {
+            logger.debug("Parameters pointInTime, versionValidity, allVersions or version not set. Defaulting to version validity " + defaultVersionValidity);
+            versionValidity = defaultVersionValidity;
+        } else {
+            versionValidity = stopPlaceSearch.getVersionValidity();
+        }
+
+
+        StringBuilder queryString = new StringBuilder("select s.* from stop_place s ");
+
+        List<String> wheres = new ArrayList<>();
+        Map<String, Object> parameters = new HashMap<>();
+        List<String> operators = new ArrayList<>();
+        List<String> orderByStatements = new ArrayList<>();
+
+        queryString.append(SQL_LEFT_JOIN_PARENT_STOP);
+
+        boolean hasIdFilter = stopPlaceSearch.getNetexIdList() != null && !stopPlaceSearch.getNetexIdList().isEmpty();
+
+        if (hasIdFilter) {
+            wheres.add("(s.netex_id in :netexIdList OR p.netex_id in :netexIdList)");
+            parameters.put("netexIdList", stopPlaceSearch.getNetexIdList());
+        } else {
+            if (stopPlaceSearch.getQuery() != null) {
+                createAndAddQueryCondition(stopPlaceSearch, operators, parameters, wheres, orderByStatements);
+            }
+
+            if (stopPlaceSearch.getStopTypeEnumerations() != null && !stopPlaceSearch.getStopTypeEnumerations().isEmpty()) {
+                wheres.add("s.stop_place_type in :stopPlaceTypes");
+                parameters.put("stopPlaceTypes", stopPlaceSearch.getStopTypeEnumerations().stream().map(StopTypeEnumeration::toString).collect(toList()));
+                operators.add("and");
+            }
+
+            if (stopPlaceSearch.getSubmode() != null) {
+                wheres.add("(s.air_submode = :submode OR s.bus_submode = :submode OR s.coach_submode = :submode OR s.funicular_submode = :submode OR s.metro_submode = :submode OR s.rail_submode = :submode OR s.telecabin_submode = :submode OR s.tram_submode = :submode OR s.water_submode = :submode)");
+                parameters.put("submode", stopPlaceSearch.getSubmode());
+                operators.add("and");
+            }
+
+            if (stopPlaceSearch.getTags() != null && !stopPlaceSearch.getTags().isEmpty()) {
+                wheres.add("(s." + SQL_MULTIPLE_TAG_QUERY + " OR p." + SQL_MULTIPLE_TAG_QUERY + ")");
+                parameters.put("tags", stopPlaceSearch.getTags());
+                operators.add("and");
+            }
+
+            boolean hasMunicipalityFilter = exportParams.getMunicipalityReferences() != null && !exportParams.getMunicipalityReferences().isEmpty();
+            boolean hasCountyFilter = exportParams.getCountyReferences() != null && !exportParams.getCountyReferences().isEmpty();
+
+            if (hasMunicipalityFilter && !hasIdFilter) {
+                String prefix;
+                if (hasCountyFilter) {
+                    operators.add("or");
+                    prefix = "(";
+                } else prefix = "";
+
+                String municipalityQuery = "topographic_place_id in (select tp.id from topographic_place tp where tp.netex_id in :municipalityId)";
+                wheres.add(prefix + "(s." + municipalityQuery + " or p." + municipalityQuery + ")");
+                parameters.put("municipalityId", exportParams.getMunicipalityReferences());
+            }
+
+            if (hasCountyFilter && !hasIdFilter) {
+                String suffix = hasMunicipalityFilter ? ")" : "";
+                String countyQuery = "topographic_place_id in (select tp.id from topographic_place tp where tp.parent_ref in :countyId)";
+                wheres.add("(s." + countyQuery + " or " + "p." + countyQuery + ")" + suffix);
+                parameters.put("countyId", exportParams.getCountyReferences());
+            }
+
+            boolean hasCode = exportParams.getCodeSpace() != null;
+
+            if (hasCode) {
+                operators.add("and");
+                wheres.add(SQL_SEARCH_BY_CODE);
+                parameters.put("codeSpace", exportParams.getCodeSpace());
+            }
+
+        }
+
+        // Parameters: version, pointInTime, versionValidity, allVersions. Should not be combined. See the exportParamsAndStopPlaceSearchValidator
+        if (stopPlaceSearch.getVersion() != null) {
+            operators.add("and");
+            wheres.add("s.version = :version");
+            parameters.put("version", stopPlaceSearch.getVersion());
+        } else if (stopPlaceSearch.getPointInTime() != null) {
+            operators.add("and");
+            //(from- and toDate is NULL), or (fromDate is set and toDate IS NULL or set)
+            String pointInTimeCondition = createPointInTimeCondition("s", "p");
+            parameters.put("pointInTime", Timestamp.from(stopPlaceSearch.getPointInTime()));
+            wheres.add(pointInTimeCondition);
+        } else if (ExportParams.VersionValidity.CURRENT.equals(versionValidity)) {
+            operators.add("and");
+            parameters.put("pointInTime", Date.from(Instant.now()));
+            String currentQuery = "(%s.from_date <= :pointInTime AND (%s.to_date >= :pointInTime or %s.to_date IS NULL))";
+            wheres.add("(" + formatRepeatedValue(currentQuery, "s", 3) + " or " + formatRepeatedValue(currentQuery, "p", 3) + ")");
+        } else if (ExportParams.VersionValidity.CURRENT_FUTURE.equals(versionValidity)) {
+            operators.add("and");
+            parameters.put("pointInTime", Date.from(Instant.now()));
+            String futureQuery = "p.netex_id is null and (s.to_date >= :pointInTime OR s.to_date IS NULL)";
+            String parentFutureQuery = "p.netex_id is not null and (p.to_date >= :pointInTime OR p.to_date IS NULL)";
+            wheres.add("((" + futureQuery + ") or (" + parentFutureQuery + "))");
+        } else if (!stopPlaceSearch.isAllVersions() && ExportParams.VersionValidity.MAX_VERSION.equals(stopPlaceSearch.getVersionValidity())) {
+            operators.add("and");
+            wheres.add("s.version = (select max(sv.version) from stop_place sv where sv.netex_id = s.netex_id)");
+        }
+
+        if (stopPlaceSearch.isWithoutLocationOnly()) {
+            operators.add("and");
+            wheres.add("(s.centroid IS NULL or (p.id IS NOT NULL AND p.centroid IS NULL))");
+        }
+
+        if (stopPlaceSearch.isWithoutQuaysOnly()) {
+            operators.add("and");
+            wheres.add("not exists (select sq.quays_id from stop_place_quays sq where sq.stop_place_id = s.id)");
+        }
+
+        if (stopPlaceSearch.isHasParking()) {
+            operators.add("and");
+            wheres.add("exists (select * from parking p where p.parent_site_ref=s.netex_id)");
+        }
+
+
+        if(stopPlaceSearch.isWithTags()) {
+            operators.add("and");
+            wheres.add(SQL_WITH_TAGS);
+        }
+
+        if (stopPlaceSearch.isWithDuplicatedQuayImportedIds()) {
+            operators.add("and");
+            if (stopPlaceSearch.getPointInTime() == null) {
+                throw new IllegalArgumentException("pointInTime must be set when searching for duplicated quay imported IDs");
+            }
+            parameters.put("originalIdKey", ORIGINAL_ID_KEY);
+            wheres.add("s.netex_id IN (" + SQL_DUPLICATED_QUAY_IMPORTED_IDS + ")");
+        }
+
+        if (stopPlaceSearch.isWithNearbySimilarDuplicates()) {
+            createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements);
+        }
+
+        if (provider != null && provider.getName() != null){
+            operators.add("and");
+            parameters.put("providerId", provider.getId());
+            wheres.add("s.provider_id = :providerId");
         }
 
         operators.add("and");

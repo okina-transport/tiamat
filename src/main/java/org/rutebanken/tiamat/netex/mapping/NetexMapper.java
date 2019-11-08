@@ -64,6 +64,11 @@ public class NetexMapper {
                 .byDefault()
                 .register();
 
+
+        mapperFactory.classMap(GeneralFrame.class, org.rutebanken.tiamat.model.GeneralFrame.class)
+                .byDefault()
+                .register();
+
         mapperFactory.classMap(TopographicPlace.class, org.rutebanken.tiamat.model.TopographicPlace.class)
                 .fieldBToA("name", "descriptor.name")
                 .byDefault()
@@ -79,7 +84,6 @@ public class NetexMapper {
                 .fieldAToB("topographicPlaceRef.version", "topographicPlace.version")
                 // TODO: Excluding some fields while waiting for NRP-1354
                 .exclude("localServices")
-                .exclude("postalAddress")
                 .exclude("roadAddress")
                 .customize(new StopPlaceMapper(publicationDeliveryHelper))
                 .byDefault()
@@ -87,8 +91,8 @@ public class NetexMapper {
 
         mapperFactory.classMap(Quay.class, org.rutebanken.tiamat.model.Quay.class)
                 .exclude("localServices")
-                .exclude("postalAddress")
                 .exclude("roadAddress")
+                .exclude("otherTransportModes")
                 .customize(new QuayMapper())
                 .byDefault()
                 .register();
@@ -181,6 +185,11 @@ public class NetexMapper {
         return siteFrame;
     }
 
+    public GeneralFrame mapToNetexModel(org.rutebanken.tiamat.model.GeneralFrame tiamatGeneralFrame) {
+        GeneralFrame generalFrame = facade.map(tiamatGeneralFrame, GeneralFrame.class);
+        return generalFrame;
+    }
+
     public StopPlace mapToNetexModel(org.rutebanken.tiamat.model.StopPlace tiamatStopPlace) {
         return facade.map(tiamatStopPlace, StopPlace.class);
     }
@@ -213,6 +222,11 @@ public class NetexMapper {
     public org.rutebanken.tiamat.model.SiteFrame mapToTiamatModel(SiteFrame netexSiteFrame) {
         org.rutebanken.tiamat.model.SiteFrame tiamatSiteFrame = facade.map(netexSiteFrame, org.rutebanken.tiamat.model.SiteFrame.class);
         return tiamatSiteFrame;
+    }
+
+    public org.rutebanken.tiamat.model.GeneralFrame mapToTiamatModel(GeneralFrame netexGeneralFrame) {
+        org.rutebanken.tiamat.model.GeneralFrame tiamatGeneralFrame = facade.map(netexGeneralFrame, org.rutebanken.tiamat.model.GeneralFrame.class);
+        return tiamatGeneralFrame;
     }
 
     public org.rutebanken.tiamat.model.StopPlace mapToTiamatModel(StopPlace netexStopPlace) {

@@ -25,6 +25,7 @@ import org.hibernate.engine.jdbc.internal.BasicFormatterImpl;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
+import org.rutebanken.tiamat.model.Provider;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -590,8 +591,8 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     }
 
     @Override
-    public Set<Long> getDatabaseIds(ExportParams exportParams, boolean ignorePaging) {
-        Pair<String, Map<String, Object>> pair = stopPlaceQueryFromSearchBuilder.buildQueryString(exportParams);
+    public Set<Long> getDatabaseIds(ExportParams exportParams, boolean ignorePaging, Provider provider) {
+        Pair<String, Map<String, Object>> pair = stopPlaceQueryFromSearchBuilder.buildQueryStringByProvider(exportParams, provider);
         Session session = entityManager.unwrap(Session.class);
         SQLQuery query = session.createSQLQuery("SELECT sub.id from (" + pair.getFirst() + ") sub");
 

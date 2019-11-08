@@ -15,28 +15,64 @@
 
 package org.rutebanken.tiamat.exporter;
 
+import javassist.bytecode.ExceptionTable;
+import net.opengis.gml._3.DirectPositionType;
 import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
-import org.rutebanken.netex.model.*;
+import org.rutebanken.netex.model.AccessibilityAssessment;
+import org.rutebanken.netex.model.AccessibilityLimitation;
+import org.rutebanken.netex.model.EntityStructure;
+import org.rutebanken.netex.model.GeneralFrame;
+import org.rutebanken.netex.model.GroupsOfStopPlacesInFrame_RelStructure;
+import org.rutebanken.netex.model.LimitationStatusEnumeration;
+import org.rutebanken.netex.model.LocationStructure;
+import org.rutebanken.netex.model.ObjectFactory;
+import org.rutebanken.netex.model.Parking;
+import org.rutebanken.netex.model.ParkingsInFrame_RelStructure;
+import org.rutebanken.netex.model.PostalAddress;
+import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.netex.model.Quay;
+import org.rutebanken.netex.model.Quays_RelStructure;
+import org.rutebanken.netex.model.SiteFrame;
+import org.rutebanken.netex.model.StopPlace;
+import org.rutebanken.netex.model.StopPlacesInFrame_RelStructure;
+import org.rutebanken.netex.model.TariffZone;
+import org.rutebanken.netex.model.TariffZonesInFrame_RelStructure;
+import org.rutebanken.netex.model.TopographicPlacesInFrame_RelStructure;
 import org.rutebanken.netex.validation.NeTExValidator;
-import org.rutebanken.tiamat.exporter.async.*;
+import org.rutebanken.tiamat.exporter.async.NetexMappingIterator;
+import org.rutebanken.tiamat.exporter.async.NetexMappingIteratorList;
+import org.rutebanken.tiamat.exporter.async.ParentStopFetchingIterator;
+import org.rutebanken.tiamat.exporter.async.ParentTreeTopographicPlaceFetchingIterator;
 import org.rutebanken.tiamat.exporter.eviction.EntitiesEvictor;
 import org.rutebanken.tiamat.exporter.eviction.SessionEntitiesEvictor;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.IDFMNetexIdentifiants;
 import org.rutebanken.tiamat.exporter.params.IDFMVehicleModeStopPlacetypeMapping;
+import org.rutebanken.tiamat.geo.geo.Lambert;
+import org.rutebanken.tiamat.geo.geo.LambertPoint;
+import org.rutebanken.tiamat.geo.geo.LambertZone;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.GroupOfStopPlaces;
 import org.rutebanken.tiamat.model.Provider;
 import org.rutebanken.tiamat.model.TopographicPlace;
-import org.rutebanken.tiamat.model.GroupOfStopPlaces;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
-import org.rutebanken.tiamat.repository.*;
+import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
+import org.rutebanken.tiamat.repository.ParkingRepository;
+import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.repository.TariffZoneRepository;
+import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.persistence.EntityManager;
@@ -45,14 +81,24 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
-import javax.xml.stream.XMLStreamException;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -114,11 +160,11 @@ public class StreamingPublicationDelivery {
         this.validateAgainstSchema = validateAgainstSchema;
     }
 
-    public void stream(ExportParams exportParams, OutputStream outputStream, Provider provider) throws JAXBException, XMLStreamException, IOException, InterruptedException, SAXException {
+    public void stream(ExportParams exportParams, OutputStream outputStream, Provider provider) throws Exception {
         stream(exportParams, outputStream, false, provider);
     }
 
-    public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider) throws JAXBException, XMLStreamException, IOException, InterruptedException, SAXException {
+    public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider) throws JAXBException, IOException, SAXException {
 
         IDFMNetexIdentifiants idfmNetexIdentifiants = new IDFMNetexIdentifiants();
 
@@ -164,14 +210,63 @@ public class StreamingPublicationDelivery {
 
         Marshaller marshaller = createMarshaller();
 
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
         logger.info("Start marshalling publication delivery");
-        marshaller.marshal(netexObjectFactory.createPublicationDelivery(publicationDeliveryStructure), outputStream);
+        marshaller.marshal(netexObjectFactory.createPublicationDelivery(publicationDeliveryStructure), byteArrayOutputStream);
+
+        doLastModifications(outputStream, byteArrayOutputStream);
+
         logger.info("Mapped {} stop places, {} parkings, {} topographic places, {} group of stop places and {} tariff zones to netex",
                 mappedStopPlaceCount.get(),
                 mappedParkingCount.get(),
                 mappedTopographicPlacesCount,
                 mappedGroupOfStopPlacesCount,
                 mappedTariffZonesCount);
+    }
+
+    /**
+     * Moche Workaroung : les ns sont générés bizarrement
+     * @param outputStreamOut
+     * @param byteArrayOutputIn
+     * @throws Exception
+     */
+    // TODO: okina 07/11/19
+    private void doLastModifications(OutputStream outputStreamOut, OutputStream byteArrayOutputIn) {
+        String s = byteArrayOutputIn.toString();
+        s = s.replace("ns2:pos", "gml:pos");
+        s = s.replace("ns3:", "siri:");
+
+        Document document = stringToDocument(s);
+        Node item = document.getElementsByTagName("PublicationDelivery").item(0);
+        Element element = (Element) item;
+        element.removeAttribute("xmlns:ns2");
+        element.removeAttribute("xmlns:ns3");
+        element.removeAttribute("xmlns:xsi");
+        element.removeAttribute("xsi:schemaLocation");
+
+        element.setAttribute("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
+        element.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+        element.setAttribute("xmlns:ifopt", "http://www.ifopt.org.uk/ifopt");
+        element.setAttribute("xmlns:siri", "http://www.siri.org.uk/siri");
+        element.setAttribute("xmlns:acbs", "http://www.ifopt.org.uk/acsb");
+        element.setAttribute("xmlns:gml", "http://www.opengis.net/gml/3.2");
+
+        String nv = element.getElementsByTagName("PublicationTimestamp").item(0).getChildNodes().item(0).getNodeValue();
+        element.getElementsByTagName("PublicationTimestamp").item(0).getChildNodes().item(0).setNodeValue(nv+"Z");
+
+        NodeList elements = document.getElementsByTagName("AccessibilityLimitation");
+        for(int i=0; i < elements.getLength(); i++){
+            Element el = (Element) elements.item(i);
+            el.removeAttribute("id");
+            el.removeAttribute("modification");
+            el.removeAttribute("version");
+        }
+        try {
+            outputStreamOut.write(documentToString(document).getBytes());
+        } catch (Exception e){
+            ; // SWALLOW
+        }
     }
 
     private void prepareQuays(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedStopPlaceCount, GeneralFrame netexGeneralFrame, EntitiesEvictor evicter, String providerName) {
@@ -298,19 +393,21 @@ public class StreamingPublicationDelivery {
                         quay.withKeyList(null);
 
                         // TODO Conversion en lambert 2 étendu ne fonctionne pas, en discuter avec IDFM pour voir les solutions possibles
-//                        LocationStructure locationOrDefault = Optional
-//                                .ofNullable(quay.getCentroid().getLocation())
-//                                .orElse(new LocationStructure()
-//                                        .withLatitude(BigDecimal.ZERO)
-//                                        .withLongitude(BigDecimal.ZERO));
+                        LocationStructure locationOrDefault = Optional
+                                .ofNullable(quay.getCentroid().getLocation())
+                                .orElse(new LocationStructure()
+                                        .withLatitude(BigDecimal.ZERO)
+                                        .withLongitude(BigDecimal.ZERO));
 
-//                            LambertPoint lambertPoint = Lambert.convertToLambert(locationOrDefault.getLatitude().doubleValue(), locationOrDefault.getLongitude().doubleValue(), LambertZone.LambertII);
-//
-//                            quay.getCentroid().setLocation(new LocationStructure()
-//                                    .withPos(
-//                                            new DirectPositionType()
-//                                                    .withValue(lambertPoint.getX(), lambertPoint.getY())
-//                                                    .withSrsName("EPSG:27572")));
+                        LambertPoint lambertPoint = Lambert.convertToLambert(locationOrDefault.getLatitude().doubleValue(), locationOrDefault.getLongitude().doubleValue(), LambertZone.Lambert93);
+                        double x = lambertPoint.getX();
+                        double y = lambertPoint.getY();
+                            quay.getCentroid().setLocation(new LocationStructure()
+                                    .withPos(
+                                            new DirectPositionType()
+                                                    .withValue(x, y)
+                                                    .withSrsName("EPSG:2154")));
+
 
                         PostalAddress postalAddress = new PostalAddress();
                         String[] zdep = quay.getId().split(":");
@@ -318,6 +415,15 @@ public class StreamingPublicationDelivery {
                         postalAddress.setPostalRegion("75000");
                         postalAddress.setVersion("any");
                         quay.setPostalAddress(postalAddress);
+
+                        AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
+                        accessibilityAssessment.setId(providerName + ":AccessibilityAssessment:" + zdep[3] + ":");
+                        accessibilityAssessment.setVersion("any");
+                        accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.UNKNOWN);
+                        AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
+                        //accessibilityLimitation.withWheelchairAccess(LimitationStatusEnumeration.);
+                        accessibilityAssessment.setLimitations(quay.getAccessibilityAssessment().getLimitations());
+                        quay.setAccessibilityAssessment(accessibilityAssessment);
 
                         quay.setModification(null);
 
@@ -516,6 +622,8 @@ public class StreamingPublicationDelivery {
         Marshaller marshaller = publicationDeliveryContext.createMarshaller();
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         marshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, "");
+        marshaller.setProperty("com.sun.xml.bind.xmlDeclaration", Boolean.FALSE);
+        marshaller.setProperty("com.sun.xml.bind.xmlHeaders", "<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 
         if (validateAgainstSchema) {
             marshaller.setSchema(neTExValidator.getSchema());
@@ -523,4 +631,41 @@ public class StreamingPublicationDelivery {
 
         return marshaller;
     }
+
+    /*
+     * SI possible tout ça à mettre en amont de la génération du xml
+     * NB : la suppression de standalone ok en amont
+     */
+
+    private static String documentToString(Document doc) {
+        String output = null;
+        try {
+            TransformerFactory tf = TransformerFactory.newInstance();
+            Transformer transformer = tf.newTransformer();
+            StringWriter writer = new StringWriter();
+            transformer.transform(new DOMSource(doc), new StreamResult(writer));
+            output = writer.getBuffer().toString();
+        } catch (Exception e){
+            return null;
+        }
+        return output;
+    }
+
+    private static Document stringToDocument(String strXml) {
+
+        Document doc = null;
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            StringReader strReader = new StringReader(strXml);
+            InputSource is = new InputSource(strReader);
+            doc = (Document) builder.parse(is);
+            doc.setXmlStandalone(false);
+        } catch (Exception e) {
+            return null;
+        }
+
+        return doc;
+    }
 }
+

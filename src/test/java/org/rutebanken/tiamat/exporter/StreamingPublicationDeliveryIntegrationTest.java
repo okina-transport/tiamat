@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -125,7 +126,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
     }
 
     @Test
-    public void avoidDuplicateTopographicPlaceWhenExportModeAll() throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException, NetexReferenceValidatorException {
+    public void avoidDuplicateTopographicPlaceWhenExportModeAll() throws Exception {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
         TopographicPlace county = new TopographicPlace(new EmbeddableMultilingualString("county"));
@@ -168,7 +169,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
      * Set export modes to none, to see that export netex is valid
      */
     @Test
-    public void handleExportModeSetToNone() throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException, NetexReferenceValidatorException {
+    public void handleExportModeSetToNone() throws Exception {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
         TopographicPlace county = new TopographicPlace(new EmbeddableMultilingualString("county"));
@@ -359,7 +360,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
      * Reproduce ROR-277, missing current stop place, when there is a future version.
      */
     @Test
-    public void keepCurrentVersionOfStopPlaceWhenFutureVersionExist() throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
+    public void keepCurrentVersionOfStopPlaceWhenFutureVersionExist() throws Exception {
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
@@ -409,47 +410,28 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
      * @throws JAXBException
      */
     @Test
-    public void exportIDFM() throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
+    public void exportIDFM() throws Exception {
 
         Provider provider = new Provider();
         provider.setId(1L);
         provider.setCode("1");
-        provider.setName("TEST");
+        provider.setName("SQYBUS");
 
         provider = providerRepository.save(provider);
+        createStopPlace(provider, "boaarle", "Arletty", 48.769338, 2.061942, "50090356");
+        createStopPlace(provider, "boaarle2","Arletty",48.803673, 2.011310, "50089971");
+//        createStopPlace(provider, "boabonn","Méliès - Croix Bonnet",48.801103, 2.006726,"50089967");
+//        createStopPlace(provider, "boabonn2","Méliès - Croix Bonnet",48.801312, 2.006654, "50090348");
+//        createStopPlace(provider, "boaclai2","René Clair",48.801586,2.004456, "");
+//        createStopPlace(provider, "boaclair","René Clair",48.801417,2.004304, "");
+//        createStopPlace(provider, "boacroi","Croix Blanche",48.798463,2.017417, "50089973");
+//        createStopPlace(provider, "boacroi2","Croix Blanche",48.798425,2.016724, "50090021");
+//        createStopPlace(provider, "boatati","Jacques Tati",48.803735,2.004744, "");
 
-        final int numberOfStopPlaces = StopPlaceSearch.DEFAULT_PAGE_SIZE + 1;
-        for(int i = 0; i < numberOfStopPlaces; i++) {
-            StopPlace stopPlace1 = new StopPlace(new EmbeddableMultilingualString("stop place number " + i));
-            Quay quay1 = new Quay();
-
-            quay1.setCentroid(geometryFactory.createPoint(new Coordinate(2.061942,48.769338)));
-            quay1.getOriginalZDEP().add("zdepTest" + i);
-            quay1.getOriginalNames().add("TestName" + i);
-
-            PrivateCodeStructure privateCodeStructure = new PrivateCodeStructure();
-            privateCodeStructure.setValue("TestPrivateCode" + i);
-            quay1.setPrivateCode(privateCodeStructure);
-
-
-            HashSet<Quay> quaysList1 = new HashSet<>();
-
-            quaysList1.add(quay1);
-
-            stopPlace1.setQuays(quaysList1);
-            stopPlace1.setVersion(1L);
-            stopPlace1.setProvider(provider);
-            stopPlace1.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
-
-            stopPlaceRepository.save(stopPlace1);
-        }
 
         ExportParams exportParams = ExportParams.newExportParamsBuilder()
                 .setStopPlaceSearch(
-                        StopPlaceSearch
-                                .newStopPlaceSearchBuilder()
-                                .setVersionValidity(ExportParams.VersionValidity.ALL)
-                                .build())
+                        StopPlaceSearch.newStopPlaceSearchBuilder().setVersionValidity(ExportParams.VersionValidity.ALL).build())
                 .build();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
@@ -460,6 +442,41 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.fromString(byteArrayOutputStream.toString());
 //        List<org.rutebanken.netex.model.StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure);
 //        assertThat(stopPlaces).hasSize(numberOfStopPlaces);
+
+        assertThat(byteArrayOutputStream.size()).isGreaterThan(0);
+    }
+
+    private void createStopPlace(Provider provider, String privateCode, String originalName, double y, double x, String zdep) {
+        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString(privateCode));
+        Quay quay = getQuay(privateCode, originalName, x, y, zdep);
+        HashSet<Quay> quaysList = new HashSet<>();
+        quaysList.add(quay);
+        stopPlace.setQuays(quaysList);
+        stopPlace.setVersion(1L);
+        stopPlace.setProvider(provider);
+        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        stopPlaceRepository.save(stopPlace);
+    }
+
+    private Quay getQuay(String privateCode, String originalName, double x, double y, String zdep) {
+        Quay quay = new Quay();
+        quay.setCentroid(geometryFactory.createPoint(new Coordinate(x,y)));
+        quay.getOriginalZDEP().add(zdep);
+        quay.getOriginalNames().add(originalName);
+        PrivateCodeStructure privateCodeStructure = new PrivateCodeStructure();
+        privateCodeStructure.setValue(privateCode);
+        quay.setPrivateCode(privateCodeStructure);
+
+        AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
+        accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.UNKNOWN);
+        AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
+        accessibilityLimitation.setWheelchairAccess(LimitationStatusEnumeration.UNKNOWN);
+        List<AccessibilityLimitation> accessibilityLimitationList = new ArrayList<AccessibilityLimitation>();
+        accessibilityLimitationList.add(accessibilityLimitation);
+        accessibilityAssessment.setLimitations(accessibilityLimitationList);
+        quay.setAccessibilityAssessment(accessibilityAssessment);
+
+        return quay;
     }
 
 }

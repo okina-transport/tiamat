@@ -4,10 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class IDFMNetexIdentifiants {
-    private Map<String, String> idSitesList = new HashMap<>();
-    private Map<String, String> nameSitesList = new HashMap<>();
+    private static Map<String, String> idSitesList = new HashMap<>();
+    private static Map<String, String> nameSitesList = new HashMap<>();
 
-    public IDFMNetexIdentifiants() {
+    static {
         idSitesList.put("CTVMI", "81");
         idSitesList.put("CEOBUS", "84");
         idSitesList.put("MOBICITE", "79");
@@ -29,11 +29,11 @@ public class IDFMNetexIdentifiants {
         nameSitesList.put("TEST", "TEST");
     }
 
-    public String getIdSite(String name){
+    public static String getIdSite(String name){
         return idSitesList.get(name);
     }
 
-    public String getNameSite(String name){
+    public static String getNameSite(String name){
         return nameSitesList.get(name);
     }
 

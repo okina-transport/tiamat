@@ -33,7 +33,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -42,6 +41,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.StreamSupport;
 
 import static java.util.stream.Collectors.toSet;
+import static org.rutebanken.tiamat.exporter.PublicationDeliveryExporter.MultiModalFetchMode.PARENTS;
 
 /**
  * This class should be removed.
@@ -134,6 +134,7 @@ public class PublicationDeliveryExporter {
         return publicationDeliveryStructure;
     }
 
+
     public PublicationDeliveryStructure createPublicationDelivery(org.rutebanken.netex.model.GeneralFrame generalFrame, String idSite, LocalDateTime localDateTime) {
         PublicationDeliveryStructure publicationDeliveryStructure = createPublicationDelivery(idSite, localDateTime);
         publicationDeliveryStructure.withDataObjects(
@@ -155,12 +156,12 @@ public class PublicationDeliveryExporter {
         logger.info("Preparing publication delivery export");
 
         if(multiModalFetchMode == null) {
-            multiModalFetchMode = MultiModalFetchMode.PARENTS;
+            multiModalFetchMode = PARENTS;
         }
 
         if(multiModalFetchMode.equals(MultiModalFetchMode.CHILDREN)) {
             stopPlaces = childStopPlacesFetcher.resolveChildren(stopPlaces);
-        } else if( multiModalFetchMode.equals(MultiModalFetchMode.PARENTS)){
+        } else if( multiModalFetchMode.equals(PARENTS)){
             stopPlaces = parentStopPlacesFetcher.resolveParents(stopPlaces, true);
         }
 

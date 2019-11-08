@@ -15,11 +15,9 @@
 
 package org.rutebanken.tiamat.exporter;
 
-import javassist.bytecode.ExceptionTable;
 import net.opengis.gml._3.DirectPositionType;
 import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
-import org.joda.time.DateTime;
 import org.rutebanken.netex.model.AccessibilityAssessment;
 import org.rutebanken.netex.model.AccessibilityLimitation;
 import org.rutebanken.netex.model.EntityStructure;
@@ -169,10 +167,8 @@ public class StreamingPublicationDelivery {
 
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider) throws JAXBException, IOException, SAXException {
 
-        IDFMNetexIdentifiants idfmNetexIdentifiants = new IDFMNetexIdentifiants();
-
         LocalDateTime localDateTime = LocalDateTime.now().withNano(0);
-        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame(idfmNetexIdentifiants.getNameSite(provider.getName()), localDateTime);
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame(IDFMNetexIdentifiants.getNameSite(provider.getName()), localDateTime);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
         AtomicInteger mappedParkingCount = new AtomicInteger();
@@ -208,9 +204,9 @@ public class StreamingPublicationDelivery {
 //        prepareStopPlaces(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexGeneralFrame, entitiesEvictor);
 //        prepareParkings(exportParams, stopPlacePrimaryIds, mappedParkingCount, netexSiteFrame, entitiesEvictor);
 //        prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, netexSiteFrame, entitiesEvictor);
-        prepareQuays(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexGeneralFrame, entitiesEvictor, idfmNetexIdentifiants.getNameSite(provider.getName()));
+        prepareQuays(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexGeneralFrame, entitiesEvictor, IDFMNetexIdentifiants.getNameSite(provider.getName()));
 
-        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame, idfmNetexIdentifiants.getIdSite(provider.getName()), localDateTime);
+        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame, IDFMNetexIdentifiants.getIdSite(provider.getName()), localDateTime);
 
         Marshaller marshaller = createMarshaller();
 

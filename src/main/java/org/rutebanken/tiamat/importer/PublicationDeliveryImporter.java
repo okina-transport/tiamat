@@ -20,11 +20,17 @@ import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.SiteFrame;
 import org.rutebanken.tiamat.exporter.PublicationDeliveryExporter;
-import org.rutebanken.tiamat.importer.handler.*;
+import org.rutebanken.tiamat.exporter.params.IDFMNetexIdentifiants;
+import org.rutebanken.tiamat.importer.handler.ParkingsImportHandler;
+import org.rutebanken.tiamat.importer.handler.PathLinkImportHandler;
+import org.rutebanken.tiamat.importer.handler.StopPlaceImportHandler;
+import org.rutebanken.tiamat.importer.handler.TariffZoneImportHandler;
+import org.rutebanken.tiamat.importer.handler.TopographicPlaceImportHandler;
 import org.rutebanken.tiamat.importer.log.ImportLogger;
 import org.rutebanken.tiamat.importer.log.ImportLoggerTask;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
+import org.rutebanken.tiamat.repository.ProviderRepository;
 import org.rutebanken.tiamat.service.batch.BackgroundJobs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +47,9 @@ import static org.rutebanken.tiamat.netex.mapping.NetexMappingContextThreadLocal
 
 @Service
 public class PublicationDeliveryImporter {
+
+    @Autowired
+    protected ProviderRepository providerRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(PublicationDeliveryImporter.class);
 
@@ -144,7 +153,9 @@ public class PublicationDeliveryImporter {
             if (responseSiteframe.getTariffZones() != null || responseSiteframe.getTopographicPlaces() != null) {
                 backgroundJobs.triggerStopPlaceUpdate();
             }
-            return publicationDeliveryExporter.createPublicationDelivery(responseSiteframe);
+            PublicationDeliveryStructure publicationDelivery = publicationDeliveryExporter.createPublicationDelivery(responseSiteframe);
+            publicationDelivery.withParticipantRef(IDFMNetexIdentifiants.getIdSite(providerRepository.findByCode(importParams.providerCode).get(0).getName()));
+            return  publicationDelivery;
         } finally {
             MDC.remove(IMPORT_CORRELATION_ID);
             loggerTimer.cancel();

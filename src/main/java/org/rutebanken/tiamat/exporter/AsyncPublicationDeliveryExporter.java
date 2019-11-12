@@ -41,6 +41,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -106,7 +107,14 @@ public class AsyncPublicationDeliveryExporter {
      */
     public ExportJob startExportJob(ExportParams exportParams) {
 
-        Iterable<Provider> providers = providerRepository.findAll();
+        Iterable<Provider> providers;
+
+        if(exportParams.getProviderId() == null) {
+            providers = providerRepository.findAll();
+        }
+        else {
+            providers = Collections.singletonList((providerRepository.findById(exportParams.getProviderId()).get()));
+        }
 
         ExportJob exportJob = new ExportJob(JobStatus.PROCESSING);
 

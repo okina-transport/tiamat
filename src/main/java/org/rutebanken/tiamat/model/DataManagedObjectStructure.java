@@ -74,6 +74,15 @@ public abstract class DataManagedObjectStructure
         return keyValues.get(key).getItems();
     }
 
+    public void setOrCreateValues(String key, Set<String> values) {
+        if (keyValues.get(key) != null) {
+            keyValues.remove(key);
+        }
+        if (values != null) {
+            keyValues.put(key, new Value(values));
+        }
+    }
+
     public Set<String> getOriginalIds() {
         return getOrCreateValues(NetexIdMapper.ORIGINAL_ID_KEY);
     }
@@ -83,6 +92,10 @@ public abstract class DataManagedObjectStructure
     public Set<String> getOriginalStopCodes() { return getOrCreateValues(NetexIdMapper.ORIGINAL_STOPCODE_KEY); }
 
     public Set<String> getOriginalZDEP() { return getOrCreateValues(NetexIdMapper.ORIGINAL_ZDEP_KEY); }
+
+    public void setOriginalZDEP(Set<String> values) {
+        setOrCreateValues(NetexIdMapper.ORIGINAL_ZDEP_KEY, values);
+    }
 
     public String getVersionComment() {
         return versionComment;

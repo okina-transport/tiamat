@@ -53,6 +53,10 @@ public class Value implements Serializable {
         this.items.addAll(items);
     }
 
+    public Value(Set<String> items) {
+        this.items.addAll(items);
+    }
+
     public Set<String> getItems() {
         return items;
     }

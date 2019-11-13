@@ -277,10 +277,7 @@ public class StreamingPublicationDelivery {
             final Iterator<org.rutebanken.tiamat.model.StopPlace> netexStopPlaceIterator = stopPlaceRepository.scrollStopPlaces(stopPlacePrimaryIds);
             final Iterator<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaceIterator = stopPlaceRepository.scrollStopPlaces(stopPlacePrimaryIds);
 
-            List<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaces = new ArrayList<>();
-
-            boolean quaysExportEmpty = false;
-            quaysExportEmpty = prepareTiamatQuays(stopPlacePrimaryIds, tiamatStopPlaceIterator, tiamatStopPlaces, quaysExportEmpty);
+            boolean quaysExportEmpty = prepareTiamatQuays(tiamatStopPlaceIterator);
 
             if(!quaysExportEmpty){
 
@@ -304,9 +301,11 @@ public class StreamingPublicationDelivery {
 
     /**
      * Traitements sur les quays Tiamat (avant mapping avec les quays Netex)
-     * @return
+     * @return TRUE si les quays sont vides, FALSE autrement
      */
-    private boolean prepareTiamatQuays(Set<Long> stopPlacePrimaryIds, Iterator<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaceIterator, List<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaces, boolean quaysExportEmpty) {
+    private boolean prepareTiamatQuays(Iterator<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaceIterator) {
+
+        List<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaces = new ArrayList<>();
 
         while (tiamatStopPlaceIterator.hasNext()) {
             tiamatStopPlaces.add(tiamatStopPlaceIterator.next());
@@ -321,10 +320,12 @@ public class StreamingPublicationDelivery {
                 .flatMap(tiamatStopPlace -> tiamatStopPlace
                         .getQuays()
                         .stream()
+                        .peek(quay -> {
+                            quay.setTransportMode(idfmVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(tiamatStopPlace.getStopPlaceType()));
+                            quay.setOriginalZDEP(tiamatStopPlace.getOriginalZDEP());
+                        })
                         .filter(quay -> !quay.getOriginalZDEP().isEmpty())
-                        .peek(quay -> quay
-                                .setTransportMode(idfmVehicleModeStopPlacetypeMapping
-                                        .getVehicleModeEnumeration(tiamatStopPlace.getStopPlaceType())))
+
                 )
                 .collect(Collectors.toList());
 
@@ -360,9 +361,9 @@ public class StreamingPublicationDelivery {
             });
         }
         else{
-            quaysExportEmpty = true;
+            return true;
         }
-        return quaysExportEmpty;
+        return false;
     }
 
     /**

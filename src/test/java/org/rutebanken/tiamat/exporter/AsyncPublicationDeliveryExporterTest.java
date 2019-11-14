@@ -35,6 +35,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Optional;
 
 import static junit.framework.TestCase.fail;
@@ -88,10 +90,9 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
     @Test
     public void testName() {
         // GIVEN
-        Instant instant = Instant.now();
 
         // WHEN
-        String sqybus = asyncPublicationDeliveryExporter.createFileNameWithoutExtention(instant, "41", "SQYBUS");
+        String sqybus = asyncPublicationDeliveryExporter.createFileNameWithoutExtention("41", "SQYBUS", LocalDateTime.now());
 
         // THEN
         Assert.assertTrue(sqybus.length() > 0);

@@ -166,9 +166,14 @@ public class StreamingPublicationDelivery {
     }
 
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider) throws JAXBException, IOException, SAXException {
+        stream(exportParams, outputStream, false, provider, LocalDateTime.now().withNano(0));
+    }
 
-        LocalDateTime localDateTime = LocalDateTime.now().withNano(0);
-        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame(IDFMNetexIdentifiants.getNameSite(provider.getName()), localDateTime);
+    public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime) throws JAXBException, IOException, SAXException {
+
+        IDFMNetexIdentifiants idfmNetexIdentifiants = new IDFMNetexIdentifiants();
+
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame(idfmNetexIdentifiants.getNameSite(provider.getName()), localDateTime);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
         AtomicInteger mappedParkingCount = new AtomicInteger();

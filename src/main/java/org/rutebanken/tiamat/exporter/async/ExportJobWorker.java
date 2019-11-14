@@ -31,6 +31,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
 import java.io.*;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -50,6 +51,7 @@ public class ExportJobWorker implements Runnable {
     private final ExportJobRepository exportJobRepository;
     private final NetexXmlReferenceValidator netexXmlReferenceValidator;
     private final Provider provider;
+    private LocalDateTime localDateTime; // ne peut pas être final. Vu qu'on ne le bouge pas, pas gênant mais dommage
 
     public ExportJobWorker(ExportJob exportJob,
                            StreamingPublicationDelivery streamingPublicationDelivery,
@@ -58,7 +60,8 @@ public class ExportJobWorker implements Runnable {
                            BlobStoreService blobStoreService,
                            ExportJobRepository exportJobRepository,
                            NetexXmlReferenceValidator netexXmlReferenceValidator,
-                           Provider provider) {
+                           Provider provider,
+                           LocalDateTime localDateTime) {
         this.exportJob = exportJob;
         this.streamingPublicationDelivery = streamingPublicationDelivery;
         this.localExportPath = localExportPath;
@@ -67,6 +70,7 @@ public class ExportJobWorker implements Runnable {
         this.exportJobRepository = exportJobRepository;
         this.netexXmlReferenceValidator = netexXmlReferenceValidator;
         this.provider = provider;
+        this.localDateTime = localDateTime;
     }
 
 
@@ -76,7 +80,7 @@ public class ExportJobWorker implements Runnable {
         File localExportXmlFile = new File(localExportPath + File.separator + fileNameWithoutExtention + ".xml");
         try {
 
-            exportToLocalXmlFile(localExportXmlFile, provider);
+            exportToLocalXmlFile(localExportXmlFile, provider, localDateTime);
 
             netexXmlReferenceValidator.validateNetexReferences(localExportXmlFile);
 
@@ -107,10 +111,10 @@ public class ExportJobWorker implements Runnable {
         }
     }
 
-    private void exportToLocalXmlFile(File localExportXmlFile, Provider provider) throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
+    private void exportToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime) throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.stream(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING, provider);
+        streamingPublicationDelivery.stream(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING, provider, localDateTime);
     }
 
     private void uploadToGcp(File localExportFile) throws FileNotFoundException {

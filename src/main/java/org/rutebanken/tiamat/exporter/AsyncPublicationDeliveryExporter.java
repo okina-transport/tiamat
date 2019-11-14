@@ -124,11 +124,12 @@ public class AsyncPublicationDeliveryExporter {
                 exportJob.setExportParams(exportParams);
                 exportJob.setSubFolder(generateSubFolderName());
 
+                LocalDateTime localDateTime = LocalDateTime.now().withNano(0);
                 exportJobRepository.save(exportJob);
-                String fileNameWithoutExtention = createFileNameWithoutExtention(exportJob.getStarted(), IDFMNetexIdentifiants.getIdSite(provider.getName()), IDFMNetexIdentifiants.getNameSite(provider.getName()));
+                String fileNameWithoutExtention = createFileNameWithoutExtention(IDFMNetexIdentifiants.getIdSite(provider.getName()), IDFMNetexIdentifiants.getNameSite(provider.getName()), localDateTime);
                 exportJob.setFileName(fileNameWithoutExtention + ".zip");
 
-                ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider);
+                ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider, localDateTime);
                 exportService.submit(exportJobWorker);
                 logger.info("Returning started export job {}", exportJob);
                 setJobUrl(exportJob);
@@ -138,8 +139,9 @@ public class AsyncPublicationDeliveryExporter {
         return exportJob;
     }
 
-    public String createFileNameWithoutExtention(Instant started, String idSite, String nameSite) {
-        String retour = "ARRET_" + idSite + "_" + nameSite + "_T_" + started.atZone(exportTimeZone.getDefaultTimeZoneId()).format(DATE_TIME_FORMATTER);
+    public String createFileNameWithoutExtention(String idSite, String nameSite, LocalDateTime localDateTime) {
+        String retour = "ARRET_" + idSite + "_" + nameSite + "_T_" + localDateTime;
+        if(!retour.endsWith("Z")) retour = retour + "Z";
         retour = retour.replace("-", "");
         retour = retour.replace(":", "");
         return retour;

@@ -28,7 +28,7 @@ public class TiamatGeneralFrameExporter {
     public org.rutebanken.tiamat.model.GeneralFrame createTiamatGeneralFrame(String siteName, LocalDateTime localDateTime) {
         // Frame <GeneralFrame>
         org.rutebanken.tiamat.model.GeneralFrame generalFrame = new org.rutebanken.tiamat.model.GeneralFrame();
-        String localDateTimeString = localDateTime + "";
+        String localDateTimeString = localDateTime + "Z";
         localDateTimeString = localDateTimeString.replace("-", "");
         localDateTimeString = localDateTimeString.replace(":", "");
         generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_ARRET_IDF_" + localDateTimeString + ":LOC");

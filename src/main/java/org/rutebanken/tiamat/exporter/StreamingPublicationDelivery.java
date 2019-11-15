@@ -20,6 +20,7 @@ import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
 import org.rutebanken.netex.model.AccessibilityAssessment;
 import org.rutebanken.netex.model.AccessibilityLimitation;
+import org.rutebanken.netex.model.AccessibilityLimitations_RelStructure;
 import org.rutebanken.netex.model.EntityStructure;
 import org.rutebanken.netex.model.GeneralFrame;
 import org.rutebanken.netex.model.GroupsOfStopPlacesInFrame_RelStructure;
@@ -421,13 +422,33 @@ public class StreamingPublicationDelivery {
                         postalAddress.setVersion("any");
                         quay.setPostalAddress(postalAddress);
 
+
                         AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
                         accessibilityAssessment.setId(providerName + ":AccessibilityAssessment:" + zdep[3] + ":");
                         accessibilityAssessment.setVersion("any");
                         accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.UNKNOWN);
-                        AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
-                        //accessibilityLimitation.withWheelchairAccess(LimitationStatusEnumeration.);
-                        accessibilityAssessment.setLimitations(quay.getAccessibilityAssessment().getLimitations());
+
+                        //AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
+                        AccessibilityLimitations_RelStructure limitations = quay.getAccessibilityAssessment().getLimitations();
+                        AccessibilityLimitation accessibilityLimitation = limitations.getAccessibilityLimitation();
+                        if(accessibilityLimitation != null){
+                            if(accessibilityLimitation.getVisualSignsAvailable() == null){
+                                limitations.getAccessibilityLimitation().setVisualSignsAvailable(LimitationStatusEnumeration.UNKNOWN);
+                            }
+                            if(accessibilityLimitation.getAudibleSignalsAvailable() == null){
+                                limitations.getAccessibilityLimitation().setAudibleSignalsAvailable(LimitationStatusEnumeration.UNKNOWN);
+                            }
+                            if(accessibilityLimitation.getWheelchairAccess() == null){
+                                limitations.getAccessibilityLimitation().setWheelchairAccess(LimitationStatusEnumeration.UNKNOWN);
+                            }
+                        }
+
+
+                        //accessibilityLimitation.withWheelchairAccess(limitations.getAccessibilityLimitation().getWheelchairAccess());
+                        //accessibilityLimitation.withAudibleSignalsAvailable(limitations.getAccessibilityLimitation().getAudibleSignalsAvailable());
+                        //accessibilityLimitation.withVisualSignsAvailable(limitations.getAccessibilityLimitation().getVisualSignsAvailable());
+                        accessibilityAssessment.withLimitations(limitations);
+
                         quay.setAccessibilityAssessment(accessibilityAssessment);
 
                         quay.setModification(null);

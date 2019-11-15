@@ -470,7 +470,10 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
         accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.UNKNOWN);
         AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
-        accessibilityLimitation.setWheelchairAccess(LimitationStatusEnumeration.UNKNOWN);
+        // comment or uncomment to test
+        //accessibilityLimitation.setWheelchairAccess(LimitationStatusEnumeration.UNKNOWN);
+        accessibilityLimitation.setAudibleSignalsAvailable(LimitationStatusEnumeration.UNKNOWN);
+        accessibilityLimitation.setVisualSignsAvailable(LimitationStatusEnumeration.UNKNOWN);
         List<AccessibilityLimitation> accessibilityLimitationList = new ArrayList<AccessibilityLimitation>();
         accessibilityLimitationList.add(accessibilityLimitation);
         accessibilityAssessment.setLimitations(accessibilityLimitationList);

@@ -422,13 +422,22 @@ public class StreamingPublicationDelivery {
                         postalAddress.setVersion("any");
                         quay.setPostalAddress(postalAddress);
 
-
                         AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
-                        accessibilityAssessment.setId(providerName + ":AccessibilityAssessment:" + zdep[3] + ":");
-                        accessibilityAssessment.setVersion("any");
-                        accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.UNKNOWN);
 
-                        //AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
+                        if(quay.getAccessibilityAssessment() == null){
+                            accessibilityAssessment.setId(providerName + ":AccessibilityAssessment:" + zdep[3] + ":");
+                            accessibilityAssessment.setVersion("any");
+                            accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.UNKNOWN);
+                            AccessibilityLimitations_RelStructure accessibilityLimitations_relStructure = new AccessibilityLimitations_RelStructure();
+                            AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
+                            accessibilityLimitations_relStructure.setAccessibilityLimitation(accessibilityLimitation);
+                            accessibilityAssessment.setLimitations(accessibilityLimitations_relStructure);
+                            quay.setAccessibilityAssessment(accessibilityAssessment);
+                        }
+                        else{
+                            accessibilityAssessment = quay.getAccessibilityAssessment();
+                        }
+
                         AccessibilityLimitations_RelStructure limitations = quay.getAccessibilityAssessment().getLimitations();
                         AccessibilityLimitation accessibilityLimitation = limitations.getAccessibilityLimitation();
                         if(accessibilityLimitation != null){
@@ -443,10 +452,6 @@ public class StreamingPublicationDelivery {
                             }
                         }
 
-
-                        //accessibilityLimitation.withWheelchairAccess(limitations.getAccessibilityLimitation().getWheelchairAccess());
-                        //accessibilityLimitation.withAudibleSignalsAvailable(limitations.getAccessibilityLimitation().getAudibleSignalsAvailable());
-                        //accessibilityLimitation.withVisualSignsAvailable(limitations.getAccessibilityLimitation().getVisualSignsAvailable());
                         accessibilityAssessment.withLimitations(limitations);
 
                         quay.setAccessibilityAssessment(accessibilityAssessment);

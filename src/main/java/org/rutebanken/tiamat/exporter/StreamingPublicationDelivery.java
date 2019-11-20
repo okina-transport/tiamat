@@ -419,7 +419,7 @@ public class StreamingPublicationDelivery {
 
                         PostalAddress postalAddress = new PostalAddress();
                         String[] zdep = quay.getId().split(":");
-                        postalAddress.setId(providerName + ":PostalAddress:" + zdep[3] + ":");
+                        postalAddress.setId(providerName + ":PostalAddress:" + zdep[2] + ":");
                         postalAddress.setPostalRegion("75000");
                         postalAddress.setVersion("any");
                         quay.setPostalAddress(postalAddress);
@@ -427,7 +427,7 @@ public class StreamingPublicationDelivery {
                         AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
 
                         if(quay.getAccessibilityAssessment() == null){
-                            accessibilityAssessment.setId(providerName + ":AccessibilityAssessment:" + zdep[3] + ":");
+                            accessibilityAssessment.setId(providerName + ":AccessibilityAssessment:" + zdep[2] + ":");
                             accessibilityAssessment.setVersion("any");
                             accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.UNKNOWN);
                             AccessibilityLimitations_RelStructure accessibilityLimitations_relStructure = new AccessibilityLimitations_RelStructure();

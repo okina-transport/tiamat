@@ -394,7 +394,7 @@ public class StreamingPublicationDelivery {
             setField(Quays_RelStructure.class, "quayRefOrQuay", quays_relStructure, netexQuays);
 
             List<JAXBElement<? extends EntityStructure>> listOfJaxbQuays = netexQuays.stream()
-                    .filter(quay -> quay.getId().split(":").length == 3) // zdep dedans
+//                    .filter(quay -> quay.getId().split(":").length == 3) // zdep dedans
                     .map(quay -> {
                         logger.info("Prepare " + quay.getId());
                         quay.setVersion("any");
@@ -419,16 +419,15 @@ public class StreamingPublicationDelivery {
 
                         PostalAddress postalAddress = new PostalAddress();
                         String[] zdep = quay.getId().split(":");
-                        postalAddress.setId(providerName + ":PostalAddress:" + zdep[2] + ":");
+                        postalAddress.setId(providerName + ":PostalAddress:" + zdep[3] + ":");
                         postalAddress.setPostalRegion("75000");
                         postalAddress.setVersion("any");
                         quay.setPostalAddress(postalAddress);
 
                         AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
 
+
                         if(quay.getAccessibilityAssessment() == null){
-                            accessibilityAssessment.setId(providerName + ":AccessibilityAssessment:" + zdep[2] + ":");
-                            accessibilityAssessment.setVersion("any");
                             accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.UNKNOWN);
                             AccessibilityLimitations_RelStructure accessibilityLimitations_relStructure = new AccessibilityLimitations_RelStructure();
                             AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
@@ -439,6 +438,9 @@ public class StreamingPublicationDelivery {
                         else{
                             accessibilityAssessment = quay.getAccessibilityAssessment();
                         }
+
+                        accessibilityAssessment.setId(providerName + ":AccessibilityAssessment:" + zdep[3] + ":");
+                        accessibilityAssessment.setVersion("any");
 
                         AccessibilityLimitations_RelStructure limitations = quay.getAccessibilityAssessment().getLimitations();
                         AccessibilityLimitation accessibilityLimitation = limitations.getAccessibilityLimitation();

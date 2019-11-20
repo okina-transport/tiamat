@@ -396,6 +396,7 @@ public class StreamingPublicationDelivery {
             List<JAXBElement<? extends EntityStructure>> listOfJaxbQuays = netexQuays.stream()
                     .filter(quay -> quay.getId().split(":").length == 3) // zdep dedans
                     .map(quay -> {
+                        logger.info("Prepare " + quay.getId());
                         quay.setVersion("any");
                         quay.withKeyList(null);
 

@@ -463,9 +463,14 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         quay.setCentroid(geometryFactory.createPoint(new Coordinate(x,y)));
         quay.getOriginalZDEP().add(zdep);
         quay.getOriginalNames().add(originalName);
-        PrivateCodeStructure privateCodeStructure = new PrivateCodeStructure();
-        privateCodeStructure.setValue(privateCode);
-        quay.setPrivateCode(privateCodeStructure);
+
+        // Bon fonctionnement de la gestion des codes à vérifier et à traiter
+//        PrivateCodeStructure privateCodeStructure = new PrivateCodeStructure();
+//        privateCodeStructure.setValue(privateCode);
+//        quay.setPrivateCode(privateCodeStructure);
+
+        String publicCode = "testcode";
+        quay.setPublicCode(publicCode);
 
         AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
         accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.UNKNOWN);

@@ -24,12 +24,15 @@ import org.rutebanken.netex.model.AccessibilityLimitations_RelStructure;
 import org.rutebanken.netex.model.EntityStructure;
 import org.rutebanken.netex.model.GeneralFrame;
 import org.rutebanken.netex.model.GroupsOfStopPlacesInFrame_RelStructure;
+import org.rutebanken.netex.model.KeyValueStructure;
 import org.rutebanken.netex.model.LimitationStatusEnumeration;
 import org.rutebanken.netex.model.LocationStructure;
+import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.netex.model.Parking;
 import org.rutebanken.netex.model.ParkingsInFrame_RelStructure;
 import org.rutebanken.netex.model.PostalAddress;
+import org.rutebanken.netex.model.PrivateCodeStructure;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.Quay;
 import org.rutebanken.netex.model.Quays_RelStructure;
@@ -57,6 +60,7 @@ import org.rutebanken.tiamat.model.GroupOfStopPlaces;
 import org.rutebanken.tiamat.model.Provider;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
+import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
@@ -83,6 +87,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -92,14 +97,19 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -172,9 +182,7 @@ public class StreamingPublicationDelivery {
 
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime) throws JAXBException, IOException, SAXException {
 
-        IDFMNetexIdentifiants idfmNetexIdentifiants = new IDFMNetexIdentifiants();
-
-        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame(idfmNetexIdentifiants.getNameSite(provider.getName()), localDateTime);
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame(IDFMNetexIdentifiants.getNameSite(provider.getName()), localDateTime);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
         AtomicInteger mappedParkingCount = new AtomicInteger();
@@ -232,14 +240,20 @@ public class StreamingPublicationDelivery {
     }
 
     /**
-     * Moche Workaroung : les ns sont générés bizarrement
+     * Moche Workaround : les ns sont générés bizarrement
+     *
      * @param outputStreamOut
      * @param byteArrayOutputIn
      * @throws Exception
      */
     // TODO: okina 07/11/19
     private void doLastModifications(OutputStream outputStreamOut, OutputStream byteArrayOutputIn) {
-        String s = byteArrayOutputIn.toString();
+        String s = null;
+        try {
+            s = new String(((ByteArrayOutputStream) byteArrayOutputIn).toByteArray(), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         s = s.replace("ns2:pos", "gml:pos");
         s = s.replace("ns3:", "siri:");
 
@@ -259,18 +273,18 @@ public class StreamingPublicationDelivery {
         element.setAttribute("xmlns:gml", "http://www.opengis.net/gml/3.2");
 
         String nv = element.getElementsByTagName("PublicationTimestamp").item(0).getChildNodes().item(0).getNodeValue();
-        element.getElementsByTagName("PublicationTimestamp").item(0).getChildNodes().item(0).setNodeValue(nv+"Z");
+        element.getElementsByTagName("PublicationTimestamp").item(0).getChildNodes().item(0).setNodeValue(nv + "Z");
 
         NodeList elements = document.getElementsByTagName("AccessibilityLimitation");
-        for(int i=0; i < elements.getLength(); i++){
+        for (int i = 0; i < elements.getLength(); i++) {
             Element el = (Element) elements.item(i);
             el.removeAttribute("id");
             el.removeAttribute("modification");
             el.removeAttribute("version");
         }
         try {
-            outputStreamOut.write(documentToString(document).getBytes());
-        } catch (Exception e){
+            outputStreamOut.write(documentToString(document).getBytes("UTF-8"));
+        } catch (Exception e) {
             ; // SWALLOW
         }
     }
@@ -281,25 +295,20 @@ public class StreamingPublicationDelivery {
             logger.info("There are stop places to export");
 
             final Iterator<org.rutebanken.tiamat.model.StopPlace> netexStopPlaceIterator = stopPlaceRepository.scrollStopPlaces(stopPlacePrimaryIds);
-            final Iterator<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaceIterator = stopPlaceRepository.scrollStopPlaces(stopPlacePrimaryIds);
 
-            List<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaces = new ArrayList<>();
+
+//            quaysExportEmpty = prepareTiamatQuays(stopPlacePrimaryIds, tiamatStopPlaceIterator, tiamatStopPlaces, quaysExportEmpty);
+
+            // Use Listening iterator to collect stop place IDs.
+            ParentStopFetchingIterator parentStopFetchingIterator = new ParentStopFetchingIterator(netexStopPlaceIterator, stopPlaceRepository);
+            NetexMappingIterator<org.rutebanken.tiamat.model.StopPlace, StopPlace> netexMappingIterator = new NetexMappingIterator<>(netexMapper, parentStopFetchingIterator, StopPlace.class, mappedStopPlaceCount, evicter);
 
             boolean quaysExportEmpty = false;
-            quaysExportEmpty = prepareTiamatQuays(stopPlacePrimaryIds, tiamatStopPlaceIterator, tiamatStopPlaces, quaysExportEmpty);
+            prepareNetexQuays(netexMappingIterator, providerName, netexGeneralFrame, quaysExportEmpty);
 
-            if(!quaysExportEmpty){
-
-                // Use Listening iterator to collect stop place IDs.
-                ParentStopFetchingIterator parentStopFetchingIterator = new ParentStopFetchingIterator(netexStopPlaceIterator, stopPlaceRepository);
-                NetexMappingIterator<org.rutebanken.tiamat.model.StopPlace, StopPlace> netexMappingIterator = new NetexMappingIterator<>(netexMapper, parentStopFetchingIterator, StopPlace.class, mappedStopPlaceCount, evicter);
-
-                prepareNetexQuays(netexMappingIterator, providerName, netexGeneralFrame);
-
-                // Code commenté car ne fonctionne que dans la génération du netex norvégien
-                // List<StopPlace> stopPlaces = new NetexMappingIteratorList<>(() -> new NetexReferenceRemovingIterator(netexMappingIterator, exportParams));
-            }
-            else{
+            // Code commenté car ne fonctionne que dans la génération du netex norvégien
+            // List<StopPlace> stopPlaces = new NetexMappingIteratorList<>(() -> new NetexReferenceRemovingIterator(netexMappingIterator, exportParams));
+            if (quaysExportEmpty) {
                 netexGeneralFrame.withMembers(null);
             }
 
@@ -310,72 +319,76 @@ public class StreamingPublicationDelivery {
 
     /**
      * Traitements sur les quays Tiamat (avant mapping avec les quays Netex)
+     *
      * @return
      */
-    private boolean prepareTiamatQuays(Set<Long> stopPlacePrimaryIds, Iterator<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaceIterator, List<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaces, boolean quaysExportEmpty) {
-
-        while (tiamatStopPlaceIterator.hasNext()) {
-            tiamatStopPlaces.add(tiamatStopPlaceIterator.next());
-        }
-
-        IDFMVehicleModeStopPlacetypeMapping idfmVehicleModeStopPlacetypeMapping = new IDFMVehicleModeStopPlacetypeMapping();
-
-        //Traitement pour valoriser correctement les données
-        // Si pas de zdep on supprime le quay
-        List<org.rutebanken.tiamat.model.Quay> tiamatQuays = tiamatStopPlaces
-                .stream()
-                .flatMap(tiamatStopPlace -> tiamatStopPlace
-                        .getQuays()
-                        .stream()
-                        .filter(quay -> !quay.getOriginalZDEP().isEmpty())
-                        .peek(quay -> quay
-                                .setTransportMode(idfmVehicleModeStopPlacetypeMapping
-                                        .getVehicleModeEnumeration(tiamatStopPlace.getStopPlaceType())))
-                )
-                .collect(Collectors.toList());
-
-        if(!tiamatQuays.isEmpty()){
-            tiamatQuays.forEach(tiamatQuay -> {
-                String name = tiamatQuay
-                        .getOriginalNames()
-                        .stream()
-                        .findFirst()
-                        .orElse("");
-
-                tiamatQuay.setName(new EmbeddableMultilingualString(name));
-
-                String zdep = tiamatQuay
-                        .getOriginalZDEP()
-                        .stream()
-                        .findFirst()
-                        .orElse(String.valueOf(tiamatQuay.getId()));
-
-                tiamatQuay.setNetexId("FR::Quay:" + zdep + ":FR1");
-
-                String stopCode = tiamatQuay
-                        .getOriginalStopCodes()
-                        .stream()
-                        .findFirst()
-                        .orElse(null);
-
-                if (stopCode != null) {
-                    org.rutebanken.tiamat.model.PrivateCodeStructure privateCodeStructure = new org.rutebanken.tiamat.model.PrivateCodeStructure();
-                    privateCodeStructure.setValue(stopCode);
-                    tiamatQuay.setPrivateCode(privateCodeStructure);
-                }
-            });
-        }
-        else{
-            quaysExportEmpty = true;
-        }
-        return quaysExportEmpty;
-    }
+//    private boolean prepareTiamatQuays(Set<Long> stopPlacePrimaryIds, Iterator<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaceIterator, List<org.rutebanken.tiamat.model.StopPlace> tiamatStopPlaces, boolean quaysExportEmpty) {
+//
+//        while (tiamatStopPlaceIterator.hasNext()) {
+//            tiamatStopPlaces.add(tiamatStopPlaceIterator.next());
+//        }
+//
+//        IDFMVehicleModeStopPlacetypeMapping idfmVehicleModeStopPlacetypeMapping = new IDFMVehicleModeStopPlacetypeMapping();
+//
+//        //Traitement pour valoriser correctement les données
+//        // Si pas de zdep on supprime le quay
+//        List<org.rutebanken.tiamat.model.Quay> tiamatQuays = tiamatStopPlaces
+//                .stream()
+//                .flatMap(tiamatStopPlace -> tiamatStopPlace
+//                        .getQuays()
+//                        .stream()
+//                        .filter(quay -> !quay.getOriginalZDEP().isEmpty())
+//                        .peek(quay -> quay
+//                                .setTransportMode(idfmVehicleModeStopPlacetypeMapping
+//                                        .getVehicleModeEnumeration(tiamatStopPlace.getStopPlaceType())))
+//                )
+//                .collect(Collectors.toList());
+//
+//        if (!tiamatQuays.isEmpty()) {
+//            tiamatQuays.forEach(tiamatQuay -> {
+//                String name = tiamatQuay
+//                        .getOriginalNames()
+//                        .stream()
+//                        .findFirst()
+//                        .orElse("");
+//
+//                tiamatQuay.setName(new EmbeddableMultilingualString(name));
+//
+//                String zdep = tiamatQuay
+//                        .getOriginalZDEP()
+//                        .stream()
+//                        .findFirst()
+//                        .orElse(String.valueOf(tiamatQuay.getId()));
+//
+//                tiamatQuay.setNetexId("FR::Quay:" + zdep + ":FR1");
+//
+//                String stopCode = tiamatQuay
+//                        .getOriginalStopCodes()
+//                        .stream()
+//                        .findFirst()
+//                        .orElse(null);
+//
+//                if (stopCode != null) {
+//                    org.rutebanken.tiamat.model.PrivateCodeStructure privateCodeStructure = new org.rutebanken.tiamat.model.PrivateCodeStructure();
+//                    privateCodeStructure.setValue(stopCode);
+//                    tiamatQuay.setPrivateCode(privateCodeStructure);
+//                }
+//            });
+//        } else {
+//            quaysExportEmpty = true;
+//        }
+//        return quaysExportEmpty;
+//    }
 
     /**
      * Traitements sur les quays Netex
      */
-    private void prepareNetexQuays(NetexMappingIterator<org.rutebanken.tiamat.model.StopPlace, StopPlace> netexMappingIterator, String providerName, org.rutebanken.netex.model.GeneralFrame netexGeneralFrame) {
+    private void prepareNetexQuays(NetexMappingIterator<org.rutebanken.tiamat.model.StopPlace, StopPlace> netexMappingIterator, String providerName, org.rutebanken.netex.model.GeneralFrame netexGeneralFrame, boolean quaysExportEmpty) {
         Quays_RelStructure quays_relStructure = new Quays_RelStructure();
+
+        IDFMVehicleModeStopPlacetypeMapping idfmVehicleModeStopPlacetypeMapping = new IDFMVehicleModeStopPlacetypeMapping();
+
+        Map<String, Set<String>> mapIdStopPlaceIdQuay = stopPlaceRepository.listStopPlaceIdsAndQuayIds(Instant.now(), Instant.now());
 
         // Utilisé pour le test exportIDFM et pour en integ actuellement
         List<StopPlace> netexStopPlaces = new ArrayList<>();
@@ -393,9 +406,80 @@ public class StreamingPublicationDelivery {
         if (!netexQuays.isEmpty()) {
             setField(Quays_RelStructure.class, "quayRefOrQuay", quays_relStructure, netexQuays);
 
+
+            List<Quay> listQuaysFilter = netexQuays.stream()
+                    .filter(quay -> quay.getKeyList().getKeyValue().stream()
+                            .anyMatch(valueStructure -> valueStructure.getKey().equals(NetexIdMapper.ORIGINAL_ZDEP_KEY) && !valueStructure.getValue().isEmpty()))
+                    .collect(Collectors.toList());
+
+
             List<JAXBElement<? extends EntityStructure>> listOfJaxbQuays = netexQuays.stream()
-//                    .filter(quay -> quay.getId().split(":").length == 3) // zdep dedans
+                    .filter(listQuaysFilter::contains)
                     .map(quay -> {
+                        // Gestion du mode de transport
+                        mapIdStopPlaceIdQuay.forEach((s, strings) -> {
+                            if (strings.contains(quay.getId())) {
+                                netexStopPlaces.forEach(stopPlace -> {
+                                    if (s.equals(stopPlace.getId()))
+                                        quay.setTransportMode(idfmVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(stopPlace.getStopPlaceType()));
+                                });
+                            }
+                        });
+
+                        // Gestion du nom
+                        String name = quay
+                                .getKeyList().getKeyValue()
+                                .stream()
+                                .filter(keyValueStructure -> keyValueStructure.getKey().equals(NetexIdMapper.ORIGINAL_NAME_KEY))
+                                .findFirst()
+                                .map(KeyValueStructure::getValue)
+                                .orElse("");
+
+                        MultilingualString multilingualString = new MultilingualString();
+                        multilingualString.setValue(name);
+                        quay.setName(multilingualString);
+
+                        // Gestion de l'id avec le Zdep
+                        String zdep = quay
+                                .getKeyList().getKeyValue()
+                                .stream()
+                                .filter(keyValueStructure -> keyValueStructure.getKey().equals(NetexIdMapper.ORIGINAL_ZDEP_KEY))
+                                .findFirst()
+                                .map(KeyValueStructure::getValue)
+                                .orElse(null);
+
+
+                        quay.setId("FR::Quay:" + zdep + ":FR1");
+
+                        PrivateCodeStructure privateCodeStructure = new PrivateCodeStructure();
+
+                        if (quay.getPublicCode() != null) {
+                            privateCodeStructure.setValue(quay.getPublicCode());
+                        }
+                        else{
+                            // Vérifier l'utilité de ce code, le stop code doit être déjà valorisé
+                            // Modification probable à réaliser public code -> private code
+                            String stopCode = quay
+                                    .getKeyList().getKeyValue()
+                                    .stream()
+                                    .filter(keyValueStructure -> keyValueStructure.getKey().equals(NetexIdMapper.ORIGINAL_ID_KEY))
+                                    .findFirst()
+                                    .map(KeyValueStructure::getValue)
+                                    .orElse(null);
+
+                            if(stopCode != null){
+                                String[] splitStopCode = stopCode.split(":");
+                                privateCodeStructure.setValue(splitStopCode[2]);
+                            }
+                            else{
+                                privateCodeStructure.setValue(null);
+                            }
+                        }
+
+                        quay.setPrivateCode(privateCodeStructure);
+                        quay.setPublicCode(null);
+
+
                         logger.info("Prepare " + quay.getId());
                         quay.setVersion("any");
                         quay.withKeyList(null);
@@ -410,16 +494,15 @@ public class StreamingPublicationDelivery {
                         LambertPoint lambertPoint = Lambert.convertToLambert(locationOrDefault.getLatitude().doubleValue(), locationOrDefault.getLongitude().doubleValue(), LambertZone.Lambert93);
                         double x = round(lambertPoint.getX(), 1);
                         double y = round(lambertPoint.getY(), 1);
-                            quay.getCentroid().setLocation(new LocationStructure()
-                                    .withPos(
-                                            new DirectPositionType()
-                                                    .withValue(x, y)
-                                                    .withSrsName("EPSG:2154")));
+                        quay.getCentroid().setLocation(new LocationStructure()
+                                .withPos(
+                                        new DirectPositionType()
+                                                .withValue(x, y)
+                                                .withSrsName("EPSG:2154")));
 
 
                         PostalAddress postalAddress = new PostalAddress();
-                        String[] zdep = quay.getId().split(":");
-                        postalAddress.setId(providerName + ":PostalAddress:" + zdep[3] + ":");
+                        postalAddress.setId(providerName + ":PostalAddress:" + zdep + ":");
                         postalAddress.setPostalRegion("75000");
                         postalAddress.setVersion("any");
                         quay.setPostalAddress(postalAddress);
@@ -427,31 +510,30 @@ public class StreamingPublicationDelivery {
                         AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
 
 
-                        if(quay.getAccessibilityAssessment() == null){
+                        if (quay.getAccessibilityAssessment() == null) {
                             accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.UNKNOWN);
                             AccessibilityLimitations_RelStructure accessibilityLimitations_relStructure = new AccessibilityLimitations_RelStructure();
                             AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
                             accessibilityLimitations_relStructure.setAccessibilityLimitation(accessibilityLimitation);
                             accessibilityAssessment.setLimitations(accessibilityLimitations_relStructure);
                             quay.setAccessibilityAssessment(accessibilityAssessment);
-                        }
-                        else{
+                        } else {
                             accessibilityAssessment = quay.getAccessibilityAssessment();
                         }
 
-                        accessibilityAssessment.setId(providerName + ":AccessibilityAssessment:" + zdep[3] + ":");
+                        accessibilityAssessment.setId(providerName + ":AccessibilityAssessment:" + zdep + ":");
                         accessibilityAssessment.setVersion("any");
 
                         AccessibilityLimitations_RelStructure limitations = quay.getAccessibilityAssessment().getLimitations();
                         AccessibilityLimitation accessibilityLimitation = limitations.getAccessibilityLimitation();
-                        if(accessibilityLimitation != null){
-                            if(accessibilityLimitation.getVisualSignsAvailable() == null){
+                        if (accessibilityLimitation != null) {
+                            if (accessibilityLimitation.getVisualSignsAvailable() == null) {
                                 limitations.getAccessibilityLimitation().setVisualSignsAvailable(LimitationStatusEnumeration.UNKNOWN);
                             }
-                            if(accessibilityLimitation.getAudibleSignalsAvailable() == null){
+                            if (accessibilityLimitation.getAudibleSignalsAvailable() == null) {
                                 limitations.getAccessibilityLimitation().setAudibleSignalsAvailable(LimitationStatusEnumeration.UNKNOWN);
                             }
-                            if(accessibilityLimitation.getWheelchairAccess() == null){
+                            if (accessibilityLimitation.getWheelchairAccess() == null) {
                                 limitations.getAccessibilityLimitation().setWheelchairAccess(LimitationStatusEnumeration.UNKNOWN);
                             }
                         }
@@ -664,6 +746,7 @@ public class StreamingPublicationDelivery {
         Marshaller marshaller = publicationDeliveryContext.createMarshaller();
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         marshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, "");
+        marshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
         marshaller.setProperty("com.sun.xml.bind.xmlDeclaration", Boolean.FALSE);
         marshaller.setProperty("com.sun.xml.bind.xmlHeaders", "<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 
@@ -685,9 +768,10 @@ public class StreamingPublicationDelivery {
             TransformerFactory tf = TransformerFactory.newInstance();
             Transformer transformer = tf.newTransformer();
             StringWriter writer = new StringWriter();
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
             transformer.transform(new DOMSource(doc), new StreamResult(writer));
             output = writer.getBuffer().toString();
-        } catch (Exception e){
+        } catch (Exception e) {
             return null;
         }
         return output;

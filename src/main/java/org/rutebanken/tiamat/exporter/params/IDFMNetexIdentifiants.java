@@ -17,6 +17,7 @@ public class IDFMNetexIdentifiants {
         idSitesList.put("TIMBUS", "87");
         idSitesList.put("TVM", "86");
         idSitesList.put("TEST", "12");
+        idSitesList.put("RD_BREST", "BIBUS");
 
         nameSitesList.put("CTVMI", "CTVMI");
         nameSitesList.put("CEOBUS", "GIRAUX VAL D'OISE");
@@ -27,6 +28,8 @@ public class IDFMNetexIdentifiants {
         nameSitesList.put("TIMBUS", "TIM BUS");
         nameSitesList.put("TVM", "TVM");
         nameSitesList.put("TEST", "TEST");
+        nameSitesList.put("RD_BREST", "BIBUS");
+
     }
 
     public static String getIdSite(String name){

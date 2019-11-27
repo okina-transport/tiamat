@@ -55,7 +55,6 @@ import org.rutebanken.tiamat.exporter.params.IDFMVehicleModeStopPlacetypeMapping
 import org.rutebanken.tiamat.geo.geo.Lambert;
 import org.rutebanken.tiamat.geo.geo.LambertPoint;
 import org.rutebanken.tiamat.geo.geo.LambertZone;
-import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.GroupOfStopPlaces;
 import org.rutebanken.tiamat.model.Provider;
 import org.rutebanken.tiamat.model.TopographicPlace;
@@ -75,7 +74,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -101,12 +99,10 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -275,13 +271,6 @@ public class StreamingPublicationDelivery {
         String nv = element.getElementsByTagName("PublicationTimestamp").item(0).getChildNodes().item(0).getNodeValue();
         element.getElementsByTagName("PublicationTimestamp").item(0).getChildNodes().item(0).setNodeValue(nv + "Z");
 
-        NodeList elements = document.getElementsByTagName("AccessibilityLimitation");
-        for (int i = 0; i < elements.getLength(); i++) {
-            Element el = (Element) elements.item(i);
-            el.removeAttribute("id");
-            el.removeAttribute("modification");
-            el.removeAttribute("version");
-        }
         try {
             outputStreamOut.write(documentToString(document).getBytes("UTF-8"));
         } catch (Exception e) {
@@ -295,9 +284,6 @@ public class StreamingPublicationDelivery {
             logger.info("There are stop places to export");
 
             final Iterator<org.rutebanken.tiamat.model.StopPlace> netexStopPlaceIterator = stopPlaceRepository.scrollStopPlaces(stopPlacePrimaryIds);
-
-
-//            quaysExportEmpty = prepareTiamatQuays(stopPlacePrimaryIds, tiamatStopPlaceIterator, tiamatStopPlaces, quaysExportEmpty);
 
             // Use Listening iterator to collect stop place IDs.
             ParentStopFetchingIterator parentStopFetchingIterator = new ParentStopFetchingIterator(netexStopPlaceIterator, stopPlaceRepository);
@@ -509,7 +495,6 @@ public class StreamingPublicationDelivery {
 
                         AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
 
-
                         if (quay.getAccessibilityAssessment() == null) {
                             accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.UNKNOWN);
                             AccessibilityLimitations_RelStructure accessibilityLimitations_relStructure = new AccessibilityLimitations_RelStructure();
@@ -526,6 +511,10 @@ public class StreamingPublicationDelivery {
 
                         AccessibilityLimitations_RelStructure limitations = quay.getAccessibilityAssessment().getLimitations();
                         AccessibilityLimitation accessibilityLimitation = limitations.getAccessibilityLimitation();
+                        accessibilityLimitation.withId(null);
+                        accessibilityLimitation.withModification(null);
+                        accessibilityLimitation.withVersion(null);
+
                         if (accessibilityLimitation != null) {
                             if (accessibilityLimitation.getVisualSignsAvailable() == null) {
                                 limitations.getAccessibilityLimitation().setVisualSignsAvailable(LimitationStatusEnumeration.UNKNOWN);

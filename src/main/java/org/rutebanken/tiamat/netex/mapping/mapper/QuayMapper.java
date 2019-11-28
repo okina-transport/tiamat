@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
 import org.rutebanken.netex.model.AlternativeNames_RelStructure;
+import org.rutebanken.netex.model.PostalAddress;
 import org.rutebanken.netex.model.Quay;
 import org.rutebanken.tiamat.model.AlternativeName;
 
@@ -94,6 +95,15 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
             }
         } else {
             quay2.setAlternativeNames(null);
+        }
+
+
+        if(quay.getZipCode() != null){
+            PostalAddress postalAddress = new PostalAddress();
+            postalAddress.setPostalRegion(quay.getZipCode());
+            postalAddress.setId(quay.getNetexId());
+            postalAddress.setVersion("any");
+            quay2.setPostalAddress(postalAddress);
         }
     }
 }

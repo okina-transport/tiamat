@@ -484,6 +484,8 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         accessibilityAssessment.setLimitations(accessibilityLimitationList);
         quay.setAccessibilityAssessment(accessibilityAssessment);
 
+        quay.setZipCode("75000");
+
         return quay;
     }
 

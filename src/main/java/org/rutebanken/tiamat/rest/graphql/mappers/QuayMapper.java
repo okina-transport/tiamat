@@ -16,6 +16,8 @@
 package org.rutebanken.tiamat.rest.graphql.mappers;
 
 import com.google.api.client.util.Preconditions;
+import org.apache.commons.lang.StringUtils;
+import org.rutebanken.tiamat.externalapis.ApiProxyService;
 import org.rutebanken.tiamat.model.PrivateCodeStructure;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -25,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -38,6 +41,8 @@ public class QuayMapper {
 
     @Autowired
     private GroupOfEntitiesMapper groupOfEntitiesMapper;
+
+    private ApiProxyService apiProxyService = new ApiProxyService();
 
     public boolean populateQuayFromInput(StopPlace stopPlace, Map quayInputMap) {
         Quay quay;
@@ -68,13 +73,25 @@ public class QuayMapper {
             isQuayUpdated = true;
         }
 
-        if(quayInputMap.get(PRIVATE_CODE) != null) {
+        if (quayInputMap.get(PRIVATE_CODE) != null) {
             Map privateCodeInputMap = (Map) quayInputMap.get(PRIVATE_CODE);
-            if(quay.getPrivateCode() == null) {
+            if (quay.getPrivateCode() == null) {
                 quay.setPrivateCode(new PrivateCodeStructure());
             }
             quay.getPrivateCode().setType((String) privateCodeInputMap.get(TYPE));
             quay.getPrivateCode().setValue((String) privateCodeInputMap.get(VALUE));
+            isQuayUpdated = true;
+        }
+
+        // On mets à jour le zip code
+        String citycodeReverseGeocoding = null;
+        try {
+           citycodeReverseGeocoding = apiProxyService.getCitycodeByReverseGeocoding(new BigDecimal(quay.getCentroid().getCoordinate().y, MathContext.DECIMAL64), new BigDecimal(quay.getCentroid().getCoordinate().x, MathContext.DECIMAL64));
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération du code postal du quay = " + quay.getId(), e);
+        }
+        if (!StringUtils.equals(quay.getZipCode(), citycodeReverseGeocoding) && citycodeReverseGeocoding != null) {
+            quay.setZipCode(citycodeReverseGeocoding);
             isQuayUpdated = true;
         }
 

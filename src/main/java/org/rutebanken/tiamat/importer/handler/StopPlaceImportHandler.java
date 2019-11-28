@@ -23,6 +23,7 @@ import org.rutebanken.netex.model.TopographicPlace;
 import org.rutebanken.netex.model.TopographicPlacesInFrame_RelStructure;
 import org.rutebanken.tiamat.exporter.TariffZonesFromStopsExporter;
 import org.rutebanken.tiamat.exporter.TopographicPlacesExporter;
+import org.rutebanken.tiamat.externalapis.ApiProxyService;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.filter.StopPlaceTypeFilter;
@@ -44,6 +45,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -110,11 +113,30 @@ public class StopPlaceImportHandler {
     @Autowired
     private ProviderRepository providerRepository;
 
+    private ApiProxyService apiProxyService = new ApiProxyService();
+
 
     // TODO: Use ExportParams to control what is returned?
     public void handleStops(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger stopPlacesCreatedMatchedOrUpdated, SiteFrame responseSiteframe) {
         if (publicationDeliveryHelper.hasStops(netexSiteFrame)) {
             List<StopPlace> tiamatStops = netexMapper.mapStopsToTiamatModel(netexSiteFrame.getStopPlaces().getStopPlace());
+
+            // On récupère les codes postaux des quays à partir d'une API public
+            tiamatStops
+                    .stream()
+                    .flatMap(stopPlace -> stopPlace.getQuays().stream())
+                    .forEach(quay -> {
+                        String citycodeReverseGeocoding = null;
+                        try {
+                            citycodeReverseGeocoding = apiProxyService.getCitycodeByReverseGeocoding(new BigDecimal(quay.getCentroid().getCoordinate().y, MathContext.DECIMAL64), new BigDecimal(quay.getCentroid().getCoordinate().x, MathContext.DECIMAL64));
+                        } catch (Exception e) {
+                            logger.error("Erreur lors de la récupération du code postal du quay = " + quay.getId(), e);
+                        }
+                        if (citycodeReverseGeocoding != null) {
+                            quay.setZipCode(citycodeReverseGeocoding);
+                        }
+                    });
+
 
             Optional<Provider> provider = providerRepository.findByCode(importParams.providerCode).stream().findFirst();
             if (provider.isPresent()) {

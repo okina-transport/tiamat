@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.importer.merging;
 
 import com.google.api.client.repackaged.com.google.common.base.Strings;
+import org.apache.commons.lang.StringUtils;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.operation.TransformException;
@@ -187,13 +188,22 @@ public class QuayMerger {
         boolean centroidUpdated = updateCentroid(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone, multipleIds);
         boolean stopCodeUpdated = updateCodes(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone);
         boolean zdepUpdated = alreadyAdded.getOriginalZDEP().addAll(incomingQuay.getOriginalZDEP());
+        boolean zipCodeUpdated = updateZipCode(alreadyAdded, incomingQuay);
 
-        if (idUpdated || nameUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || zdepUpdated) {
-            logger.debug("Quay changed. idUpdated: {}, nameUpdated: {}, merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zdepUpdated: {}. Quay: {}", idUpdated, nameUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, zdepUpdated, alreadyAdded);
+        if (idUpdated || nameUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || zdepUpdated || zipCodeUpdated) {
+            logger.debug("Quay changed. idUpdated: {}, nameUpdated: {}, merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zdepUpdated: {}, zipCodeUpdated: {}. Quay: {}", idUpdated, nameUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, zdepUpdated, alreadyAdded, zipCodeUpdated);
 
             alreadyAdded.setChanged(Instant.now());
             updatedQuaysCounter.incrementAndGet();
         }
+    }
+
+    private boolean updateZipCode(Quay alreadyAdded, Quay incomingQuay) {
+        if(!StringUtils.equals(alreadyAdded.getZipCode(), incomingQuay.getZipCode()) && incomingQuay.getZipCode() != null){
+            alreadyAdded.setZipCode(incomingQuay.getZipCode());
+            return true;
+        }
+        return false;
     }
 
     private boolean updateCodes(Quay alreadyAdded, Quay incomingQuay, boolean stopPlaceAlone, boolean quayAlone) {

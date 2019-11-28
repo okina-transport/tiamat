@@ -20,7 +20,7 @@
 
     <groupId>org.rutebanken</groupId>
     <artifactId>tiamat</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Tiamat</name>
@@ -119,6 +119,9 @@
         <rutebanken-organisation.version>0.0.4-SNAPSHOT</rutebanken-organisation.version>
         <fabric8.version>2.3.7</fabric8.version>
         <metrics.version>3.2.3</metrics.version>
+
+        <version.lombok>1.16.4</version.lombok>
+
     </properties>
 
     <!-- This repository list can be deleted, as it is now supplied by rutebanken nexus.
@@ -537,6 +540,23 @@
             <artifactId>activemq-kahadb-store</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.codehaus.jettison</groupId>
+            <artifactId>jettison</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${version.lombok}</version>
+        </dependency>
+
     </dependencies>
 
 

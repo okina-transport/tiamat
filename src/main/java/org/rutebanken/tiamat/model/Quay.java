@@ -35,7 +35,10 @@ public class Quay extends StopPlaceSpace_VersionStructure {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private final List<BoardingPosition> boardingPositions = new ArrayList<>();
-    protected String publicCode;;
+    protected String publicCode;
+
+    @Column(name = "zip_code")
+    protected String zipCode;
 
     /**
      * TODO: reconsider data type for compass bearing.
@@ -68,6 +71,12 @@ public class Quay extends StopPlaceSpace_VersionStructure {
 
     public List<BoardingPosition> getBoardingPositions() {
         return boardingPositions;
+    }
+
+    public String getZipCode() { return zipCode; }
+
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
     }
 
     @Override

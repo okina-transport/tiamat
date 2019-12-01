@@ -209,7 +209,7 @@ public class QuayMerger {
         if(incomingQuay.getOriginalNames() != null && !incomingQuay.getOriginalNames().isEmpty()){
             return alreadyAdded.getOriginalNames().addAll(incomingQuay.getOriginalNames());
         }
-        else if(incomingQuay.getName().getValue() != null){
+        else if(incomingQuay.getName() != null && incomingQuay.getName().getValue() != null){
             return alreadyAdded.getOriginalNames().add(incomingQuay.getName().getValue());
         }
         else{

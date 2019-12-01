@@ -23,6 +23,7 @@ import org.rutebanken.tiamat.importer.matching.OriginalIdMatcher;
 import org.rutebanken.tiamat.model.MultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.repository.QuayRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +66,9 @@ public class QuayMerger {
     public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays) {
         return mergeQuays(newStopPlace, existingStopPlace, addNewQuays, true, true);
     }
+
+    @Autowired
+    private QuayRepository quayRepository;
 
 
     /**
@@ -144,10 +148,16 @@ public class QuayMerger {
                 updateIfChanged(matchingQuay.get(), incomingQuay, updatedQuaysCounter, stopPlaceAlone, newStopPlace);
             } else if (addNewQuays) {
                 logger.info("Found no match for existing quay {}. Adding it!", incomingQuay);
-                result.add(incomingQuay);
-                incomingQuay.setCreated(Instant.now());
-                incomingQuay.setChanged(Instant.now());
-                addedQuaysCounter.incrementAndGet();
+                Quay quay = null;
+                if (incomingQuay != null && incomingQuay.getNetexId() != null) {
+                     quay = quayRepository.findFirstByNetexIdOrderByVersionDesc(incomingQuay.getNetexId());
+                }
+                if (quay == null){
+                    result.add(incomingQuay);
+                    incomingQuay.setCreated(Instant.now());
+                    incomingQuay.setChanged(Instant.now());
+                    addedQuaysCounter.incrementAndGet();
+                }
             } else {
                 logger.warn("No match for quay belonging to stop place {}. Quay: {}. Full incoming quay toString: {}. Was looking in list of quays for match: {}",
                         newStopPlace != null ? newStopPlace.importedIdAndNameToString() : null,

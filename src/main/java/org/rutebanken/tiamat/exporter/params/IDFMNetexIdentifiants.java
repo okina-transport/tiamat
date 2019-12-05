@@ -18,6 +18,7 @@ public class IDFMNetexIdentifiants {
         idSitesList.put("TVM", "86");
         idSitesList.put("TEST", "12");
         idSitesList.put("RD_BREST", "BIBUS");
+        idSitesList.put("RD_ANGERS", "IRIGO");
 
         nameSitesList.put("CTVMI", "CTVMI");
         nameSitesList.put("CEOBUS", "GIRAUX VAL D'OISE");
@@ -29,6 +30,7 @@ public class IDFMNetexIdentifiants {
         nameSitesList.put("TVM", "TVM");
         nameSitesList.put("TEST", "TEST");
         nameSitesList.put("RD_BREST", "BIBUS");
+        nameSitesList.put("RD_ANGERS", "IRIGO");
 
     }
 

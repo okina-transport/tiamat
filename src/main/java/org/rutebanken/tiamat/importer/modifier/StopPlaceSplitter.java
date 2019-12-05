@@ -19,6 +19,7 @@ import org.apache.commons.lang3.SerializationUtils;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.operation.TransformException;
+import org.rutebanken.tiamat.model.Provider;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.slf4j.Logger;
@@ -105,9 +106,12 @@ public class StopPlaceSplitter {
     private List<StopPlace> createStopsFromQuayGroups(StopPlace originalStopPlace, List<List<Quay>> quayGroups) {
 
         originalStopPlace.setCentroid(null);
+        Provider provider = originalStopPlace.getProvider();
+        originalStopPlace.setProvider(null);
         return quayGroups.stream()
                 .map(quayList -> {
                     StopPlace newStopPlace = SerializationUtils.clone(originalStopPlace);
+                    newStopPlace.setProvider(provider);
                     newStopPlace.getQuays().clear();
                     newStopPlace.getOriginalIds().clear();
                     if(!quayList.get(0).getOriginalIds().isEmpty()) {

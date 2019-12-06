@@ -121,7 +121,7 @@ public class StopPlaceImportHandler {
         if (publicationDeliveryHelper.hasStops(netexSiteFrame)) {
             List<StopPlace> tiamatStops = netexMapper.mapStopsToTiamatModel(netexSiteFrame.getStopPlaces().getStopPlace());
 
-            // On récupère les codes postaux des quays à partir d'une API public
+            // Get the postal codes of the quays from two French public apis
             tiamatStops
                     .stream()
                     .flatMap(stopPlace -> stopPlace.getQuays().stream())

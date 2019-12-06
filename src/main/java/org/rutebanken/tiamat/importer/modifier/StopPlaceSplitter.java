@@ -105,6 +105,7 @@ public class StopPlaceSplitter {
 
     private List<StopPlace> createStopsFromQuayGroups(StopPlace originalStopPlace, List<List<Quay>> quayGroups) {
 
+        // TODO provider management with SerializationUtils does not work, to review.
         originalStopPlace.setCentroid(null);
         Provider provider = originalStopPlace.getProvider();
         originalStopPlace.setProvider(null);

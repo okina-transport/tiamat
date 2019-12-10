@@ -10,7 +10,6 @@ public class IDFMNetexIdentifiants {
     static {
         idSitesList.put("CTVMI", "81");
         idSitesList.put("CEOBUS", "84");
-        idSitesList.put("MOBICITE", "79");
         idSitesList.put("PERRIER", "42");
         idSitesList.put("SQYBUS", "41");
         idSitesList.put("STILE", "89");
@@ -19,10 +18,13 @@ public class IDFMNetexIdentifiants {
         idSitesList.put("TEST", "12");
         idSitesList.put("RD_BREST", "BIBUS");
         idSitesList.put("RD_ANGERS", "IRIGO");
+        idSitesList.put("MOBICITEL40", "MOBICITEL40");
+        idSitesList.put("MOBICITE469", "MOBICITE469");
+        idSitesList.put("RDLA", "RDLA");
+        idSitesList.put("CTVH", "CTVH");
 
         nameSitesList.put("CTVMI", "CTVMI");
         nameSitesList.put("CEOBUS", "GIRAUX VAL D'OISE");
-        nameSitesList.put("MOBICITE", "MOBICITE");
         nameSitesList.put("PERRIER", "PERRIER");
         nameSitesList.put("SQYBUS", "SQYBUS");
         nameSitesList.put("STILE", "STILE");
@@ -31,6 +33,10 @@ public class IDFMNetexIdentifiants {
         nameSitesList.put("TEST", "TEST");
         nameSitesList.put("RD_BREST", "BIBUS");
         nameSitesList.put("RD_ANGERS", "IRIGO");
+        nameSitesList.put("MOBICITEL40", "MOBICITEL40");
+        nameSitesList.put("MOBICITE469", "MOBICITE469");
+        nameSitesList.put("RDLA", "RDLA");
+        nameSitesList.put("CTVH", "CTVH");
 
     }
 

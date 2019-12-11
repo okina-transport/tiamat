@@ -20,26 +20,36 @@ INSERT INTO providers (id, name)
 VALUES (5, 'CTVMI');
 
 INSERT INTO providers (id, name)
-VALUES (6, 'MOBICITE');
+VALUES (6, 'STILE');
 
 INSERT INTO providers (id, name)
-VALUES (7, 'STILE');
+VALUES (7, 'TIMBUS');
 
 INSERT INTO providers (id, name)
-VALUES (8, 'TIMBUS');
+VALUES (8, 'RD_BREST');
 
 INSERT INTO providers (id, name)
-VALUES (9, 'RD_BREST');
+VALUES (9, 'RD_ANGERS');
 
 INSERT INTO providers (id, name)
-VALUES (10, 'RD_ANGERS');
+VALUES (10, 'TEST');
 
 INSERT INTO providers (id, name)
-VALUES (11, 'TEST');
+VALUES (11, 'MOBICITEL40');
+
+INSERT INTO providers (id, name)
+VALUES (12, 'MOBICITE469');
+
+INSERT INTO providers (id, name)
+VALUES (13, 'CTVH');
+
+INSERT INTO providers (id, name)
+VALUES (14, 'RDLA');
+
 
 ALTER TABLE stop_place ADD COLUMN provider_id BIGINT;
 ALTER TABLE stop_place ADD CONSTRAINT fk_provider_id foreign key (provider_id) references providers;
 
-UPDATE stop_place SET provider_id=11 WHERE provider_id IS NULL;
+UPDATE stop_place SET provider_id=10 WHERE provider_id IS NULL;
 
 ALTER TABLE stop_place ALTER COLUMN provider_id SET NOT NULL;

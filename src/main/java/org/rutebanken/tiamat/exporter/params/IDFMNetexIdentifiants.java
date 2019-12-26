@@ -1,5 +1,7 @@
 package org.rutebanken.tiamat.exporter.params;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,8 +20,8 @@ public class IDFMNetexIdentifiants {
         idSitesList.put("TEST", "12");
         idSitesList.put("RD_BREST", "BIBUS");
         idSitesList.put("RD_ANGERS", "IRIGO");
-        idSitesList.put("MOBICITEL40", "MOBICITEL40");
-        idSitesList.put("MOBICITE469", "MOBICITE469");
+        idSitesList.put("MOBICITEL40", "79");
+        idSitesList.put("MOBICITE469", "79");
         idSitesList.put("RDLA", "RDLA");
         idSitesList.put("CTVH", "CTVH");
 
@@ -33,19 +35,27 @@ public class IDFMNetexIdentifiants {
         nameSitesList.put("TEST", "TEST");
         nameSitesList.put("RD_BREST", "BIBUS");
         nameSitesList.put("RD_ANGERS", "IRIGO");
-        nameSitesList.put("MOBICITEL40", "MOBICITEL40");
-        nameSitesList.put("MOBICITE469", "MOBICITE469");
+        nameSitesList.put("MOBICITEL40", "MOBICITE");
+        nameSitesList.put("MOBICITE469", "MOBICITE");
         nameSitesList.put("RDLA", "RDLA");
         nameSitesList.put("CTVH", "CTVH");
 
     }
 
     public static String getIdSite(String name){
-        return idSitesList.get(name);
+        String retour = idSitesList.get(name);
+        if(StringUtils.isEmpty(retour)){
+            return name;
+        }
+        return retour;
     }
 
     public static String getNameSite(String name){
-        return nameSitesList.get(name);
+        String retour = nameSitesList.get(name);
+        if(StringUtils.isEmpty(retour)){
+            return name;
+        }
+        return retour;
     }
 
 }

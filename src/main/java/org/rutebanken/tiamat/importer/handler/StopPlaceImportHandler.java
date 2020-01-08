@@ -194,7 +194,7 @@ public class StopPlaceImportHandler {
                     } else if (importParams.importType.equals(ImportType.INITIAL)) {
                         importedOrMatchedNetexStopPlaces = parallelInitialStopPlaceImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated);
                     } else if (importParams.importType.equals(ImportType.MATCH)) {
-                        importedOrMatchedNetexStopPlaces = matchingAppendingIdStopPlacesImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated);
+                        importedOrMatchedNetexStopPlaces = matchingAppendingIdStopPlacesImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated, provider.get());
                     } else {
                         throw new NotImplementedException("Import type " + importParams.importType + " not implemented ");
                     }

@@ -259,7 +259,7 @@ public class MergingStopPlaceImporter {
         }
 
         if (newStopPlace.getName() != null) {
-            final StopPlace nearbyStopPlace = nearbyStopPlaceFinder.find(newStopPlace, true);
+            final StopPlace nearbyStopPlace = nearbyStopPlaceFinder.find(newStopPlace, true, null);
             if (nearbyStopPlace != null) {
                 logger.debug("Found nearby stop place with name: {}, id: {}", nearbyStopPlace.getName(), nearbyStopPlace.getNetexId());
                 return nearbyStopPlace;

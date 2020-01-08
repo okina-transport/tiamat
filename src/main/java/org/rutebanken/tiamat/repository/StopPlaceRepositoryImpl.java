@@ -194,7 +194,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
      * @return the stop place within bounding box if equal type, within envelope and closest similarity in name
      */
     @Override
-    public String findNearbyStopPlace(Envelope envelope, String name, StopTypeEnumeration stopTypeEnumeration) {
+    public String findNearbyStopPlace(Envelope envelope, String name, StopTypeEnumeration stopTypeEnumeration, Provider provider) {
         Geometry geometryFilter = geometryFactory.toGeometry(envelope);
 
         String sql = "SELECT sub.netex_id FROM " +
@@ -202,7 +202,13 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                 SQL_LEFT_JOIN_PARENT_STOP +
                 "WHERE ST_Within(s.centroid, :filter) = true " +
                 "AND " + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME +
-                "AND s.stop_place_type = :stopPlaceType) sub " +
+                "AND s.stop_place_type = :stopPlaceType ";
+
+        if(provider != null){
+            sql += "AND s.provider_id = :providerId";
+        }
+
+        sql +=  ") sub " +
                 "WHERE sub.sim > 0.6 " +
                 "ORDER BY sub.sim DESC LIMIT 1";
 
@@ -211,21 +217,33 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         query.setParameter("filter", geometryFilter);
         query.setParameter("stopPlaceType", stopTypeEnumeration.toString());
         query.setParameter("name", name);
+        if (provider != null){
+            query.setParameter("providerId", provider.getId());
+        }
         return getOneOrNull(query);
     }
 
     @Override
-    public String findNearbyStopPlace(Envelope envelope, String name) {
+    public String findNearbyStopPlace(Envelope envelope, String name, Provider provider) {
         Geometry geometryFilter = geometryFactory.toGeometry(envelope);
 
-        Query query = entityManager.createNativeQuery("SELECT s.netex_id FROM stop_place s " +
+        String sql = "SELECT s.netex_id FROM stop_place s " +
                                                            SQL_LEFT_JOIN_PARENT_STOP +
                                                            "WHERE ST_Within(s.centroid, :filter) = true " +
                                                            "AND " + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME +
-                                                           "AND s.name_value = :name ");
+                                                           "AND s.name_value = :name ";
+
+        if(provider != null){
+            sql += "AND s.provider_id = :providerId";
+        }
+
+        Query query = entityManager.createNativeQuery(sql);
         query.setParameter("filter", geometryFilter);
         query.setParameter("name", name);
         query.setParameter("pointInTime", Date.from(Instant.now()));
+        if (provider != null){
+            query.setParameter("providerId", provider.getId());
+        }
         return getOneOrNull(query);
     }
 

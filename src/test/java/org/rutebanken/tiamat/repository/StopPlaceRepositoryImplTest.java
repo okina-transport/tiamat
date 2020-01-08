@@ -347,7 +347,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
         Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
 
-        String result = stopPlaceRepository.findNearbyStopPlace(envelope, stopPlace.getName().getValue(), StopTypeEnumeration.ONSTREET_BUS);
+        String result = stopPlaceRepository.findNearbyStopPlace(envelope, stopPlace.getName().getValue(), StopTypeEnumeration.ONSTREET_BUS, null);
         assertThat(result).isNotNull();
         StopPlace actual = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(result);
         assertThat(actual.getName().getValue()).isEqualTo(stopPlace.getName().getValue());
@@ -365,7 +365,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         H2Functions.setSimilarityOveridden(0.61);
         Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
 
-        String result = stopPlaceRepository.findNearbyStopPlace(envelope, "Nesbru N", StopTypeEnumeration.ONSTREET_BUS);
+        String result = stopPlaceRepository.findNearbyStopPlace(envelope, "Nesbru N", StopTypeEnumeration.ONSTREET_BUS, null);
         assertThat(result).isNotNull();
         StopPlace actual = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(result);
         assertThat(actual.getName().getValue()).isEqualTo(stopPlace.getName().getValue());
@@ -382,7 +382,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
         Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
 
-        String result = stopPlaceRepository.findNearbyStopPlace(envelope, stopPlace.getName().getValue(), StopTypeEnumeration.ONSTREET_BUS);
+        String result = stopPlaceRepository.findNearbyStopPlace(envelope, stopPlace.getName().getValue(), StopTypeEnumeration.ONSTREET_BUS, null);
         assertThat(result).isNull();
     }
 
@@ -398,7 +398,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         // Stop place coordinates within envelope
         Envelope envelope = new Envelope(14, 16, 50, 70);
 
-        String result = stopPlaceRepository.findNearbyStopPlace(envelope, "Another stop place which does not exist", StopTypeEnumeration.ONSTREET_BUS);
+        String result = stopPlaceRepository.findNearbyStopPlace(envelope, "Another stop place which does not exist", StopTypeEnumeration.ONSTREET_BUS, null);
         assertThat(result).isNull();
         H2Functions.setSimilarityOveridden(1);
     }
@@ -417,7 +417,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         // Stop place coordinates within envelope
         Envelope envelope = new Envelope(14, 16, 50, 70);
 
-        String result = stopPlaceRepository.findNearbyStopPlace(envelope, "name", StopTypeEnumeration.ONSTREET_BUS);
+        String result = stopPlaceRepository.findNearbyStopPlace(envelope, "name", StopTypeEnumeration.ONSTREET_BUS, null);
         assertThat(result).isNotNull();
     }
 

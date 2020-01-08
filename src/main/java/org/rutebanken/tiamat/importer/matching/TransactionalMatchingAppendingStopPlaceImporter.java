@@ -23,6 +23,7 @@ import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByIdFinder;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
 import org.rutebanken.tiamat.importer.merging.QuayMerger;
+import org.rutebanken.tiamat.model.Provider;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
@@ -37,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -82,7 +84,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
-                                 AtomicInteger stopPlacesCreatedOrUpdated) {
+                                 AtomicInteger stopPlacesCreatedOrUpdated, Provider provider) {
 
 
         List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
@@ -135,7 +137,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
         }
 
         if (foundStopPlaces.isEmpty()) {
-            org.rutebanken.tiamat.model.StopPlace nearbyStopPlace = nearbyStopPlaceFinder.find(incomingStopPlace, ALLOW_OTHER_TYPE_AS_ANY_MATCH);
+            org.rutebanken.tiamat.model.StopPlace nearbyStopPlace = nearbyStopPlaceFinder.find(incomingStopPlace, ALLOW_OTHER_TYPE_AS_ANY_MATCH, provider);
             if (nearbyStopPlace != null) {
                 foundStopPlaces = Arrays.asList(nearbyStopPlace);
             }

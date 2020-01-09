@@ -45,16 +45,16 @@ public class QuayMerger {
      * If two quays closed than this value, treat as match if no other conflict.
      */
     @Value("${quayMerger.mergeDistanceMetersIgnoreIdMatch:3}")
-    public final double MERGE_DISTANCE_METERS_IGNORE_ID_MATCH = 3;
+    public double MERGE_DISTANCE_METERS_IGNORE_ID_MATCH = 3;
 
     @Value("${quayMerger.mergeDistanceMeters:8}")
-    public final double MERGE_DISTANCE_METERS = 8;
+    public double MERGE_DISTANCE_METERS = 8;
 
     @Value("${quayMerger.mergeDistanceMetersExtended:30}")
-    public final double MERGE_DISTANCE_METERS_EXTENDED = 30;
+    public double MERGE_DISTANCE_METERS_EXTENDED = 30;
 
     @Value("${quayMerger.maxCompassBearingDifference:60}")
-    private final int maxCompassBearingDifference = 60;
+    private int maxCompassBearingDifference = 60;
 
     private final OriginalIdMatcher originalIdMatcher;
 

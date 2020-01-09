@@ -48,10 +48,10 @@ public class QuayMerger {
     public final double MERGE_DISTANCE_METERS_IGNORE_ID_MATCH = 3;
 
     @Value("${quayMerger.mergeDistanceMeters:8}")
-    public final double MERGE_DISTANCE_METERS = 8;
+    public final double MERGE_DISTANCE_METERS = 0;
 
     @Value("${quayMerger.mergeDistanceMetersExtended:30}")
-    public final double MERGE_DISTANCE_METERS_EXTENDED = 30;
+    public final double MERGE_DISTANCE_METERS_EXTENDED = 0;
 
     @Value("${quayMerger.maxCompassBearingDifference:60}")
     private final int maxCompassBearingDifference = 60;

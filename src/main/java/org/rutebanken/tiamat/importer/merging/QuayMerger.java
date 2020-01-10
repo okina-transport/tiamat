@@ -187,7 +187,7 @@ public class QuayMerger {
         boolean changedByMerge = mergeFields(incomingQuay, alreadyAdded);
         boolean centroidUpdated = updateCentroid(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone, multipleIds);
         boolean stopCodeUpdated = updateCodes(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone);
-        boolean zdepUpdated = alreadyAdded.getOriginalZDEP().addAll(incomingQuay.getOriginalZDEP());
+        boolean zdepUpdated = updateZdep(alreadyAdded, incomingQuay);
         boolean zipCodeUpdated = updateZipCode(alreadyAdded, incomingQuay);
 
         if (idUpdated || nameUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || zdepUpdated || zipCodeUpdated) {
@@ -204,6 +204,16 @@ public class QuayMerger {
             return true;
         }
         return false;
+    }
+
+    private boolean updateZdep(Quay alreadyAdded, Quay incomingQuay) {
+        boolean zdepUpdated = false;
+        if(incomingQuay.getOriginalZDEP().size() != 0 && !alreadyAdded.getOriginalZDEP().containsAll(incomingQuay.getOriginalZDEP())){
+            alreadyAdded.getOriginalZDEP().clear();
+            zdepUpdated = alreadyAdded.getOriginalZDEP().addAll(incomingQuay.getOriginalZDEP());
+        }
+
+        return zdepUpdated;
     }
 
     private boolean updateCodes(Quay alreadyAdded, Quay incomingQuay, boolean stopPlaceAlone, boolean quayAlone) {

@@ -31,6 +31,7 @@ import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,13 +82,15 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     @Autowired
     private MergingStopPlaceImporter mergingStopPlaceImporter;
 
+    @Value("${idfm.modeMatch.noMergeSeveralProducers:false}")
+    boolean noMergeIDFMStopPlaces;
 
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
                                  AtomicInteger stopPlacesCreatedOrUpdated, Provider provider) {
 
 
-        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
+        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace, noMergeIDFMStopPlaces);
         final int foundStopPlacesCount = foundStopPlaces.size();
 
         if (!foundStopPlaces.isEmpty()) {
@@ -137,7 +140,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
         }
 
         if (foundStopPlaces.isEmpty()) {
-            org.rutebanken.tiamat.model.StopPlace nearbyStopPlace = nearbyStopPlaceFinder.find(incomingStopPlace, ALLOW_OTHER_TYPE_AS_ANY_MATCH, provider);
+            org.rutebanken.tiamat.model.StopPlace nearbyStopPlace = nearbyStopPlaceFinder.find(incomingStopPlace, ALLOW_OTHER_TYPE_AS_ANY_MATCH, provider, noMergeIDFMStopPlaces);
             if (nearbyStopPlace != null) {
                 foundStopPlaces = Arrays.asList(nearbyStopPlace);
             }
@@ -150,7 +153,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             StopPlace newStopPlace = null;
             try {
-                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace);
+                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace, noMergeIDFMStopPlaces);
             } catch (InterruptedException | ExecutionException e) {
                 logger.error("Problem while adding new stop place", e);
             }

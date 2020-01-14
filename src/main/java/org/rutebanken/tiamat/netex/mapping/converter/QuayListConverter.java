@@ -18,10 +18,13 @@ package org.rutebanken.tiamat.netex.mapping.converter;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
+import org.apache.commons.lang.StringUtils;
 import org.rutebanken.netex.model.Quays_RelStructure;
 import org.rutebanken.tiamat.model.Quay;
+import org.rutebanken.tiamat.repository.QuayRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
@@ -31,6 +34,9 @@ import java.util.Set;
 public class QuayListConverter extends BidirectionalConverter<Set<Quay>, Quays_RelStructure> {
 
     private static final Logger logger = LoggerFactory.getLogger(QuayListConverter.class);
+
+    @Autowired
+    private QuayRepository quayRepository;
 
     @Override
     public Quays_RelStructure convertTo(Set<Quay> quays, Type<Quays_RelStructure> type, MappingContext mappingContext) {
@@ -59,11 +65,25 @@ public class QuayListConverter extends BidirectionalConverter<Set<Quay>, Quays_R
                     .map(object -> ((org.rutebanken.netex.model.Quay) object))
                     .map(netexQuay -> {
                         Quay tiamatQuay = mapperFacade.map(netexQuay, Quay.class);
+                        addOriginalId(tiamatQuay);
                         return tiamatQuay;
                     })
                     .forEach(quay -> quays.add(quay));
         }
         
         return quays;
+    }
+
+    // En cas de mise à jour des zdeps des quays on va récupérer l'id original pour une meilleure gestion du mapping entre un quay netex et tiamat.
+    private void addOriginalId(Quay tiamatQuay) {
+        if(tiamatQuay.getOriginalIds().isEmpty() && !tiamatQuay.getNetexId().isEmpty()){
+            Quay quay = quayRepository.findFirstByNetexIdOrderByVersionDesc(tiamatQuay.getNetexId());
+            if(quay != null && quay.getId() != null){
+                String originalIdQuay = quayRepository.findImportedIdByNetexIdQuay(quay.getId());
+                if(originalIdQuay != null){
+                    tiamatQuay.getOriginalIds().add(originalIdQuay);
+                }
+            }
+        }
     }
 }

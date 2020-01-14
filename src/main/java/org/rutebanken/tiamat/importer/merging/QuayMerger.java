@@ -208,7 +208,7 @@ public class QuayMerger {
 
     private boolean updateZdep(Quay alreadyAdded, Quay incomingQuay) {
         boolean zdepUpdated = false;
-        if(incomingQuay.getOriginalZDEP().size() != 0 && !alreadyAdded.getOriginalZDEP().containsAll(incomingQuay.getOriginalZDEP())){
+        if(!incomingQuay.getOriginalZDEP().isEmpty() && !alreadyAdded.getOriginalZDEP().containsAll(incomingQuay.getOriginalZDEP())){
             alreadyAdded.getOriginalZDEP().clear();
             zdepUpdated = alreadyAdded.getOriginalZDEP().addAll(incomingQuay.getOriginalZDEP());
         }

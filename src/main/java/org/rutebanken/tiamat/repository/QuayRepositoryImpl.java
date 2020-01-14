@@ -87,7 +87,7 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
                 "		ON qkv.key_values_id = vi.value_id AND vi.items NOT LIKE '' AND qkv.key_values_key in (:mappingIdKeys) " +
                 SQL_LEFT_JOIN_PARENT_STOP +
                 "WHERE " +
-                 SQL_STOP_PLACE_OR_PARENT_IS_VALID_IN_INTERVAL +
+                SQL_STOP_PLACE_OR_PARENT_IS_VALID_IN_INTERVAL +
                 "ORDER BY q.id,qkv.key_values_id";
 
 
@@ -120,7 +120,7 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
 
     private Instant parseInstant(Object timestampObject) {
         if (timestampObject instanceof Timestamp) {
-            return ((Timestamp)timestampObject).toInstant();
+            return ((Timestamp) timestampObject).toInstant();
         }
         return null;
     }
@@ -152,7 +152,7 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
         List<String> results = nativeQuery.getResultList();
 
         Set<String> ids = new HashSet<>();
-        for(String result : results) {
+        for (String result : results) {
             ids.add(result);
         }
         return ids;
@@ -167,6 +167,7 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
 
     /**
      * Return jbv code mapping for rail stations. The stop place contains jbc code mapping. The quay contains the public code.
+     *
      * @return
      */
     @Override
@@ -199,6 +200,26 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
         }
 
         return mappingResult;
+    }
+
+    @Override
+    public String findImportedIdByNetexIdQuay(Long quayId) {
+        Query query = entityManager.createNativeQuery("" +
+                "SELECT v.items FROM value_items v " +
+                "  JOIN quay_key_values qkv ON qkv.key_values_id = v.value_id " +
+                "  JOIN quay q ON q.id = qkv.quay_id " +
+                " WHERE qkv.key_values_key = :keyValueImportedId " +
+                "   AND q.id = :quayId");
+
+        query.setParameter("quayId", quayId);
+        query.setParameter("keyValueImportedId", "imported-id");
+
+        @SuppressWarnings("unchecked")
+        List<String> results = query.getResultList();
+        return results
+                .stream()
+                .findFirst()
+                .orElse(null);
     }
 
 }

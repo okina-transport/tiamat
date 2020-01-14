@@ -108,7 +108,7 @@ public class MergingStopPlaceImporter {
      * <p>
      * Attempts to use saveAndFlush or hibernate flush mode always have not been successful.
      */
-    public org.rutebanken.netex.model.StopPlace importStopPlace(StopPlace newStopPlace) throws InterruptedException, ExecutionException {
+    public org.rutebanken.netex.model.StopPlace importStopPlace(StopPlace newStopPlace, boolean noMergeIDFMStopPlaces) throws InterruptedException, ExecutionException {
 
         logger.debug("Transaction active: {}. Isolation level: {}", TransactionSynchronizationManager.isActualTransactionActive(), TransactionSynchronizationManager.getCurrentTransactionIsolationLevel());
 
@@ -117,12 +117,14 @@ public class MergingStopPlaceImporter {
                     + "TransactionSynchronizationManager.isActualTransactionActive(): " + TransactionSynchronizationManager.isActualTransactionActive());
         }
 
-        return netexMapper.mapToNetexModel(importStopPlaceWithoutNetexMapping(newStopPlace));
+        return netexMapper.mapToNetexModel(importStopPlaceWithoutNetexMapping(newStopPlace, noMergeIDFMStopPlaces));
     }
 
-    public StopPlace importStopPlaceWithoutNetexMapping(StopPlace incomingStopPlace) throws InterruptedException, ExecutionException {
-        StopPlace foundStopPlace = findNearbyOrExistingStopPlace(incomingStopPlace);
-
+    public StopPlace importStopPlaceWithoutNetexMapping(StopPlace incomingStopPlace, boolean noMergeIDFMStopPlaces) throws InterruptedException, ExecutionException {
+        StopPlace foundStopPlace = null;
+        if(!noMergeIDFMStopPlaces){
+            foundStopPlace = findNearbyOrExistingStopPlace(incomingStopPlace);
+        }
         final StopPlace stopPlace;
         if (foundStopPlace != null) {
             stopPlace = handleAlreadyExistingStopPlace(foundStopPlace, incomingStopPlace);
@@ -259,7 +261,7 @@ public class MergingStopPlaceImporter {
         }
 
         if (newStopPlace.getName() != null) {
-            final StopPlace nearbyStopPlace = nearbyStopPlaceFinder.find(newStopPlace, true, null);
+            final StopPlace nearbyStopPlace = nearbyStopPlaceFinder.find(newStopPlace, true, null, false);
             if (nearbyStopPlace != null) {
                 logger.debug("Found nearby stop place with name: {}, id: {}", nearbyStopPlace.getName(), nearbyStopPlace.getNetexId());
                 return nearbyStopPlace;

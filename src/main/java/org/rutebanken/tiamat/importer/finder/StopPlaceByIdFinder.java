@@ -57,6 +57,10 @@ public class StopPlaceByIdFinder {
             stopPlace -> hasQuays -> findByNetexId(stopPlace),
             stopPlace -> hasQuays -> findByQuayNetexId(stopPlace, hasQuays));
 
+    private List<Function<StopPlace, Function<Boolean, List<StopPlace>>>> findFunctionListIDFM = Arrays.asList(
+            stopPlace -> hasQuays -> findByNetexId(stopPlace),
+            stopPlace -> hasQuays -> findByQuayNetexId(stopPlace, hasQuays));
+
     public List<StopPlace> findByNetexId(StopPlace incomingStopPlace) {
         if (incomingStopPlace.getNetexId() != null && netexIdHelper.isNsrId(incomingStopPlace.getNetexId())) {
             logger.debug("Looking for stop by netex id {}", incomingStopPlace.getNetexId());
@@ -65,14 +69,23 @@ public class StopPlaceByIdFinder {
         return new ArrayList<>(0);
     }
 
-    public List<StopPlace> findStopPlace(StopPlace incomingStopPlace) {
+    public List<StopPlace> findStopPlace(StopPlace incomingStopPlace, boolean noMergeIDFMStopPlaces) {
         boolean hasQuays = incomingStopPlace.getQuays() != null && !incomingStopPlace.getQuays().isEmpty();
+        if(noMergeIDFMStopPlaces){
+            return getFindFunctionList(incomingStopPlace, hasQuays, findFunctionListIDFM);
+        }
+        else{
+            return getFindFunctionList(incomingStopPlace, hasQuays, findFunctionList);
+        }
+    }
+
+    private List<StopPlace> getFindFunctionList(StopPlace incomingStopPlace, boolean hasQuays, List<Function<StopPlace, Function<Boolean, List<StopPlace>>>> findFunctionList) {
         return findFunctionList.stream()
                 .map(function -> function.apply(incomingStopPlace).apply(hasQuays))
                 .filter(set -> !set.isEmpty())
                 .flatMap(set -> set.stream())
                 .filter(Objects::nonNull)
-                .collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(org.rutebanken.tiamat.model.StopPlace::getNetexId))), ArrayList::new));
+                .collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(StopPlace::getNetexId))), ArrayList::new));
     }
 
     public List<StopPlace> findByQuayNetexId(StopPlace incomingStopPlace, boolean hasQuays) {

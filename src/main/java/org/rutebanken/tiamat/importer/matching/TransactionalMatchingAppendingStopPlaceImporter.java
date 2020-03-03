@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.importer.matching;
 
 import org.rutebanken.netex.model.StopPlace;
+import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
 import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
 import org.rutebanken.tiamat.importer.AlternativeStopTypes;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
@@ -28,6 +29,8 @@ import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.versioning.VersionCreator;
+import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,6 +87,15 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
     @Value("${idfm.modeMatch.noMergeSeveralProducers:false}")
     boolean noMergeIDFMStopPlaces;
+
+    @Autowired
+    protected VersionCreator versionCreator;
+
+    @Autowired
+    private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+
+    @Autowired
+    private StopPlaceCentroidComputer stopPlaceCentroidComputer;
 
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
@@ -168,25 +180,65 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             for (org.rutebanken.tiamat.model.StopPlace existingStopPlace : foundStopPlaces) {
 
+                org.rutebanken.tiamat.model.StopPlace copy = versionCreator.createCopy(existingStopPlace, org.rutebanken.tiamat.model.StopPlace.class);
+
                 logger.debug("Found matching stop place {}", existingStopPlace);
 
-                keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, existingStopPlace);
+                boolean keyValuesChanged = (
+                        keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy)
+                                && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy)
+                                && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_STOPCODE_KEY, incomingStopPlace, copy)
+                );
+
+                boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
 
                 if (incomingStopPlace.getTariffZones() != null) {
-                    if (existingStopPlace.getTariffZones() == null) {
-                        existingStopPlace.setTariffZones(new HashSet<>());
+                    if (copy.getTariffZones() == null) {
+                        copy.setTariffZones(new HashSet<>());
                     }
-                    existingStopPlace.getTariffZones().addAll(incomingStopPlace.getTariffZones());
+                    copy.getTariffZones().addAll(incomingStopPlace.getTariffZones());
                 }
 
-                quayMerger.mergeQuays(incomingStopPlace, existingStopPlace, CREATE_NEW_QUAYS);
+                boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS);
 
-                existingStopPlace = stopPlaceRepository.save(existingStopPlace);
-                String netexId = incomingStopPlace.getNetexId();
+                boolean nameChanged = false;
+                if(incomingStopPlace.getName() != null && !incomingStopPlace.getName().equals(existingStopPlace.getName())){
+                    copy.setName(incomingStopPlace.getName());
+                    nameChanged = true;
+                }
+
+                boolean typeChanged = false;
+                if (copy.getStopPlaceType() == null && incomingStopPlace.getStopPlaceType() != null) {
+                    copy.setStopPlaceType(incomingStopPlace.getStopPlaceType());
+                    logger.info("Updated stop place type to {} for stop place {}", copy.getStopPlaceType(), copy);
+                    typeChanged = true;
+                }
+
+                boolean alternativeNameChanged = false;
+                if(incomingStopPlace.getAlternativeNames() != null && incomingStopPlace.getAlternativeNames().size() != 0){
+                    org.rutebanken.tiamat.model.StopPlace alternativeNamesToCopy = copy;
+                    int sizeList = alternativeNamesToCopy.getAlternativeNames().size();
+                    incomingStopPlace.getAlternativeNames().forEach(incomingAlternativeName -> {
+                        if (!alternativeNamesToCopy.getAlternativeNames().contains(incomingAlternativeName)){
+                            alternativeNamesToCopy.getAlternativeNames().add(incomingAlternativeName);
+                        }
+                    });
+                    if(alternativeNamesToCopy.getAlternativeNames().size() != sizeList){
+                        alternativeNameChanged = true;
+                    }
+                }
+
+                if (quayChanged || keyValuesChanged || centroidChanged || typeChanged || alternativeNameChanged || nameChanged) {
+                    copy = stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, copy);
+                }
+
+//                copy = stopPlaceRepository.save(existingStopPlace);
+
+                String netexId = copy.getNetexId();
 
                 matchedStopPlaces.removeIf(stopPlace -> stopPlace.getId().equals(netexId));
 
-                matchedStopPlaces.add(netexMapper.mapToNetexModel(existingStopPlace));
+                matchedStopPlaces.add(netexMapper.mapToNetexModel(copy));
 
                 stopPlacesCreatedOrUpdated.incrementAndGet();
 

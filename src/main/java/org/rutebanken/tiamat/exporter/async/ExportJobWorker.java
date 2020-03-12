@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.exporter.async;
 
+import org.apache.commons.lang.StringUtils;
 import org.h2.util.IOUtils;
 import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
 import org.rutebanken.tiamat.model.Provider;
@@ -25,6 +26,7 @@ import org.rutebanken.tiamat.repository.ExportJobRepository;
 import org.rutebanken.tiamat.service.BlobStoreService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;
@@ -52,6 +54,9 @@ public class ExportJobWorker implements Runnable {
     private final NetexXmlReferenceValidator netexXmlReferenceValidator;
     private final Provider provider;
     private LocalDateTime localDateTime; // ne peut pas être final. Vu qu'on ne le bouge pas, pas gênant mais dommage
+
+    @Value("${tiamat.export.destination:both}")
+    private String tiamatExportDestination;
 
     public ExportJobWorker(ExportJob exportJob,
                            StreamingPublicationDelivery streamingPublicationDelivery,
@@ -86,9 +91,12 @@ public class ExportJobWorker implements Runnable {
 
             localExportZipFile.createNewFile();
 
-            exportToLocalZipFile(localExportZipFile, localExportXmlFile);
-
-            uploadToGcp(localExportZipFile);
+            if(StringUtils.equals(tiamatExportDestination, "local") || StringUtils.equals(tiamatExportDestination, "both")){
+                exportToLocalZipFile(localExportZipFile, localExportXmlFile);
+            }
+            if(StringUtils.equals(tiamatExportDestination, "gcs") || StringUtils.equals(tiamatExportDestination, "both")){
+                uploadToGcp(localExportZipFile);
+            }
 
             exportJob.setStatus(JobStatus.FINISHED);
             exportJob.setFinished(Instant.now());
@@ -106,7 +114,7 @@ public class ExportJobWorker implements Runnable {
         } finally {
             exportJobRepository.save(exportJob);
             logger.info("Removing local file: {},{}", localExportXmlFile);
-            localExportZipFile.delete();
+//            localExportZipFile.delete();
             localExportXmlFile.delete();
         }
     }

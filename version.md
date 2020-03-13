@@ -9,3 +9,4 @@
 
 # 1.0.6
 - Ajout de la gestion des versions en mode MATCH
+- Stockage des fichiers exportés sur le filesystem et/ou Google Cloud Storage

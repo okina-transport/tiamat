@@ -54,9 +54,7 @@ public class ExportJobWorker implements Runnable {
     private final NetexXmlReferenceValidator netexXmlReferenceValidator;
     private final Provider provider;
     private LocalDateTime localDateTime; // ne peut pas être final. Vu qu'on ne le bouge pas, pas gênant mais dommage
-
-    @Value("${tiamat.export.destination:both}")
-    private String tiamatExportDestination;
+    private final String tiamatExportDestination;
 
     public ExportJobWorker(ExportJob exportJob,
                            StreamingPublicationDelivery streamingPublicationDelivery,
@@ -66,7 +64,8 @@ public class ExportJobWorker implements Runnable {
                            ExportJobRepository exportJobRepository,
                            NetexXmlReferenceValidator netexXmlReferenceValidator,
                            Provider provider,
-                           LocalDateTime localDateTime) {
+                           LocalDateTime localDateTime,
+                           String tiamatExportDestination) {
         this.exportJob = exportJob;
         this.streamingPublicationDelivery = streamingPublicationDelivery;
         this.localExportPath = localExportPath;
@@ -76,6 +75,7 @@ public class ExportJobWorker implements Runnable {
         this.netexXmlReferenceValidator = netexXmlReferenceValidator;
         this.provider = provider;
         this.localDateTime = localDateTime;
+        this.tiamatExportDestination = tiamatExportDestination;
     }
 
 

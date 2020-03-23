@@ -73,12 +73,15 @@ public class AsyncPublicationDeliveryExporter {
 
     private final ProviderRepository providerRepository;
 
+    private final String tiamatExportDestination;
+
     @Autowired
     public AsyncPublicationDeliveryExporter(ExportJobRepository exportJobRepository,
                                             BlobStoreService blobStoreService,
                                             @Qualifier("asyncStreamingPublicationDelivery") StreamingPublicationDelivery streamingPublicationDelivery,
                                             NetexXmlReferenceValidator netexXmlReferenceValidator, ExportTimeZone exportTimeZone,
-                                            @Value("${async.export.path:/deployments/data/}") String localExportPath, ProviderRepository providerRepository) {
+                                            @Value("${async.export.path:/deployments/data/}") String localExportPath, ProviderRepository providerRepository,
+                                            @Value("${tiamat.export.destination:both}") String tiamatExportDestination) {
         this.exportJobRepository = exportJobRepository;
         this.blobStoreService = blobStoreService;
         this.streamingPublicationDelivery = streamingPublicationDelivery;
@@ -86,6 +89,7 @@ public class AsyncPublicationDeliveryExporter {
         this.exportTimeZone = exportTimeZone;
         this.localExportPath = localExportPath;
         this.providerRepository = providerRepository;
+        this.tiamatExportDestination = tiamatExportDestination;
 
         File exportFolder = new File(localExportPath);
         if (!exportFolder.exists() && !exportFolder.mkdirs()) {
@@ -129,7 +133,7 @@ public class AsyncPublicationDeliveryExporter {
                 String fileNameWithoutExtention = createFileNameWithoutExtention(IDFMNetexIdentifiants.getIdSite(provider.getName()), IDFMNetexIdentifiants.getNameSite(provider.getName()), localDateTime);
                 exportJob.setFileName(fileNameWithoutExtention + ".zip");
 
-                ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider, localDateTime);
+                ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination);
                 exportService.submit(exportJobWorker);
                 logger.info("Returning started export job {}", exportJob);
                 setJobUrl(exportJob);

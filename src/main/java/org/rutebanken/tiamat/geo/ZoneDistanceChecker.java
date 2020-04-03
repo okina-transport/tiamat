@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ZoneDistanceChecker {
 
-    public static final int DEFAULT_MAX_DISTANCE = 1000;
+    public static final int DEFAULT_MAX_DISTANCE = 32089700; // avant 1000 aujourd'hui c'est la distance la plus grande parcourable en ligne droite sur la terre. Du coup, on peut bouger les points partout
 
     private static final Logger logger = Logger.getLogger(ZoneDistanceChecker.class);
 

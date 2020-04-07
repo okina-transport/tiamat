@@ -1,0 +1,1 @@
+alter table quay add column url character varying(255);

@@ -40,6 +40,9 @@ public class Quay extends StopPlaceSpace_VersionStructure {
     @Column(name = "zip_code")
     protected String zipCode;
 
+    @Column(name = "url")
+    protected String url;
+
     /**
      * TODO: reconsider data type for compass bearing.
      * https://rutebanken.atlassian.net/browse/NRP-895
@@ -77,6 +80,12 @@ public class Quay extends StopPlaceSpace_VersionStructure {
 
     public void setZipCode(String zipCode) {
         this.zipCode = zipCode;
+    }
+
+    public String getUrl() { return url; }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     @Override

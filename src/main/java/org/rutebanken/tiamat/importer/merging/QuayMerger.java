@@ -21,6 +21,7 @@ import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.operation.TransformException;
 import org.rutebanken.tiamat.importer.matching.OriginalIdMatcher;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.MultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -189,17 +190,50 @@ public class QuayMerger {
         boolean stopCodeUpdated = updateCodes(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone);
         boolean zdepUpdated = updateZdep(alreadyAdded, incomingQuay);
         boolean zipCodeUpdated = updateZipCode(alreadyAdded, incomingQuay);
+        boolean urlUpdated = updateUrl(alreadyAdded, incomingQuay);
+        boolean descUpdated = updateDesc(alreadyAdded, incomingQuay);
 
-        if (idUpdated || nameUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || zdepUpdated || zipCodeUpdated) {
-            logger.debug("Quay changed. idUpdated: {}, nameUpdated: {}, merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zdepUpdated: {}, zipCodeUpdated: {}. Quay: {}", idUpdated, nameUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, zdepUpdated, alreadyAdded, zipCodeUpdated);
+        if (idUpdated || nameUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || zdepUpdated || zipCodeUpdated || urlUpdated || descUpdated) {
+            logger.debug("Quay changed. idUpdated: {}, nameUpdated: {}, merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zdepUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}. Quay: {}", idUpdated, nameUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, zdepUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated);
 
             alreadyAdded.setChanged(Instant.now());
             updatedQuaysCounter.incrementAndGet();
         }
     }
 
+    private boolean updateDesc(Quay alreadyAdded, Quay incomingQuay) {
+        String alreadyDescription = null;
+        String incomingDescription = null;
+
+        if (alreadyAdded.getDescription() != null) {
+            if (alreadyAdded.getDescription().getValue() != null) {
+                alreadyDescription = alreadyAdded.getDescription().getValue();
+            }
+        }
+
+        if (incomingQuay.getDescription() != null) {
+            if (incomingQuay.getDescription().getValue() != null) {
+                incomingDescription = incomingQuay.getDescription().getValue();
+            }
+        }
+
+        if (!StringUtils.equals(alreadyDescription, incomingDescription) && incomingDescription != null) {
+            alreadyAdded.setDescription(new EmbeddableMultilingualString(incomingQuay.getDescription().getValue()));
+            return true;
+        }
+        return false;
+    }
+
+    private boolean updateUrl(Quay alreadyAdded, Quay incomingQuay) {
+        if (!StringUtils.equals(alreadyAdded.getUrl(), incomingQuay.getUrl()) && incomingQuay.getUrl() != null) {
+            alreadyAdded.setUrl(incomingQuay.getUrl());
+            return true;
+        }
+        return false;
+    }
+
     private boolean updateZipCode(Quay alreadyAdded, Quay incomingQuay) {
-        if(!StringUtils.equals(alreadyAdded.getZipCode(), incomingQuay.getZipCode()) && incomingQuay.getZipCode() != null){
+        if (!StringUtils.equals(alreadyAdded.getZipCode(), incomingQuay.getZipCode()) && incomingQuay.getZipCode() != null) {
             alreadyAdded.setZipCode(incomingQuay.getZipCode());
             return true;
         }
@@ -208,7 +242,7 @@ public class QuayMerger {
 
     private boolean updateZdep(Quay alreadyAdded, Quay incomingQuay) {
         boolean zdepUpdated = false;
-        if(!incomingQuay.getOriginalZDEP().isEmpty() && !alreadyAdded.getOriginalZDEP().containsAll(incomingQuay.getOriginalZDEP())){
+        if (!incomingQuay.getOriginalZDEP().isEmpty() && !alreadyAdded.getOriginalZDEP().containsAll(incomingQuay.getOriginalZDEP())) {
             alreadyAdded.getOriginalZDEP().clear();
             zdepUpdated = alreadyAdded.getOriginalZDEP().addAll(incomingQuay.getOriginalZDEP());
         }

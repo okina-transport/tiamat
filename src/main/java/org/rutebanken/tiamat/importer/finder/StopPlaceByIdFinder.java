@@ -23,6 +23,7 @@ import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -51,15 +52,11 @@ public class StopPlaceByIdFinder {
     @Autowired
     private NetexIdHelper netexIdHelper;
 
-    private List<Function<StopPlace, Function<Boolean, List<StopPlace>>>> findFunctionList = Arrays.asList(
-            stopPlace -> hasQuays -> stopPlaceByQuayOriginalIdFinder.find(stopPlace, hasQuays),
-            stopPlace -> hasQuays -> findByStopPlaceOriginalId(stopPlace),
-            stopPlace -> hasQuays -> findByNetexId(stopPlace),
-            stopPlace -> hasQuays -> findByQuayNetexId(stopPlace, hasQuays));
-
-    private List<Function<StopPlace, Function<Boolean, List<StopPlace>>>> findFunctionListIDFM = Arrays.asList(
-            stopPlace -> hasQuays -> findByNetexId(stopPlace),
-            stopPlace -> hasQuays -> findByQuayNetexId(stopPlace, hasQuays));
+    private List<Function<StopPlace, Function<Boolean, Function<Boolean, List<StopPlace>>>>> findFunctionList = Arrays.asList(
+            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> stopPlaceByQuayOriginalIdFinder.find(stopPlace, hasQuays, noMergeIDFMStopPlaces),
+            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByStopPlaceOriginalId(stopPlace),
+            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByNetexId(stopPlace),
+            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByQuayNetexId(stopPlace, hasQuays));
 
     public List<StopPlace> findByNetexId(StopPlace incomingStopPlace) {
         if (incomingStopPlace.getNetexId() != null && netexIdHelper.isNsrId(incomingStopPlace.getNetexId())) {
@@ -71,17 +68,12 @@ public class StopPlaceByIdFinder {
 
     public List<StopPlace> findStopPlace(StopPlace incomingStopPlace, boolean noMergeIDFMStopPlaces) {
         boolean hasQuays = incomingStopPlace.getQuays() != null && !incomingStopPlace.getQuays().isEmpty();
-        if(noMergeIDFMStopPlaces){
-            return getFindFunctionList(incomingStopPlace, hasQuays, findFunctionListIDFM);
-        }
-        else{
-            return getFindFunctionList(incomingStopPlace, hasQuays, findFunctionList);
-        }
+        return getFindFunctionList(incomingStopPlace, hasQuays, noMergeIDFMStopPlaces, findFunctionList);
     }
 
-    private List<StopPlace> getFindFunctionList(StopPlace incomingStopPlace, boolean hasQuays, List<Function<StopPlace, Function<Boolean, List<StopPlace>>>> findFunctionList) {
+    private List<StopPlace> getFindFunctionList(StopPlace incomingStopPlace, boolean hasQuays, boolean noMergeIDFMStopPlaces, List<Function<StopPlace, Function<Boolean, Function<Boolean, List<StopPlace>>>>> findFunctionList) {
         return findFunctionList.stream()
-                .map(function -> function.apply(incomingStopPlace).apply(hasQuays))
+                .map(function -> function.apply(incomingStopPlace).apply(hasQuays).apply(noMergeIDFMStopPlaces))
                 .filter(set -> !set.isEmpty())
                 .flatMap(set -> set.stream())
                 .filter(Objects::nonNull)
@@ -100,7 +92,6 @@ public class StopPlaceByIdFinder {
         }
         return new ArrayList<>(0);
     }
-
 
 
     public List<StopPlace> findByStopPlaceOriginalId(StopPlace incomingStopPlace) {

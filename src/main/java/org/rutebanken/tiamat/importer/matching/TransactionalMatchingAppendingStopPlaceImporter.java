@@ -190,8 +190,6 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                                 && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_STOPCODE_KEY, incomingStopPlace, copy)
                 );
 
-                boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
-
                 if (incomingStopPlace.getTariffZones() != null) {
                     if (copy.getTariffZones() == null) {
                         copy.setTariffZones(new HashSet<>());
@@ -200,6 +198,8 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 }
 
                 boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS);
+
+                boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
 
                 boolean nameChanged = false;
                 if(incomingStopPlace.getName() != null && !incomingStopPlace.getName().equals(existingStopPlace.getName())){

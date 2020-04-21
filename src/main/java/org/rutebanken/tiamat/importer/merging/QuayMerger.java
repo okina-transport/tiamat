@@ -21,7 +21,10 @@ import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.operation.TransformException;
 import org.rutebanken.tiamat.importer.matching.OriginalIdMatcher;
+import org.rutebanken.tiamat.model.AccessibilityAssessment;
+import org.rutebanken.tiamat.model.AccessibilityLimitation;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
 import org.rutebanken.tiamat.model.MultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -192,13 +195,44 @@ public class QuayMerger {
         boolean zipCodeUpdated = updateZipCode(alreadyAdded, incomingQuay);
         boolean urlUpdated = updateUrl(alreadyAdded, incomingQuay);
         boolean descUpdated = updateDesc(alreadyAdded, incomingQuay);
+        boolean wheelchairBoardingUpdated = updateWheelchairBoarding(alreadyAdded, incomingQuay);
 
-        if (idUpdated || nameUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || zdepUpdated || zipCodeUpdated || urlUpdated || descUpdated) {
-            logger.debug("Quay changed. idUpdated: {}, nameUpdated: {}, merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zdepUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}. Quay: {}", idUpdated, nameUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, zdepUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated);
+        if (idUpdated || nameUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || zdepUpdated || zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated) {
+            logger.debug("Quay changed. idUpdated: {}, nameUpdated: {}, merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zdepUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}. Quay: {}", idUpdated, nameUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, zdepUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated);
 
             alreadyAdded.setChanged(Instant.now());
             updatedQuaysCounter.incrementAndGet();
         }
+    }
+
+    private boolean updateWheelchairBoarding(Quay alreadyAdded, Quay incomingQuay) {
+        LimitationStatusEnumeration wheelchairBoardingAlreadyPresent = null;
+        if(alreadyAdded.getAccessibilityAssessment() != null){
+            if(alreadyAdded.getAccessibilityAssessment().getLimitations() != null && !alreadyAdded.getAccessibilityAssessment().getLimitations().isEmpty()){
+                if(alreadyAdded.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess() != null){
+                    wheelchairBoardingAlreadyPresent = alreadyAdded.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess();
+                }
+            }
+        }
+
+        if(incomingQuay.getAccessibilityAssessment() != null){
+            if(incomingQuay.getAccessibilityAssessment().getLimitations() != null && !incomingQuay.getAccessibilityAssessment().getLimitations().isEmpty()){
+                if(incomingQuay.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess() != null){
+                    if(!incomingQuay.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess().equals(wheelchairBoardingAlreadyPresent) && wheelchairBoardingAlreadyPresent != null){
+                        alreadyAdded.getAccessibilityAssessment().getLimitations().get(0).setWheelchairAccess(incomingQuay.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess());
+                        return true;
+                    }
+                    if(wheelchairBoardingAlreadyPresent == null){
+                        AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
+                        AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
+                        accessibilityLimitation.setWheelchairAccess(incomingQuay.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess());
+                        accessibilityAssessment.getLimitations().add(accessibilityLimitation);
+                        alreadyAdded.setAccessibilityAssessment(accessibilityAssessment);
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private boolean updateDesc(Quay alreadyAdded, Quay incomingQuay) {

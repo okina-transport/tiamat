@@ -76,7 +76,7 @@ public class AccessibilityAssessmentOptimizer {
                 stopPlace.setAccessibilityAssessment(firstAccessibilityAssessment);
 
                 //Remove Assessment from Quays
-                stopPlace.getQuays().forEach(quay -> quay.setAccessibilityAssessment(null));
+//                stopPlace.getQuays().forEach(quay -> quay.setAccessibilityAssessment(null));
             } else {
                 // Assessments are different - remove from StopPlace
                 stopPlace.setAccessibilityAssessment(null);

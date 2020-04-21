@@ -252,7 +252,7 @@ public class QuayMerger {
 
     private boolean updateCodes(Quay alreadyAdded, Quay incomingQuay, boolean stopPlaceAlone, boolean quayAlone) {
         boolean codesUpdated = false;
-        if (!alreadyAdded.getOriginalStopCodes().contains(incomingQuay.getPublicCode())) {
+        if (!alreadyAdded.getOriginalStopCodes().contains(incomingQuay.getPublicCode()) && incomingQuay.getPublicCode() != null) {
             codesUpdated = alreadyAdded.getOriginalStopCodes().add(alreadyAdded.getPublicCode());
         }
 

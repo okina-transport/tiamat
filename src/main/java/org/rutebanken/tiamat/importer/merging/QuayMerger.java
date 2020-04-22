@@ -225,8 +225,10 @@ public class QuayMerger {
                     if(wheelchairBoardingAlreadyPresent == null){
                         AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
                         AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
+                        ArrayList<AccessibilityLimitation> accessibilityLimitations = new ArrayList<>();
+                        accessibilityLimitations.add(accessibilityLimitation);
                         accessibilityLimitation.setWheelchairAccess(incomingQuay.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess());
-                        accessibilityAssessment.getLimitations().add(accessibilityLimitation);
+                        accessibilityAssessment.setLimitations(accessibilityLimitations);
                         alreadyAdded.setAccessibilityAssessment(accessibilityAssessment);
                     }
                 }

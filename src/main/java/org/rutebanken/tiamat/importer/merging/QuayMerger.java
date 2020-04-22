@@ -228,6 +228,13 @@ public class QuayMerger {
                         ArrayList<AccessibilityLimitation> accessibilityLimitations = new ArrayList<>();
                         accessibilityLimitations.add(accessibilityLimitation);
                         accessibilityLimitation.setWheelchairAccess(incomingQuay.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess());
+                        accessibilityLimitation.setAudibleSignalsAvailable(LimitationStatusEnumeration.UNKNOWN);
+                        accessibilityLimitation.setStepFreeAccess(LimitationStatusEnumeration.UNKNOWN);
+                        accessibilityLimitation.setEscalatorFreeAccess(LimitationStatusEnumeration.UNKNOWN);
+                        accessibilityLimitation.setLiftFreeAccess(LimitationStatusEnumeration.UNKNOWN);
+                        accessibilityLimitation.setAudibleSignalsAvailable(LimitationStatusEnumeration.UNKNOWN);
+                        accessibilityLimitation.setVisualSignsAvailable(LimitationStatusEnumeration.UNKNOWN);
+
                         accessibilityAssessment.setLimitations(accessibilityLimitations);
                         alreadyAdded.setAccessibilityAssessment(accessibilityAssessment);
                     }

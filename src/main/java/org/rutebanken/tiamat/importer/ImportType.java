@@ -50,5 +50,13 @@ public enum ImportType {
      * Matching already existing stops on ID or nearby location. Append tariff zones and IDs.
      * See {@link TransactionalMatchingAppendingStopPlaceImporter}
      */
-    MATCH
+    MATCH,
+
+    /**
+     * Import utilisé pour les imports GTFS dans le cadre du projet MOSAIC/IDFM
+     * il crée les points d'arrêt et les quays
+     * mais si ils sont déjà existants il ne les met à jour que lorsque la position du quay est modifiée.
+     */
+
+    IDFM_IMPORT
 }

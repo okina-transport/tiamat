@@ -56,7 +56,7 @@ public class QuayMergerTest {
         quay2.getOriginalIds().add("BRA:Quay:12321234");
         quay2.setCentroid(geometryFactory.createPoint(new Coordinate(59, 10)));
 
-        Set<Quay> result = quayMerger.mergeQuays(null, Sets.newHashSet(quay2), Sets.newHashSet(quay1), new AtomicInteger(), new AtomicInteger(), true, false, true);
+        Set<Quay> result = quayMerger.mergeQuays(null, Sets.newHashSet(quay2), Sets.newHashSet(quay1), new AtomicInteger(), new AtomicInteger(), true, false, true, false);
 
         assertThat(result).hasSize(1);
         assertThat(result.iterator().next().getChanged()).isNull();

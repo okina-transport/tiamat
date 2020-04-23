@@ -108,7 +108,7 @@ public class MergingStopPlaceImporter {
      * <p>
      * Attempts to use saveAndFlush or hibernate flush mode always have not been successful.
      */
-    public org.rutebanken.netex.model.StopPlace importStopPlace(StopPlace newStopPlace, boolean noMergeIDFMStopPlaces) throws InterruptedException, ExecutionException {
+    public org.rutebanken.netex.model.StopPlace importStopPlace(StopPlace newStopPlace, boolean noMergeIDFMStopPlaces, boolean idfmImport) throws InterruptedException, ExecutionException {
 
         logger.debug("Transaction active: {}. Isolation level: {}", TransactionSynchronizationManager.isActualTransactionActive(), TransactionSynchronizationManager.getCurrentTransactionIsolationLevel());
 
@@ -117,17 +117,17 @@ public class MergingStopPlaceImporter {
                     + "TransactionSynchronizationManager.isActualTransactionActive(): " + TransactionSynchronizationManager.isActualTransactionActive());
         }
 
-        return netexMapper.mapToNetexModel(importStopPlaceWithoutNetexMapping(newStopPlace, noMergeIDFMStopPlaces));
+        return netexMapper.mapToNetexModel(importStopPlaceWithoutNetexMapping(newStopPlace, noMergeIDFMStopPlaces, idfmImport));
     }
 
-    public StopPlace importStopPlaceWithoutNetexMapping(StopPlace incomingStopPlace, boolean noMergeIDFMStopPlaces) throws InterruptedException, ExecutionException {
+    public StopPlace importStopPlaceWithoutNetexMapping(StopPlace incomingStopPlace, boolean noMergeIDFMStopPlaces, boolean idfmImport) throws InterruptedException, ExecutionException {
         StopPlace foundStopPlace = null;
         if(!noMergeIDFMStopPlaces){
             foundStopPlace = findNearbyOrExistingStopPlace(incomingStopPlace);
         }
         final StopPlace stopPlace;
         if (foundStopPlace != null) {
-            stopPlace = handleAlreadyExistingStopPlace(foundStopPlace, incomingStopPlace);
+            stopPlace = handleAlreadyExistingStopPlace(foundStopPlace, incomingStopPlace, idfmImport);
         } else {
             stopPlace = handleCompletelyNewStopPlace(incomingStopPlace);
         }
@@ -164,13 +164,13 @@ public class MergingStopPlaceImporter {
         return updateCache(incomingStopPlace);
     }
 
-    public StopPlace handleAlreadyExistingStopPlace(StopPlace existingStopPlace, StopPlace incomingStopPlace) {
+    public StopPlace handleAlreadyExistingStopPlace(StopPlace existingStopPlace, StopPlace incomingStopPlace, boolean idfmImport) {
         logger.debug("Found existing stop place {} from incoming {}", existingStopPlace, incomingStopPlace);
 
         StopPlace copy = versionCreator.createCopy(existingStopPlace, StopPlace.class);
 
         boolean stopPlaceAlone = quayMerger.checkNumberProducers(existingStopPlace.getKeyValues(), incomingStopPlace.getKeyValues());
-        boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, ADD_NEW_QUAYS, EXISTING_STOP_QUAY_MERGE_SHORT_DISTANCE_CHECK_BEFORE_ID_MATCH, stopPlaceAlone);
+        boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, ADD_NEW_QUAYS, EXISTING_STOP_QUAY_MERGE_SHORT_DISTANCE_CHECK_BEFORE_ID_MATCH, stopPlaceAlone, idfmImport);
         boolean keyValuesChanged = (
                 keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy)
                         && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy)

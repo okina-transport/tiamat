@@ -67,15 +67,15 @@ public class QuayMerger {
         this.originalIdMatcher = originalIdMatcher;
     }
 
-    public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays) {
-        return mergeQuays(newStopPlace, existingStopPlace, addNewQuays, false, true);
+    public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, boolean idfmImport) {
+        return mergeQuays(newStopPlace, existingStopPlace, addNewQuays, false, true, idfmImport);
     }
 
 
     /**
      * Inspect quays from incoming AND matching stop place. If they do not exist from before, add them.
      */
-    public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch, boolean stopPlaceAlone) {
+    public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch, boolean stopPlaceAlone, boolean idfmImport) {
 
         AtomicInteger updatedQuays = new AtomicInteger();
         AtomicInteger addedQuays = new AtomicInteger();
@@ -86,7 +86,7 @@ public class QuayMerger {
             newStopPlace.setQuays(new HashSet<>());
         }
 
-        Set<Quay> result = mergeQuays(newStopPlace, newStopPlace.getQuays(), existingStopPlace.getQuays(), updatedQuays, addedQuays, addNewQuays, lowDistanceCheckBeforeIdMatch, stopPlaceAlone);
+        Set<Quay> result = mergeQuays(newStopPlace, newStopPlace.getQuays(), existingStopPlace.getQuays(), updatedQuays, addedQuays, addNewQuays, lowDistanceCheckBeforeIdMatch, stopPlaceAlone, idfmImport);
 
         existingStopPlace.setQuays(result);
 
@@ -95,11 +95,11 @@ public class QuayMerger {
     }
 
     public Set<Quay> mergeQuays(Set<Quay> newQuays, Set<Quay> existingQuays, AtomicInteger updatedQuaysCounter, AtomicInteger addedQuaysCounter, boolean addNewQuays) {
-        return mergeQuays(null, newQuays, existingQuays, updatedQuaysCounter, addedQuaysCounter, addNewQuays, true, false);
+        return mergeQuays(null, newQuays, existingQuays, updatedQuaysCounter, addedQuaysCounter, addNewQuays, true, false, false);
     }
 
     public Set<Quay> mergeQuays(StopPlace newStopPlace, Set<Quay> newQuays, Set<Quay> existingQuays, AtomicInteger updatedQuaysCounter, AtomicInteger addedQuaysCounter, boolean addNewQuays) {
-        return mergeQuays(newStopPlace, newQuays, existingQuays, updatedQuaysCounter, addedQuaysCounter, addNewQuays, true, false);
+        return mergeQuays(newStopPlace, newQuays, existingQuays, updatedQuaysCounter, addedQuaysCounter, addNewQuays, true, false, false);
     }
 
     /**
@@ -113,7 +113,7 @@ public class QuayMerger {
      * @param addNewQuays         if allowed to add quays if not match found
      * @return the resulting set of quays after matching, appending and adding.
      */
-    public Set<Quay> mergeQuays(StopPlace newStopPlace, Set<Quay> newQuays, Set<Quay> existingQuays, AtomicInteger updatedQuaysCounter, AtomicInteger addedQuaysCounter, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch, boolean stopPlaceAlone) {
+    public Set<Quay> mergeQuays(StopPlace newStopPlace, Set<Quay> newQuays, Set<Quay> existingQuays, AtomicInteger updatedQuaysCounter, AtomicInteger addedQuaysCounter, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch, boolean stopPlaceAlone, boolean idfmImport) {
 
         Set<Quay> result = new HashSet<>();
         if (existingQuays != null) {
@@ -146,7 +146,7 @@ public class QuayMerger {
             }
 
             if (matchingQuay.isPresent()) {
-                updateIfChanged(matchingQuay.get(), incomingQuay, updatedQuaysCounter, stopPlaceAlone);
+                updateIfChanged(matchingQuay.get(), incomingQuay, updatedQuaysCounter, stopPlaceAlone, idfmImport);
             } else if (addNewQuays) {
                 logger.info("Found no match for existing quay {}. Adding it!", incomingQuay);
                 result.add(incomingQuay);
@@ -182,20 +182,53 @@ public class QuayMerger {
         return Optional.empty();
     }
 
-    private void updateIfChanged(Quay alreadyAdded, Quay incomingQuay, AtomicInteger updatedQuaysCounter, boolean stopPlaceAlone) {
+    private void updateIfChanged(Quay alreadyAdded, Quay incomingQuay, AtomicInteger updatedQuaysCounter, boolean stopPlaceAlone, boolean idfmImport) {
         // The incoming quay could for some reason already have multiple imported IDs.
-        boolean quayAlone = checkNumberProducers(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
-        boolean multipleIds = checkNumberId(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
-        boolean idUpdated = alreadyAdded.getOriginalIds().addAll(incomingQuay.getOriginalIds());
-        boolean nameUpdated = alreadyAdded.getOriginalNames().addAll(incomingQuay.getOriginalNames());
-        boolean changedByMerge = mergeFields(incomingQuay, alreadyAdded);
-        boolean centroidUpdated = updateCentroid(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone, multipleIds);
-        boolean stopCodeUpdated = updateCodes(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone);
-        boolean zdepUpdated = updateZdep(alreadyAdded, incomingQuay);
-        boolean zipCodeUpdated = updateZipCode(alreadyAdded, incomingQuay);
-        boolean urlUpdated = updateUrl(alreadyAdded, incomingQuay);
-        boolean descUpdated = updateDesc(alreadyAdded, incomingQuay);
-        boolean wheelchairBoardingUpdated = updateWheelchairBoarding(alreadyAdded, incomingQuay);
+
+        boolean quayAlone;
+        boolean multipleIds;
+        boolean idUpdated;
+        boolean nameUpdated;
+        boolean changedByMerge;
+        boolean centroidUpdated;
+        boolean stopCodeUpdated;
+        boolean zdepUpdated;
+        boolean zipCodeUpdated;
+        boolean urlUpdated;
+        boolean descUpdated;
+        boolean wheelchairBoardingUpdated;
+
+        if(idfmImport){
+            quayAlone = checkNumberProducers(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
+            multipleIds = checkNumberId(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
+            idUpdated = false;
+            nameUpdated = false;
+            changedByMerge = false;
+            centroidUpdated = updateCentroid(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone, multipleIds);
+            stopCodeUpdated = false;
+            zdepUpdated = false;
+            zipCodeUpdated = false;
+            urlUpdated = false;
+            descUpdated = false;
+            wheelchairBoardingUpdated = false;
+        }
+        else {
+            quayAlone = checkNumberProducers(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
+            multipleIds = checkNumberId(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
+            idUpdated = alreadyAdded.getOriginalIds().addAll(incomingQuay.getOriginalIds());
+            nameUpdated = alreadyAdded.getOriginalNames().addAll(incomingQuay.getOriginalNames());
+            changedByMerge = mergeFields(incomingQuay, alreadyAdded);
+            centroidUpdated = updateCentroid(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone, multipleIds);
+            stopCodeUpdated = updateCodes(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone);
+            zdepUpdated = updateZdep(alreadyAdded, incomingQuay);
+            zipCodeUpdated = updateZipCode(alreadyAdded, incomingQuay);
+            urlUpdated = updateUrl(alreadyAdded, incomingQuay);
+            descUpdated = updateDesc(alreadyAdded, incomingQuay);
+            wheelchairBoardingUpdated = updateWheelchairBoarding(alreadyAdded, incomingQuay);
+        }
+
+
+
 
         if (idUpdated || nameUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || zdepUpdated || zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated) {
             logger.debug("Quay changed. idUpdated: {}, nameUpdated: {}, merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zdepUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}. Quay: {}", idUpdated, nameUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, zdepUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated);

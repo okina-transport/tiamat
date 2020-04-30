@@ -14,3 +14,6 @@
 # 1.0.7
 - Gestion de la position d'un quay https://redmine.okina.fr/issues/6452
 - Gestion des champs description et url https://redmine.okina.fr/issues/6433
+
+# 1.0.8
+- 6692 : Gestion de la mise des points d'arrêt entre Okina et Tiamat et les imports GTFS

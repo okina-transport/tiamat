@@ -99,7 +99,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
-                                 AtomicInteger stopPlacesCreatedOrUpdated, Provider provider) {
+                                 AtomicInteger stopPlacesCreatedOrUpdated, boolean idfmImport) {
 
 
         List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace, noMergeIDFMStopPlaces);
@@ -165,7 +165,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             StopPlace newStopPlace = null;
             try {
-                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace, noMergeIDFMStopPlaces);
+                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace, noMergeIDFMStopPlaces, idfmImport);
             } catch (InterruptedException | ExecutionException e) {
                 logger.error("Problem while adding new stop place", e);
             }
@@ -197,7 +197,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                     copy.getTariffZones().addAll(incomingStopPlace.getTariffZones());
                 }
 
-                boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS);
+                boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS, idfmImport);
 
                 boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
 

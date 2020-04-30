@@ -24,6 +24,8 @@ public class IDFMNetexIdentifiants {
         idSitesList.put("MOBICITE469", "79");
         idSitesList.put("RDLA", "RDLA");
         idSitesList.put("CTVH", "CTVH");
+        idSitesList.put("SAINT_MALO", "SAINT_MALO");
+        idSitesList.put("VALENCIENNES", "VALENCIENNES");
 
         nameSitesList.put("CTVMI", "CTVMI");
         nameSitesList.put("CEOBUS", "GIRAUX VAL D'OISE");
@@ -39,6 +41,8 @@ public class IDFMNetexIdentifiants {
         nameSitesList.put("MOBICITE469", "MOBICITE");
         nameSitesList.put("RDLA", "RDLA");
         nameSitesList.put("CTVH", "CTVH");
+        nameSitesList.put("SAINT_MALO", "SAINT_MALO");
+        nameSitesList.put("VALENCIENNES", "VALENCIENNES");
 
     }
 

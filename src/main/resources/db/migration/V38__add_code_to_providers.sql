@@ -14,3 +14,5 @@ UPDATE providers set code ='mobicitel40' WHERE name='MOBICITEL40';
 UPDATE providers set code ='mobicite469' WHERE name='MOBICITE469';
 UPDATE providers set code ='ctvh' WHERE name='CTVH';
 UPDATE providers set code ='rdla' WHERE name='RDLA';
+UPDATE providers set code ='saint_malo' WHERE name='SAINT_MALO';
+UPDATE providers set code ='valenciennes' WHERE name='VALENCIENNES';

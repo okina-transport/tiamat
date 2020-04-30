@@ -46,6 +46,12 @@ VALUES (13, 'CTVH');
 INSERT INTO providers (id, name)
 VALUES (14, 'RDLA');
 
+INSERT INTO providers (id, name)
+VALUES (15, 'SAINT_MALO');
+
+INSERT INTO providers (id, name)
+VALUES (16, 'VALENCIENNES');
+
 
 ALTER TABLE stop_place ADD COLUMN provider_id BIGINT;
 ALTER TABLE stop_place ADD CONSTRAINT fk_provider_id foreign key (provider_id) references providers;

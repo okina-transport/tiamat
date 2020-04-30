@@ -89,7 +89,13 @@ public class ApiProxyService {
 	}
 
 	private String getCitycode(URL apiUrl) throws Exception {
-        InputStream inputStream = apiUrl.openStream();
+		InputStream inputStream;
+		try {
+			inputStream = apiUrl.openStream();
+		} catch (Exception e) {
+			logger.error("Problème de connexion à l'API");
+			return null;
+		}
 
         StringWriter writer = new StringWriter();
         String encoding = StandardCharsets.UTF_8.name();

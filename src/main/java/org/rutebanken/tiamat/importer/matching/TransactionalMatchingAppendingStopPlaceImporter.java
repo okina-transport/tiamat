@@ -202,7 +202,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
 
                 boolean nameChanged = false;
-                if(incomingStopPlace.getName() != null && !incomingStopPlace.getName().equals(existingStopPlace.getName())){
+                if(incomingStopPlace.getName() != null && !incomingStopPlace.getName().equals(existingStopPlace.getName()) && !idfmImport){
                     copy.setName(incomingStopPlace.getName());
                     nameChanged = true;
                 }

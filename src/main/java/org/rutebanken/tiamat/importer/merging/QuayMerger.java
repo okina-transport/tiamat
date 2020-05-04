@@ -216,7 +216,7 @@ public class QuayMerger {
             quayAlone = checkNumberProducers(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
             multipleIds = checkNumberId(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
             idUpdated = alreadyAdded.getOriginalIds().addAll(incomingQuay.getOriginalIds());
-            nameUpdated = alreadyAdded.getOriginalNames().addAll(incomingQuay.getOriginalNames());
+            nameUpdated = updateName(alreadyAdded, incomingQuay);
             changedByMerge = mergeFields(incomingQuay, alreadyAdded);
             centroidUpdated = updateCentroid(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone, multipleIds);
             stopCodeUpdated = updateCodes(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone);
@@ -228,14 +228,29 @@ public class QuayMerger {
         }
 
 
-
-
         if (idUpdated || nameUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || zdepUpdated || zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated) {
             logger.debug("Quay changed. idUpdated: {}, nameUpdated: {}, merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zdepUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}. Quay: {}", idUpdated, nameUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, zdepUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated);
 
             alreadyAdded.setChanged(Instant.now());
             updatedQuaysCounter.incrementAndGet();
         }
+    }
+
+    private boolean updateName(Quay alreadyAdded, Quay incomingQuay) {
+        boolean namesUpdated = false;
+        if (!alreadyAdded.getOriginalNames().containsAll(incomingQuay.getOriginalNames()) && !incomingQuay.getOriginalNames().isEmpty()) {
+            alreadyAdded.getOriginalNames().clear();
+            namesUpdated = alreadyAdded.getOriginalNames().addAll(incomingQuay.getOriginalNames());
+        }
+
+        if (incomingQuay.getName() != null && incomingQuay.getName().getValue() != null) {
+            if(!alreadyAdded.getOriginalNames().contains(incomingQuay.getName().getValue())){
+                alreadyAdded.getOriginalNames().clear();
+                namesUpdated = alreadyAdded.getOriginalNames().add(incomingQuay.getName().getValue());
+            }
+        }
+
+        return namesUpdated;
     }
 
     private boolean updateWheelchairBoarding(Quay alreadyAdded, Quay incomingQuay) {

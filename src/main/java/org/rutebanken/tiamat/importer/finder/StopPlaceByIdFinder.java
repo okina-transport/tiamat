@@ -53,10 +53,11 @@ public class StopPlaceByIdFinder {
     private NetexIdHelper netexIdHelper;
 
     private List<Function<StopPlace, Function<Boolean, Function<Boolean, List<StopPlace>>>>> findFunctionList = Arrays.asList(
-            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> stopPlaceByQuayOriginalIdFinder.find(stopPlace, hasQuays, noMergeIDFMStopPlaces),
-            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByStopPlaceOriginalId(stopPlace),
-            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByNetexId(stopPlace),
-            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByQuayNetexId(stopPlace, hasQuays));
+            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> stopPlaceByQuayOriginalIdFinder.find(stopPlace, hasQuays, noMergeIDFMStopPlaces)
+//            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByStopPlaceOriginalId(stopPlace)
+//            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByNetexId(stopPlace),
+//            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByQuayNetexId(stopPlace, hasQuays)
+            );
 
     public List<StopPlace> findByNetexId(StopPlace incomingStopPlace) {
         if (incomingStopPlace.getNetexId() != null && netexIdHelper.isNsrId(incomingStopPlace.getNetexId())) {

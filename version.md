@@ -17,3 +17,6 @@
 
 # 1.0.8
 - 6692 : Gestion de la mise des points d'arrêt entre Okina et Tiamat et les imports GTFS
+
+# 1.0.9
+- 6908 : Fix Exports NeTex Arrêts

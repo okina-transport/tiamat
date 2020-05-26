@@ -144,11 +144,7 @@ public class AsyncPublicationDeliveryExporter {
     }
 
     public String createFileNameWithoutExtention(String idSite, String nameSite, LocalDateTime localDateTime) {
-        String retour = "ARRET_" + idSite + "_" + nameSite + "_T_" + localDateTime;
-        if(!retour.endsWith("Z")) retour = retour + "Z";
-        retour = retour.replace("-", "");
-        retour = retour.replace(":", "");
-        return retour;
+        return "ARRET_" + idSite + "_" + nameSite + "_T_" + localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "T" + localDateTime.format(DateTimeFormatter.ofPattern("HHmmss")) + "Z";
     }
 
     public ExportJob getExportJob(long exportJobId) {

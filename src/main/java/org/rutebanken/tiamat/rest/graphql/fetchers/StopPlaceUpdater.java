@@ -23,6 +23,7 @@ import graphql.schema.DataFetchingEnvironment;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.repository.CacheProviderRepository;
 import org.rutebanken.tiamat.repository.ProviderRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.rest.graphql.helpers.CleanupHelper;
@@ -78,7 +79,7 @@ class StopPlaceUpdater implements DataFetcher {
     private RoleAssignmentExtractor roleAssignmentExtractor;
 
     @Autowired
-    private ProviderRepository providerRepository;
+    private CacheProviderRepository providerRepository;
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
@@ -141,7 +142,7 @@ class StopPlaceUpdater implements DataFetcher {
 
             // Assign provider to stop place.
             // TODO : allow provider selection in UI, for now taking first in line in user credentials.
-            roleAssignmentExtractor.getRoleAssignmentsForUser().stream().findFirst().flatMap(roleAssignment -> providerRepository.findByName(roleAssignment.getOrganisation()).stream().findFirst()).ifPresent(updatedStopPlace::setProvider);
+//            roleAssignmentExtractor.getRoleAssignmentsForUser().stream().findFirst().flatMap(roleAssignment -> providerRepository.getProvider(roleAssignment.getOrganisation()).stream().findFirst()).ifPresent(updatedStopPlace::setProvider);
 
 
             if (updatedStopPlace != null) {

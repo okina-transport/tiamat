@@ -18,7 +18,7 @@ package org.rutebanken.tiamat.exporter.async;
 import org.apache.commons.lang.StringUtils;
 import org.h2.util.IOUtils;
 import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
-import org.rutebanken.tiamat.model.Provider;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.job.ExportJob;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
@@ -26,7 +26,6 @@ import org.rutebanken.tiamat.repository.ExportJobRepository;
 import org.rutebanken.tiamat.service.BlobStoreService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;

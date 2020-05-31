@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.config.H2Functions;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
@@ -1526,67 +1527,67 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         assertThat(searchResult).isEmpty();
     }
 
-    @Test
-    public void findWithoutProvider() {
-        // GIVEN
-        String stopPlaceNameToSearch = "exemple";
-        createStopPlacesWithProviders(stopPlaceNameToSearch, "exemple-with-provider", "exemple-with-provider2");
-
-        ExportParams exportParams = newExportParamsBuilder().setStopPlaceSearch(newStopPlaceSearchBuilder()
-                .setQuery(stopPlaceNameToSearch)
-                .setAllVersions(true)
-                .build())
-                .build();
-
-        // WHEN
-        Page<StopPlace> searchResult = stopPlaceRepository.findStopPlace(exportParams);
-
-        // THEN
-        assertThat(searchResult).isNotEmpty();
-        Assert.assertEquals(3, searchResult.getContent().size());
-    }
-
-    @Test
-    public void findWithExistingProvider() {
-        // GIVEN
-        String stopPlaceNameToSearch = "exemple-with-provider";
-        createStopPlacesWithProviders("exemple", stopPlaceNameToSearch, "exemple-with-provider2");
-
-        ExportParams exportParamsWithExistingProvider = newExportParamsBuilder().setStopPlaceSearch(newStopPlaceSearchBuilder()
-                .setQuery(stopPlaceNameToSearch)
-                .setAllVersions(true)
-                .build())
-                .setProviderId(1L)
-                .build();
-
-        // WHEN
-        Page<StopPlace> searchResultWithExistingProvider    = stopPlaceRepository.findStopPlace(exportParamsWithExistingProvider);
-
-        // THEN
-        assertThat(searchResultWithExistingProvider).isNotEmpty();
-        Assert.assertEquals(1, searchResultWithExistingProvider.getContent().size());
-        Assert.assertEquals(new Long(1L), searchResultWithExistingProvider.getContent().get(0).getProvider().getId());
-    }
-
-    @Test
-    public void findWithNonexistentProvider() {
-        // GIVEN
-        String stopPlaceNameToSearch = "exemple-with-provider2";
-        createStopPlacesWithProviders("exemple", "exemple-with-provider", stopPlaceNameToSearch);
-
-        ExportParams exportParamsWithNonexistentProvider = newExportParamsBuilder().setStopPlaceSearch(newStopPlaceSearchBuilder()
-                .setQuery(stopPlaceNameToSearch)
-                .setAllVersions(true)
-                .build())
-                .setProviderId(3L)
-                .build();
-
-        // WHEN
-        Page<StopPlace> searchResultWithNonexistentProvider = stopPlaceRepository.findStopPlace(exportParamsWithNonexistentProvider);
-
-        // THEN
-        assertThat(searchResultWithNonexistentProvider).isEmpty();
-    }
+//    @Test
+//    public void findWithoutProvider() {
+//        // GIVEN
+//        String stopPlaceNameToSearch = "exemple";
+//        createStopPlacesWithProviders(stopPlaceNameToSearch, "exemple-with-provider", "exemple-with-provider2");
+//
+//        ExportParams exportParams = newExportParamsBuilder().setStopPlaceSearch(newStopPlaceSearchBuilder()
+//                .setQuery(stopPlaceNameToSearch)
+//                .setAllVersions(true)
+//                .build())
+//                .build();
+//
+//        // WHEN
+//        Page<StopPlace> searchResult = stopPlaceRepository.findStopPlace(exportParams);
+//
+//        // THEN
+//        assertThat(searchResult).isNotEmpty();
+//        Assert.assertEquals(3, searchResult.getContent().size());
+//    }
+//
+//    @Test
+//    public void findWithExistingProvider() {
+//        // GIVEN
+//        String stopPlaceNameToSearch = "exemple-with-provider";
+//        createStopPlacesWithProviders("exemple", stopPlaceNameToSearch, "exemple-with-provider2");
+//
+//        ExportParams exportParamsWithExistingProvider = newExportParamsBuilder().setStopPlaceSearch(newStopPlaceSearchBuilder()
+//                .setQuery(stopPlaceNameToSearch)
+//                .setAllVersions(true)
+//                .build())
+//                .setProviderId(1L)
+//                .build();
+//
+//        // WHEN
+//        Page<StopPlace> searchResultWithExistingProvider    = stopPlaceRepository.findStopPlace(exportParamsWithExistingProvider);
+//
+//        // THEN
+//        assertThat(searchResultWithExistingProvider).isNotEmpty();
+//        Assert.assertEquals(1, searchResultWithExistingProvider.getContent().size());
+//        Assert.assertEquals(new Long(1L), searchResultWithExistingProvider.getContent().get(0).getProvider().getId());
+//    }
+//
+//    @Test
+//    public void findWithNonexistentProvider() {
+//        // GIVEN
+//        String stopPlaceNameToSearch = "exemple-with-provider2";
+//        createStopPlacesWithProviders("exemple", "exemple-with-provider", stopPlaceNameToSearch);
+//
+//        ExportParams exportParamsWithNonexistentProvider = newExportParamsBuilder().setStopPlaceSearch(newStopPlaceSearchBuilder()
+//                .setQuery(stopPlaceNameToSearch)
+//                .setAllVersions(true)
+//                .build())
+//                .setProviderId(3L)
+//                .build();
+//
+//        // WHEN
+//        Page<StopPlace> searchResultWithNonexistentProvider = stopPlaceRepository.findStopPlace(exportParamsWithNonexistentProvider);
+//
+//        // THEN
+//        assertThat(searchResultWithNonexistentProvider).isEmpty();
+//    }
 
 
     private Quay saveQuay(StopPlace stopPlace, String id, Long version, String orgIdKeyName, String orgId) {
@@ -1655,28 +1656,28 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         return stopPlace;
     }
 
-    private void createStopPlacesWithProviders(String stopPlaceName, String stopPlaceNameWithProvider, String stopPlaceNameWithProvider2) {
-        Provider provider = new Provider(1L, "exemple-provider");
-        provider.setCode("test-code");
-        provider = providerRepository.save(provider);
-
-        Provider provider2 = new Provider(2L, "exemple-provider2");
-        provider2.setCode("test-code2");
-        provider2 = providerRepository.save(provider2);
-
-        StopPlace stopPlace = new StopPlace();
-        stopPlace.setName(new EmbeddableMultilingualString(stopPlaceName, ""));
-
-        StopPlace stopPlaceWithProvider = new StopPlace();
-        stopPlaceWithProvider.setName(new EmbeddableMultilingualString(stopPlaceNameWithProvider, ""));
-        stopPlaceWithProvider.setProvider(provider);
-
-        StopPlace stopPlaceWithProvider2 = new StopPlace();
-        stopPlaceWithProvider2.setName(new EmbeddableMultilingualString(stopPlaceNameWithProvider2, ""));
-        stopPlaceWithProvider2.setProvider(provider2);
-
-        stopPlaceRepository.save(stopPlace);
-        stopPlaceRepository.save(stopPlaceWithProvider);
-        stopPlaceRepository.save(stopPlaceWithProvider2);
-    }
+//    private void createStopPlacesWithProviders(String stopPlaceName, String stopPlaceNameWithProvider, String stopPlaceNameWithProvider2) {
+//        Provider provider = new Provider(1L, "exemple-provider");
+//        provider.setCode("test-code");
+//        provider = providerRepository.save(provider);
+//
+//        Provider provider2 = new Provider(2L, "exemple-provider2");
+//        provider2.setCode("test-code2");
+//        provider2 = providerRepository.save(provider2);
+//
+//        StopPlace stopPlace = new StopPlace();
+//        stopPlace.setName(new EmbeddableMultilingualString(stopPlaceName, ""));
+//
+//        StopPlace stopPlaceWithProvider = new StopPlace();
+//        stopPlaceWithProvider.setName(new EmbeddableMultilingualString(stopPlaceNameWithProvider, ""));
+//        stopPlaceWithProvider.setProvider(provider);
+//
+//        StopPlace stopPlaceWithProvider2 = new StopPlace();
+//        stopPlaceWithProvider2.setName(new EmbeddableMultilingualString(stopPlaceNameWithProvider2, ""));
+//        stopPlaceWithProvider2.setProvider(provider2);
+//
+//        stopPlaceRepository.save(stopPlace);
+//        stopPlaceRepository.save(stopPlaceWithProvider);
+//        stopPlaceRepository.save(stopPlaceWithProvider2);
+//    }
 }

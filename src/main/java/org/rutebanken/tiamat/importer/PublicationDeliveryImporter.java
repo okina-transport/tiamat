@@ -30,7 +30,7 @@ import org.rutebanken.tiamat.importer.log.ImportLogger;
 import org.rutebanken.tiamat.importer.log.ImportLoggerTask;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
-import org.rutebanken.tiamat.repository.ProviderRepository;
+import org.rutebanken.tiamat.repository.CacheProviderRepository;
 import org.rutebanken.tiamat.service.batch.BackgroundJobs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +49,7 @@ import static org.rutebanken.tiamat.netex.mapping.NetexMappingContextThreadLocal
 public class PublicationDeliveryImporter {
 
     @Autowired
-    protected ProviderRepository providerRepository;
+    protected CacheProviderRepository providerRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(PublicationDeliveryImporter.class);
 
@@ -154,7 +154,7 @@ public class PublicationDeliveryImporter {
                 backgroundJobs.triggerStopPlaceUpdate();
             }
             PublicationDeliveryStructure publicationDelivery = publicationDeliveryExporter.createPublicationDelivery(responseSiteframe);
-            publicationDelivery.withParticipantRef(IDFMNetexIdentifiants.getIdSite(providerRepository.findByCode(importParams.providerCode).get(0).getName()));
+            publicationDelivery.withParticipantRef(IDFMNetexIdentifiants.getIdSite(importParams.providerCode));
             return  publicationDelivery;
         } finally {
             MDC.remove(IMPORT_CORRELATION_ID);

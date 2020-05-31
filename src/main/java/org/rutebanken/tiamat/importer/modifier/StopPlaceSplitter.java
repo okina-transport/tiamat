@@ -19,7 +19,7 @@ import org.apache.commons.lang3.SerializationUtils;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.operation.TransformException;
-import org.rutebanken.tiamat.model.Provider;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.slf4j.Logger;
@@ -107,7 +107,7 @@ public class StopPlaceSplitter {
 
         // TODO provider management with SerializationUtils does not work, to review.
         originalStopPlace.setCentroid(null);
-        Provider provider = originalStopPlace.getProvider();
+        String provider = originalStopPlace.getProvider();
         originalStopPlace.setProvider(null);
         return quayGroups.stream()
                 .map(quayList -> {

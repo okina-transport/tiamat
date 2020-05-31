@@ -47,7 +47,7 @@ public class IDFMNetexIdentifiants {
     }
 
     public static String getIdSite(String name){
-        String retour = idSitesList.get(name);
+        String retour = idSitesList.get(name.toUpperCase());
         if(StringUtils.isEmpty(retour)){
             return name;
         }
@@ -55,7 +55,7 @@ public class IDFMNetexIdentifiants {
     }
 
     public static String getNameSite(String name){
-        String retour = nameSitesList.get(name);
+        String retour = nameSitesList.get(name.toUpperCase());
         if(StringUtils.isEmpty(retour)){
             return name;
         }

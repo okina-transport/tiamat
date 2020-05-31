@@ -19,7 +19,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.rutebanken.tiamat.exporter.async.ExportJobWorker;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.IDFMNetexIdentifiants;
-import org.rutebanken.tiamat.model.Provider;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.job.ExportJob;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
@@ -113,12 +113,7 @@ public class AsyncPublicationDeliveryExporter {
 
         Iterable<Provider> providers;
 
-        if(exportParams.getProviderId() == null) {
-            providers = providerRepository.findAll();
-        }
-        else {
-            providers = Collections.singletonList((providerRepository.findById(exportParams.getProviderId()).get()));
-        }
+        providers = Collections.singletonList(providerRepository.getProvider(exportParams.getProviderId()));
 
         ExportJob exportJob = new ExportJob(JobStatus.PROCESSING);
 
@@ -130,7 +125,7 @@ public class AsyncPublicationDeliveryExporter {
 
                 LocalDateTime localDateTime = LocalDateTime.now().withNano(0);
                 exportJobRepository.save(exportJob);
-                String fileNameWithoutExtention = createFileNameWithoutExtention(IDFMNetexIdentifiants.getIdSite(provider.getName()), IDFMNetexIdentifiants.getNameSite(provider.getName()), localDateTime);
+                String fileNameWithoutExtention = createFileNameWithoutExtention(IDFMNetexIdentifiants.getIdSite(provider.getChouetteInfo().getReferential()), IDFMNetexIdentifiants.getNameSite(provider.getChouetteInfo().getReferential()), localDateTime);
                 exportJob.setFileName(fileNameWithoutExtention + ".zip");
 
                 ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination);

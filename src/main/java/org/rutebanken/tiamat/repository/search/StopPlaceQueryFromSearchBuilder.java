@@ -18,7 +18,7 @@ package org.rutebanken.tiamat.repository.search;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
-import org.rutebanken.tiamat.model.Provider;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -191,9 +191,10 @@ public class StopPlaceQueryFromSearchBuilder {
             parameters.put("netexIdList", stopPlaceSearch.getNetexIdList());
         } else {
 
+            // TODO modifier côté Okina envoyer le nom du referential au lieu de l'id
             if(exportParams.getProviderId() != null) {
-                wheres.add("s.provider_id = :providerId");
-                parameters.put("providerId", exportParams.getProviderId());
+                wheres.add("s.provider = :providerName");
+                parameters.put("providerName", exportParams.getProviderId());
             }
 
             if (stopPlaceSearch.getQuery() != null) {
@@ -475,10 +476,10 @@ public class StopPlaceQueryFromSearchBuilder {
             createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements);
         }
 
-        if (provider != null && provider.getName() != null){
+        if (provider.getChouetteInfo().getReferential() != null){
             operators.add("and");
-            parameters.put("providerId", provider.getId());
-            wheres.add("s.provider_id = :providerId");
+            parameters.put("providerName", provider.getChouetteInfo().getReferential());
+            wheres.add("s.provider = :providerName");
         }
 
         operators.add("and");

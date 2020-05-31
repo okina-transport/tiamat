@@ -34,11 +34,11 @@ import org.rutebanken.tiamat.importer.matching.StopPlaceIdMatcher;
 import org.rutebanken.tiamat.importer.merging.TransactionalMergingStopPlacesImporter;
 import org.rutebanken.tiamat.importer.modifier.StopPlacePostFilterSteps;
 import org.rutebanken.tiamat.importer.modifier.StopPlacePreSteps;
-import org.rutebanken.tiamat.model.Provider;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
-import org.rutebanken.tiamat.repository.ProviderRepository;
+import org.rutebanken.tiamat.repository.CacheProviderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -111,7 +111,7 @@ public class StopPlaceImportHandler {
     private HazelcastInstance hazelcastInstance;
 
     @Autowired
-    private ProviderRepository providerRepository;
+    private CacheProviderRepository providerRepository;
 
     private ApiProxyService apiProxyService = new ApiProxyService();
 
@@ -137,14 +137,18 @@ public class StopPlaceImportHandler {
                         }
                     });
 
-
-            Optional<Provider> provider = providerRepository.findByCode(importParams.providerCode).stream().findFirst();
-            if (provider.isPresent()) {
-                tiamatStops.forEach(stop -> stop.setProvider(provider.get()));
-            } else {
-                throw new ProviderException("No provider defined");
+            if(providerRepository.getProviders().stream().anyMatch(provider -> provider.getChouetteInfo().getReferential().equals(importParams.providerCode))){
+                tiamatStops.forEach(stop -> stop.setProvider(importParams.providerCode));
             }
-
+            else{
+                providerRepository.populate();
+                if (providerRepository.getProviders().stream().noneMatch(provider -> provider.getChouetteInfo().getReferential().equals(importParams.providerCode))){
+                    throw new ProviderException("No provider defined");
+                }
+                else{
+                    tiamatStops.forEach(stop -> stop.setProvider(importParams.providerCode));
+                }
+            }
 
             tiamatStops = stopPlaceTypeFilter.filter(tiamatStops, importParams.allowOnlyStopTypes);
 

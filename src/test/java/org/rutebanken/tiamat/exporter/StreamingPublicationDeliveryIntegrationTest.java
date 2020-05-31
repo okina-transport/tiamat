@@ -20,11 +20,11 @@ import org.junit.Test;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.validation.NeTExValidator;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
-import org.rutebanken.tiamat.netex.validation.NetexReferenceValidatorException;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
 import org.rutebanken.tiamat.repository.ProviderRepository;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryTestHelper;
@@ -409,54 +409,54 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
      * @throws SAXException
      * @throws JAXBException
      */
-    @Test
-    public void exportIDFM() throws Exception {
-
-        Provider provider = new Provider();
-        provider.setId(1L);
-        provider.setCode("1");
-        provider.setName("SQYBUS");
-
-        provider = providerRepository.save(provider);
-        createStopPlace(provider, "boaarle", "Arletty", 48.769338, 2.061942, "50090356");
-        createStopPlace(provider, "boaarle2","Arletty",48.803673, 2.011310, "50089971");
-//        createStopPlace(provider, "boabonn","Méliès - Croix Bonnet",48.801103, 2.006726,"50089967");
-//        createStopPlace(provider, "boabonn2","Méliès - Croix Bonnet",48.801312, 2.006654, "50090348");
-//        createStopPlace(provider, "boaclai2","René Clair",48.801586,2.004456, "");
-//        createStopPlace(provider, "boaclair","René Clair",48.801417,2.004304, "");
-//        createStopPlace(provider, "boacroi","Croix Blanche",48.798463,2.017417, "50089973");
-//        createStopPlace(provider, "boacroi2","Croix Blanche",48.798425,2.016724, "50090021");
-//        createStopPlace(provider, "boatati","Jacques Tati",48.803735,2.004744, "");
-
-
-        ExportParams exportParams = ExportParams.newExportParamsBuilder()
-                .setStopPlaceSearch(
-                        StopPlaceSearch.newStopPlaceSearchBuilder().setVersionValidity(ExportParams.VersionValidity.ALL).build())
-                .build();
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
-
-
-        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, true, provider);
-
-        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.fromString(byteArrayOutputStream.toString());
-//        List<org.rutebanken.netex.model.StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure);
-//        assertThat(stopPlaces).hasSize(numberOfStopPlaces);
-
-        assertThat(byteArrayOutputStream.size()).isGreaterThan(0);
-    }
-
-    private void createStopPlace(Provider provider, String privateCode, String originalName, double y, double x, String zdep) {
-        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString(privateCode));
-        Quay quay = getQuay(privateCode, originalName, x, y, zdep);
-        HashSet<Quay> quaysList = new HashSet<>();
-        quaysList.add(quay);
-        stopPlace.setQuays(quaysList);
-        stopPlace.setVersion(1L);
-        stopPlace.setProvider(provider);
-        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
-        stopPlaceRepository.save(stopPlace);
-    }
+//    @Test
+//    public void exportIDFM() throws Exception {
+//
+//        Provider provider = new Provider();
+//        provider.setId(1L);
+//        provider.setCode("1");
+//        provider.setName("SQYBUS");
+//
+//        provider = providerRepository.save(provider);
+//        createStopPlace(provider, "boaarle", "Arletty", 48.769338, 2.061942, "50090356");
+//        createStopPlace(provider, "boaarle2","Arletty",48.803673, 2.011310, "50089971");
+////        createStopPlace(provider, "boabonn","Méliès - Croix Bonnet",48.801103, 2.006726,"50089967");
+////        createStopPlace(provider, "boabonn2","Méliès - Croix Bonnet",48.801312, 2.006654, "50090348");
+////        createStopPlace(provider, "boaclai2","René Clair",48.801586,2.004456, "");
+////        createStopPlace(provider, "boaclair","René Clair",48.801417,2.004304, "");
+////        createStopPlace(provider, "boacroi","Croix Blanche",48.798463,2.017417, "50089973");
+////        createStopPlace(provider, "boacroi2","Croix Blanche",48.798425,2.016724, "50090021");
+////        createStopPlace(provider, "boatati","Jacques Tati",48.803735,2.004744, "");
+//
+//
+//        ExportParams exportParams = ExportParams.newExportParamsBuilder()
+//                .setStopPlaceSearch(
+//                        StopPlaceSearch.newStopPlaceSearchBuilder().setVersionValidity(ExportParams.VersionValidity.ALL).build())
+//                .build();
+//        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+//
+//
+//
+//        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, true, provider);
+//
+//        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.fromString(byteArrayOutputStream.toString());
+////        List<org.rutebanken.netex.model.StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure);
+////        assertThat(stopPlaces).hasSize(numberOfStopPlaces);
+//
+//        assertThat(byteArrayOutputStream.size()).isGreaterThan(0);
+//    }
+//
+//    private void createStopPlace(Provider provider, String privateCode, String originalName, double y, double x, String zdep) {
+//        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString(privateCode));
+//        Quay quay = getQuay(privateCode, originalName, x, y, zdep);
+//        HashSet<Quay> quaysList = new HashSet<>();
+//        quaysList.add(quay);
+//        stopPlace.setQuays(quaysList);
+//        stopPlace.setVersion(1L);
+//        stopPlace.setProvider(provider);
+//        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+//        stopPlaceRepository.save(stopPlace);
+//    }
 
     private Quay getQuay(String privateCode, String originalName, double x, double y, String zdep) {
         Quay quay = new Quay();

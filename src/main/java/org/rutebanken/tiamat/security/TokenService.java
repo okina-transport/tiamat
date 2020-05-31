@@ -11,26 +11,23 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
+ *
  */
 
-package org.rutebanken.tiamat.repository;
+package org.rutebanken.tiamat.security;
 
-import org.rutebanken.tiamat.domain.Provider;
+import org.keycloak.admin.client.Keycloak;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.List;
+@Service
+public class TokenService {
 
-public interface ProviderRepository {
+    @Autowired
+    private Keycloak keycloakClient;
 
-//    public List<Provider> findByName(String name);
-//
-//    public List<Provider> findByCode(String code);
-
-    Collection<Provider> getProviders();
-
-    Provider getProvider(Long id);
-
-    String getReferential(Long id);
+    public String getToken() {
+        return keycloakClient.tokenManager().getAccessTokenString();
+    }
 
 }
-

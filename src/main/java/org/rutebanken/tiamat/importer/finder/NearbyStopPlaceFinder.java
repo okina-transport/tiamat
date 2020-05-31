@@ -23,10 +23,9 @@ import com.vividsolutions.jts.geom.Point;
 import org.apache.commons.lang.StringUtils;
 import org.rutebanken.tiamat.general.PeriodicCacheLogger;
 import org.rutebanken.tiamat.importer.AlternativeStopTypes;
-import org.rutebanken.tiamat.model.Provider;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
-import org.rutebanken.tiamat.repository.ProviderRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -147,8 +146,8 @@ public class NearbyStopPlaceFinder {
     }
 
     public final String createKey(StopPlace stopPlace, Envelope envelope) {
-        if (stopPlace.getProvider() != null && StringUtils.isNotBlank(stopPlace.getProvider().getCode())){
-            return stopPlace.getName() + "-" + stopPlace.getStopPlaceType().value() + "-" + stopPlace.getProvider().getCode() + "-" + envelope.toString();
+        if (StringUtils.isNotBlank(stopPlace.getProvider())){
+            return stopPlace.getName() + "-" + stopPlace.getStopPlaceType().value() + "-" + stopPlace.getProvider() + "-" + envelope.toString();
         }
         else{
             return stopPlace.getName() + "-" + stopPlace.getStopPlaceType().value() + "-" + envelope.toString();

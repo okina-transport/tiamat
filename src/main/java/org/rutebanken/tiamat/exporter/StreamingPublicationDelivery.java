@@ -45,7 +45,7 @@ import org.rutebanken.tiamat.exporter.params.IDFMVehicleModeStopPlacetypeMapping
 import org.rutebanken.tiamat.geo.geo.Lambert;
 import org.rutebanken.tiamat.geo.geo.LambertPoint;
 import org.rutebanken.tiamat.geo.geo.LambertZone;
-import org.rutebanken.tiamat.model.Provider;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
@@ -90,7 +90,6 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -166,7 +165,7 @@ public class StreamingPublicationDelivery {
 
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime) throws JAXBException, IOException, SAXException {
 
-        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame(IDFMNetexIdentifiants.getNameSite(provider.getName()), localDateTime);
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame(IDFMNetexIdentifiants.getNameSite(provider.getChouetteInfo().getReferential()), localDateTime);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
 
@@ -186,9 +185,9 @@ public class StreamingPublicationDelivery {
         netexGeneralFrame.setVersion("any");
 
         logger.info("Preparing scrollable iterators");
-        prepareQuays(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexGeneralFrame, entitiesEvictor, IDFMNetexIdentifiants.getNameSite(provider.getName()));
+        prepareQuays(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexGeneralFrame, entitiesEvictor, IDFMNetexIdentifiants.getNameSite(provider.getChouetteInfo().getReferential()));
 
-        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame, IDFMNetexIdentifiants.getIdSite(provider.getName()), localDateTime);
+        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame, IDFMNetexIdentifiants.getIdSite(provider.getChouetteInfo().getReferential()), localDateTime);
 
         Marshaller marshaller = createMarshaller();
 

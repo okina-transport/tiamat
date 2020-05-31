@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.rutebanken.tiamat.domain.Provider;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -87,9 +88,7 @@ public class StopPlace
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<TariffZoneRef> tariffZones = new HashSet<>();
 
-    @OneToOne
-    @JoinColumn(name = "provider_id")
-    private Provider provider;
+    private String provider;
 
     public StopPlace(EmbeddableMultilingualString name) {
         super(name);
@@ -279,11 +278,11 @@ public class StopPlace
         this.parentStopPlace = parentStopPlace;
     }
 
-    public Provider getProvider() {
+    public String getProvider() {
         return provider;
     }
 
-    public void setProvider(Provider provider) {
+    public void setProvider(String provider) {
         this.provider = provider;
     }
     @Override

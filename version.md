@@ -20,3 +20,6 @@
 
 # 1.0.9
 - 6908 : Fix Exports NeTex Arrêts
+
+# 1.0.10
+- Gestion des filiales

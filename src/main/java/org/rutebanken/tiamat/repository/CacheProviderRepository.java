@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.repository;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.domain.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,7 @@ import java.net.ConnectException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -101,6 +103,11 @@ public class CacheProviderRepository implements ProviderRepository {
     @Override
     public String getReferential(Long id) {
         return getProvider(id).chouetteInfo.referential;
+    }
+
+
+    public Optional<Provider> getByReferential(String referential) {
+        return StringUtils.isNotBlank(referential) ? cache.asMap().values().stream().filter(p -> referential.equalsIgnoreCase(p.getChouetteInfo().getReferential())).findAny() : Optional.empty();
     }
 
 }

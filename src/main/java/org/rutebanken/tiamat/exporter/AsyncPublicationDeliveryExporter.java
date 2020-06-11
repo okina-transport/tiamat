@@ -126,7 +126,9 @@ public class AsyncPublicationDeliveryExporter {
 
                 LocalDateTime localDateTime = LocalDateTime.now().withNano(0);
                 exportJobRepository.save(exportJob);
-                String fileNameWithoutExtention = createFileNameWithoutExtention(IDFMNetexIdentifiants.getIdSite(provider.getChouetteInfo().getReferential()), IDFMNetexIdentifiants.getNameSite(provider.getChouetteInfo().getReferential()), localDateTime);
+                String idSite = provider.getChouetteInfo().getCodeIdfm();
+                String nameSite = provider.name;
+                String fileNameWithoutExtention = createFileNameWithoutExtention(idSite, nameSite, localDateTime);
                 exportJob.setFileName(fileNameWithoutExtention + ".zip");
 
                 ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination);

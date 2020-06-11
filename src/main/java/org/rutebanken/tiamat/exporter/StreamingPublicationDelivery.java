@@ -165,7 +165,9 @@ public class StreamingPublicationDelivery {
 
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime) throws JAXBException, IOException, SAXException {
 
-        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame(IDFMNetexIdentifiants.getNameSite(provider.getChouetteInfo().getReferential()), localDateTime);
+//        String siteName = IDFMNetexIdentifiants.getNameSite(provider.getChouetteInfo().getReferential());
+        String siteName = provider.name;
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame(siteName, localDateTime);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
 
@@ -185,9 +187,11 @@ public class StreamingPublicationDelivery {
         netexGeneralFrame.setVersion("any");
 
         logger.info("Preparing scrollable iterators");
-        prepareQuays(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexGeneralFrame, entitiesEvictor, IDFMNetexIdentifiants.getNameSite(provider.getChouetteInfo().getReferential()));
+//        String siteName = IDFMNetexIdentifiants.getNameSite(provider.getChouetteInfo().getReferential());
+        prepareQuays(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexGeneralFrame, entitiesEvictor, siteName);
 
-        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame, IDFMNetexIdentifiants.getIdSite(provider.getChouetteInfo().getReferential()), localDateTime);
+        String idSite = provider.getChouetteInfo().getCodeIdfm();
+        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame, idSite, localDateTime);
 
         Marshaller marshaller = createMarshaller();
 

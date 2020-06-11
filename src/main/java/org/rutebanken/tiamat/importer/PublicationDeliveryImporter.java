@@ -19,6 +19,7 @@ import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.SiteFrame;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.PublicationDeliveryExporter;
 import org.rutebanken.tiamat.exporter.params.IDFMNetexIdentifiants;
 import org.rutebanken.tiamat.importer.handler.ParkingsImportHandler;
@@ -31,6 +32,7 @@ import org.rutebanken.tiamat.importer.log.ImportLoggerTask;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.repository.CacheProviderRepository;
+import org.rutebanken.tiamat.rest.graphql.TiamatExceptionWhileDataFetching;
 import org.rutebanken.tiamat.service.batch.BackgroundJobs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +41,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
 import java.util.Timer;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -154,7 +157,10 @@ public class PublicationDeliveryImporter {
                 backgroundJobs.triggerStopPlaceUpdate();
             }
             PublicationDeliveryStructure publicationDelivery = publicationDeliveryExporter.createPublicationDelivery(responseSiteframe);
-            publicationDelivery.withParticipantRef(IDFMNetexIdentifiants.getIdSite(importParams.providerCode));
+            final String providerCode = importParams.providerCode;
+            Provider provider = providerRepository.getByReferential(importParams.providerCode).orElseThrow(() -> new RuntimeException("Aucun provider correspondant au code " + providerCode));
+            String idSite = provider.getChouetteInfo().getCodeIdfm();
+            publicationDelivery.withParticipantRef(idSite);
             return  publicationDelivery;
         } finally {
             MDC.remove(IMPORT_CORRELATION_ID);

@@ -119,6 +119,7 @@ public class AsyncPublicationDeliveryExporter {
 
         providers.forEach(provider -> {
             if(provider != null) {
+                logger.info("Starting export {} for provider {}", exportJob.getId(), provider.id + "/" + provider.chouetteInfo.codeIdfm);
                 exportJob.setStarted(Instant.now());
                 exportJob.setExportParams(exportParams);
                 exportJob.setSubFolder(generateSubFolderName());

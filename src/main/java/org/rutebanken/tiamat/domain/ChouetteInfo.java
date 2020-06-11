@@ -40,6 +40,8 @@ public class ChouetteInfo {
     public boolean enableAutoImport;
     public boolean generateDatedServiceJourneyIds;
     public Set<String> generateMissingServiceLinksForModes;
+    public boolean idfm;
+    public String codeIdfm;
 
     public Long migrateDataToProvider; // Which dataspace to transfer data to when provider dataspace is valid
 
@@ -67,6 +69,8 @@ public class ChouetteInfo {
                 ", generateMissingServiceLinksForModes='" + generateMissingServiceLinksForModes + '\'' +
                 ", migrateDataToProvider='" + migrateDataToProvider + '\'' +
                 ", generateDatedServiceJourneyIds='" + generateDatedServiceJourneyIds + '\'' +
+                ", idfm=" + idfm +
+                ", codeIdfm=" + codeIdfm +
                 '}';
     }
 
@@ -140,6 +144,22 @@ public class ChouetteInfo {
 
     public boolean isGenerateDatedServiceJourneyIds() {
         return generateDatedServiceJourneyIds;
+    }
+
+    public boolean isIdfm() {
+        return idfm;
+    }
+
+    public void setIdfm(boolean idfm) {
+        this.idfm = idfm;
+    }
+
+    public String getCodeIdfm() {
+        return codeIdfm;
+    }
+
+    public void setCodeIdfm(String codeIdfm) {
+        this.codeIdfm = codeIdfm;
     }
 }
 

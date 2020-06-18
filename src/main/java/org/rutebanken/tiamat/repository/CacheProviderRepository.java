@@ -55,7 +55,7 @@ public class CacheProviderRepository implements ProviderRepository {
         cache = CacheBuilder.newBuilder().maximumSize(cacheMaxSize).build();
     }
 
-    @Scheduled(fixedRateString = "${tiamat.provider.cache.refresh.interval:300000}")
+    @Scheduled(fixedRateString = "${tiamat.provider.cache.refresh.interval:30000}")
     public void populate() {
         try {
             Collection<Provider> newProviders = restProviderService.getProviders();

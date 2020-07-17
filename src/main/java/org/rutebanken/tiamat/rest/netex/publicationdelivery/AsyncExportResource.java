@@ -30,7 +30,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toList;
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_STOP_PLACE_PATH;
 import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_JOB_PATH;
@@ -58,6 +62,17 @@ public class AsyncExportResource {
     public Collection<ExportJob> getAsyncExportJobs() {
         return asyncPublicationDeliveryExporter.getJobs();
     }
+
+    @GET
+    @Path("ref/{referential}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<ExportJob> getAsyncExportJobsForReferential(@PathParam(value = "referential") String referential) {
+        Collection<ExportJob> jobs = asyncPublicationDeliveryExporter.getJobs();
+        return jobs.stream()
+                .filter(j -> j.getFileName().toLowerCase().contains(referential.toLowerCase() + "_"))
+                .sorted(Comparator.comparing(ExportJob::getStarted)).collect(toList());
+    }
+
 
     @GET
     @Path("{id}/status")

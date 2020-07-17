@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.model.job;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.MoreObjects;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 
@@ -29,6 +30,7 @@ import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportRe
 
 @Entity
 @XmlRootElement
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ExportJob {
 
     @Id

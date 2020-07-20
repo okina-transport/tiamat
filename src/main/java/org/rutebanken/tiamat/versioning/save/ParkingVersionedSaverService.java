@@ -16,7 +16,6 @@
 package org.rutebanken.tiamat.versioning.save;
 
 
-import com.google.api.client.util.Preconditions;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.model.DataManagedObjectStructure;
@@ -24,6 +23,7 @@ import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
+import org.rutebanken.tiamat.service.Preconditions;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
 import org.rutebanken.tiamat.versioning.VersionIncrementor;
 import org.slf4j.Logger;

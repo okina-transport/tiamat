@@ -17,10 +17,14 @@ package org.rutebanken.tiamat;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import lombok.Getter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
+import org.rutebanken.tiamat.domain.ChouetteInfo;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.GeneratedIdState;
 import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
@@ -51,7 +55,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
+import java.util.ArrayList;
+import java.util.List;
 
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
 import static org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService.INITIAL_LAST_ID;
 
 @RunWith(SpringRunner.class)
@@ -122,11 +130,35 @@ public abstract class TiamatIntegrationTest {
     @Autowired
     protected RoleAssignmentExtractor roleAssignmentExtractor;
 
-    @Autowired
-    protected ProviderRepository providerRepository;
+    @Getter
+    ProviderRepository providerRepository = Mockito.mock(ProviderRepository.class);
 
     @Value("${local.server.port}")
     protected int port;
+
+    @Before
+    public void initProviderRepository() {
+        ChouetteInfo chouetteInfo = new ChouetteInfo();
+        chouetteInfo.codeIdfm = "test";
+        chouetteInfo.id = 1L;
+        chouetteInfo.xmlns = "xmlns";
+        chouetteInfo.xmlnsurl = "http://xmlns";
+        chouetteInfo.referential = "test";
+        chouetteInfo.organisation = "test";
+        chouetteInfo.idfm = true;
+        chouetteInfo.codeIdfm = "test";
+
+        Provider provider = new Provider();
+        provider.id=1L;
+        provider.name = "test";
+        provider.chouetteInfo = chouetteInfo;
+
+        List<Provider> providers = new ArrayList<>();
+        providers.add(provider);
+
+        when(providerRepository.getProviders()).thenReturn(providers);
+        when(providerRepository.getProvider(anyLong())).thenReturn(providers.get(0));
+    }
 
     @Before
     @After

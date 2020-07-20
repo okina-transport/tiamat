@@ -15,35 +15,40 @@
 
 package org.rutebanken.tiamat.exporter;
 
+import com.vividsolutions.jts.geom.Coordinate;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.model.job.ExportJob;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.repository.ExportJobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.transform.TransformerException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.Optional;
 
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.rutebanken.tiamat.exporter.params.ExportParams.newExportParamsBuilder;
+import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ZDEP_KEY;
 
 public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest {
+
+    @Qualifier("syncStreamingPublicationDelivery")
+    @Autowired
+    private StreamingPublicationDelivery streamingPublicationDelivery;
+
 
     @Autowired
     private AsyncPublicationDeliveryExporter asyncPublicationDeliveryExporter;
@@ -51,16 +56,47 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
     @Autowired
     private ExportJobRepository exportJobRepository;
 
-    @Ignore
     @Test
-    public void test() throws JAXBException, ParserConfigurationException, IOException, SAXException, TransformerException, XMLStreamException, InterruptedException {
+    public void test() throws InterruptedException, JAXBException, IOException, SAXException {
 
-        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("stop place to be exported"));
+        asyncPublicationDeliveryExporter.providerRepository = getProviderRepository();
 
-        stopPlaceRepository.save(stopPlace);
+        final int numberOfStopPlaces = StopPlaceSearch.DEFAULT_PAGE_SIZE;
+        for (int i = 0; i < numberOfStopPlaces; i++) {
+            StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("stop place numbber " + i));
+            stopPlace.setVersion(1L);
+            stopPlace.setProvider("test");
+
+
+            Quay quay = new Quay();
+            quay.setNetexId("NSR:Quay:" + i);
+            quay.setName(new EmbeddableMultilingualString("Quay_" + i));
+            quay.setPublicCode("quay" + i);
+            quay.getKeyValues().put(ORIGINAL_ZDEP_KEY, new Value("yolo_" + i));
+            quay.setCentroid(geometryFactory.createPoint(new Coordinate(48, 2)));
+            quay.setZipCode("75000");
+
+            stopPlace.getQuays().add(quay);
+
+            stopPlaceRepository.save(stopPlace);
+
+        }
         stopPlaceRepository.flush();
 
-        ExportParams exportParams = newExportParamsBuilder().setStopPlaceSearch(new StopPlaceSearch()).build();
+
+        Provider provider = getProviderRepository().getProviders().iterator().next();
+        ExportParams exportParams = ExportParams.newExportParamsBuilder()
+                .setStopPlaceSearch(
+                        StopPlaceSearch
+                                .newStopPlaceSearchBuilder()
+                                .setVersionValidity(ExportParams.VersionValidity.ALL)
+                                .build())
+                .setProviderId(provider.getId())
+                .build();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, true, provider);
+        asyncPublicationDeliveryExporter.streamingPublicationDelivery = streamingPublicationDelivery;
 
         ExportJob exportJob = asyncPublicationDeliveryExporter.startExportJob(exportParams);
 

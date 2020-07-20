@@ -15,19 +15,18 @@
 
 package org.rutebanken.tiamat.rest.graphql.fetchers;
 
-import com.google.api.client.repackaged.com.google.common.base.Strings;
-import com.google.api.client.util.Preconditions;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.CacheProviderRepository;
-import org.rutebanken.tiamat.repository.ProviderRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.rest.graphql.helpers.CleanupHelper;
 import org.rutebanken.tiamat.rest.graphql.mappers.StopPlaceMapper;
+import org.rutebanken.tiamat.service.Preconditions;
 import org.rutebanken.tiamat.service.stopplace.StopPlaceRenamer;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
@@ -157,7 +156,7 @@ class StopPlaceUpdater implements DataFetcher {
                 }
 
                 if (hasValuesChanged) {
-                    if (updatedStopPlace.getName() == null || Strings.isNullOrEmpty(updatedStopPlace.getName().getValue())) {
+                    if (updatedStopPlace.getName() == null || StringUtils.isBlank(updatedStopPlace.getName().getValue())) {
                         throw new IllegalArgumentException("Updated stop place must have name set: " + updatedStopPlace);
                     }
 

@@ -16,10 +16,9 @@
 package org.rutebanken.tiamat.exporter;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.async.ExportJobWorker;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
-import org.rutebanken.tiamat.exporter.params.IDFMNetexIdentifiants;
-import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.job.ExportJob;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
@@ -63,7 +62,7 @@ public class AsyncPublicationDeliveryExporter {
 
     private final BlobStoreService blobStoreService;
 
-    private final StreamingPublicationDelivery streamingPublicationDelivery;
+    StreamingPublicationDelivery streamingPublicationDelivery;
 
     private final NetexXmlReferenceValidator netexXmlReferenceValidator;
 
@@ -71,7 +70,7 @@ public class AsyncPublicationDeliveryExporter {
 
     private final String localExportPath;
 
-    private final ProviderRepository providerRepository;
+    ProviderRepository providerRepository;
 
     private final String tiamatExportDestination;
 

@@ -35,17 +35,16 @@ import org.rutebanken.netex.model.Quay;
 import org.rutebanken.netex.model.Quays_RelStructure;
 import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.netex.validation.NeTExValidator;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.async.NetexMappingIterator;
 import org.rutebanken.tiamat.exporter.async.ParentStopFetchingIterator;
 import org.rutebanken.tiamat.exporter.eviction.EntitiesEvictor;
 import org.rutebanken.tiamat.exporter.eviction.SessionEntitiesEvictor;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
-import org.rutebanken.tiamat.exporter.params.IDFMNetexIdentifiants;
 import org.rutebanken.tiamat.exporter.params.IDFMVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.geo.geo.Lambert;
 import org.rutebanken.tiamat.geo.geo.LambertPoint;
 import org.rutebanken.tiamat.geo.geo.LambertZone;
-import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
@@ -245,7 +244,7 @@ public class StreamingPublicationDelivery {
         try {
             outputStreamOut.write(documentToString(document).getBytes("UTF-8"));
         } catch (Exception e) {
-            ; // SWALLOW
+            ; // SWALLO
         }
     }
 

@@ -15,12 +15,12 @@
 
 package org.rutebanken.tiamat.rest.graphql.mappers;
 
-import com.google.api.client.util.Preconditions;
 import org.apache.commons.lang.StringUtils;
 import org.rutebanken.tiamat.externalapis.ApiProxyService;
 import org.rutebanken.tiamat.model.PrivateCodeStructure;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.service.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +32,12 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.COMPASS_BEARING;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.ID;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.PRIVATE_CODE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.PUBLIC_CODE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.TYPE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.VALUE;
 
 @Component
 public class QuayMapper {

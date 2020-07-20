@@ -126,8 +126,7 @@ public class ExportJobWorker implements Runnable {
 
     private void uploadToGcp(File localExportFile) throws FileNotFoundException {
         logger.info("Uploading to gcp: {} in folder: {}", exportJob.getFileName(), exportJob.getSubFolder());
-        FileInputStream fileInputStream = new FileInputStream(localExportFile);
-        blobStoreService.upload(exportJob.getSubFolder() + "/" + exportJob.getFileName(), fileInputStream);
+        blobStoreService.upload(exportJob.getSubFolder() + "/" + exportJob.getFileName(), localExportFile);
     }
 
     private void exportToLocalZipFile(File localZipFile, File localExportZipFile) throws IOException, InterruptedException, JAXBException, XMLStreamException, SAXException {

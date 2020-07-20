@@ -20,10 +20,22 @@ import org.junit.Test;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.validation.NeTExValidator;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
-import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.AccessibilityAssessment;
+import org.rutebanken.tiamat.model.AccessibilityLimitation;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.GroupOfStopPlaces;
+import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
+import org.rutebanken.tiamat.model.Quay;
+import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.StopPlaceReference;
+import org.rutebanken.tiamat.model.TariffZone;
+import org.rutebanken.tiamat.model.TariffZoneRef;
+import org.rutebanken.tiamat.model.TopographicPlace;
+import org.rutebanken.tiamat.model.TopographicPlaceRefStructure;
+import org.rutebanken.tiamat.model.TopographicPlaceTypeEnumeration;
+import org.rutebanken.tiamat.model.ValidBetween;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
 import org.rutebanken.tiamat.repository.ProviderRepository;
@@ -48,7 +60,6 @@ import java.io.StringReader;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 import static javax.xml.bind.JAXBContext.newInstance;
@@ -56,7 +67,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test streaming publication delivery with h2 database
- * {@link StreamingPublicationDeliveryTest} is without database and spring context.
  */
 @Transactional
 public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrationTest {
@@ -111,10 +121,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
 
         ExportParams exportParams = ExportParams.newExportParamsBuilder()
                 .setStopPlaceSearch(
-                        StopPlaceSearch
-                                .newStopPlaceSearchBuilder()
-                                .setVersionValidity(ExportParams.VersionValidity.ALL)
-                                .build())
+                       new StopPlaceSearch())
                 .build();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 

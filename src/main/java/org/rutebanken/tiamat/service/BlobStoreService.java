@@ -15,13 +15,14 @@
 
 package org.rutebanken.tiamat.service;
 
-import com.google.cloud.storage.Storage;
-import org.rutebanken.helper.gcp.BlobStoreHelper;
+import com.amazonaws.services.s3.AmazonS3;
+import com.okina.helper.aws.BlobStoreHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.InputStream;
 
 @Service
@@ -30,50 +31,41 @@ public class BlobStoreService {
     private static final Logger logger = LoggerFactory.getLogger(BlobStoreService.class);
 
     private final String bucketName;
-
     private final String blobPath;
-    private final String credentialPath;
-    private final String projectId;
+    private final AmazonS3 client;
 
 
-    public BlobStoreService(@Value("${blobstore.gcs.credential.path}") String credentialPath,
-                            @Value("${blobstore.gcs.container.name}") String bucketName,
-                            @Value("${blobstore.gcs.blob.path}") String blobPath,
-                            @Value("${blobstore.gcs.project.id}") String projectId) {
-
+    public BlobStoreService(@Value("${blobstore.aws.access.key}") String accessKey,
+                            @Value("${blobstore.aws.access.secret}") String accessSecret,
+                            @Value("${blobstore.aws.container.name}") String bucketName,
+                            @Value("${blobstore.aws.blob.path}") String blobPath) {
         this.bucketName = bucketName;
         this.blobPath = blobPath;
-        this.credentialPath = credentialPath;
-        this.projectId = projectId;
+        this.client = getClient(accessKey, accessSecret);
     }
 
-    public void upload(String fileName, InputStream inputStream, boolean makePublic) {
-        Storage storage = getStorage();
+    public void upload(String fileName, File file) {
         String blobIdName = createBlobIdName(blobPath, fileName);
         try {
             logger.info("Uploading {} to path {} in bucket {}", fileName, blobPath, bucketName);
-            BlobStoreHelper.uploadBlobWithRetry(storage, bucketName, blobIdName, inputStream, false);
+            BlobStoreHelper.uploadBlob(client, bucketName, blobIdName, file);
         } catch (Exception e) {
             throw new RuntimeException("Error uploading file " + fileName + ", blobIdName " + blobIdName + " to bucket " + bucketName, e);
         }
     }
 
-    public void upload(String fileName, InputStream inputStream) {
-        upload(fileName, inputStream, false);
-    }
-
-    private Storage getStorage() {
+    private AmazonS3 getClient(String accessKey, String accessSecret) {
         try {
-            logger.info("Get storage for project {}", projectId);
-            return BlobStoreHelper.getStorage(credentialPath, projectId);
+            logger.info(String.format("Getting client for key %s", accessKey));
+            return BlobStoreHelper.getClient(accessKey, accessSecret);
         } catch (RuntimeException e) {
-            throw new RuntimeException("Error setting up BlobStore from blobstore.gcs.credential.path '" + credentialPath + "' and blobstore.gcs.project.id '" + projectId + "'", e);
+            throw new RuntimeException(String.format("Error getting client for key %s", accessKey));
         }
     }
 
     public InputStream download(String fileName) {
         String blobIdName = createBlobIdName(blobPath, fileName);
-        return BlobStoreHelper.getBlob(getStorage(), bucketName, blobIdName);
+        return BlobStoreHelper.getBlob(client, bucketName, blobIdName);
     }
 
     public String createBlobIdName(String blobPath, String fileName) {

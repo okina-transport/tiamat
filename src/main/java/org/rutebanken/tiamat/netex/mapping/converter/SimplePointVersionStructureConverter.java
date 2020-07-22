@@ -15,13 +15,13 @@
 
 package org.rutebanken.tiamat.netex.mapping.converter;
 
-import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
+import org.apache.commons.lang3.StringUtils;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
 import org.opengis.referencing.FactoryException;
@@ -119,7 +119,7 @@ public class SimplePointVersionStructureConverter extends BidirectionalConverter
 
     private Point transformIfDifferentSrs(Coordinate coordinate, String sourceSrsName) {
 
-        if(Strings.isNullOrEmpty(sourceSrsName)) {
+        if(StringUtils.isBlank(sourceSrsName)) {
             logger.debug("SRS is null or empty. Assuming {}: {}", geometryFactory.getSRID(), sourceSrsName);
         } else if(!sourceSrsName.equals(internalSrsName)) {
             Coordinate transformed = transform(coordinate, sourceSrsName);

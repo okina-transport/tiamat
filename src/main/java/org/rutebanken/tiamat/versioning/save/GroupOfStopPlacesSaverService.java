@@ -15,7 +15,6 @@
 
 package org.rutebanken.tiamat.versioning.save;
 
-import com.google.api.client.util.Preconditions;
 import com.vividsolutions.jts.geom.Point;
 import org.rutebanken.helper.organisation.AuthorizationConstants;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
@@ -24,6 +23,7 @@ import org.rutebanken.tiamat.model.GroupOfStopPlaces;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.service.Preconditions;
 import org.rutebanken.tiamat.service.groupofstopplaces.GroupOfStopPlacesCentroidComputer;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
 import org.rutebanken.tiamat.versioning.VersionIncrementor;

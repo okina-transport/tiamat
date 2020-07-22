@@ -15,7 +15,6 @@
 
 package org.rutebanken.tiamat.versioning;
 
-import com.google.api.client.repackaged.com.google.common.base.Strings;
 import org.rutebanken.tiamat.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,7 +87,6 @@ public class VersionIncrementor {
      * Increment versions for stop place with children.
      * The object must have their netexId set, or else they will get an initial version
      * @param stopPlace with quays and accessibility assessment
-     * @param validFrom
      * @return modified StopPlace
      */
     public StopPlace initiateOrIncrementVersions(StopPlace stopPlace) {

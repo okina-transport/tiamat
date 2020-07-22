@@ -15,7 +15,6 @@
 
 package org.rutebanken.tiamat.importer.merging;
 
-import com.google.api.client.repackaged.com.google.common.base.Strings;
 import org.apache.commons.lang.StringUtils;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
@@ -455,7 +454,7 @@ public class QuayMerger {
     }
 
     private boolean hasNameValue(MultilingualString multilingualString) {
-        return multilingualString != null && !Strings.isNullOrEmpty(multilingualString.getValue());
+        return multilingualString != null && !StringUtils.isBlank(multilingualString.getValue());
     }
 
     public boolean areClose(Quay quay1, Quay quay2) {

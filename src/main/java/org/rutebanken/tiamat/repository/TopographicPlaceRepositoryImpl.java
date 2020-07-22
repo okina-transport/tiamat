@@ -16,26 +16,35 @@
 package org.rutebanken.tiamat.repository;
 
 
-import com.google.api.client.repackaged.com.google.common.base.Strings;
 import org.apache.commons.lang.NotImplementedException;
-import org.hibernate.*;
-import org.rutebanken.tiamat.exporter.params.ExportParams;
+import org.apache.commons.lang.StringUtils;
+import org.hibernate.SQLQuery;
+import org.hibernate.ScrollMode;
+import org.hibernate.ScrollableResults;
+import org.hibernate.Session;
 import org.rutebanken.tiamat.exporter.params.TopographicPlaceSearch;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.TopographicPlace;
+import org.rutebanken.tiamat.model.TopographicPlaceTypeEnumeration;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.TopographicPlaceQueryFromSearchBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.*;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import java.time.Instant;
-import java.util.*;
+import javax.persistence.TypedQuery;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Repository
@@ -82,7 +91,7 @@ public class TopographicPlaceRepositoryImpl implements TopographicPlaceRepositor
             parameters.put("topographicPlaceType", topographicPlaceType);
         }
 
-        if(!Strings.isNullOrEmpty(name)) {
+        if(!StringUtils.isBlank(name)) {
             sql.append("AND similarity(tp.name.value, :name) > 0.2 ");
             parameters.put("name", name);
             sql.append("ORDER BY SIMILARITY(tp.name.value, :name) DESC");

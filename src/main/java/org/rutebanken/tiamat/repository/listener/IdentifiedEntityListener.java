@@ -19,6 +19,7 @@ import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 
 import javax.persistence.PrePersist;
 
+
 public class IdentifiedEntityListener {
 
 

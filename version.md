@@ -23,3 +23,6 @@
 
 # 1.0.10
 - Gestion des filiales
+
+# 1.0.11
+- Migration AWS

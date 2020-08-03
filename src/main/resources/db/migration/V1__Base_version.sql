@@ -18,10 +18,10 @@ SET row_security = off;
 -- Name: topology; Type: SCHEMA; Schema: -; Owner: tiamat
 --
 
---CREATE SCHEMA topology;
+CREATE SCHEMA topology;
 
 
---ALTER SCHEMA topology OWNER TO tiamat;
+ALTER SCHEMA topology OWNER TO tiamat;
 
 --
 -- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
@@ -40,9 +40,8 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 --
 -- Name: pg_trgm; Type: EXTENSION; Schema: -; Owner: 
 --
--- @todo sch existe déja sur AWS
--- décommenter pour local ou intég
--- CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
 
 
 --
@@ -56,9 +55,7 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 -- Name: postgis; Type: EXTENSION; Schema: -; Owner: 
 --
 
--- @todo sch existe déja sur AWS
--- décommenter pour local ou intég
--- CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
 
 
 --
@@ -72,7 +69,7 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 -- Name: postgis_topology; Type: EXTENSION; Schema: -; Owner: 
 --
 
---CREATE EXTENSION IF NOT EXISTS postgis_topology WITH SCHEMA topology;
+CREATE EXTENSION IF NOT EXISTS postgis_topology WITH SCHEMA topology;
 
 
 --

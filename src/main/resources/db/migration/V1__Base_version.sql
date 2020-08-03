@@ -18,10 +18,10 @@ SET row_security = off;
 -- Name: topology; Type: SCHEMA; Schema: -; Owner: tiamat
 --
 
-CREATE SCHEMA topology;
+--CREATE SCHEMA topology;
 
 
-ALTER SCHEMA topology OWNER TO tiamat;
+--ALTER SCHEMA topology OWNER TO tiamat;
 
 --
 -- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
@@ -72,7 +72,7 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 -- Name: postgis_topology; Type: EXTENSION; Schema: -; Owner: 
 --
 
-CREATE EXTENSION IF NOT EXISTS postgis_topology WITH SCHEMA topology;
+--CREATE EXTENSION IF NOT EXISTS postgis_topology WITH SCHEMA topology;
 
 
 --

@@ -72,9 +72,7 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 -- Name: postgis_topology; Type: EXTENSION; Schema: -; Owner: 
 --
 
--- @todo sch existe déja sur AWS
--- décommenter pour local ou intég
--- CREATE EXTENSION IF NOT EXISTS postgis_topology WITH SCHEMA topology;
+CREATE EXTENSION IF NOT EXISTS postgis_topology WITH SCHEMA topology;
 
 
 --

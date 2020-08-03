@@ -40,8 +40,9 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 --
 -- Name: pg_trgm; Type: EXTENSION; Schema: -; Owner: 
 --
-
-CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
+-- @todo sch existe déja sur AWS
+-- décommenter pour local ou intég
+-- CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
 
 
 --

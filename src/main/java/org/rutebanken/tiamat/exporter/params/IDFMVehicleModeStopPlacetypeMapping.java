@@ -11,6 +11,7 @@ public class IDFMVehicleModeStopPlacetypeMapping {
     private Map<org.rutebanken.netex.model.StopTypeEnumeration, org.rutebanken.netex.model.VehicleModeEnumeration> stopPlaceTypeVehicleMode = new HashMap<>();
 
     public IDFMVehicleModeStopPlacetypeMapping() {
+
         stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.ONSTREET_BUS, org.rutebanken.netex.model.VehicleModeEnumeration.BUS);
         stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.ONSTREET_TRAM, org.rutebanken.netex.model.VehicleModeEnumeration.BUS);
         stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.AIRPORT, org.rutebanken.netex.model.VehicleModeEnumeration.AIR);

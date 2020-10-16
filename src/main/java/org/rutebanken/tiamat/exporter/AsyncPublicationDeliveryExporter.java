@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Collections;
@@ -123,7 +124,7 @@ public class AsyncPublicationDeliveryExporter {
                 exportJob.setExportParams(exportParams);
                 exportJob.setSubFolder(generateSubFolderName());
 
-                LocalDateTime localDateTime = LocalDateTime.now().withNano(0);
+                LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
                 exportJobRepository.save(exportJob);
                 String idSite = provider.getChouetteInfo().getCodeIdfm();
                 String nameSite = provider.name;

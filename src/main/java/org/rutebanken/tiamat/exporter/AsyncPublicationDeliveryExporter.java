@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.exporter;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.commons.lang.StringUtils;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.async.ExportJobWorker;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
@@ -127,7 +128,11 @@ public class AsyncPublicationDeliveryExporter {
                 LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
                 exportJobRepository.save(exportJob);
                 String idSite = provider.getChouetteInfo().getCodeIdfm();
+
                 String nameSite = provider.name;
+                if(StringUtils.isNotBlank(provider.getChouetteInfo().getNameNetexStopIdfm())) {
+                    nameSite = provider.getChouetteInfo().getNameNetexStopIdfm();
+                }
                 String fileNameWithoutExtention = createFileNameWithoutExtention(idSite, nameSite, localDateTime);
                 exportJob.setFileName(fileNameWithoutExtention + ".zip");
 

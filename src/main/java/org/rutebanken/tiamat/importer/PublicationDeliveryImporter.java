@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.importer;
 
+import org.apache.commons.lang.StringUtils;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;

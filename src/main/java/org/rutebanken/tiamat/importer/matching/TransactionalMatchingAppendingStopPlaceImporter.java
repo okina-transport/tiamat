@@ -173,6 +173,10 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             if (foundStopPlaces.size() > 1) {
                 logger.warn("Found {} matches for incoming stop place {}. Matches: {}", foundStopPlaces.size(), incomingStopPlace, foundStopPlaces);
+                logger.error("==============================================================> ERREUR, il y a plusieurs points d'arrêt avec le même identifiant local : ");
+                for(org.rutebanken.tiamat.model.StopPlace stopPlace : foundStopPlaces){
+                    logger.error("- ", stopPlace.getNetexId());
+                }
             }
 
             for (org.rutebanken.tiamat.model.StopPlace existingStopPlace : foundStopPlaces) {
@@ -228,8 +232,6 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 if (quayChanged || keyValuesChanged || centroidChanged || typeChanged || alternativeNameChanged || nameChanged) {
                     copy = stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, copy);
                 }
-
-//                copy = stopPlaceRepository.save(existingStopPlace);
 
                 String netexId = copy.getNetexId();
 

@@ -249,6 +249,12 @@ public class QuayMerger {
             }
         }
 
+
+        // Log pour remonter l'erreur des imported name vides
+        if(alreadyAdded.getOriginalNames().size() == 0){
+            logger.error("================================================> Erreur: il n'y a aucun imported-name dans le quay: ", alreadyAdded.getNetexId());
+        }
+
         return namesUpdated;
     }
 

@@ -101,9 +101,9 @@ public class AsyncExportResource {
     }
 
     @GET
-    @Path("stop-place-file-list")
-    public Response asyncGetSopPlaceFileList() {
-        List<String> stopPlaceFileList = asyncPublicationDeliveryExporter.getStopPlaceFileList();
+    @Path("stop-place-file-list/{id}")
+    public Response asyncGetSopPlaceFileList(@PathParam(value = "id") long siteId) {
+        List<String> stopPlaceFileList = asyncPublicationDeliveryExporter.getStopPlaceFileList(siteId);
         return Response.ok(stopPlaceFileList).build();
     }
 }

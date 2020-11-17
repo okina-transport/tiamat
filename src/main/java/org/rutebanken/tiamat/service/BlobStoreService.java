@@ -79,6 +79,7 @@ public class BlobStoreService {
         List<S3ObjectSummary> stopPlaceFileList = BlobStoreHelper.listAllBlobsRecursively(this.client, this.bucketName, siteId+"/exports");
         return stopPlaceFileList.stream()
                                 .map(S3ObjectSummary::getKey)
+                                .filter(key->key.contains("ARRET_"))
                                 .collect(Collectors.toList());
 
     }

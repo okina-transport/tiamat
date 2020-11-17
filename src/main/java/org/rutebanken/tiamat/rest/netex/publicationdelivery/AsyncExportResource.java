@@ -106,4 +106,11 @@ public class AsyncExportResource {
         List<String> stopPlaceFileList = asyncPublicationDeliveryExporter.getStopPlaceFileList(siteId);
         return Response.ok(stopPlaceFileList).build();
     }
+
+    @GET
+    @Path("stop-place-file-download/{fileName}")
+    public Response asyncGetSopPlaceFileList(@PathParam(value = "fileName") String fileName) {
+        InputStream inputStream = asyncPublicationDeliveryExporter.getJobFileContent(fileName);
+        return Response.ok(inputStream).build();
+    }
 }

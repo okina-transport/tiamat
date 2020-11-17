@@ -15,6 +15,8 @@
 
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.Api;
 import org.rutebanken.tiamat.exporter.AsyncPublicationDeliveryExporter;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
@@ -102,9 +104,17 @@ public class AsyncExportResource {
 
     @GET
     @Path("stop-place-file-list/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response asyncGetSopPlaceFileList(@PathParam(value = "id") long siteId) {
         List<String> stopPlaceFileList = asyncPublicationDeliveryExporter.getStopPlaceFileList(siteId);
-        return Response.ok(stopPlaceFileList).build();
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonString="";
+        try {
+            jsonString = objectMapper.writeValueAsString(stopPlaceFileList);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return Response.ok(jsonString).build();
     }
 
     @GET

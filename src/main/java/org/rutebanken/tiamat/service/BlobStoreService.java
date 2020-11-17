@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.service;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.okina.helper.aws.BlobStoreHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class BlobStoreService {
@@ -70,5 +73,13 @@ public class BlobStoreService {
 
     public String createBlobIdName(String blobPath, String fileName) {
         return blobPath + '/' + fileName;
+    }
+
+    public List<String> listSopPlacesInBlob(){
+        List<S3ObjectSummary> stopPlaceFileList = BlobStoreHelper.listAllBlobsRecursively(this.client, this.bucketName, "ARRET_");
+        return stopPlaceFileList.stream()
+                                .map(S3ObjectSummary::getKey)
+                                .collect(Collectors.toList());
+
     }
 }

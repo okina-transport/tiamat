@@ -43,6 +43,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -180,5 +181,9 @@ public class AsyncPublicationDeliveryExporter {
         LocalDateTime localDateTime = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
         String gcpSubfolder = localDateTime.getYear() + "-" + String.format("%02d", localDateTime.getMonthValue());
         return gcpSubfolder;
+    }
+
+    public List<String> getStopPlaceFileList(){
+        return blobStoreService.listSopPlacesInBlob();
     }
 }

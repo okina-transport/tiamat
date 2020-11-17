@@ -30,6 +30,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.List;
 
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_STOP_PLACE_PATH;
@@ -97,5 +98,12 @@ public class AsyncExportResource {
     public Response asyncExport(@BeanParam ExportParams exportParams) {
         ExportJob exportJob = asyncPublicationDeliveryExporter.startExportJob(exportParams);
         return Response.ok(exportJob).build();
+    }
+
+    @GET
+    @Path("stop-place-file-list")
+    public Response asyncGetSopPlaceFileList() {
+        List<String> stopPlaceFileList = asyncPublicationDeliveryExporter.getStopPlaceFileList();
+        return Response.ok(stopPlaceFileList).build();
     }
 }

@@ -118,8 +118,8 @@ public class AsyncExportResource {
     }
 
     @GET
-    @Path("stop-place-file-download/{fileName}")
-    public Response asyncGetSopPlaceFileList(@PathParam(value = "fileName") String fileName) {
+    @Path("stop-place-file-download")
+    public Response asyncGetSopPlaceFileList(@HeaderParam("fileName") String fileName) {
         InputStream inputStream = asyncPublicationDeliveryExporter.getJobFileContent(fileName);
         return Response.ok(inputStream).build();
     }

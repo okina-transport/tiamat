@@ -71,6 +71,10 @@ public class BlobStoreService {
         return BlobStoreHelper.getBlob(client, bucketName, blobIdName);
     }
 
+    public InputStream downloadFromAbsolutePath(String absolutePath) {
+        return BlobStoreHelper.getBlob(client, bucketName, absolutePath);
+    }
+
     public String createBlobIdName(String blobPath, String fileName) {
         return blobPath + '/' + fileName;
     }

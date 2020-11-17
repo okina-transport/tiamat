@@ -161,11 +161,11 @@ public class AsyncPublicationDeliveryExporter {
     }
 
     public InputStream getJobFileContent(ExportJob exportJob) {
-        return getJobFileContent(exportJob.getSubFolder() + "/" + exportJob.getFileName());
+        return blobStoreService.download(exportJob.getSubFolder() + "/" + exportJob.getFileName());
     }
 
     public InputStream getJobFileContent(String filePath) {
-        return blobStoreService.download(filePath);
+        return blobStoreService.downloadFromAbsolutePath(filePath);
     }
 
     public Collection<ExportJob> getJobs() {

@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class BlobStoreService {
@@ -100,20 +101,25 @@ public class BlobStoreService {
             return Optional.empty();
 
         String path = ((S3ObjectInputStream) inputStream).getHttpRequest().getURI().getPath();
-        String[] splittedPath = path.split("/");
-        return Optional.of(splittedPath[splittedPath.length-1]);
+        return Optional.of(getFileNameFromFilePath(path));
+    }
+
+    private String getFileNameFromFilePath(String filePath){
+        String[] splittedPath = filePath.split("/");
+        return splittedPath[splittedPath.length-1];
     }
 
     public String createBlobIdName(String blobPath, String fileName) {
         return blobPath + '/' + fileName;
     }
 
-    public List<String> listStopPlacesInBlob(long siteId){
+    public List<String> listStopPlacesInBlob(long siteId, int maxNbResults){
         List<S3ObjectSummary> stopPlaceFileList = BlobStoreHelper.listAllBlobsRecursively(this.client, this.bucketName, siteId+"/exports");
-        return stopPlaceFileList.stream()
-                                .map(S3ObjectSummary::getKey)
-                                .filter(key->key.contains("ARRET_"))
-                                .collect(Collectors.toList());
+        Stream<String> fileListStream = stopPlaceFileList.stream()
+                                                         .map(S3ObjectSummary::getKey)
+                                                         .filter(key -> key.contains("ARRET_"))
+                                                         .sorted((k1, k2) -> getFileNameFromFilePath(k2).compareTo(getFileNameFromFilePath(k1)));
 
+        return maxNbResults == 0 ? fileListStream.collect(Collectors.toList()) : fileListStream.limit(maxNbResults).collect(Collectors.toList());
     }
 }

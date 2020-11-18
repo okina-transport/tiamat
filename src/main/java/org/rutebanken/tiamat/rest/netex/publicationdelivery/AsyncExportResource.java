@@ -124,7 +124,7 @@ public class AsyncExportResource {
     public Response asyncGetSopPlaceFileList(@PathParam("fileName") String fileName) {
         File file = asyncPublicationDeliveryExporter.getJobFileContent(fileName);
         return Response.ok(file, MediaType.APPLICATION_OCTET_STREAM)
-                .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"" ) //optional
+                .header("filename", file.getName() )
                 .build();
     }
 }

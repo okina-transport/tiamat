@@ -30,6 +30,7 @@ import org.springframework.stereotype.Component;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.File;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
@@ -120,7 +121,7 @@ public class AsyncExportResource {
     @GET
     @Path("stop-place-file-download/{fileName : .+}")
     public Response asyncGetSopPlaceFileList(@PathParam("fileName") String fileName) {
-        InputStream inputStream = asyncPublicationDeliveryExporter.getJobFileContent(fileName);
-        return Response.ok(inputStream).build();
+        File file = asyncPublicationDeliveryExporter.getJobFileContent(fileName);
+        return Response.ok(file).build();
     }
 }

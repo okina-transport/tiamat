@@ -82,8 +82,12 @@ public class BlobStoreService {
         InputStream inputStream = BlobStoreHelper.getBlob(client, bucketName, absolutePath);
 
         Optional<String> fileName = getFileName(inputStream);
-        File file = new File(System.getProperty("java.io.tmpdir") + "/" + UUID.randomUUID() + (fileName.isPresent() ? "/"+fileName.get():""));
+
+
+        File file = new File(System.getProperty("java.io.tmpdir") + "/" + (fileName.isPresent() ? fileName.get():UUID.randomUUID()));
+
         try {
+            Files.deleteIfExists(file.toPath());
             Files.copy(inputStream, Paths.get(file.getAbsolutePath()), new CopyOption[0]);
         } catch (IOException e) {
             e.printStackTrace();

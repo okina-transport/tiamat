@@ -34,6 +34,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_STOP_PLACE_PATH;
@@ -106,8 +107,8 @@ public class AsyncExportResource {
     @GET
     @Path("stop-place-file-list/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response asyncGetSopPlaceFileList(@PathParam(value = "id") long siteId) {
-        List<String> stopPlaceFileList = asyncPublicationDeliveryExporter.getStopPlaceFileList(siteId);
+    public Response asyncGetSopPlaceFileList(@PathParam(value = "id") long siteId, @HeaderParam("maxNbResults") Integer maxNbResults) {
+        List<String> stopPlaceFileList = asyncPublicationDeliveryExporter.getStopPlaceFileList(siteId,maxNbResults);
         ObjectMapper objectMapper = new ObjectMapper();
         String jsonString="";
         try {

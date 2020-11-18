@@ -187,7 +187,7 @@ public class AsyncPublicationDeliveryExporter {
         return gcpSubfolder;
     }
 
-    public List<String> getStopPlaceFileList(long siteId){
-        return blobStoreService.listStopPlacesInBlob(siteId);
+    public List<String> getStopPlaceFileList(long siteId, int maxNbResults){
+        return blobStoreService.listStopPlacesInBlob(siteId,maxNbResults);
     }
 }

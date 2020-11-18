@@ -120,6 +120,7 @@ public class AsyncExportResource {
 
     @GET
     @Path("stop-place-file-download/{fileName : .+}")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response asyncGetSopPlaceFileList(@PathParam("fileName") String fileName) {
         File file = asyncPublicationDeliveryExporter.getJobFileContent(fileName);
         return Response.ok(file).build();

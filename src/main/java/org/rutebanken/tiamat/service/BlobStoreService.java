@@ -24,8 +24,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -71,8 +76,15 @@ public class BlobStoreService {
         return BlobStoreHelper.getBlob(client, bucketName, blobIdName);
     }
 
-    public InputStream downloadFromAbsolutePath(String absolutePath) {
-        return BlobStoreHelper.getBlob(client, bucketName, absolutePath);
+    public File downloadFromAbsolutePath(String absolutePath) {
+        InputStream inputStream = BlobStoreHelper.getBlob(client, bucketName, absolutePath);
+        File file = new File(System.getProperty("java.io.tmpdir") + "/" + UUID.randomUUID());
+        try {
+            Files.copy(inputStream, Paths.get(file.getAbsolutePath()), new CopyOption[0]);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return file;
     }
 
     public String createBlobIdName(String blobPath, String fileName) {

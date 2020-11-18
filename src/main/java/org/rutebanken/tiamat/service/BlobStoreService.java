@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.service;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.okina.helper.aws.BlobStoreHelper;
 import org.slf4j.Logger;
@@ -30,6 +31,7 @@ import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -78,13 +80,24 @@ public class BlobStoreService {
 
     public File downloadFromAbsolutePath(String absolutePath) {
         InputStream inputStream = BlobStoreHelper.getBlob(client, bucketName, absolutePath);
-        File file = new File(System.getProperty("java.io.tmpdir") + "/" + UUID.randomUUID());
+
+        Optional<String> fileName = getFileName(inputStream);
+        File file = new File(System.getProperty("java.io.tmpdir") + "/" + UUID.randomUUID() + (fileName.isPresent() ? "/"+fileName.get():""));
         try {
             Files.copy(inputStream, Paths.get(file.getAbsolutePath()), new CopyOption[0]);
         } catch (IOException e) {
             e.printStackTrace();
         }
         return file;
+    }
+
+    private Optional<String> getFileName(InputStream inputStream){
+        if (!(inputStream instanceof S3ObjectInputStream))
+            return Optional.empty();
+
+        String path = ((S3ObjectInputStream) inputStream).getHttpRequest().getURI().getPath();
+        String[] splittedPath = path.split("/");
+        return Optional.of(splittedPath[splittedPath.length-1]);
     }
 
     public String createBlobIdName(String blobPath, String fileName) {

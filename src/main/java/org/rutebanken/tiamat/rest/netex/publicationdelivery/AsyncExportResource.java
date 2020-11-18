@@ -123,6 +123,8 @@ public class AsyncExportResource {
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response asyncGetSopPlaceFileList(@PathParam("fileName") String fileName) {
         File file = asyncPublicationDeliveryExporter.getJobFileContent(fileName);
-        return Response.ok(file).build();
+        return Response.ok(file, MediaType.APPLICATION_OCTET_STREAM)
+                .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"" ) //optional
+                .build();
     }
 }

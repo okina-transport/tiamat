@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.exporter;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.async.ExportJobWorker;
@@ -36,6 +37,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -134,8 +137,16 @@ public class AsyncPublicationDeliveryExporter {
                 if(StringUtils.isNotBlank(provider.getChouetteInfo().getNameNetexStopIdfm())) {
                     nameSite = provider.getChouetteInfo().getNameNetexStopIdfm();
                 }
+
                 String fileNameWithoutExtention = createFileNameWithoutExtention(idSite, nameSite, localDateTime);
-                exportJob.setFileName(fileNameWithoutExtention + ".zip");
+
+                String nameFileZip = null;
+                try {
+                    nameFileZip = URLEncoder.encode(fileNameWithoutExtention, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+                exportJob.setFileName(nameFileZip + ".zip");
 
                 ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination);
                 exportService.submit(exportJobWorker);

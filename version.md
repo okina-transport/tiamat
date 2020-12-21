@@ -26,3 +26,7 @@
 
 # 1.0.11
 - Migration AWS
+
+
+# 2.0.0
+- Initialisation version de base mobi-ITI

@@ -20,7 +20,7 @@
 
     <groupId>org.rutebanken</groupId>
     <artifactId>tiamat</artifactId>
-    <version>1.0.14-SNAPSHOT</version>
+    <version>2.0.0-mobi-iti-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Tiamat</name>
@@ -63,7 +63,7 @@
 
         <!-- Docker & Fabric8 Configs -->
         <docker.from>registry.okina.fr/okina/java-base-image</docker.from>
-        <docker.image>registry.okina.fr/mosaic/${project.artifactId}:${project.version}</docker.image>
+        <docker.image>registry.okina.fr/mobiiti/${project.artifactId}:${project.version}</docker.image>
         <docker.cleanup>none</docker.cleanup>
         <!--<docker.port.container.jolokia>8778</docker.port.container.jolokia>-->
 

@@ -53,10 +53,10 @@ public enum ImportType {
     MATCH,
 
     /**
-     * Import utilisé pour les imports GTFS dans le cadre du projet MOSAIC/IDFM
+     * Import utilisé pour les imports GTFS dans le cadre du projet Mobi-iti
      * il crée les points d'arrêt et les quays
      * mais si ils sont déjà existants il ne les met à jour que lorsque la position du quay est modifiée.
      */
 
-    IDFM_IMPORT
+    ON_MOVE_ONLY
 }

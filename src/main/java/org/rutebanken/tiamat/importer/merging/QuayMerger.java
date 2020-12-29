@@ -66,15 +66,15 @@ public class QuayMerger {
         this.originalIdMatcher = originalIdMatcher;
     }
 
-    public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, boolean idfmImport) {
-        return mergeQuays(newStopPlace, existingStopPlace, addNewQuays, false, true, idfmImport);
+    public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, boolean onMoveOnlyImport) {
+        return mergeQuays(newStopPlace, existingStopPlace, addNewQuays, false, true, onMoveOnlyImport);
     }
 
 
     /**
      * Inspect quays from incoming AND matching stop place. If they do not exist from before, add them.
      */
-    public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch, boolean stopPlaceAlone, boolean idfmImport) {
+    public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch, boolean stopPlaceAlone, boolean onMoveOnlyImport) {
 
         AtomicInteger updatedQuays = new AtomicInteger();
         AtomicInteger addedQuays = new AtomicInteger();
@@ -85,7 +85,7 @@ public class QuayMerger {
             newStopPlace.setQuays(new HashSet<>());
         }
 
-        Set<Quay> result = mergeQuays(newStopPlace, newStopPlace.getQuays(), existingStopPlace.getQuays(), updatedQuays, addedQuays, addNewQuays, lowDistanceCheckBeforeIdMatch, stopPlaceAlone, idfmImport);
+        Set<Quay> result = mergeQuays(newStopPlace, newStopPlace.getQuays(), existingStopPlace.getQuays(), updatedQuays, addedQuays, addNewQuays, lowDistanceCheckBeforeIdMatch, stopPlaceAlone, onMoveOnlyImport);
 
         existingStopPlace.setQuays(result);
 
@@ -112,7 +112,7 @@ public class QuayMerger {
      * @param addNewQuays         if allowed to add quays if not match found
      * @return the resulting set of quays after matching, appending and adding.
      */
-    public Set<Quay> mergeQuays(StopPlace newStopPlace, Set<Quay> newQuays, Set<Quay> existingQuays, AtomicInteger updatedQuaysCounter, AtomicInteger addedQuaysCounter, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch, boolean stopPlaceAlone, boolean idfmImport) {
+    public Set<Quay> mergeQuays(StopPlace newStopPlace, Set<Quay> newQuays, Set<Quay> existingQuays, AtomicInteger updatedQuaysCounter, AtomicInteger addedQuaysCounter, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch, boolean stopPlaceAlone, boolean onMoveOnlyImport) {
 
         Set<Quay> result = new HashSet<>();
         if (existingQuays != null) {
@@ -145,7 +145,7 @@ public class QuayMerger {
             }
 
             if (matchingQuay.isPresent()) {
-                updateIfChanged(matchingQuay.get(), incomingQuay, updatedQuaysCounter, stopPlaceAlone, idfmImport);
+                updateIfChanged(matchingQuay.get(), incomingQuay, updatedQuaysCounter, stopPlaceAlone, onMoveOnlyImport);
             } else if (addNewQuays) {
                 logger.info("Found no match for existing quay {}. Adding it!", incomingQuay);
                 result.add(incomingQuay);
@@ -181,7 +181,7 @@ public class QuayMerger {
         return Optional.empty();
     }
 
-    private void updateIfChanged(Quay alreadyAdded, Quay incomingQuay, AtomicInteger updatedQuaysCounter, boolean stopPlaceAlone, boolean idfmImport) {
+    private void updateIfChanged(Quay alreadyAdded, Quay incomingQuay, AtomicInteger updatedQuaysCounter, boolean stopPlaceAlone, boolean onMoveOnlyImport) {
         // The incoming quay could for some reason already have multiple imported IDs.
 
         boolean quayAlone;
@@ -197,7 +197,7 @@ public class QuayMerger {
         boolean descUpdated;
         boolean wheelchairBoardingUpdated;
 
-        if(idfmImport){
+        if(onMoveOnlyImport){
             quayAlone = checkNumberProducers(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
             multipleIds = checkNumberId(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
             idUpdated = false;

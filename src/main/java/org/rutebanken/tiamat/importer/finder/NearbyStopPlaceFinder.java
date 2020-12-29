@@ -76,9 +76,9 @@ public class NearbyStopPlaceFinder {
         return find(stopPlace, false, null, false);
     }
 
-    public StopPlace find(StopPlace stopPlace, boolean allowOther, Provider provider, boolean noMergeIDFMStopPlaces) {
+    public StopPlace find(StopPlace stopPlace, boolean allowOther, Provider provider, boolean noMergeOnMoveOnly) {
 
-        if(!noMergeIDFMStopPlaces){
+        if(!noMergeOnMoveOnly){
             provider = null;
         }
 

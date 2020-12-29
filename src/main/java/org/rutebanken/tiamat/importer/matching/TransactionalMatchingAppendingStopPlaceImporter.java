@@ -82,8 +82,8 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     @Autowired
     private MergingStopPlaceImporter mergingStopPlaceImporter;
 
-    @Value("${idfm.modeMatch.noMergeSeveralProducers:false}")
-    boolean noMergeIDFMStopPlaces;
+    @Value("${onMoveOnly.modeMatch.noMergeSeveralProducers:false}")
+    boolean noMergeOnMoveOnly;
 
     @Autowired
     protected VersionCreator versionCreator;
@@ -96,10 +96,10 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
-                                 AtomicInteger stopPlacesCreatedOrUpdated, boolean idfmImport) {
+                                 AtomicInteger stopPlacesCreatedOrUpdated, boolean onMoveOnlyImport) {
 
 
-        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace, noMergeIDFMStopPlaces);
+        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace, noMergeOnMoveOnly);
         final int foundStopPlacesCount = foundStopPlaces.size();
 
         if (!foundStopPlaces.isEmpty()) {
@@ -147,9 +147,9 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             foundStopPlaces = filteredStopPlaces;
         }
-        // Désactiver pour Mosaic car fusionne des pa au nom proche au sein d'un même pa commercial
+        // Désactiver pour Mobi-iti car fusionne des pa au nom proche au sein d'un même pa commercial
 //        if (foundStopPlaces.isEmpty()) {
-//            org.rutebanken.tiamat.model.StopPlace nearbyStopPlace = nearbyStopPlaceFinder.find(incomingStopPlace, ALLOW_OTHER_TYPE_AS_ANY_MATCH, provider, noMergeIDFMStopPlaces);
+//            org.rutebanken.tiamat.model.StopPlace nearbyStopPlace = nearbyStopPlaceFinder.find(incomingStopPlace, ALLOW_OTHER_TYPE_AS_ANY_MATCH, provider, noMergeOnMoveOnly);
 //            if (nearbyStopPlace != null) {
 //                foundStopPlaces = Arrays.asList(nearbyStopPlace);
 //            }
@@ -162,7 +162,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             StopPlace newStopPlace = null;
             try {
-                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace, noMergeIDFMStopPlaces, idfmImport);
+                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace, noMergeOnMoveOnly, onMoveOnlyImport);
             } catch (InterruptedException | ExecutionException e) {
                 logger.error("Problem while adding new stop place", e);
             }
@@ -198,12 +198,12 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                     copy.getTariffZones().addAll(incomingStopPlace.getTariffZones());
                 }
 
-                boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS, idfmImport);
+                boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS, onMoveOnlyImport);
 
                 boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
 
                 boolean nameChanged = false;
-                if(incomingStopPlace.getName() != null && !incomingStopPlace.getName().equals(existingStopPlace.getName()) && !idfmImport){
+                if(incomingStopPlace.getName() != null && !incomingStopPlace.getName().equals(existingStopPlace.getName()) && !onMoveOnlyImport){
                     copy.setName(incomingStopPlace.getName());
                     nameChanged = true;
                 }

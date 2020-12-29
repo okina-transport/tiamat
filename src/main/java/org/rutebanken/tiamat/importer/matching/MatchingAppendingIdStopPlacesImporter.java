@@ -40,13 +40,13 @@ public class MatchingAppendingIdStopPlacesImporter {
     @Autowired
     private TransactionalMatchingAppendingStopPlaceImporter transactionalMatchingAppendingStopPlaceImporter;
 
-    public List<StopPlace> importStopPlaces(List<org.rutebanken.tiamat.model.StopPlace> tiamatStops, AtomicInteger stopPlacesCreatedOrUpdated, boolean idfmImport) {
+    public List<StopPlace> importStopPlaces(List<org.rutebanken.tiamat.model.StopPlace> tiamatStops, AtomicInteger stopPlacesCreatedOrUpdated, boolean onMoveOnlyImport) {
 
         List<StopPlace> matchedStopPlaces = new ArrayList<>();
 
         tiamatStops.forEach(incomingStopPlace -> {
 
-            transactionalMatchingAppendingStopPlaceImporter.findAppendAndAdd(incomingStopPlace, matchedStopPlaces, stopPlacesCreatedOrUpdated, idfmImport);
+            transactionalMatchingAppendingStopPlaceImporter.findAppendAndAdd(incomingStopPlace, matchedStopPlaces, stopPlacesCreatedOrUpdated, onMoveOnlyImport);
 
         });
 

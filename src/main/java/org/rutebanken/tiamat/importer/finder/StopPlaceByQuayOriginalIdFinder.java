@@ -48,8 +48,8 @@ public class StopPlaceByQuayOriginalIdFinder {
     @Autowired
     private NetexIdHelper netexIdHelper;
 
-    public List<StopPlace> find(StopPlace incomingStopPlace, boolean hasQuays, boolean noMergeIDFMStopPlaces) {
-        if (hasQuays && !noMergeIDFMStopPlaces) {
+    public List<StopPlace> find(StopPlace incomingStopPlace, boolean hasQuays, boolean noMergeOnMoveOnly) {
+        if (hasQuays && !noMergeOnMoveOnly) {
             return incomingStopPlace.getQuays().stream()
                     .flatMap(quay -> quay.getOriginalIds().stream())
                     .map(this::extractNumericValueIfPossible)

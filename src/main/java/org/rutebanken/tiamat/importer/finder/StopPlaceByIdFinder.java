@@ -53,10 +53,10 @@ public class StopPlaceByIdFinder {
     private NetexIdHelper netexIdHelper;
 
     private List<Function<StopPlace, Function<Boolean, Function<Boolean, List<StopPlace>>>>> findFunctionList = Arrays.asList(
-            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> stopPlaceByQuayOriginalIdFinder.find(stopPlace, hasQuays, noMergeIDFMStopPlaces)
-//            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByStopPlaceOriginalId(stopPlace)
-//            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByNetexId(stopPlace),
-//            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByQuayNetexId(stopPlace, hasQuays)
+            stopPlace -> hasQuays -> noMergeOnMoveOnly -> stopPlaceByQuayOriginalIdFinder.find(stopPlace, hasQuays, noMergeOnMoveOnly)
+//            stopPlace -> hasQuays -> noMergeOnMoveOnly -> findByStopPlaceOriginalId(stopPlace)
+//            stopPlace -> hasQuays -> noMergeOnMoveOnly -> findByNetexId(stopPlace),
+//            stopPlace -> hasQuays -> noMergeOnMoveOnly -> findByQuayNetexId(stopPlace, hasQuays)
             );
 
     public List<StopPlace> findByNetexId(StopPlace incomingStopPlace) {
@@ -67,14 +67,14 @@ public class StopPlaceByIdFinder {
         return new ArrayList<>(0);
     }
 
-    public List<StopPlace> findStopPlace(StopPlace incomingStopPlace, boolean noMergeIDFMStopPlaces) {
+    public List<StopPlace> findStopPlace(StopPlace incomingStopPlace, boolean noMergeOnMoveOnly) {
         boolean hasQuays = incomingStopPlace.getQuays() != null && !incomingStopPlace.getQuays().isEmpty();
-        return getFindFunctionList(incomingStopPlace, hasQuays, noMergeIDFMStopPlaces, findFunctionList);
+        return getFindFunctionList(incomingStopPlace, hasQuays, noMergeOnMoveOnly, findFunctionList);
     }
 
-    private List<StopPlace> getFindFunctionList(StopPlace incomingStopPlace, boolean hasQuays, boolean noMergeIDFMStopPlaces, List<Function<StopPlace, Function<Boolean, Function<Boolean, List<StopPlace>>>>> findFunctionList) {
+    private List<StopPlace> getFindFunctionList(StopPlace incomingStopPlace, boolean hasQuays, boolean noMergeOnMoveOnly, List<Function<StopPlace, Function<Boolean, Function<Boolean, List<StopPlace>>>>> findFunctionList) {
         return findFunctionList.stream()
-                .map(function -> function.apply(incomingStopPlace).apply(hasQuays).apply(noMergeIDFMStopPlaces))
+                .map(function -> function.apply(incomingStopPlace).apply(hasQuays).apply(noMergeOnMoveOnly))
                 .filter(set -> !set.isEmpty())
                 .flatMap(set -> set.stream())
                 .filter(Objects::nonNull)

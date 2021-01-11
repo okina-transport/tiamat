@@ -99,7 +99,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                                  AtomicInteger stopPlacesCreatedOrUpdated, boolean idfmImport) {
 
 
-        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace, noMergeIDFMStopPlaces);
+        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
         final int foundStopPlacesCount = foundStopPlaces.size();
 
         if (!foundStopPlaces.isEmpty()) {

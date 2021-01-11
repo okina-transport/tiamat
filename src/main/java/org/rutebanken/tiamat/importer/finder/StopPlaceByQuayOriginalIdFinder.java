@@ -48,18 +48,7 @@ public class StopPlaceByQuayOriginalIdFinder {
     @Autowired
     private NetexIdHelper netexIdHelper;
 
-    public List<StopPlace> find(StopPlace incomingStopPlace, boolean hasQuays, boolean noMergeIDFMStopPlaces) {
-        if (hasQuays && !noMergeIDFMStopPlaces) {
-            return incomingStopPlace.getQuays().stream()
-                    .flatMap(quay -> quay.getOriginalIds().stream())
-                    .map(this::find)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .peek(stopPlaceNetexId -> logger.debug("Found stop place {}", stopPlaceNetexId))
-                    .map(stopPlaceRepository::findFirstByNetexIdOrderByVersionDesc)
-                    .filter(stopPlace -> stopPlace != null)
-                    .collect(toList());
-        }
+    public List<StopPlace> find(StopPlace incomingStopPlace, boolean hasQuays) {
         if (hasQuays) {
             return incomingStopPlace.getQuays().stream()
                     .flatMap(quay -> quay.getOriginalIds().stream())

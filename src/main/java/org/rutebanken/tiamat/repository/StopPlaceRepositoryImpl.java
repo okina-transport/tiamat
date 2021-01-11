@@ -476,7 +476,6 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         query.setParameter("value", "%:" + quayOriginalId);
         query.setParameter("originalIdKey", ORIGINAL_ID_KEY);
-        query.setParameter("pointInTime",  Date.from(pointInTime));
 
         try {
             @SuppressWarnings("unchecked")

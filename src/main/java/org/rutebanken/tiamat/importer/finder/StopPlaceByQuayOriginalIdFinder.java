@@ -52,8 +52,6 @@ public class StopPlaceByQuayOriginalIdFinder {
         if (hasQuays && !noMergeIDFMStopPlaces) {
             return incomingStopPlace.getQuays().stream()
                     .flatMap(quay -> quay.getOriginalIds().stream())
-                    .map(this::extractNumericValueIfPossible)
-                    .peek(quayOriginalId -> logger.trace("looking for stop place by quay original id: {}", quayOriginalId))
                     .map(this::find)
                     .filter(Optional::isPresent)
                     .map(Optional::get)

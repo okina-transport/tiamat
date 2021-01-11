@@ -470,8 +470,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                              "  INNER JOIN value_items vi " +
                              "    ON vi.value_id = qkv.key_values_id AND vi.items LIKE :value " +
                              SQL_LEFT_JOIN_PARENT_STOP +
-                             " WHERE " +
-                SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME;
+                             ";";
 
         Query query = entityManager.createNativeQuery(sql);
 

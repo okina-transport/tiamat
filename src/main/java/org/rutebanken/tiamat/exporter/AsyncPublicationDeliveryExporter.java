@@ -16,6 +16,8 @@
 package org.rutebanken.tiamat.exporter;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.async.ExportJobWorker;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
@@ -35,12 +37,16 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -123,12 +129,24 @@ public class AsyncPublicationDeliveryExporter {
                 exportJob.setExportParams(exportParams);
                 exportJob.setSubFolder(generateSubFolderName());
 
-                LocalDateTime localDateTime = LocalDateTime.now().withNano(0);
+                LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
                 exportJobRepository.save(exportJob);
                 String idSite = provider.getChouetteInfo().getCodeIdfm();
+
                 String nameSite = provider.name;
+                if(StringUtils.isNotBlank(provider.getChouetteInfo().getNameNetexStopIdfm())) {
+                    nameSite = provider.getChouetteInfo().getNameNetexStopIdfm();
+                }
+
                 String fileNameWithoutExtention = createFileNameWithoutExtention(idSite, nameSite, localDateTime);
-                exportJob.setFileName(fileNameWithoutExtention + ".zip");
+
+                String nameFileZip = null;
+                try {
+                    nameFileZip = URLEncoder.encode(fileNameWithoutExtention, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+                exportJob.setFileName(nameFileZip + ".zip");
 
                 ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination);
                 exportService.submit(exportJobWorker);
@@ -157,6 +175,10 @@ public class AsyncPublicationDeliveryExporter {
         return blobStoreService.download(exportJob.getSubFolder() + "/" + exportJob.getFileName());
     }
 
+    public File getJobFileContent(String filePath) {
+        return blobStoreService.downloadFromAbsolutePath(filePath);
+    }
+
     public Collection<ExportJob> getJobs() {
 
         return exportJobRepository.findAll()
@@ -174,5 +196,9 @@ public class AsyncPublicationDeliveryExporter {
         LocalDateTime localDateTime = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
         String gcpSubfolder = localDateTime.getYear() + "-" + String.format("%02d", localDateTime.getMonthValue());
         return gcpSubfolder;
+    }
+
+    public List<String> getStopPlaceFileList(long siteId, int maxNbResults){
+        return blobStoreService.listStopPlacesInBlob(siteId,maxNbResults);
     }
 }

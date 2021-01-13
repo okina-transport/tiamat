@@ -42,6 +42,8 @@ public class ChouetteInfo {
     public Set<String> generateMissingServiceLinksForModes;
     public boolean idfm;
     public String codeIdfm;
+    public String nameNetexStopIdfm;
+    public String nameNetexOffreIdfm;
 
     public Long migrateDataToProvider; // Which dataspace to transfer data to when provider dataspace is valid
 
@@ -69,8 +71,10 @@ public class ChouetteInfo {
                 ", generateMissingServiceLinksForModes='" + generateMissingServiceLinksForModes + '\'' +
                 ", migrateDataToProvider='" + migrateDataToProvider + '\'' +
                 ", generateDatedServiceJourneyIds='" + generateDatedServiceJourneyIds + '\'' +
-                ", idfm=" + idfm +
-                ", codeIdfm=" + codeIdfm +
+                ", idfm=" + idfm + '\'' +
+                ", codeIdfm=" + codeIdfm + '\'' +
+                ", nameNetexStopIdfm=" + nameNetexStopIdfm + '\'' +
+                ", nameNetexOffreIdfm=" + nameNetexOffreIdfm + '\'' +
                 '}';
     }
 
@@ -161,5 +165,13 @@ public class ChouetteInfo {
     public void setCodeIdfm(String codeIdfm) {
         this.codeIdfm = codeIdfm;
     }
+
+    public String getNameNetexStopIdfm() { return nameNetexStopIdfm; }
+
+    public void setNameNetexStopIdfm(String nameNetexStopIdfm) { this.nameNetexStopIdfm = nameNetexStopIdfm; }
+
+    public String getNameNetexOffreIdfm() { return nameNetexOffreIdfm; }
+
+    public void setNameNetexOffreIdfm(String nameNetexOffreIdfm) { this.nameNetexOffreIdfm = nameNetexOffreIdfm; }
 }
 

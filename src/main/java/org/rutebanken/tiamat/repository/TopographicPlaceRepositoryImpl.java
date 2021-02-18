@@ -22,13 +22,16 @@ import org.hibernate.SQLQuery;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
+import com.google.api.client.repackaged.com.google.common.base.Strings;
+import org.apache.commons.lang3.NotImplementedException;
+import org.hibernate.*;
+import org.hibernate.query.NativeQuery;
 import org.rutebanken.tiamat.exporter.params.TopographicPlaceSearch;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.TopographicPlaceTypeEnumeration;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.TopographicPlaceQueryFromSearchBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
@@ -50,8 +53,6 @@ import java.util.stream.Collectors;
 @Repository
 @Transactional
 public class TopographicPlaceRepositoryImpl implements TopographicPlaceRepositoryCustom {
-
-	private static final Logger logger = LoggerFactory.getLogger(TopographicPlaceRepositoryImpl.class);
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -81,24 +82,26 @@ public class TopographicPlaceRepositoryImpl implements TopographicPlaceRepositor
 	@Override
 	public List<TopographicPlace> findByNameAndTypeMaxVersion(String name, TopographicPlaceTypeEnumeration topographicPlaceType) {
 
-		StringBuilder sql = new StringBuilder("SELECT tp FROM TopographicPlace tp WHERE " +
-				"tp.version = (SELECT MAX(tpv.version) FROM TopographicPlace tpv WHERE tpv.netexId = tp.netexId) ");
-
 		Map<String, Object> parameters = new HashMap<>();
+		StringBuilder sql = new StringBuilder("SELECT tp.* FROM topographic_place tp WHERE " +
+				"tp.version = (SELECT MAX(tpv.version) FROM topographic_place tpv WHERE tpv.netex_id = tp.netex_id " +
+				"and (tpv.to_date is null or tpv.to_date > :pointInTime) and (tpv.from_date is null or tpv.from_date < :pointInTime)) ");
+		Instant pointInTime = Instant.now();
+		parameters.put("pointInTime", pointInTime);
 
         if(topographicPlaceType != null) {
-            sql.append("AND tp.topographicPlaceType = :topographicPlaceType ");
-            parameters.put("topographicPlaceType", topographicPlaceType);
+            sql.append("AND tp.topographic_place_type = :topographicPlaceType ");
+            parameters.put("topographicPlaceType", topographicPlaceType.name());
         }
 
         if(!StringUtils.isBlank(name)) {
-            sql.append("AND similarity(tp.name.value, :name) > 0.2 ");
+            sql.append("AND similarity(tp.name_value, :name) > 0.2 ");
             parameters.put("name", name);
-            sql.append("ORDER BY SIMILARITY(tp.name.value, :name) DESC");
+            sql.append("ORDER BY SIMILARITY(tp.name_value, :name) DESC");
         }
 
-		TypedQuery<TopographicPlace> query = entityManager.createQuery(sql.toString(), TopographicPlace.class);
-		parameters.forEach(query::setParameter);
+		Query query = entityManager.createNativeQuery(sql.toString(), TopographicPlace.class);
+        parameters.forEach(query::setParameter);
 
 		return query.getResultList();
 	}
@@ -120,7 +123,7 @@ public class TopographicPlaceRepositoryImpl implements TopographicPlaceRepositor
 
 	public Iterator<TopographicPlace> scrollTopographicPlaces(String sql) {
 		Session session = entityManager.unwrap(Session.class);
-		SQLQuery sqlQuery = session.createSQLQuery(sql);
+		NativeQuery sqlQuery = session.createNativeQuery(sql);
 
 		sqlQuery.addEntity(TopographicPlace.class);
 		sqlQuery.setReadOnly(true);

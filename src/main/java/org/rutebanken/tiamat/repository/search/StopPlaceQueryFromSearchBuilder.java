@@ -137,6 +137,7 @@ public class StopPlaceQueryFromSearchBuilder {
     private static final ExportParams.VersionValidity defaultVersionValidity = ExportParams.VersionValidity.CURRENT;
 
 
+
     @Autowired
     private SearchHelper searchHelper;
 
@@ -385,8 +386,9 @@ public class StopPlaceQueryFromSearchBuilder {
 
             boolean hasMunicipalityFilter = exportParams.getMunicipalityReferences() != null && !exportParams.getMunicipalityReferences().isEmpty();
             boolean hasCountyFilter = exportParams.getCountyReferences() != null && !exportParams.getCountyReferences().isEmpty();
+            boolean hasCountryFilter = exportParams.getCountryReferences() != null && !exportParams.getCountryReferences().isEmpty();
 
-            if (hasMunicipalityFilter && !hasIdFilter) {
+            if (hasMunicipalityFilter) {
                 String prefix;
                 if (hasCountyFilter) {
                     operators.add("or");
@@ -398,11 +400,24 @@ public class StopPlaceQueryFromSearchBuilder {
                 parameters.put("municipalityId", exportParams.getMunicipalityReferences());
             }
 
-            if (hasCountyFilter && !hasIdFilter) {
+            if (hasCountyFilter) {
                 String suffix = hasMunicipalityFilter ? ")" : "";
                 String countyQuery = "topographic_place_id in (select tp.id from topographic_place tp where tp.parent_ref in :countyId)";
                 wheres.add("(s." + countyQuery + " or " + "p." + countyQuery + ")" + suffix);
                 parameters.put("countyId", exportParams.getCountyReferences());
+            }
+
+            if (hasCountryFilter) {
+                String suffix = hasCountyFilter | hasMunicipalityFilter ? ")" : "";
+                String countryQuery = "topographic_place_id in (" +
+                        "select tp.id from topographic_place tp " +
+                            "left join topographic_place ptp " +
+                                "on tp.parent_ref = ptp.netex_id and tp.parent_ref_version = CAST(ptp.version as text) " +
+                            "where (tp.topographic_place_type = 'MUNICIPALITY' or tp.topographic_place_type = 'COUNTY' or tp.topographic_place_type = 'COUNTRY') " +
+                            "and (tp.parent_ref = :countryId or ptp.parent_ref = :countryId or tp.netex_id = :countryId) " +
+                            "and tp.version = (select max(tpv.version) from topographic_place tpv where tpv.netex_id = tp.netex_id))";
+                wheres.add("(s." + countryQuery + " or " + "p." + countryQuery + ")" + suffix);
+                parameters.put("countryId", exportParams.getCountryReferences());
             }
 
             boolean hasCode = exportParams.getCodeSpace() != null;
@@ -438,6 +453,10 @@ public class StopPlaceQueryFromSearchBuilder {
             String parentFutureQuery = "p.netex_id is not null and (p.to_date >= :pointInTime OR p.to_date IS NULL)";
             wheres.add("((" + futureQuery + ") or (" + parentFutureQuery + "))");
         } else if (!stopPlaceSearch.isAllVersions() && ExportParams.VersionValidity.MAX_VERSION.equals(stopPlaceSearch.getVersionValidity())) {
+
+            // This part of query can cause issues finding matches in older versions of stop place
+            // See the task https://enturas.atlassian.net/browse/ROR-572
+
             operators.add("and");
             wheres.add("s.version = (select max(sv.version) from stop_place sv where sv.netex_id = s.netex_id)");
         }

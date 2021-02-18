@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.rutebanken.tiamat.model.ModificationEnumeration;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.lock.MutateLock;
@@ -117,6 +118,10 @@ class StopPlaceUpdater implements DataFetcher {
                 logger.info("About to update StopPlace {}", netexId);
 
                 existingVersion = findAndVerify(netexId);
+
+                if (existingVersion.getModificationEnumeration() != null && existingVersion.getModificationEnumeration().equals(ModificationEnumeration.DELETE)) {
+                    throw new IllegalArgumentException("Attempting to update/reactivate terminated StopPlace: " + existingVersion);
+                }
 
                 if (mutateParent) {
                     Preconditions.checkArgument(existingVersion.isParentStopPlace(),

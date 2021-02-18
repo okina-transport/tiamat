@@ -88,6 +88,9 @@ public class StopPlace
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<TariffZoneRef> tariffZones = new HashSet<>();
 
+    @Enumerated(EnumType.STRING)
+    private ModificationEnumeration modificationEnumeration;
+
     private String provider;
 
     public StopPlace(EmbeddableMultilingualString name) {
@@ -276,6 +279,14 @@ public class StopPlace
 
     public void setParentStopPlace(boolean parentStopPlace) {
         this.parentStopPlace = parentStopPlace;
+    }
+
+    public ModificationEnumeration getModificationEnumeration() {
+        return modificationEnumeration;
+    }
+
+    public void setModificationEnumeration(ModificationEnumeration modificationEnumeration) {
+        this.modificationEnumeration = modificationEnumeration;
     }
 
     public String getProvider() {

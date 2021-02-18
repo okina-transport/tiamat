@@ -36,6 +36,16 @@ import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.TopographicPlaceRefStructure;
 import org.rutebanken.tiamat.model.TopographicPlaceTypeEnumeration;
 import org.rutebanken.tiamat.model.ValidBetween;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.GroupOfStopPlaces;
+import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.StopPlaceReference;
+import org.rutebanken.tiamat.model.TariffZone;
+import org.rutebanken.tiamat.model.TariffZoneRef;
+import org.rutebanken.tiamat.model.TopographicPlace;
+import org.rutebanken.tiamat.model.TopographicPlaceRefStructure;
+import org.rutebanken.tiamat.model.TopographicPlaceTypeEnumeration;
+import org.rutebanken.tiamat.model.ValidBetween;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
 import org.rutebanken.tiamat.repository.ProviderRepository;
@@ -402,7 +412,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         JAXBContext publicationDeliveryContext = newInstance(PublicationDeliveryStructure.class);
         Unmarshaller unmarshaller = publicationDeliveryContext.createUnmarshaller();
 
-        NeTExValidator neTExValidator = new NeTExValidator();
+        NeTExValidator neTExValidator =  NeTExValidator.getNeTExValidator();
         unmarshaller.setSchema(neTExValidator.getSchema());
         unmarshaller.unmarshal(new StringReader(xml));
     }

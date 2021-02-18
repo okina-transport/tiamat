@@ -16,7 +16,7 @@
 package org.rutebanken.tiamat.netex.id;
 
 import com.google.common.base.Strings;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.model.PathLinkEnd;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.SiteFrame;
@@ -34,6 +34,9 @@ import java.util.regex.Pattern;
 public class NetexIdHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(NetexIdHelper.class);
+
+    // TODO: make it configurable, maybe in ValidPrefixList
+    public static final String NSR = "NSR";
 
     private static Pattern NETEX_ID_PATTERN = Pattern.compile("\\w{3}:\\w{3,}:\\w+");
 

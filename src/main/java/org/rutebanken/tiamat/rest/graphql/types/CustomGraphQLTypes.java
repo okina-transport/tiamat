@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.rest.graphql.types;
 
-import com.vividsolutions.jts.geom.Geometry;
+import org.locationtech.jts.geom.Geometry;
 import graphql.schema.*;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.*;
@@ -60,6 +60,7 @@ public class CustomGraphQLTypes {
     public static GraphQLEnumType parkingUserEnum = createCustomEnumType(PARKING_USER_ENUM, ParkingUserEnumeration.class);
     public static GraphQLEnumType parkingStayEnum = createCustomEnumType(PARKING_STAY_TYPE_ENUM, ParkingStayEnumeration.class);
     public static GraphQLEnumType parkingReservationEnum = createCustomEnumType(PARKING_RESERVATION_ENUM, ParkingReservationEnumeration.class);
+    public static GraphQLEnumType parkingPaymentProcessEnum = createCustomEnumType(PARKING_PAYMENT_PROCESS_ENUM, ParkingPaymentProcessEnumeration.class);
     public static GraphQLEnumType parkingTypeEnum = createCustomEnumType(PARKING_TYPE_ENUM, ParkingTypeEnumeration.class);
     public static GraphQLEnumType topographicPlaceTypeEnum = createCustomEnumType(TOPOGRAPHIC_PLACE_TYPE_ENUM, TopographicPlaceTypeEnumeration.class);
     public static GraphQLEnumType stopPlaceTypeEnum = createCustomEnumType(STOP_PLACE_TYPE_ENUM, StopTypeEnumeration.class);
@@ -78,6 +79,7 @@ public class CustomGraphQLTypes {
     public static GraphQLEnumType cablewaySubmodeType = createCustomEnumType("TelecabinSubmodeType", TelecabinSubmodeEnumeration.class);
     public static GraphQLEnumType funicularSubmodeType = createCustomEnumType("FunicularSubmodeType", FunicularSubmodeEnumeration.class);
     public static GraphQLEnumType versionValidityEnumType = createCustomEnumType(ExportParams.VersionValidity.class.getSimpleName(), ExportParams.VersionValidity.class);
+    public static GraphQLEnumType modificationEnumerationType = createCustomEnumType("ModificationEnumerationType", ModificationEnumeration.class);
 
 
     public static GraphQLEnumType createCustomEnumType(String name, Class c) {
@@ -144,10 +146,13 @@ public class CustomGraphQLTypes {
             .type(geoJsonObjectType)
             .dataFetcher(env -> {
                 if (env.getSource() instanceof Zone_VersionStructure) {
-                    Zone_VersionStructure source = (Zone_VersionStructure) env.getSource();
-                    return source.getCentroid();
+                    Zone_VersionStructure source = env.getSource();
+                    if (source.getCentroid()!=null) {
+                        return source.getCentroid();
+                    }
+                    return source.getPolygon();
                 } else if (env.getSource() instanceof Link) {
-                    Link link = (Link) env.getSource();
+                    Link link = env.getSource();
                     return link.getLineString();
                 }
                 return null;
@@ -664,16 +669,28 @@ public class CustomGraphQLTypes {
                     .name(PARKING_VEHICLE_TYPE)
                     .type(parkingVehicleEnum))
             .field(newFieldDefinition()
+                    .name(PARKING_USER_TYPE)
+                    .type(parkingUserEnum))
+            .field(newFieldDefinition()
                     .name(PARKING_STAY_TYPE)
                     .type(parkingStayEnum))
             .field(newFieldDefinition()
                     .name(NUMBER_OF_SPACES)
+                    .type(GraphQLBigInteger))
+            .field(newFieldDefinition()
+                    .name(NUMBER_OF_SPACES_WITH_RECHARGE_POINT)
+                    .type(GraphQLBigInteger))
+            .field(newFieldDefinition()
+                    .name(NUMBER_OF_CARSHARING_SPACES)
                     .type(GraphQLBigInteger))
             .build();
 
 
     public static GraphQLInputObjectType parkingCapacityInputObjectType = GraphQLInputObjectType.newInputObject()
             .name(INPUT_TYPE_PARKING_CAPACITY)
+            .field(newInputObjectField()
+                    .name(PARKING_USER_TYPE)
+                    .type(parkingUserEnum))
             .field(newInputObjectField()
                     .name(PARKING_VEHICLE_TYPE)
                     .type(parkingVehicleEnum))
@@ -682,6 +699,12 @@ public class CustomGraphQLTypes {
                     .type(parkingStayEnum))
             .field(newInputObjectField()
                     .name(NUMBER_OF_SPACES)
+                    .type(GraphQLBigInteger))
+            .field(newInputObjectField()
+                    .name(NUMBER_OF_SPACES_WITH_RECHARGE_POINT)
+                    .type(GraphQLBigInteger))
+            .field(newInputObjectField()
+                    .name(NUMBER_OF_CARSHARING_SPACES)
                     .type(GraphQLBigInteger))
             .build();
 
@@ -797,6 +820,12 @@ public class CustomGraphQLTypes {
                         .name(RECHARGING_AVAILABLE)
                         .type(GraphQLBoolean))
                 .field(newFieldDefinition()
+                        .name(CARPOOLING_AVAILABLE)
+                        .type(GraphQLBoolean))
+                .field(newFieldDefinition()
+                        .name(CARSHARING_AVAILABLE)
+                        .type(GraphQLBoolean))
+                .field(newFieldDefinition()
                         .name(SECURE)
                         .type(GraphQLBoolean))
                 .field(newFieldDefinition()
@@ -811,6 +840,9 @@ public class CustomGraphQLTypes {
                 .field(newFieldDefinition()
                         .name(FREE_PARKING_OUT_OF_HOURS)
                         .type(GraphQLBoolean))
+                .field(newFieldDefinition()
+                        .name(PARKING_PAYMENT_PROCESS)
+                        .type(new GraphQLList(parkingPaymentProcessEnum)))
                 .field(newFieldDefinition()
                         .name(PARKING_PROPERTIES)
                         .type(new GraphQLList(parkingPropertiesObjectType)))
@@ -855,6 +887,12 @@ public class CustomGraphQLTypes {
                         .name(RECHARGING_AVAILABLE)
                         .type(GraphQLBoolean))
                 .field(newInputObjectField()
+                        .name(CARPOOLING_AVAILABLE)
+                        .type(GraphQLBoolean))
+                .field(newInputObjectField()
+                        .name(CARSHARING_AVAILABLE)
+                        .type(GraphQLBoolean))
+                .field(newInputObjectField()
                         .name(SECURE)
                         .type(GraphQLBoolean))
                 .field(newInputObjectField()
@@ -869,6 +907,9 @@ public class CustomGraphQLTypes {
                 .field(newInputObjectField()
                         .name(FREE_PARKING_OUT_OF_HOURS)
                         .type(GraphQLBoolean))
+                .field(newInputObjectField()
+                        .name(PARKING_PAYMENT_PROCESS)
+                        .type(new GraphQLList(parkingPaymentProcessEnum)))
                 .field(newInputObjectField()
                         .name(PARKING_PROPERTIES)
                         .type(new GraphQLList(parkingPropertiesInputObjectType)))

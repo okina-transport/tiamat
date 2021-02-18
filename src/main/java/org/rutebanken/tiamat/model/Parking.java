@@ -16,6 +16,8 @@
 package org.rutebanken.tiamat.model;
 
 import com.google.common.base.MoreObjects;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.math.BigInteger;
@@ -30,8 +32,6 @@ public class Parking
     protected String publicCode;
     @Transient
     protected MultilingualStringEntity label;
-    @Transient
-    protected List<ParkingPaymentProcessEnumeration> parkingPaymentProcess;
     @Transient
     protected List<PaymentMethodEnumeration> paymentMethods;
     @Transient
@@ -55,7 +55,13 @@ public class Parking
     @Enumerated(EnumType.STRING)
     protected ParkingTypeEnumeration parkingType;
 
-    @ElementCollection(targetClass = ParkingVehicleEnumeration.class, fetch = FetchType.EAGER)
+    @ElementCollection(targetClass = ParkingPaymentProcessEnumeration.class)
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @Enumerated(EnumType.STRING)
+    protected List<ParkingPaymentProcessEnumeration> parkingPaymentProcess;
+
+    @ElementCollection(targetClass = ParkingVehicleEnumeration.class)
+    @LazyCollection(LazyCollectionOption.FALSE)
     @Enumerated(EnumType.STRING)
     protected List<ParkingVehicleEnumeration> parkingVehicleTypes;
     protected ParkingLayoutEnumeration parkingLayout;
@@ -65,6 +71,8 @@ public class Parking
     protected Boolean overnightParkingPermitted;
     protected Boolean prohibitedForHazardousMaterials;
     protected Boolean rechargingAvailable;
+    protected Boolean carpoolingAvailable;
+    protected Boolean carsharingAvailable;
     protected Boolean secure;
     protected Boolean realTimeOccupancyAvailable;
     protected ParkingReservationEnumeration parkingReservation;
@@ -186,6 +194,22 @@ public class Parking
 
     public void setRechargingAvailable(Boolean value) {
         this.rechargingAvailable = value;
+    }
+
+    public Boolean isCarpoolingAvailable() {
+        return carpoolingAvailable;
+    }
+
+    public void setCarpoolingAvailable(Boolean value) {
+        this.carpoolingAvailable = value;
+    }
+
+    public Boolean isCarsharingAvailable() {
+        return carsharingAvailable;
+    }
+
+    public void setCarsharingAvailable(Boolean value) {
+        this.carsharingAvailable = value;
     }
 
     public Boolean isSecure() {
@@ -327,6 +351,8 @@ public class Parking
                 .add("overnightParkingPermitted", overnightParkingPermitted)
                 .add("prohibitedForHazardousMaterials", prohibitedForHazardousMaterials)
                 .add("rechargingAvailable", rechargingAvailable)
+                .add("carpoolingAvailable", carpoolingAvailable)
+                .add("carsharingAvailable", carsharingAvailable)
                 .add("secure", secure)
                 .add("realTimeOccupancyAvailable", realTimeOccupancyAvailable)
                 .add("parkingReservation", parkingReservation)

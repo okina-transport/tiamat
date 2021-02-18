@@ -203,6 +203,7 @@ public class GraphQLNames {
     public static final String PARKING_VEHICLE_ENUM = "ParkingVehicleType";
     public static final String PARKING_LAYOUT_ENUM = "ParkingLayoutType";
     public static final String PARKING_RESERVATION_ENUM = "ParkingReservationType";
+    public static final String PARKING_PAYMENT_PROCESS_ENUM = "ParkingPaymentProcessType";
     public static final String PARKING_USER_ENUM = "ParkingUserType";
     public static final String PARKING_STAY_TYPE_ENUM = "ParkingStayType";
 
@@ -256,6 +257,9 @@ public class GraphQLNames {
     public static final String CYCLE_STORAGE_TYPE = "cycleStorageType";
     //GeneralSign
 
+    public static final String NUMBER_OF_SPACES_WITH_RECHARGE_POINT = "numberOfSpacesWithRechargePoint";
+
+    public static final String NUMBER_OF_CARSHARING_SPACES = "numberOfCarsharingSpaces";
 
     public static final String OUTPUT_TYPE_PRIVATE_CODE = "PrivateCode";
     public static final String PRIVATE_CODE = "privateCode";
@@ -272,6 +276,7 @@ public class GraphQLNames {
     public static final String VALUES_ARG_DESCRIPTION = "Must be used together with parameter 'key', other search-parameters are ignored. Defines value to search for.";
     public static final String VERSION = "version";
     public static final String VERSION_COMMENT = "versionComment";
+    public static final String MODIFICATION_ENUMERATION = "modificationEnumeration";
     public static final String VERSION_ARG_DESCRIPTION = "Find stop place from " + ID + " and " +  VERSION + ". Only used together with " + ID + " argument";
 
     public static final String CHANGED_BY = "changedBy";
@@ -284,7 +289,9 @@ public class GraphQLNames {
     public static final String IMPORTED_ID_QUERY = "importedId";
     public static final String IMPORTED_ID_ARG_DESCRIPTION = "Searches for StopPlace by importedId.";
     public static final String COUNTY_REF = "countyReference";
+    public static final String COUNTRY_REF = "countryReference";
     public static final String COUNTY_REF_ARG_DESCRIPTION = "Only return StopPlaces located in given counties.";
+    public static final String COUNTRY_REF_ARG_DESCRIPTION = "Only return StopPlaces located in given countries.";
 
     public static final String MUNICIPALITY_REF = "municipalityReference";
     public static final String MUNICIPALITY_REF_ARG_DESCRIPTION = "Only return StopPlaces located in given municipalities.";
@@ -312,6 +319,8 @@ public class GraphQLNames {
     public static final String WITH_NEARBY_SIMILAR_DUPLICATES_ARG_DESCRIPTION = "withNearbySimilarDuplicates";
 
     public static final String HAS_PARKING = "hasParking";
+    public static final String ONLY_MONOMODAL_STOPPLACES = "onlyMonomodalStopPlaces";
+    public static final String ONLY_MONOMODAL_STOPPLACES_DESCRIPTION = "Set to true to only return mono modal stop places.";
 
     public static final String LONGITUDE_MIN = "lonMin";
     public static final String LATITUDE_MIN = "latMin";
@@ -359,6 +368,7 @@ public class GraphQLNames {
     public static final String PARKING_VEHICLE_TYPES = "parkingVehicleTypes";
     public static final String PARKING_VEHICLE_TYPE = "parkingVehicleType";
     public static final String PARKING_USER_TYPES = "parkingUserTypes";
+    public static final String PARKING_USER_TYPE = "parkingUserType";
     public static final String MAXIMUM_STAY = "maximumStay";
     public static final String PARKING_STAY_TYPE = "parkingStayType";
     public static final String SPACES = "spaces";
@@ -368,11 +378,14 @@ public class GraphQLNames {
     public static final String PRINCIPAL_CAPACITY = "principalCapacity";
     public static final String OVERNIGHT_PARKING_PERMITTED = "overnightParkingPermitted";
     public static final String RECHARGING_AVAILABLE = "rechargingAvailable";
+    public static final String CARPOOLING_AVAILABLE = "carpoolingAvailable";
+    public static final String CARSHARING_AVAILABLE = "carsharingAvailable";
     public static final String SECURE = "secure";
     public static final String REAL_TIME_OCCUPANCY_AVAILABLE = "realTimeOccupancyAvailable";
     public static final String PARKING_RESERVATION = "parkingReservation";
     public static final String BOOKING_URL = "bookingUrl";
     public static final String FREE_PARKING_OUT_OF_HOURS = "freeParkingOutOfHours";
+    public static final String PARKING_PAYMENT_PROCESS = "parkingPaymentProcess";
     public static final String LABEL = "label";
     public static final String PARENT_SITE_REF = "parentSiteRef";
 

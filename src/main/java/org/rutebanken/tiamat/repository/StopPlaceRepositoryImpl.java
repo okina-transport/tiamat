@@ -17,9 +17,9 @@ package org.rutebanken.tiamat.repository;
 
 
 import com.google.common.collect.Sets;
-import com.vividsolutions.jts.geom.Envelope;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.hibernate.*;
 import org.hibernate.engine.jdbc.internal.BasicFormatterImpl;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
@@ -147,22 +147,39 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         Geometry geometryFilter = geometryFactory.toGeometry(envelope);
 
-        String queryString = "SELECT s.* FROM stop_place s " +
+
+        String queryString;
+        if (pointInTime != null) {
+        queryString = "SELECT s.* FROM stop_place s " +
                                      SQL_LEFT_JOIN_PARENT_STOP +
                                      "WHERE " +
                                         SQL_CHILD_OR_PARENT_WITHIN +
                                         "AND "
-                                        + SQL_NOT_PARENT_STOP_PLACE;
+                                        + SQL_NOT_PARENT_STOP_PLACE +
+                                        "AND "
+                                        + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME;
+            if(ignoreStopPlaceId != null) {
+                queryString += "AND " + SQL_IGNORE_STOP_PLACE_ID;
 
-        if (pointInTime != null) {
-            queryString += "AND " + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME;
+            }
         } else {
             // If no point in time is set, use max version to only get one version per stop place
-            queryString += "AND " + SQL_MAX_VERSION_OF_STOP_PLACE;
-        }
+            String subQueryString = "SELECT s.netex_id,max(s.version) FROM stop_place s " +
+                    SQL_LEFT_JOIN_PARENT_STOP +
+                    "WHERE " +
+                    SQL_CHILD_OR_PARENT_WITHIN +
+                    "AND "
+                    + SQL_NOT_PARENT_STOP_PLACE;
 
-        if(ignoreStopPlaceId != null) {
-            queryString += "AND " + SQL_IGNORE_STOP_PLACE_ID;
+
+            if (ignoreStopPlaceId != null) {
+                subQueryString += "AND " + SQL_IGNORE_STOP_PLACE_ID + "group by s.netex_id";
+            } else {
+                subQueryString += "group by s.netex_id" ;
+            }
+
+            queryString = "SELECT s.* FROM stop_place s " +
+                    "WHERE (netex_id,version) in (" + subQueryString + ")" ;
 
         }
 

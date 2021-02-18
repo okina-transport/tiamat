@@ -16,22 +16,17 @@
 package org.rutebanken.tiamat.repository;
 
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.lang.StringUtils;
-import org.hibernate.SQLQuery;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
-import com.google.api.client.repackaged.com.google.common.base.Strings;
-import org.apache.commons.lang3.NotImplementedException;
-import org.hibernate.*;
 import org.hibernate.query.NativeQuery;
 import org.rutebanken.tiamat.exporter.params.TopographicPlaceSearch;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.TopographicPlaceTypeEnumeration;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.TopographicPlaceQueryFromSearchBuilder;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
@@ -41,7 +36,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;

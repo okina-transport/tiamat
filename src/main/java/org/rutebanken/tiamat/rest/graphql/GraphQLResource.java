@@ -18,9 +18,13 @@ package org.rutebanken.tiamat.rest.graphql;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.collect.Sets;
-import graphql.*;
-import graphql.execution.ExecutionPath;
-import graphql.schema.GraphQLSchema;
+import graphql.ErrorType;
+import graphql.ExceptionWhileDataFetching;
+import graphql.ExecutionInput;
+import graphql.ExecutionResult;
+import graphql.GraphQL;
+import graphql.GraphQLError;
+import graphql.GraphQLException;
 import io.swagger.annotations.Api;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.tiamat.rest.exception.ErrorResponseEntity;
@@ -36,11 +40,19 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.PostConstruct;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
 

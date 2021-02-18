@@ -15,10 +15,10 @@
 
 package org.rutebanken.tiamat.exporter.async;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.h2.util.IOUtils;
-import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
 import org.rutebanken.tiamat.domain.Provider;
+import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
 import org.rutebanken.tiamat.model.job.ExportJob;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
@@ -30,7 +30,12 @@ import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.zip.ZipEntry;

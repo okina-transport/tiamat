@@ -17,13 +17,13 @@ package org.rutebanken.tiamat.importer.finder;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Point;
-import org.apache.commons.lang.StringUtils;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.general.PeriodicCacheLogger;
 import org.rutebanken.tiamat.importer.AlternativeStopTypes;
-import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
@@ -33,7 +33,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 

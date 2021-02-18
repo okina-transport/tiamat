@@ -16,11 +16,12 @@
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiParam;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
-import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.PublicationDeliveryImporter;
+import org.rutebanken.tiamat.importer.ImportParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,11 +37,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
+
 /**
  * Import publication deliveries
  */
 @Component
-@Api
+@Api(tags = {"Import resource"}, produces = "application/xml")
 @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
 @Path("netex")
 public class ImportResource {
@@ -74,7 +76,7 @@ public class ImportResource {
     @POST
     @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
-    public Response importPublicationDelivery(InputStream inputStream, @BeanParam ImportParams importParams) throws IOException, JAXBException, SAXException {
+    public Response importPublicationDelivery(@ApiParam(hidden = true) InputStream inputStream, @BeanParam ImportParams importParams) throws IOException, JAXBException, SAXException {
         logger.info("Received Netex publication delivery, starting to parse...");
         logger.info(".........................................................(importParams.providerCode = " + importParams.providerCode +")");
 

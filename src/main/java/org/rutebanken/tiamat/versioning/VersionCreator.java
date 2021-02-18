@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.versioning;
 
-import com.vividsolutions.jts.geom.Point;
+import org.locationtech.jts.geom.Point;
 import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
@@ -47,6 +47,8 @@ public class VersionCreator {
     private static final String CHANGED_BY_FIELD = "changedBy";
 
     private static final String VALID_BETWEEN = "validBetween";
+
+    private static final String MODIFICATION_ENUMERATION ="modificationEnumeration";
 
     private final VersionIncrementor versionIncrementor;
 
@@ -100,6 +102,7 @@ public class VersionCreator {
                 .exclude(VERSION_COMMENT_FIELD)
                 .exclude(CHANGED_BY_FIELD)
                 .exclude(VALID_BETWEEN)
+                .exclude(MODIFICATION_ENUMERATION)
                 .byDefault()
                 .register();
 

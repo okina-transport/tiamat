@@ -16,7 +16,7 @@
 package org.rutebanken.tiamat.importer.handler;
 
 import com.hazelcast.core.HazelcastInstance;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.rutebanken.netex.model.SiteFrame;
 import org.rutebanken.netex.model.StopPlacesInFrame_RelStructure;
 import org.rutebanken.netex.model.TopographicPlace;
@@ -113,8 +113,6 @@ public class StopPlaceImportHandler {
 
     private ApiProxyService apiProxyService = new ApiProxyService();
 
-
-    // TODO: Use ExportParams to control what is returned?
     public void handleStops(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger stopPlacesCreatedMatchedOrUpdated, SiteFrame responseSiteframe) {
         if (publicationDeliveryHelper.hasStops(netexSiteFrame)) {
             List<StopPlace> tiamatStops = netexMapper.mapStopsToTiamatModel(netexSiteFrame.getStopPlaces().getStopPlace());

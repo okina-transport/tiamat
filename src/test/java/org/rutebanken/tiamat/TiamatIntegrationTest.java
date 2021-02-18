@@ -16,7 +16,7 @@
 package org.rutebanken.tiamat;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.vividsolutions.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.GeometryFactory;
 import lombok.Getter;
 import org.junit.After;
 import org.junit.Before;

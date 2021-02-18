@@ -25,7 +25,6 @@ import org.rutebanken.tiamat.model.job.JobStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -36,14 +35,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
-import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
-import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_STOP_PLACE_PATH;
 import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_JOB_PATH;
 
 /**
  * Export publication delivery data to google cloud storage. Some parts like stops and parking asynchronously
  */
-@Api
+@Api(tags = {"Async export resource"}, produces = "application/xml")
 @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
 @Path("/netex/" + ASYNC_JOB_PATH)
 public class AsyncExportResource {

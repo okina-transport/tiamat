@@ -19,8 +19,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.ws.rs.GET;
@@ -28,16 +30,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
-@Api
+@Api(tags = {"Application status resource"}, produces = "text/plain")
 @Produces("application/json")
 @Path("/")
 @Transactional
 public class HealthResource {
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
-//    @Autowired
-//    private DbStatusChecker dbStatusChecker;
-
+    @Autowired
+    private StopPlaceRepository stopPlaceRepository;
 
     @GET
     @Path("/ready")
@@ -46,13 +45,8 @@ public class HealthResource {
             @ApiResponse(code = 200, message = "application is running")
     })
     public Response readinessProbe() {
-//        logger.debug("Checking readiness...");
-//        if (dbStatusChecker.isDbUp()) {
-//            return Response.ok().build();
-//        } else {
-//            return Response.serverError().build();
-//        }
-        return Response.ok().build();
+        stopPlaceRepository.findAllByOrderByChangedDesc(new PageRequest(1, 1));
+        return Response.status(Response.Status.OK).build();
     }
 
     @GET

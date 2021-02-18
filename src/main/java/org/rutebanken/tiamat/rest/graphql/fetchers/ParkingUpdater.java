@@ -16,7 +16,7 @@
 package org.rutebanken.tiamat.rest.graphql.fetchers;
 
 import com.google.common.base.Preconditions;
-import com.vividsolutions.jts.geom.Point;
+import org.locationtech.jts.geom.Point;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
@@ -134,14 +134,14 @@ class ParkingUpdater implements DataFetcher {
 
             updatedParking.setParentSiteRef(parentSiteRef);
         }
-
+        /*
         if (input.get(TOTAL_CAPACITY) != null) {
             BigInteger totalCapacity = (BigInteger) input.get(TOTAL_CAPACITY);
             isUpdated = isUpdated || (!totalCapacity.equals(updatedParking.getTotalCapacity()));
 
             updatedParking.setTotalCapacity(totalCapacity);
         }
-
+        */
         if (input.get(PRINCIPAL_CAPACITY) != null) {
             BigInteger principalCapacity = (BigInteger) input.get(PRINCIPAL_CAPACITY);
             isUpdated = isUpdated || (!principalCapacity.equals(updatedParking.getPrincipalCapacity()));
@@ -181,6 +181,18 @@ class ParkingUpdater implements DataFetcher {
             updatedParking.setRechargingAvailable(rechargingAvailable);
         }
 
+        if (input.get(CARPOOLING_AVAILABLE) != null) {
+            Boolean carpoolingAvailable = (Boolean) input.get(CARPOOLING_AVAILABLE);
+            isUpdated = isUpdated || (!carpoolingAvailable.equals(updatedParking.isCarpoolingAvailable()));
+            updatedParking.setCarpoolingAvailable(carpoolingAvailable);
+        }
+
+        if (input.get(CARSHARING_AVAILABLE) != null) {
+            Boolean carsharingAvailable = (Boolean) input.get(CARSHARING_AVAILABLE);
+            isUpdated = isUpdated || (!carsharingAvailable.equals(updatedParking.isCarsharingAvailable()));
+            updatedParking.setCarsharingAvailable(carsharingAvailable);
+        }
+
         if (input.get(SECURE) != null) {
             Boolean isSecure = (Boolean) input.get(SECURE);
             isUpdated = isUpdated || (!isSecure.equals(updatedParking.isSecure()));
@@ -199,6 +211,16 @@ class ParkingUpdater implements DataFetcher {
             updatedParking.setFreeParkingOutOfHours(freeParkingOutOfHours);
         }
 
+        if (input.get(PARKING_PAYMENT_PROCESS) != null) {
+
+            List<ParkingPaymentProcessEnumeration> parkingPaymentProcessTypes = (List<ParkingPaymentProcessEnumeration>) input.get(PARKING_PAYMENT_PROCESS);
+            isUpdated = isUpdated || !(updatedParking.getParkingPaymentProcess().containsAll(parkingPaymentProcessTypes) &&
+                    parkingPaymentProcessTypes.containsAll(updatedParking.getParkingPaymentProcess()));
+
+            updatedParking.getParkingPaymentProcess().clear();
+            updatedParking.getParkingPaymentProcess().addAll(parkingPaymentProcessTypes);
+        }
+
         if (input.get(PARKING_RESERVATION) != null) {
             ParkingReservationEnumeration parkingReservation = (ParkingReservationEnumeration) input.get(PARKING_RESERVATION);
             isUpdated = isUpdated || (!parkingReservation.equals(updatedParking.getParkingReservation()));
@@ -213,8 +235,20 @@ class ParkingUpdater implements DataFetcher {
 
         if (input.get(PARKING_PROPERTIES) != null) {
             List<ParkingProperties> parkingPropertiesList = resolveParkingPropertiesList((List) input.get(PARKING_PROPERTIES));
+            int total_capacity = parkingPropertiesList.stream()
+                    .map(ParkingProperties::getSpaces)
+                    .filter(Objects::nonNull)
+                    .flatMap(Collection::stream)
+                    .filter(space -> space.getNumberOfSpaces() != null)
+                    .mapToInt(space -> space.getNumberOfSpaces().intValue())
+                    .sum();
             isUpdated = true;
             updatedParking.setParkingProperties(parkingPropertiesList);
+            if (total_capacity > 0) {
+                updatedParking.setTotalCapacity(BigInteger.valueOf(total_capacity));
+            } else {
+                updatedParking.setTotalCapacity(null);
+            }
         }
 
         if (input.get(PARKING_AREAS) != null) {
@@ -236,12 +270,7 @@ class ParkingUpdater implements DataFetcher {
 
     private ParkingProperties resolveSingleParkingProperties(Map input) {
         ParkingProperties p = new ParkingProperties();
-
-        p.getParkingUserTypes().addAll((Collection<? extends ParkingUserEnumeration>) input.get(PARKING_USER_TYPES));
         p.setSpaces(resolveParkingCapacities((List) input.get(SPACES)));
-
-        //p.setMaximumStay(input.get(MAXIMUM_STAY));
-
         return p;
     }
 
@@ -256,9 +285,12 @@ class ParkingUpdater implements DataFetcher {
 
     private ParkingCapacity resolveSingleParkingCapacity(Map input) {
         ParkingCapacity capacity = new ParkingCapacity();
+        capacity.setParkingUserType((ParkingUserEnumeration) input.get(PARKING_USER_TYPE));
         capacity.setParkingVehicleType((ParkingVehicleEnumeration) input.get(PARKING_VEHICLE_TYPE));
         capacity.setParkingStayType((ParkingStayEnumeration) input.get(PARKING_STAY_TYPE));
         capacity.setNumberOfSpaces((BigInteger) input.get(NUMBER_OF_SPACES));
+        capacity.setNumberOfSpacesWithRechargePoint((BigInteger) input.get(NUMBER_OF_SPACES_WITH_RECHARGE_POINT));
+        capacity.setNumberOfCarsharingSpaces((BigInteger) input.get(NUMBER_OF_CARSHARING_SPACES));
         return capacity;
     }
 

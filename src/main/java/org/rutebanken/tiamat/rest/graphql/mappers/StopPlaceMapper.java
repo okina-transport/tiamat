@@ -28,6 +28,8 @@ import org.rutebanken.tiamat.model.TelecabinSubmodeEnumeration;
 import org.rutebanken.tiamat.model.TramSubmodeEnumeration;
 import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.model.WaterSubmodeEnumeration;
+import com.google.api.client.util.Preconditions;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.rest.graphql.scalars.TransportModeScalar;
 import org.rutebanken.tiamat.service.Preconditions;
 import org.slf4j.Logger;
@@ -94,7 +96,6 @@ public class StopPlaceMapper {
             stopPlace.setParentSiteRef(parentSiteRef);
             isUpdated = true;
         }
-
         if (input.get(ADJACENT_SITES) != null) {
             stopPlace.getAdjacentSites().clear();
             List adjacentSiteObjects = (List) input.get(ADJACENT_SITES);
@@ -104,6 +105,21 @@ public class StopPlaceMapper {
                 logger.trace("Adding siteRefStructure {} for stop place {}", siteRefStructure, stopPlace);
                 stopPlace.getAdjacentSites().add(siteRefStructure);
             }
+            isUpdated = true;
+        }
+
+        if (input.get(PUBLIC_CODE) != null) {
+            stopPlace.setPublicCode((String) input.get(PUBLIC_CODE));
+            isUpdated = true;
+        }
+
+        if(input.get(PRIVATE_CODE) != null) {
+            Map privateCodeInputMap = (Map) input.get(PRIVATE_CODE);
+            if(stopPlace.getPrivateCode() == null) {
+                stopPlace.setPrivateCode(new PrivateCodeStructure());
+            }
+            stopPlace.getPrivateCode().setType((String) privateCodeInputMap.get(TYPE));
+            stopPlace.getPrivateCode().setValue((String) privateCodeInputMap.get(VALUE));
             isUpdated = true;
         }
 

@@ -30,3 +30,6 @@
 
 # 2.0.0
 - Initialisation version de base mobi-ITI
+
+# 2.1.0-mobi-iti-SNAPSHOT
+- Réintégration devs LRO nouveaux points de mobilité

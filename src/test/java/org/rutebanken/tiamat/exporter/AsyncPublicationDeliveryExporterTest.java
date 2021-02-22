@@ -15,9 +15,9 @@
 
 package org.rutebanken.tiamat.exporter;
 
-import com.vividsolutions.jts.geom.Coordinate;
 import org.junit.Assert;
 import org.junit.Test;
+import org.locationtech.jts.geom.Coordinate;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
@@ -60,7 +60,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
     @Test
     public void test() throws InterruptedException, JAXBException, IOException, SAXException {
 
-        asyncPublicationDeliveryExporter.providerRepository = getProviderRepository();
+        asyncPublicationDeliveryExporter.providerRepository = providerRepository;
 
         final int numberOfStopPlaces = StopPlaceSearch.DEFAULT_PAGE_SIZE;
         for (int i = 0; i < numberOfStopPlaces; i++) {
@@ -85,7 +85,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         stopPlaceRepository.flush();
 
 
-        Provider provider = getProviderRepository().getProviders().iterator().next();
+        Provider provider = providerRepository.getProviders().iterator().next();
         ExportParams exportParams = ExportParams.newExportParamsBuilder()
                 .setStopPlaceSearch(
                         StopPlaceSearch

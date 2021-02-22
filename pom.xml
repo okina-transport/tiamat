@@ -106,16 +106,14 @@
 
         <!-- NB: Concious choice of using snapshot version. This is to keep in
             sync, and fail fast if incompatibilities -->
-        <netex-java-model.version>1.0.9-SNAPSHOT</netex-java-model.version>
+        <netex-java-model.version>1.1.0</netex-java-model.version>
         <okina-helper.version>1.0.23-SNAPSHOT</okina-helper.version>
         <fabric8.version>2.3.7</fabric8.version>
         <metrics.version>3.2.3</metrics.version>
 
-        <version.lombok>1.16.4</version.lombok>
-
     </properties>
 
-    <!-- This repository list can be deleted, as it is now supplied by rutebanken nexus.
+    <!-- This repository list can be deleted, as it is now plied by rutebanken nexus.
          But you have set up maven to use it as mirror in settings.xml
     -->
     <repositories>
@@ -555,12 +553,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${version.lombok}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client</artifactId>
             <version>${keycloak.version}</version>
@@ -587,8 +579,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.plugin.version}</version>
                 <configuration>
-                    <source>8</source>
-                    <target>8</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                     <encoding>UTF-8</encoding>
                     <compilerArgs>
                         <!--arg>-Werror</arg-->

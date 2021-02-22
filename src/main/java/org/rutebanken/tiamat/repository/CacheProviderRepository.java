@@ -31,7 +31,6 @@ import org.springframework.web.client.ResourceAccessException;
 import javax.annotation.PostConstruct;
 import java.net.ConnectException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -55,7 +54,7 @@ public class CacheProviderRepository implements ProviderRepository {
         cache = CacheBuilder.newBuilder().maximumSize(cacheMaxSize).build();
     }
 
-    @Scheduled(fixedRateString = "${tiamat.provider.cache.refresh.interval:5000}")
+    @Scheduled(fixedRateString = "${tiamat.provider.cache.refresh.interval:20000}")
     public void populate() {
         try {
             Collection<Provider> newProviders = restProviderService.getProviders();

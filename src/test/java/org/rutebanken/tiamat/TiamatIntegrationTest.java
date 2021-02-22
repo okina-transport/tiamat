@@ -17,7 +17,6 @@ package org.rutebanken.tiamat;
 
 import com.hazelcast.core.HazelcastInstance;
 import org.locationtech.jts.geom.GeometryFactory;
-import lombok.Getter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -130,8 +129,8 @@ public abstract class TiamatIntegrationTest {
     @Autowired
     protected RoleAssignmentExtractor roleAssignmentExtractor;
 
-    @Getter
-    ProviderRepository providerRepository = Mockito.mock(ProviderRepository.class);
+    @Autowired
+    protected ProviderRepository providerRepository = Mockito.mock(ProviderRepository.class);
 
     @Value("${local.server.port}")
     protected int port;

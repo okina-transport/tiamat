@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.importer.handler;
 
 import com.hazelcast.core.HazelcastInstance;
 import org.apache.commons.lang3.NotImplementedException;
+import org.rutebanken.netex.model.Quay;
 import org.rutebanken.netex.model.SiteFrame;
 import org.rutebanken.netex.model.StopPlacesInFrame_RelStructure;
 import org.rutebanken.netex.model.TopographicPlace;
@@ -152,11 +153,7 @@ public class StopPlaceImportHandler {
                 tiamatStops = stopPlaceTypeFilter.filter(tiamatStops, importParams.ignoreStopTypes, true);
             }
 
-            boolean isImportTypeIdMatch = importParams.importType != null && importParams.importType.equals(ImportType.ID_MATCH);
-            if (!isImportTypeIdMatch) {
-                logger.info("Running stop place pre steps");
-                tiamatStops = stopPlacePreSteps.run(tiamatStops);
-            }
+            boolean isImportTypeIdMatch = importParams.importType != null && (importParams.importType.equals(ImportType.ID_MATCH));
 
             int numberOfStopBeforeFiltering = tiamatStops.size();
             logger.info("About to filter {} stops based on topographic references: {}", tiamatStops.size(), importParams.targetTopographicPlaces);

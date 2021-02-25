@@ -164,6 +164,8 @@ public class StopPlaceSplitter {
                     quay1.getCentroid().getCoordinate(),
                     quay2.getCentroid().getCoordinate(),
                     DefaultGeographicCRS.WGS84);
+
+            logger.debug("distance:"+distanceInMeters);
             return distanceInMeters < QUAY_DISTANCE;
         } catch (TransformException e) {
             logger.warn("Error checking distance between {} and {}", quay1, quay2, e);

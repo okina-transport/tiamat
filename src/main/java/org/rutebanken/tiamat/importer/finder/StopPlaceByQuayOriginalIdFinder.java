@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.importer.finder;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
@@ -71,6 +72,7 @@ public class StopPlaceByQuayOriginalIdFinder {
                     .peek(stopPlaceNetexId -> logger.debug("Found stop place {}", stopPlaceNetexId))
                     .map(stopPlaceRepository::findFirstByNetexIdOrderByVersionDesc)
                     .filter(stopPlace -> stopPlace != null)
+                    .distinct()
                     .collect(toList());
         }
         return new ArrayList<>();
@@ -93,7 +95,7 @@ public class StopPlaceByQuayOriginalIdFinder {
 
     private Optional<String> find(String quayOriginalId) {
         try {
-            return originalQuayIdCache.get(quayOriginalId, () -> {
+            return originalQuayIdCache.get(extractNumericValueIfPossible(quayOriginalId), () -> {
                 logger.debug("Cache miss. Fetching stop place repository to find stop place from {}", quayOriginalId);
                 List<String> stopPlaceNetexIds = stopPlaceRepository.findStopPlaceFromQuayOriginalId(quayOriginalId, Instant.now());
                 if(stopPlaceNetexIds == null || stopPlaceNetexIds.isEmpty()) {

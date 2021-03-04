@@ -116,6 +116,19 @@ public class StopPlaceImportHandler {
 
     public void handleStops(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger stopPlacesCreatedMatchedOrUpdated, SiteFrame responseSiteframe) {
         if (publicationDeliveryHelper.hasStops(netexSiteFrame)) {
+
+
+            logger.warn("Nouvel import TIAMAT");
+            for (org.rutebanken.netex.model.StopPlace stopPlace : netexSiteFrame.getStopPlaces().getStopPlace()) {
+                logger.warn("stopPlace - "+stopPlace.getId());
+
+                for (Object o : stopPlace.getQuays().getQuayRefOrQuay()) {
+                    logger.warn("quay - "+((Quay)o).getId());
+                }
+
+            }
+
+
             List<StopPlace> tiamatStops = netexMapper.mapStopsToTiamatModel(netexSiteFrame.getStopPlaces().getStopPlace());
 
             // Get the postal codes of the quays from two French public apis
@@ -175,6 +188,18 @@ public class StopPlaceImportHandler {
             if (importParams.forceStopType != null) {
                 logger.info("Forcing stop type to " + importParams.forceStopType);
                 tiamatStops.forEach(stopPlace -> stopPlace.setStopPlaceType(importParams.forceStopType));
+            }
+
+
+
+            logger.warn("before import");
+            for (org.rutebanken.netex.model.StopPlace stopPlace : netexSiteFrame.getStopPlaces().getStopPlace()) {
+                logger.warn("stopPlace - "+stopPlace.getId());
+
+                for (Object o : stopPlace.getQuays().getQuayRefOrQuay()) {
+                    logger.warn("quay - "+((Quay)o).getId());
+                }
+
             }
 
             Collection<org.rutebanken.netex.model.StopPlace> importedOrMatchedNetexStopPlaces;

@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -218,11 +219,17 @@ public class AsyncPublicationDeliveryExporter {
 
     private List<String> getStopPlaceFileListFromLocalStorage(String providerName){
         File providerDir = new File(localExportPath + File.separator +providerName);
+
+        if (!providerDir.exists())
+            return new ArrayList<>();
+
         try {
             return Files.walk(providerDir.toPath())
-                                         .map(path-> path.getFileName().toString())
-                                         .collect(toList());
-        } catch (IOException e) {
+                    .map(path -> path.getFileName().toString())
+                    .collect(toList());
+
+        }
+        catch (IOException e) {
             logger.error("Error while reading local FileStore repository");
             logger.error(e.getMessage());
         }

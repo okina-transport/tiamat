@@ -94,7 +94,7 @@ public class ExportJobWorker implements Runnable {
             exportToLocalXmlFile(localExportXmlFile, provider, localDateTime);
 
             netexXmlReferenceValidator.validateNetexReferences(localExportXmlFile);
-            localExportZipFile.mkdirs();
+            localExportZipFile.getParentFile().mkdirs();
             localExportZipFile.createNewFile();
 
             if(StringUtils.equals(tiamatExportDestination, "local") || StringUtils.equals(tiamatExportDestination, "both")){

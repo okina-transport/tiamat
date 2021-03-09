@@ -106,7 +106,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                                  AtomicInteger stopPlacesCreatedOrUpdated, boolean onMoveOnlyImport) {
 
 
-        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace, noMergeOnMoveOnly);
+        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
         final int foundStopPlacesCount = foundStopPlaces.size();
 
         if (!foundStopPlaces.isEmpty()) {

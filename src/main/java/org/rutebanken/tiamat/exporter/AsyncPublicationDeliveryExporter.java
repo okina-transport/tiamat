@@ -35,20 +35,27 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_JOB_PATH;
@@ -174,8 +181,15 @@ public class AsyncPublicationDeliveryExporter {
         return blobStoreService.download(exportJob.getSubFolder() + "/" + exportJob.getFileName());
     }
 
-    public File getJobFileContent(String filePath) {
-        return blobStoreService.downloadFromAbsolutePath(filePath);
+    public File getJobFileContent(String providerName, String filePath) {
+
+        if (StringUtils.equals(tiamatExportDestination, "local")){
+            File providerDir = new File(localExportPath + File.separator +providerName);
+            return new File(providerDir,filePath);
+
+        }else{
+            return blobStoreService.downloadFromAbsolutePath(filePath);
+        }
     }
 
     public Collection<ExportJob> getJobs() {
@@ -197,7 +211,37 @@ public class AsyncPublicationDeliveryExporter {
         return gcpSubfolder;
     }
 
-    public List<String> getStopPlaceFileList(long siteId, int maxNbResults){
-        return blobStoreService.listStopPlacesInBlob(siteId,maxNbResults);
+
+    public List<String> getStopPlaceFileListByProviderName(String providerName, int maxNbResults){
+        List<String> stopPlaceFileList = new ArrayList<>();
+
+        if (StringUtils.equals(tiamatExportDestination, "local") || StringUtils.equals(tiamatExportDestination, "both")){
+            stopPlaceFileList.addAll(getStopPlaceFileListFromLocalStorage(providerName));
+        }
+
+        if (StringUtils.equals(tiamatExportDestination, "gcs") || StringUtils.equals(tiamatExportDestination, "both")){
+            stopPlaceFileList.addAll(blobStoreService.listStopPlacesInBlob(providerName,maxNbResults));
+        }
+        return stopPlaceFileList;
+    }
+
+    private List<String> getStopPlaceFileListFromLocalStorage(String providerName){
+        File providerDir = new File(localExportPath + File.separator +providerName);
+
+        if (!providerDir.exists())
+            return new ArrayList<>();
+
+        try {
+            return Files.walk(providerDir.toPath())
+                        .map(path -> path.getFileName().toString())
+                        .filter(filename->filename.contains(".zip"))
+                        .collect(toList());
+
+        }
+        catch (IOException e) {
+            logger.error("Error while reading local FileStore repository");
+            logger.error(e.getMessage());
+        }
+        return new ArrayList<>();
     }
 }

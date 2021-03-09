@@ -47,7 +47,7 @@ public class PublicationDeliveryHelper {
     }
 
     public boolean hasTariffZones(SiteFrame netexSiteFrame) {
-        return netexSiteFrame.getTariffZones() != null && netexSiteFrame.getTariffZones().getTariffZone() != null;
+        return netexSiteFrame.getTariffZones() != null && netexSiteFrame.getTariffZones().getTariffZone_() != null;
     }
 
     public boolean hasPathLinks(SiteFrame netexSiteFrame) {

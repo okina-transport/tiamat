@@ -31,7 +31,7 @@ public class TiamatGeneralFrameExporter {
         String localDateTimeString = localDateTime + "Z";
         localDateTimeString = localDateTimeString.replace("-", "");
         localDateTimeString = localDateTimeString.replace(":", "");
-        generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_ARRET_IDF_" + localDateTimeString + ":LOC");
+        generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_ARRET_" + localDateTimeString + ":LOC");
         generalFrame.setModification(ModificationEnumeration.REVISE);
 
         logger.info("Adding {} generalFrame", generalFrame);
@@ -43,8 +43,8 @@ public class TiamatGeneralFrameExporter {
     public void setFramesDefault(GeneralFrame generalFrame) {
         // Frame <TypeOfFrameRef>
         TypeOfFrameRefStructure typeOfFrameRefStructure = new TypeOfFrameRefStructure();
-        typeOfFrameRefStructure.setRef("FR1:TypeOfFrame:NETEX_ARRET");
-        typeOfFrameRefStructure.setValue("version=\"1.04:FR1-NETEX_ARRET_IDF-2.1\"");
+        typeOfFrameRefStructure.setRef("FR:TypeOfFrame:NETEX_ARRET");
+        typeOfFrameRefStructure.setValue("version=\"1.1:FR-NETEX_ARRET-2.2\"");
         generalFrame.setTypeOfFrameRef(typeOfFrameRefStructure);
 
         logger.info("Adding {} typeOfFrameRefStructure in generalFrame", typeOfFrameRefStructure);

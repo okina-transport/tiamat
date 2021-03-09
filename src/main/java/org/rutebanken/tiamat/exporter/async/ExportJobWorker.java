@@ -85,14 +85,16 @@ public class ExportJobWorker implements Runnable {
 
     public void run() {
         logger.info("Started export job: {}", exportJob);
-        final File localExportZipFile = new File(localExportPath + File.separator + exportJob.getFileName());
+
+        File providerDir = new File(localExportPath + File.separator + provider.name);
+        final File localExportZipFile = new File(providerDir, File.separator+exportJob.getFileName());
         File localExportXmlFile = new File(localExportPath + File.separator + fileNameWithoutExtention + ".xml");
         try {
 
             exportToLocalXmlFile(localExportXmlFile, provider, localDateTime);
 
             netexXmlReferenceValidator.validateNetexReferences(localExportXmlFile);
-
+            localExportZipFile.getParentFile().mkdirs();
             localExportZipFile.createNewFile();
 
             if(StringUtils.equals(tiamatExportDestination, "local") || StringUtils.equals(tiamatExportDestination, "both")){

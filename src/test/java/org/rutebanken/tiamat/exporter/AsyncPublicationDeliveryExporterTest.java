@@ -25,7 +25,9 @@ import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.model.Value;
+import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.model.job.ExportJob;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.repository.ExportJobRepository;
@@ -67,6 +69,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
             StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("stop place numbber " + i));
             stopPlace.setVersion(1L);
             stopPlace.setProvider("test");
+            stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
 
 
             Quay quay = new Quay();
@@ -100,14 +103,15 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         asyncPublicationDeliveryExporter.streamingPublicationDelivery = streamingPublicationDelivery;
 
         ExportJob exportJob = asyncPublicationDeliveryExporter.startExportJob(exportParams);
+        JobStatus startStatus = exportJob.getStatus();
 
         assertThat(exportJob.getId()).isGreaterThan(0L);
 
         long start = System.currentTimeMillis();
-        long timeout = 10000;
+        long timeout = 20000;
         while (true) {
             Optional<ExportJob> actualExportJob = exportJobRepository.findById(exportJob.getId());
-            if (actualExportJob.get().getStatus().equals(exportJob.getStatus())) {
+            if (actualExportJob.get().getStatus().equals(startStatus)) {
                 if (System.currentTimeMillis() - start > timeout) {
                     fail("Waited more than " + timeout + " millis for job status to change");
                 }
@@ -119,7 +123,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
                 fail("Job status is failed");
             } else if (actualExportJob.get().getStatus().equals(JobStatus.FINISHED)) {
                 System.out.println("Job finished");
-
+                break;
             }
         }
     }

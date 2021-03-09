@@ -23,7 +23,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class NetexMapper {
@@ -181,7 +184,74 @@ public class NetexMapper {
     }
 
     public StopPlace mapToNetexModel(org.rutebanken.tiamat.model.StopPlace tiamatStopPlace) {
-        return facade.map(tiamatStopPlace, StopPlace.class);
+        StopPlace netexStopPlace = facade.map(tiamatStopPlace, StopPlace.class);
+        netexStopPlace.setTransportMode(VehicleModeEnumeration.BUS);
+        netexStopPlace.setWeighting(InterchangeWeightingEnumeration.INTERCHANGE_ALLOWED);
+        MultilingualString multilingualString = new MultilingualString();
+        multilingualString.setValue(tiamatStopPlace.getOriginalIds().toString());
+        multilingualString.setLang("fr");
+        netexStopPlace.setName(multilingualString);
+
+        initTypeOfPlace(netexStopPlace);
+        netexStopPlace.getQuays().getQuayRefOrQuay().forEach(quay->initQuayProperties(netexStopPlace,(Quay)quay));
+
+        ValidBetween validBetween = new ValidBetween();
+        validBetween.setFromDate(LocalDateTime.now());
+        netexStopPlace.getValidBetween().clear();
+        netexStopPlace.getValidBetween().add(validBetween);
+        return netexStopPlace;
+    }
+
+    private void initTypeOfPlace(StopPlace netexStopPlace){
+
+        List<VehicleModeEnumeration> tranportModeList = netexStopPlace.getQuays().getQuayRefOrQuay().stream()
+                                                                                                    .map(obj -> ((Quay) obj).getTransportMode())
+                                                                                                    .filter(transportMode -> transportMode != null)
+                                                                                                    .distinct()
+                                                                                                    .collect(Collectors.toList());
+
+        TypeOfPlaceRefs_RelStructure placeRefs = new TypeOfPlaceRefs_RelStructure();
+        TypeOfPlaceRefStructure typeOfPlace = new TypeOfPlaceRefStructure();
+        if (tranportModeList.size() > 1){
+            typeOfPlace.withRef("multimodalStopPlace");
+        }else{
+            typeOfPlace.withRef("monomodalStopPlace");
+        }
+        placeRefs.withTypeOfPlaceRef(typeOfPlace);
+        netexStopPlace.setPlaceTypes(placeRefs);
+
+    }
+
+    private void initQuayProperties(StopPlace stopPlace,Quay quay){
+        MultilingualString multilingualString = new MultilingualString();
+        multilingualString.setValue(quay.getId());
+        multilingualString.setLang("fr");
+        quay.setName(multilingualString);
+
+
+        TypeOfPlaceRefs_RelStructure placeRefs = new TypeOfPlaceRefs_RelStructure();
+        TypeOfPlaceRefStructure typeOfPlace = new TypeOfPlaceRefStructure();
+        typeOfPlace.withRef("monomodalStopPlace");
+        placeRefs.withTypeOfPlaceRef(typeOfPlace);
+        quay.setPlaceTypes(placeRefs);
+        quay.setTransportMode(VehicleModeEnumeration.BUS);
+        SiteRefStructure siteRef = new SiteRefStructure();
+        siteRef.withRef(stopPlace.getId());
+        quay.setSiteRef(siteRef);
+        ValidBetween validBetween = new ValidBetween();
+        validBetween.setFromDate(LocalDateTime.now());
+        quay.getValidBetween().clear();
+        quay.getValidBetween().add(validBetween);
+        CountryRef cr = new CountryRef();
+        cr.setValue("fr");
+        quay.getPostalAddress().setCountryRef(cr);
+        quay.getPostalAddress().setPlaceTypes(placeRefs);
+
+        MultilingualString multilingualStringAddressShortName = new MultilingualString();
+        multilingualStringAddressShortName.setValue(quay.getId()+"-address");
+        multilingualStringAddressShortName.setLang("fr");
+        quay.getPostalAddress().setShortName(multilingualStringAddressShortName);
+        quay.getPostalAddress().setName(multilingualStringAddressShortName);
     }
 
 

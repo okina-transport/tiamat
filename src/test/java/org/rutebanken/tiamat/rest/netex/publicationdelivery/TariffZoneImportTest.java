@@ -22,8 +22,12 @@ import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.xml.bind.JAXBElement;
+import javax.xml.namespace.QName;
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,6 +36,8 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
     @Autowired
     private PublicationDeliveryTestHelper publicationDeliveryTestHelper;
 
+    private QName qname = new QName("http://www.netex.org.uk/netex", "TariffZone_");
+
     @Test
     public void publicationDeliveryWithTariffZone() throws Exception {
         TariffZone tariffZone = new TariffZone()
@@ -39,16 +45,21 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
                 .withVersion("1")
                 .withId("RUT:TariffZone:01");
 
+
+
         SiteFrame siteFrame = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
-                .withTariffZone(tariffZone));
+                .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone)));
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.publicationDelivery(siteFrame);
 
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDeliveryStructure);
 
         List<TariffZone> actualZones = publicationDeliveryTestHelper.findSiteFrame(response)
-                .getTariffZones().getTariffZone();
+                                                                    .getTariffZones().getTariffZone_()
+                                                                    .stream()
+                                                                    .map(jaxbElement -> (TariffZone)jaxbElement.getValue())
+                                                                    .collect(Collectors.toList());
 
         assertThat(actualZones).isNotEmpty();
         assertThat(actualZones.get(0).getName().getValue()).isEqualTo(tariffZone.getName().getValue());
@@ -71,7 +82,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
         SiteFrame siteFrame = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
-                        .withTariffZone(tariffZone))
+                        .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone)))
                 .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace(stopPlace));
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.publicationDelivery(siteFrame);
@@ -85,7 +96,10 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDeliveryStructure, importParams);
 
         List<TariffZone> actualZones = publicationDeliveryTestHelper.findSiteFrame(response)
-                .getTariffZones().getTariffZone();
+                .getTariffZones().getTariffZone_()
+                .stream()
+                .map(jaxbElement -> (TariffZone)jaxbElement.getValue())
+                .collect(Collectors.toList());
 
         assertThat(actualZones).isNotEmpty();
         assertThat(actualZones.get(0).getName().getValue()).isEqualTo(tariffZone.getName().getValue());
@@ -120,7 +134,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
         SiteFrame siteFrame = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
-                        .withTariffZone(tariffZone1))
+                        .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone1)))
                 .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace(stopPlace));
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.publicationDelivery(siteFrame);
@@ -146,7 +160,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
         SiteFrame siteFrame2 = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
-                        .withTariffZone(tariffZone2))
+                        .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone2)))
                 .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace(stopPlace));
 
         PublicationDeliveryStructure publicationDeliveryStructure2 = publicationDeliveryTestHelper.publicationDelivery(siteFrame2);
@@ -157,7 +171,10 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDeliveryStructure2, importParams);
 
         List<TariffZone> actualZones = publicationDeliveryTestHelper.findSiteFrame(response)
-                .getTariffZones().getTariffZone();
+                .getTariffZones().getTariffZone_()
+                .stream()
+                .map(jaxbElement -> (TariffZone)jaxbElement.getValue())
+                .collect(Collectors.toList());
 
         assertThat(actualZones).isNotEmpty();
         assertThat(actualZones).hasSize(2);
@@ -191,7 +208,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
         SiteFrame siteFrame = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
-                        .withTariffZone(tariffZone1))
+                        .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone1)))
                 .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace(stopPlace));
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.publicationDelivery(siteFrame);
@@ -219,7 +236,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
         SiteFrame siteFrame2 = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
-                        .withTariffZone(tariffZone2))
+                        .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone2)))
                 .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace(stopPlace2));
 
         PublicationDeliveryStructure publicationDeliveryStructure2 = publicationDeliveryTestHelper.publicationDelivery(siteFrame2);
@@ -230,7 +247,10 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure matchReponse = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDeliveryStructure2, importParams);
 
         List<TariffZone> actualZones = publicationDeliveryTestHelper.findSiteFrame(matchReponse)
-                .getTariffZones().getTariffZone();
+                .getTariffZones().getTariffZone_()
+                .stream()
+                .map(jaxbElement -> (TariffZone)jaxbElement.getValue())
+                .collect(Collectors.toList());
 
         assertThat(actualZones).isNotEmpty();
         assertThat(actualZones).hasSize(2);
@@ -244,7 +264,10 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure idMatchResponse = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDeliveryStructure2, importParams);
 
         actualZones = publicationDeliveryTestHelper.findSiteFrame(idMatchResponse)
-                .getTariffZones().getTariffZone();
+                .getTariffZones().getTariffZone_()
+                .stream()
+                .map(jaxbElement -> (TariffZone)jaxbElement.getValue())
+                .collect(Collectors.toList());
         assertThat(actualZones).isNotEmpty();
         assertThat(actualZones).hasSize(2);
 

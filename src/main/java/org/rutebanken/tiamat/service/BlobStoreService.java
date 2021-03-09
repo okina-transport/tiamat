@@ -113,7 +113,7 @@ public class BlobStoreService {
         return blobPath + '/' + fileName;
     }
 
-    public List<String> listStopPlacesInBlob(long siteId, int maxNbResults){
+    public List<String> listStopPlacesInBlob(String siteId, int maxNbResults){
         List<S3ObjectSummary> stopPlaceFileList = BlobStoreHelper.listAllBlobsRecursively(this.client, this.bucketName, siteId+"/exports");
         Stream<String> fileListStream = stopPlaceFileList.stream()
                                                          .map(S3ObjectSummary::getKey)

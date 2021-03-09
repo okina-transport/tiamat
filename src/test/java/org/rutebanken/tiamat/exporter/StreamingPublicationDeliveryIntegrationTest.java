@@ -61,6 +61,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static javax.xml.bind.JAXBContext.newInstance;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -354,7 +355,14 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
                 .as("site fra tariff zones")
                 .isNotNull();
 
-        assertThat(siteFrame.getTariffZones().getTariffZone())
+
+        List<org.rutebanken.netex.model.TariffZone> tarifZones = siteFrame.getTariffZones().getTariffZone_()
+                                                                    .stream()
+                                                                    .map(jaxbElement -> (org.rutebanken.netex.model.TariffZone) jaxbElement.getValue())
+                                                                    .collect(Collectors.toList());
+
+
+        assertThat(tarifZones)
                 .extracting(tariffZone -> tariffZone.getId() + "-" + tariffZone.getVersion())
                 .as("Both tariff zones exists in publication delivery. But not the one not being reffered to (v2)")
                 .containsOnly(tariffZoneId + "-" + 1, tariffZoneId + "-" + 3);

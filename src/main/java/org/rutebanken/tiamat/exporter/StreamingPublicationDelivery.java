@@ -22,6 +22,7 @@ import org.hibernate.internal.SessionImpl;
 import org.rutebanken.netex.model.AccessibilityAssessment;
 import org.rutebanken.netex.model.AccessibilityLimitation;
 import org.rutebanken.netex.model.AccessibilityLimitations_RelStructure;
+import org.rutebanken.netex.model.CountryRef;
 import org.rutebanken.netex.model.EntityStructure;
 import org.rutebanken.netex.model.GeneralFrame;
 import org.rutebanken.netex.model.KeyValueStructure;
@@ -34,7 +35,10 @@ import org.rutebanken.netex.model.PrivateCodeStructure;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.Quay;
 import org.rutebanken.netex.model.Quays_RelStructure;
+import org.rutebanken.netex.model.SiteRefStructure;
 import org.rutebanken.netex.model.StopPlace;
+import org.rutebanken.netex.model.TypeOfPlaceRefStructure;
+import org.rutebanken.netex.model.TypeOfPlaceRefs_RelStructure;
 import org.rutebanken.netex.validation.NeTExValidator;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.async.NetexMappingIterator;
@@ -278,6 +282,15 @@ public class StreamingPublicationDelivery {
         }
     }
 
+
+    private void feedQuayWithParentInfo(Quay childQuay, StopPlace parentStopPlace){
+        SiteRefStructure siteRef = new SiteRefStructure();
+        siteRef.withRef(parentStopPlace.getId());
+        childQuay.setSiteRef(siteRef);
+
+        childQuay.setTransportMode(parentStopPlace.getTransportMode());
+    }
+
     /**
      * Traitements sur les quays Netex pour préparer l'export selon le profil IDFM
      * @param netexMappingIterator
@@ -301,17 +314,21 @@ public class StreamingPublicationDelivery {
 
         netexStopPlaces.forEach(netexStopPlace -> {
             if (netexStopPlace.getQuays() != null && netexStopPlace.getQuays().getQuayRefOrQuay() != null)
-                netexStopPlace.getQuays().getQuayRefOrQuay().forEach(quay -> netexQuays.add((Quay) quay));
+                netexStopPlace.getQuays().getQuayRefOrQuay().forEach(quay -> {
+                    Quay netexQuay = (Quay) quay;
+                    feedQuayWithParentInfo(netexQuay,netexStopPlace);
+                    netexQuays.add(netexQuay);
+                }
+                    );
         });
 
         if (!netexQuays.isEmpty()) {
             setField(Quays_RelStructure.class, "quayRefOrQuay", quays_relStructure, netexQuays);
 
 
-            List<Quay> listQuaysFilter = filterQuaysWithZdep(netexQuays);
+
 
             List<JAXBElement<? extends EntityStructure>> listOfJaxbQuays = netexQuays.stream()
-                    .filter(listQuaysFilter::contains)
                     .map(quay -> {
                         // Gestion du mode de transport
                         mapIdStopPlaceIdQuay.forEach((s, strings) -> {
@@ -442,6 +459,25 @@ public class StreamingPublicationDelivery {
         postalAddress.setId(providerName + ":PostalAddress:" + zdep + ":");
         postalAddress.setPostalRegion(quay.getPostalAddress().getPostalRegion());
         postalAddress.setVersion("any");
+
+        MultilingualString multilingualStringAddressShortName = new MultilingualString();
+        multilingualStringAddressShortName.setValue(quay.getId()+"-address");
+        multilingualStringAddressShortName.setLang("fr");
+
+        postalAddress.setName(multilingualStringAddressShortName);
+        postalAddress.setName(multilingualStringAddressShortName);
+
+        CountryRef cr = new CountryRef();
+        cr.setValue("fr");
+        postalAddress.setCountryRef(cr);
+        TypeOfPlaceRefs_RelStructure placeRefs = new TypeOfPlaceRefs_RelStructure();
+        TypeOfPlaceRefStructure typeOfPlace = new TypeOfPlaceRefStructure();
+        typeOfPlace.withRef("monomodalStopPlace");
+        placeRefs.withTypeOfPlaceRef(typeOfPlace);
+        quay.setPlaceTypes(placeRefs);
+        postalAddress.setPlaceTypes(placeRefs);
+
+
         quay.setPostalAddress(postalAddress);
     }
 

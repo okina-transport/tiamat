@@ -55,6 +55,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_JOB_PATH;
@@ -180,8 +181,15 @@ public class AsyncPublicationDeliveryExporter {
         return blobStoreService.download(exportJob.getSubFolder() + "/" + exportJob.getFileName());
     }
 
-    public File getJobFileContent(String filePath) {
-        return blobStoreService.downloadFromAbsolutePath(filePath);
+    public File getJobFileContent(String providerName, String filePath) {
+
+        if (StringUtils.equals(tiamatExportDestination, "local")){
+            File providerDir = new File(localExportPath + File.separator +providerName);
+            return new File(providerDir,filePath);
+
+        }else{
+            return blobStoreService.downloadFromAbsolutePath(filePath);
+        }
     }
 
     public Collection<ExportJob> getJobs() {
@@ -225,8 +233,9 @@ public class AsyncPublicationDeliveryExporter {
 
         try {
             return Files.walk(providerDir.toPath())
-                    .map(path -> path.getFileName().toString())
-                    .collect(toList());
+                        .map(path -> path.getFileName().toString())
+                        .filter(filename->filename.contains(".zip"))
+                        .collect(toList());
 
         }
         catch (IOException e) {

@@ -101,11 +101,12 @@ public class AsyncExportResource {
         return Response.ok(exportJob).build();
     }
 
+
     @GET
-    @Path("stop-place-file-list/{id}")
+    @Path("stop-place-file-list-by-provider-name/{providerName}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response asyncGetSopPlaceFileList(@PathParam(value = "id") long siteId, @HeaderParam("maxNbResults") Integer maxNbResults) {
-        List<String> stopPlaceFileList = asyncPublicationDeliveryExporter.getStopPlaceFileList(siteId,maxNbResults);
+    public Response asyncGetSopPlaceFileList(@PathParam(value = "providerName") String providerName, @HeaderParam("maxNbResults") Integer maxNbResults) {
+        List<String> stopPlaceFileList = asyncPublicationDeliveryExporter.getStopPlaceFileListByProviderName(providerName,maxNbResults);
         ObjectMapper objectMapper = new ObjectMapper();
         String jsonString="";
         try {

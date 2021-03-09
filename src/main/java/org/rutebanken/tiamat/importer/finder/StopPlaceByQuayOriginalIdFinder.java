@@ -49,33 +49,21 @@ public class StopPlaceByQuayOriginalIdFinder {
     @Autowired
     private NetexIdHelper netexIdHelper;
 
-    public List<StopPlace> find(StopPlace incomingStopPlace, boolean hasQuays, boolean noMergeOnMoveOnly) {
-        if (hasQuays && !noMergeOnMoveOnly) {
-            return incomingStopPlace.getQuays().stream()
-                    .flatMap(quay -> quay.getOriginalIds().stream())
-                    .map(this::extractNumericValueIfPossible)
-                    .peek(quayOriginalId -> logger.trace("looking for stop place by quay original id: {}", quayOriginalId))
-                    .map(this::find)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .peek(stopPlaceNetexId -> logger.debug("Found stop place {}", stopPlaceNetexId))
-                    .map(stopPlaceRepository::findFirstByNetexIdOrderByVersionDesc)
-                    .filter(stopPlace -> stopPlace != null)
-                    .collect(toList());
-        }
-        if (hasQuays) {
-            return incomingStopPlace.getQuays().stream()
-                    .flatMap(quay -> quay.getOriginalIds().stream())
-                    .map(this::find)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .peek(stopPlaceNetexId -> logger.debug("Found stop place {}", stopPlaceNetexId))
-                    .map(stopPlaceRepository::findFirstByNetexIdOrderByVersionDesc)
-                    .filter(stopPlace -> stopPlace != null)
-                    .distinct()
-                    .collect(toList());
-        }
-        return new ArrayList<>();
+    public List<StopPlace> find(StopPlace incomingStopPlace, boolean hasQuays) {
+            if (hasQuays) {
+                return incomingStopPlace.getQuays().stream()
+                        .flatMap(quay -> quay.getOriginalIds().stream())
+                        .map(this::find)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .peek(stopPlaceNetexId -> logger.debug("Found stop place {}", stopPlaceNetexId))
+                        .map(stopPlaceRepository::findFirstByNetexIdOrderByVersionDesc)
+                        .filter(stopPlace -> stopPlace != null)
+                        .distinct()
+                        .collect(toList());
+            }
+            return new ArrayList<>();
+
     }
 
     private String extractNumericValueIfPossible(String quayOriginalId) {

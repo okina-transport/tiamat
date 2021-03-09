@@ -72,6 +72,7 @@ public class PublicationDeliveryStreamingOutput {
             marshaller.setSchema(neTExValidator.getSchema());
         }
 
+
         return outputStream -> {
             try {
                 logger.debug("Marshalling publication delivery to outputstream");

@@ -20,12 +20,14 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.domain.ChouetteInfo;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.GeneratedIdState;
+import org.rutebanken.tiamat.repository.CacheProviderRepository;
 import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.PathJunctionRepository;
@@ -36,6 +38,7 @@ import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.repository.TagRepository;
 import org.rutebanken.tiamat.repository.TariffZoneRepository;
 import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
+import org.rutebanken.tiamat.service.BlobStoreService;
 import org.rutebanken.tiamat.service.TariffZonesLookupService;
 import org.rutebanken.tiamat.service.TopographicPlaceLookupService;
 import org.rutebanken.tiamat.versioning.VersionCreator;
@@ -47,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -54,10 +58,12 @@ import org.springframework.test.context.junit4.SpringRunner;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService.INITIAL_LAST_ID;
 
@@ -129,8 +135,11 @@ public abstract class TiamatIntegrationTest {
     @Autowired
     protected RoleAssignmentExtractor roleAssignmentExtractor;
 
-    @Autowired
-    protected ProviderRepository providerRepository = Mockito.mock(ProviderRepository.class);
+    @MockBean
+    protected CacheProviderRepository providerRepository ;
+
+    @MockBean
+    protected BlobStoreService blobStoreService ;
 
     @Value("${local.server.port}")
     protected int port;
@@ -157,6 +166,11 @@ public abstract class TiamatIntegrationTest {
 
         when(providerRepository.getProviders()).thenReturn(providers);
         when(providerRepository.getProvider(anyLong())).thenReturn(providers.get(0));
+
+
+        doNothing().when(blobStoreService).upload(isA(String.class), isA(File.class));
+
+
     }
 
     @Before

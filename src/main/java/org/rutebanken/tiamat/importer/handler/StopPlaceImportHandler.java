@@ -212,8 +212,8 @@ public class StopPlaceImportHandler {
             tariffZonesFromStopsExporter.resolveTariffZones(importedOrMatchedNetexStopPlaces, responseSiteframe);
 
             if (responseSiteframe.getTariffZones() != null
-                    && responseSiteframe.getTariffZones().getTariffZone() != null
-                    && responseSiteframe.getTariffZones().getTariffZone().isEmpty()) {
+                    && responseSiteframe.getTariffZones().getTariffZone_() != null
+                    && responseSiteframe.getTariffZones().getTariffZone_().isEmpty()) {
                 responseSiteframe.setTariffZones(null);
             }
 

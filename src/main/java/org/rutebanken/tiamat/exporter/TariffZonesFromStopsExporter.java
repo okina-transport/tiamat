@@ -19,6 +19,7 @@ import org.rutebanken.netex.model.SiteFrame;
 import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.netex.model.TariffZone;
 import org.rutebanken.netex.model.TariffZonesInFrame_RelStructure;
+import org.rutebanken.netex.model.Zone_VersionStructure;
 import org.rutebanken.tiamat.model.TariffZoneRef;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
@@ -28,7 +29,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.xml.bind.JAXBElement;
+import javax.xml.namespace.QName;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @Transactional
@@ -42,6 +46,8 @@ public class TariffZonesFromStopsExporter {
     @Autowired
     private ReferenceResolver referenceResolver;
 
+    private QName qname = new QName("http://www.netex.org.uk/netex", "TariffZone_");
+
     /**
      * Resolve and add relevant tariffzones to the response site frame.
      * If a tariffzone already exists in the response, it's not added twice.
@@ -53,10 +59,17 @@ public class TariffZonesFromStopsExporter {
 
         Map<String, TariffZone> tariffZoneMap = new HashMap<>();
 
-        if(responseSiteFrame.getTariffZones() != null && responseSiteFrame.getTariffZones().getTariffZone() != null) {
-            responseSiteFrame.getTariffZones().getTariffZone()
+        if(responseSiteFrame.getTariffZones() != null && responseSiteFrame.getTariffZones().getTariffZone_() != null) {
+
+
+            List<org.rutebanken.netex.model.TariffZone> tarifZones = responseSiteFrame.getTariffZones().getTariffZone_()
+                                                                                    .stream()
+                                                                                    .map(jaxbElement -> (org.rutebanken.netex.model.TariffZone) jaxbElement.getValue())
+                                                                                    .collect(Collectors.toList());
+
+            tarifZones
                     .forEach(tariffZone -> tariffZoneMap.put(key(tariffZone.getId(), tariffZone.getVersion()), tariffZone));
-        }
+    }
 
         importedNetexStopPlaces.stream()
                 .filter(stopPlace -> stopPlace.getTariffZones() != null)
@@ -81,7 +94,11 @@ public class TariffZonesFromStopsExporter {
             responseSiteFrame.withTariffZones(null);
         } else {
             logger.info("Adding {} tariff zones", tariffZoneMap.values().size());
-            responseSiteFrame.withTariffZones(new TariffZonesInFrame_RelStructure().withTariffZone(tariffZoneMap.values()));
+            List<JAXBElement<? extends Zone_VersionStructure>> jaxbTariffZone = tariffZoneMap.values().stream()
+                                                                            .map(tariffZone -> new JAXBElement<TariffZone>(qname, TariffZone.class, tariffZone))
+                                                                            .collect(Collectors.toList());
+
+            responseSiteFrame.withTariffZones(new TariffZonesInFrame_RelStructure().withTariffZone_(jaxbTariffZone));
         }
     }
 

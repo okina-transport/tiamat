@@ -20,7 +20,7 @@
 
     <groupId>org.rutebanken</groupId>
     <artifactId>tiamat</artifactId>
-    <version>2.1.0-mobi-iti</version>
+    <version>2.1.1-mobi-iti-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Tiamat</name>
@@ -106,7 +106,7 @@
 
         <!-- NB: Concious choice of using snapshot version. This is to keep in
             sync, and fail fast if incompatibilities -->
-        <netex-java-model.version>1.1.0</netex-java-model.version>
+        <netex-java-model.version>2.0.1-NETEX-FR</netex-java-model.version>
         <okina-helper.version>1.0.23-SNAPSHOT</okina-helper.version>
         <fabric8.version>2.3.7</fabric8.version>
         <metrics.version>3.2.3</metrics.version>

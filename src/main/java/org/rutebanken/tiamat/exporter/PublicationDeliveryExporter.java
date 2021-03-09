@@ -111,14 +111,14 @@ public class PublicationDeliveryExporter {
 
     public PublicationDeliveryStructure createPublicationDelivery(String idSite) {
         return new PublicationDeliveryStructure()
-                .withVersion("1.04:FR1-NETEX-2.0")
+                .withVersion("1.1:FR-NETEX-2.2")
                 .withPublicationTimestamp(LocalDateTime.now().withNano(0))
                 .withParticipantRef(idSite);
     }
 
     public PublicationDeliveryStructure createPublicationDelivery(String idSite, LocalDateTime localDateTime) {
         return new PublicationDeliveryStructure()
-                .withVersion("1.04:FR1-NETEX-2.0")
+                .withVersion("1.1:FR-NETEX-2.2")
                 .withPublicationTimestamp(localDateTime)
                 .withParticipantRef(idSite);
     }

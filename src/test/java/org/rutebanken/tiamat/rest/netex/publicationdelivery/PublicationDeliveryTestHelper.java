@@ -23,6 +23,7 @@ import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
@@ -61,7 +62,7 @@ public class PublicationDeliveryTestHelper {
         }
     }
 
-    @Autowired
+    @MockBean
     private ImportResource importResource;
 
     public PublicationDeliveryStructure createPublicationDeliveryTopographicPlace(TopographicPlace... topographicPlace) {

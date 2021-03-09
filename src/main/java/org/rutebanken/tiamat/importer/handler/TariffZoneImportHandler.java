@@ -77,13 +77,13 @@ public class TariffZoneImportHandler {
     public void handleTariffZones(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger tariffZoneImportedCounter, SiteFrame responseSiteframe) {
 
         if (publicationDeliveryHelper.hasTariffZones(netexSiteFrame) && importParams.importType != ImportType.ID_MATCH) {
-            List<org.rutebanken.tiamat.model.TariffZone> tiamatTariffZones = netexMapper.getFacade().mapAsList(netexSiteFrame.getTariffZones().getTariffZone(), org.rutebanken.tiamat.model.TariffZone.class);
+            List<org.rutebanken.tiamat.model.TariffZone> tiamatTariffZones = netexMapper.getFacade().mapAsList(netexSiteFrame.getTariffZones().getTariffZone_(), org.rutebanken.tiamat.model.TariffZone.class);
             logger.debug("Mapped {} tariff zones from netex to internal model", tiamatTariffZones.size());
             List<TariffZone> importedTariffZones = tariffZoneImporter.importTariffZones(tiamatTariffZones);
             logger.debug("Got {} imported tariffZones ", importedTariffZones.size());
-            if (!importedTariffZones.isEmpty()) {
-                responseSiteframe.withTariffZones(new TariffZonesInFrame_RelStructure().withTariffZone(importedTariffZones));
-            }
+//            if (!importedTariffZones.isEmpty()) {
+//                responseSiteframe.withTariffZones(new TariffZonesInFrame_RelStructure().withTariffZone_(importedTariffZones));
+//            }
         }
     }
 

@@ -22,7 +22,11 @@ import org.rutebanken.tiamat.model.TariffZone;
 import org.rutebanken.tiamat.repository.TariffZoneRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.xml.bind.JAXBElement;
+import javax.xml.namespace.QName;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -33,6 +37,8 @@ public class TariffZonesFromStopsExporterTest extends TiamatIntegrationTest {
 
     @Autowired
     private TariffZonesFromStopsExporter tariffZonesFromStopsExporter;
+
+    private QName qname = new QName("http://www.netex.org.uk/netex", "TariffZone_");
 
     @Test
     public void avoidDuplicateTariffZones() {
@@ -54,7 +60,14 @@ public class TariffZonesFromStopsExporterTest extends TiamatIntegrationTest {
         SiteFrame siteFrame = new SiteFrame();
         tariffZonesFromStopsExporter.resolveTariffZones(Arrays.asList(netexStopPlace, netexStopPlace2), siteFrame);
 
-        assertThat(siteFrame.getTariffZones().getTariffZone()).as("Number of tariffzones returned").hasSize(1);
+
+        List<org.rutebanken.netex.model.TariffZone> tariffZones = siteFrame.getTariffZones().getTariffZone_()
+                .stream()
+                .map(jaxbElement -> (org.rutebanken.netex.model.TariffZone) jaxbElement.getValue())
+                .collect(Collectors.toList());
+
+
+        assertThat(tariffZones).as("Number of tariffzones returned").hasSize(1);
 
     }
 
@@ -94,10 +107,16 @@ public class TariffZonesFromStopsExporterTest extends TiamatIntegrationTest {
         netexStopPlace.withTariffZones(new TariffZoneRefs_RelStructure().withTariffZoneRef(new TariffZoneRef().withRef(tariffZone.getNetexId()).withVersion("1")));
 
         SiteFrame siteFrame = new SiteFrame();
-        siteFrame.withTariffZones(new TariffZonesInFrame_RelStructure().withTariffZone(alreadyAddedTariffZone));
+        siteFrame.withTariffZones(new TariffZonesInFrame_RelStructure().withTariffZone_(new JAXBElement<org.rutebanken.netex.model.TariffZone>(qname,org.rutebanken.netex.model.TariffZone.class,alreadyAddedTariffZone)));
         tariffZonesFromStopsExporter.resolveTariffZones(Arrays.asList(netexStopPlace), siteFrame);
 
-        assertThat(siteFrame.getTariffZones().getTariffZone()).as("Number of tariffzones returned").hasSize(2);
+
+        List<org.rutebanken.netex.model.TariffZone> tarifZones = siteFrame.getTariffZones().getTariffZone_()
+                .stream()
+                .map(jaxbElement -> (org.rutebanken.netex.model.TariffZone) jaxbElement.getValue())
+                .collect(Collectors.toList());
+
+        assertThat(tarifZones).as("Number of tariffzones returned").hasSize(2);
 
     }
 

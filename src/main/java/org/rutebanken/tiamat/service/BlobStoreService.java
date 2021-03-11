@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -116,9 +117,9 @@ public class BlobStoreService {
     public List<String> listStopPlacesInBlob(String siteId, int maxNbResults){
         List<S3ObjectSummary> stopPlaceFileList = BlobStoreHelper.listAllBlobsRecursively(this.client, this.bucketName, siteId+"/exports");
         Stream<String> fileListStream = stopPlaceFileList.stream()
+                                                         .sorted(Comparator.comparing(S3ObjectSummary::getLastModified).reversed())
                                                          .map(S3ObjectSummary::getKey)
-                                                         .filter(key -> key.contains("ARRET_"))
-                                                         .sorted((k1, k2) -> getFileNameFromFilePath(k2).compareTo(getFileNameFromFilePath(k1)));
+                                                         .filter(key -> key.contains("ARRET_"));
 
         return maxNbResults == 0 ? fileListStream.collect(Collectors.toList()) : fileListStream.limit(maxNbResults).collect(Collectors.toList());
     }

@@ -475,7 +475,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         Query query = entityManager.createNativeQuery(sql);
 
-        query.setParameter("value", "%:" + quayOriginalId);
+        query.setParameter("value", quayOriginalId);
         query.setParameter("originalIdKey", ORIGINAL_ID_KEY);
         query.setParameter("pointInTime",  Date.from(pointInTime));
 

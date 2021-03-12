@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.exporter;
 
 import net.opengis.gml._3.DirectPositionType;
+import org.apache.commons.lang.StringUtils;
 import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
 import org.rutebanken.netex.model.AccessibilityAssessment;
@@ -166,6 +167,9 @@ public class StreamingPublicationDelivery {
 
 //        String siteName = IDFMNetexIdentifiants.getNameSite(provider.getChouetteInfo().getReferential());
         String siteName = provider.name;
+        if(StringUtils.isNotBlank(provider.getChouetteInfo().getNameNetexStopIdfm())){
+            siteName = provider.getChouetteInfo().getNameNetexStopIdfm();
+        }
         org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame(siteName, localDateTime);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
@@ -190,6 +194,7 @@ public class StreamingPublicationDelivery {
         prepareQuays(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexGeneralFrame, entitiesEvictor, siteName);
 
         String idSite = provider.getChouetteInfo().getCodeIdfm();
+
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame, idSite, localDateTime);
 
         Marshaller marshaller = createMarshaller();

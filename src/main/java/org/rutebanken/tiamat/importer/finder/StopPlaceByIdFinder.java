@@ -52,11 +52,8 @@ public class StopPlaceByIdFinder {
     @Autowired
     private NetexIdHelper netexIdHelper;
 
-    private List<Function<StopPlace, Function<Boolean, Function<Boolean, List<StopPlace>>>>> findFunctionList = Arrays.asList(
-            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> stopPlaceByQuayOriginalIdFinder.find(stopPlace, hasQuays, noMergeIDFMStopPlaces)
-//            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByStopPlaceOriginalId(stopPlace)
-//            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByNetexId(stopPlace),
-//            stopPlace -> hasQuays -> noMergeIDFMStopPlaces -> findByQuayNetexId(stopPlace, hasQuays)
+    private List<Function<StopPlace, Function<Boolean, List<StopPlace>>>> findFunctionList = Arrays.asList(
+            stopPlace -> hasQuays -> stopPlaceByQuayOriginalIdFinder.find(stopPlace, hasQuays)
             );
 
     public List<StopPlace> findByNetexId(StopPlace incomingStopPlace) {
@@ -67,16 +64,16 @@ public class StopPlaceByIdFinder {
         return new ArrayList<>(0);
     }
 
-    public List<StopPlace> findStopPlace(StopPlace incomingStopPlace, boolean noMergeIDFMStopPlaces) {
+    public List<StopPlace> findStopPlace(StopPlace incomingStopPlace) {
         boolean hasQuays = incomingStopPlace.getQuays() != null && !incomingStopPlace.getQuays().isEmpty();
-        return getFindFunctionList(incomingStopPlace, hasQuays, noMergeIDFMStopPlaces, findFunctionList);
+        return getFindFunctionList(incomingStopPlace, hasQuays, findFunctionList);
     }
 
-    private List<StopPlace> getFindFunctionList(StopPlace incomingStopPlace, boolean hasQuays, boolean noMergeIDFMStopPlaces, List<Function<StopPlace, Function<Boolean, Function<Boolean, List<StopPlace>>>>> findFunctionList) {
+    private List<StopPlace> getFindFunctionList(StopPlace incomingStopPlace, boolean hasQuays, List<Function<StopPlace, Function<Boolean, List<StopPlace>>>> findFunctionList) {
         return findFunctionList.stream()
-                .map(function -> function.apply(incomingStopPlace).apply(hasQuays).apply(noMergeIDFMStopPlaces))
+                .map(function -> function.apply(incomingStopPlace).apply(hasQuays))
                 .filter(set -> !set.isEmpty())
-                .flatMap(set -> set.stream())
+                .flatMap(Collection::stream)
                 .filter(Objects::nonNull)
                 .collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(StopPlace::getNetexId))), ArrayList::new));
     }

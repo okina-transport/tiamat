@@ -16,6 +16,8 @@
 package org.rutebanken.tiamat.service;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.okina.helper.aws.BlobStoreHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +25,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class BlobStoreService {
@@ -68,7 +80,47 @@ public class BlobStoreService {
         return BlobStoreHelper.getBlob(client, bucketName, blobIdName);
     }
 
+    public File downloadFromAbsolutePath(String absolutePath) {
+        InputStream inputStream = BlobStoreHelper.getBlob(client, bucketName, absolutePath);
+
+        Optional<String> fileName = getFileName(inputStream);
+
+
+        File file = new File(System.getProperty("java.io.tmpdir") + "/" + (fileName.isPresent() ? fileName.get():UUID.randomUUID()));
+
+        try {
+            Files.deleteIfExists(file.toPath());
+            Files.copy(inputStream, Paths.get(file.getAbsolutePath()), new CopyOption[0]);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return file;
+    }
+
+    private Optional<String> getFileName(InputStream inputStream){
+        if (!(inputStream instanceof S3ObjectInputStream))
+            return Optional.empty();
+
+        String path = ((S3ObjectInputStream) inputStream).getHttpRequest().getURI().getPath();
+        return Optional.of(getFileNameFromFilePath(path));
+    }
+
+    private String getFileNameFromFilePath(String filePath){
+        String[] splittedPath = filePath.split("/");
+        return splittedPath[splittedPath.length-1];
+    }
+
     public String createBlobIdName(String blobPath, String fileName) {
         return blobPath + '/' + fileName;
+    }
+
+    public List<String> listStopPlacesInBlob(long siteId, int maxNbResults){
+        List<S3ObjectSummary> stopPlaceFileList = BlobStoreHelper.listAllBlobsRecursively(this.client, this.bucketName, siteId+"/exports");
+        Stream<String> fileListStream = stopPlaceFileList.stream()
+                                                         .sorted(Comparator.comparing(S3ObjectSummary::getLastModified).reversed())
+                                                         .map(S3ObjectSummary::getKey)
+                                                         .filter(key -> key.contains("ARRET_"));
+
+        return maxNbResults == 0 ? fileListStream.collect(Collectors.toList()) : fileListStream.limit(maxNbResults).collect(Collectors.toList());
     }
 }

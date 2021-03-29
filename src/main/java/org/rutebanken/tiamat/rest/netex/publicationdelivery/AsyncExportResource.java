@@ -15,6 +15,8 @@
 
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.Api;
 import org.rutebanken.tiamat.exporter.AsyncPublicationDeliveryExporter;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
@@ -28,8 +30,11 @@ import org.springframework.stereotype.Component;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.File;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_PATH;
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_STOP_PLACE_PATH;
@@ -97,5 +102,30 @@ public class AsyncExportResource {
     public Response asyncExport(@BeanParam ExportParams exportParams) {
         ExportJob exportJob = asyncPublicationDeliveryExporter.startExportJob(exportParams);
         return Response.ok(exportJob).build();
+    }
+
+    @GET
+    @Path("stop-place-file-list/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response asyncGetSopPlaceFileList(@PathParam(value = "id") long siteId, @HeaderParam("maxNbResults") Integer maxNbResults) {
+        List<String> stopPlaceFileList = asyncPublicationDeliveryExporter.getStopPlaceFileList(siteId,maxNbResults);
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonString="";
+        try {
+            jsonString = objectMapper.writeValueAsString(stopPlaceFileList);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return Response.ok(jsonString).build();
+    }
+
+    @GET
+    @Path("stop-place-file-download/{fileName : .+}")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public Response asyncGetSopPlaceFileList(@PathParam("fileName") String fileName) {
+        File file = asyncPublicationDeliveryExporter.getJobFileContent(fileName);
+        return Response.ok(file, MediaType.APPLICATION_OCTET_STREAM)
+                .header("filename", file.getName() )
+                .build();
     }
 }

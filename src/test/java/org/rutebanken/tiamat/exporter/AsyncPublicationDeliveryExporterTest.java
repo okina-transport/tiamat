@@ -37,6 +37,7 @@ import javax.xml.bind.JAXBException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static junit.framework.TestCase.fail;
@@ -128,7 +129,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         // GIVEN
 
         // WHEN
-        String sqybus = asyncPublicationDeliveryExporter.createFileNameWithoutExtention("41", "SQYBUS", LocalDateTime.now());
+        String sqybus = asyncPublicationDeliveryExporter.createFileNameWithoutExtention("41", "SQYBUS", LocalDateTime.now(ZoneOffset.UTC));
 
         // THEN
         Assert.assertTrue(sqybus.length() > 0);

@@ -249,6 +249,12 @@ public class QuayMerger {
             }
         }
 
+
+        // Log pour remonter l'erreur des imported name vides
+        if(alreadyAdded.getOriginalNames().size() == 0){
+            logger.error("================================================> Erreur: il n'y a aucun imported-name dans le quay: ", alreadyAdded.getNetexId());
+        }
+
         return namesUpdated;
     }
 
@@ -332,9 +338,10 @@ public class QuayMerger {
 
     private boolean updateZdep(Quay alreadyAdded, Quay incomingQuay) {
         boolean zdepUpdated = false;
-        if (!incomingQuay.getOriginalZDEP().isEmpty() && !alreadyAdded.getOriginalZDEP().containsAll(incomingQuay.getOriginalZDEP())) {
+        if (!alreadyAdded.getOriginalZDEP().equals(incomingQuay.getOriginalZDEP())) {
             alreadyAdded.getOriginalZDEP().clear();
-            zdepUpdated = alreadyAdded.getOriginalZDEP().addAll(incomingQuay.getOriginalZDEP());
+            alreadyAdded.getOriginalZDEP().addAll(incomingQuay.getOriginalZDEP());
+            zdepUpdated = true;
         }
 
         return zdepUpdated;

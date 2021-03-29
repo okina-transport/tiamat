@@ -24,10 +24,13 @@ import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByIdFinder;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
 import org.rutebanken.tiamat.importer.merging.QuayMerger;
+import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.service.stopplace.StopPlaceDeleter;
+import org.rutebanken.tiamat.service.stopplace.StopPlaceQuayMover;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
@@ -38,6 +41,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -94,12 +98,15 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     @Autowired
     private StopPlaceCentroidComputer stopPlaceCentroidComputer;
 
+    @Autowired
+    private QuayMover quayMover;
+
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
                                  AtomicInteger stopPlacesCreatedOrUpdated, boolean idfmImport) {
 
 
-        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace, noMergeIDFMStopPlaces);
+        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
         final int foundStopPlacesCount = foundStopPlaces.size();
 
         if (!foundStopPlaces.isEmpty()) {
@@ -173,6 +180,12 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             if (foundStopPlaces.size() > 1) {
                 logger.warn("Found {} matches for incoming stop place {}. Matches: {}", foundStopPlaces.size(), incomingStopPlace, foundStopPlaces);
+
+                try {
+                    foundStopPlaces = checkIfQuaysAlreadyPresentInOtherStopPlace(foundStopPlaces, incomingStopPlace);
+                } catch (ExecutionException e) {
+                    logger.error("Problem while moving/creating/deleting existing/new stop place", e);
+                }
             }
 
             for (org.rutebanken.tiamat.model.StopPlace existingStopPlace : foundStopPlaces) {
@@ -229,8 +242,6 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                     copy = stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, copy);
                 }
 
-//                copy = stopPlaceRepository.save(existingStopPlace);
-
                 String netexId = copy.getNetexId();
 
                 matchedStopPlaces.removeIf(stopPlace -> stopPlace.getId().equals(netexId));
@@ -241,5 +252,10 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             }
         }
+    }
+
+    private List<org.rutebanken.tiamat.model.StopPlace> checkIfQuaysAlreadyPresentInOtherStopPlace(List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces, org.rutebanken.tiamat.model.StopPlace incomingStopPlace) throws ExecutionException {
+        quayMover.doMove(foundStopPlaces, incomingStopPlace);
+        return stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
     }
 }

@@ -25,7 +25,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
@@ -187,10 +189,6 @@ public class NetexMapper {
         StopPlace netexStopPlace = facade.map(tiamatStopPlace, StopPlace.class);
         netexStopPlace.setTransportMode(VehicleModeEnumeration.BUS);
         netexStopPlace.setWeighting(InterchangeWeightingEnumeration.INTERCHANGE_ALLOWED);
-        MultilingualString multilingualString = new MultilingualString();
-        multilingualString.setValue(tiamatStopPlace.getOriginalIds().toString());
-        multilingualString.setLang("fr");
-        netexStopPlace.setName(multilingualString);
 
         initTypeOfPlace(netexStopPlace);
         netexStopPlace.getQuays().getQuayRefOrQuay().forEach(quay->initQuayProperties(netexStopPlace,(Quay)quay));
@@ -224,7 +222,7 @@ public class NetexMapper {
 
     private void initQuayProperties(StopPlace stopPlace,Quay quay){
         MultilingualString multilingualString = new MultilingualString();
-        multilingualString.setValue(quay.getId());
+        multilingualString.setValue(getImportedName(quay).get());
         multilingualString.setLang("fr");
         quay.setName(multilingualString);
 
@@ -252,6 +250,26 @@ public class NetexMapper {
         multilingualStringAddressShortName.setLang("fr");
         quay.getPostalAddress().setShortName(multilingualStringAddressShortName);
         quay.getPostalAddress().setName(multilingualStringAddressShortName);
+    }
+
+    public static Optional<String> getImportedName(Zone_VersionStructure stopPlace){
+
+        KeyListStructure keyList = stopPlace.getKeyList();
+        if (keyList != null && keyList.getKeyValue() != null) {
+            List<KeyValueStructure> keyValue = keyList.getKeyValue();
+            for (KeyValueStructure structure : keyValue) {
+                if (structure != null && "imported-name".equals(structure.getKey())) {
+
+                    String rawIds = structure.getValue();
+                    List<String> idList = Arrays.stream(rawIds.split(","))
+                            .distinct()
+                            .collect(Collectors.toList());
+
+                    return Optional.of(idList.get(0));
+                }
+            }
+        }
+        return Optional.empty();
     }
 
 

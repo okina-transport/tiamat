@@ -196,7 +196,6 @@ public class QuayMerger {
         boolean changedByMerge;
         boolean centroidUpdated;
         boolean stopCodeUpdated;
-        boolean zdepUpdated;
         boolean zipCodeUpdated;
         boolean urlUpdated;
         boolean descUpdated;
@@ -210,7 +209,6 @@ public class QuayMerger {
             changedByMerge = false;
             centroidUpdated = updateCentroid(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone, multipleIds);
             stopCodeUpdated = false;
-            zdepUpdated = false;
             zipCodeUpdated = false;
             urlUpdated = false;
             descUpdated = false;
@@ -224,7 +222,6 @@ public class QuayMerger {
             changedByMerge = mergeFields(incomingQuay, alreadyAdded);
             centroidUpdated = updateCentroid(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone, multipleIds);
             stopCodeUpdated = updateCodes(alreadyAdded, incomingQuay, stopPlaceAlone, quayAlone);
-            zdepUpdated = updateZdep(alreadyAdded, incomingQuay);
             zipCodeUpdated = updateZipCode(alreadyAdded, incomingQuay);
             urlUpdated = updateUrl(alreadyAdded, incomingQuay);
             descUpdated = updateDesc(alreadyAdded, incomingQuay);
@@ -232,8 +229,8 @@ public class QuayMerger {
         }
 
 
-        if (idUpdated || nameUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || zdepUpdated || zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated) {
-            logger.debug("Quay changed. idUpdated: {}, nameUpdated: {}, merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zdepUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}. Quay: {}", idUpdated, nameUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, zdepUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated);
+        if (idUpdated || nameUpdated || changedByMerge || centroidUpdated || stopCodeUpdated ||  zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated) {
+            logger.debug("Quay changed. idUpdated: {}, nameUpdated: {}, merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}. Quay: {}", idUpdated, nameUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated);
 
             alreadyAdded.setChanged(Instant.now());
             updatedQuaysCounter.incrementAndGet();
@@ -341,15 +338,6 @@ public class QuayMerger {
         return false;
     }
 
-    private boolean updateZdep(Quay alreadyAdded, Quay incomingQuay) {
-        boolean zdepUpdated = false;
-        if (!incomingQuay.getOriginalZDEP().isEmpty() && !alreadyAdded.getOriginalZDEP().containsAll(incomingQuay.getOriginalZDEP())) {
-            alreadyAdded.getOriginalZDEP().clear();
-            zdepUpdated = alreadyAdded.getOriginalZDEP().addAll(incomingQuay.getOriginalZDEP());
-        }
-
-        return zdepUpdated;
-    }
 
     private boolean updateCodes(Quay alreadyAdded, Quay incomingQuay, boolean stopPlaceAlone, boolean quayAlone) {
         boolean codesUpdated = false;

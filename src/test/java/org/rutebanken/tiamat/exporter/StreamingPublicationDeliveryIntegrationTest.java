@@ -473,10 +473,9 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
 //        stopPlaceRepository.save(stopPlace);
 //    }
 
-    private Quay getQuay(String privateCode, String originalName, double x, double y, String zdep) {
+    private Quay getQuay(String privateCode, String originalName, double x, double y) {
         Quay quay = new Quay();
         quay.setCentroid(geometryFactory.createPoint(new Coordinate(x,y)));
-        quay.getOriginalZDEP().add(zdep);
         quay.getOriginalNames().add(originalName);
 
         // Bon fonctionnement de la gestion des codes à vérifier et à traiter

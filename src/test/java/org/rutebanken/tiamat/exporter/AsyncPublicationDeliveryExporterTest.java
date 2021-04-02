@@ -44,7 +44,6 @@ import java.util.Optional;
 
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ZDEP_KEY;
 
 public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest {
 
@@ -76,7 +75,6 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
             quay.setNetexId("NSR:Quay:" + i);
             quay.setName(new EmbeddableMultilingualString("Quay_" + i));
             quay.setPublicCode("quay" + i);
-            quay.getKeyValues().put(ORIGINAL_ZDEP_KEY, new Value("yolo_" + i));
             quay.setCentroid(geometryFactory.createPoint(new Coordinate(48, 2)));
             quay.setZipCode("75000");
 

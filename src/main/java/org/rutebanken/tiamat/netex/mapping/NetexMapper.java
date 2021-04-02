@@ -217,7 +217,6 @@ public class NetexMapper {
         }
         placeRefs.withTypeOfPlaceRef(typeOfPlace);
         netexStopPlace.setPlaceTypes(placeRefs);
-
     }
 
     private void initQuayProperties(StopPlace stopPlace,Quay quay){

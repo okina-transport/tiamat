@@ -62,7 +62,6 @@ import java.util.Collections;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ZDEP_KEY;
 
 public class NetexFranceComplianceTest extends TiamatIntegrationTest {
 
@@ -141,10 +140,9 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
 
 
     private void checkQuayValues(org.rutebanken.netex.model.Quay quay){
-        String quayCode = quay.getId().split(":")[3];
-        String quayNb = quayCode.split("_")[1];
+        String quayNb = quay.getId().split(":")[2];
 
-        Assert.assertEquals("wrong id","FR::Quay:"+quayCode+":FR1",quay.getId());
+        Assert.assertEquals("wrong id","NSR:Quay:"+quayNb,quay.getId());
         Assert.assertEquals("wrong privateCode","quay"+quayNb,quay.getPrivateCode().getValue());
 
         Assert.assertEquals("wrong version","any",quay.getVersion());
@@ -158,17 +156,17 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
         PostalAddress postalAddress = quay.getPostalAddress();
         String postalAdressId = postalAddress.getId();
 
-        Assert.assertEquals("wrong postalAdressId","test:PostalAddress:"+quayCode+":",postalAdressId);
+        Assert.assertEquals("wrong postalAdressId","test:PostalAddress:NSR:Quay:"+quayNb,postalAdressId);
         MultilingualString postalAdressName = postalAddress.getName();
         Assert.assertEquals("wrong lang","fr",postalAdressName.getLang());
-        Assert.assertEquals("wrong address name","FR::Quay:"+quayCode+":FR1-address",postalAdressName.getValue());
+        Assert.assertEquals("wrong address name","NSR:Quay:"+quayNb+"-address",postalAdressName.getValue());
         checkPlaceType(postalAddress.getPlaceTypes());
         Assert.assertEquals("wrong country ref","fr",postalAddress.getCountryRef().getValue());
         Assert.assertEquals("wrong postal regions","75000",postalAddress.getPostalRegion());
 
         AccessibilityAssessment accessAssessment = quay.getAccessibilityAssessment();
 
-        Assert.assertEquals("wrong accessibility id","test:AccessibilityAssessment:yolo_"+quayNb+":",accessAssessment.getId());
+        Assert.assertEquals("wrong accessibility id","test:AccessibilityAssessment:NSR:Quay:"+quayNb,accessAssessment.getId());
         Assert.assertEquals("wrong accessibility assessment","unknown",accessAssessment.getMobilityImpairedAccess().value());
         Assert.assertEquals("wrong accessibility version","any",accessAssessment.getVersion());
 
@@ -208,7 +206,6 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
             quay.setNetexId("NSR:Quay:" + i);
             quay.setName(new EmbeddableMultilingualString("Quay_" + i));
             quay.setPublicCode("quay" + i);
-            quay.getKeyValues().put(ORIGINAL_ZDEP_KEY, new Value("yolo_" + i));
             quay.setCentroid(geometryFactory.createPoint(new Coordinate(48, 2)));
             quay.setZipCode("75000");
 

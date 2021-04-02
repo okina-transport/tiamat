@@ -342,15 +342,13 @@ public class StreamingPublicationDelivery {
 
                         addNameQuay(quay);
 
-                        String zdep = addZdepInQuayId(quay);
-
                         addPrivateStopCode(quay);
 
                         convertGeolocation(quay);
 
-                        addPostalAdress(providerName, quay, zdep);
+                        addPostalAdress(providerName, quay);
 
-                        addAccessibilityAssessment(providerName, quay, zdep);
+                        addAccessibilityAssessment(providerName, quay);
 
                         quay.setModification(null);
 
@@ -364,12 +362,6 @@ public class StreamingPublicationDelivery {
         }
     }
 
-    private List<Quay> filterQuaysWithZdep(List<Quay> netexQuays) {
-        return netexQuays.stream()
-                        .filter(quay -> quay.getKeyList().getKeyValue().stream()
-                                .anyMatch(valueStructure -> valueStructure.getKey().equals(NetexIdMapper.ORIGINAL_ZDEP_KEY) && !valueStructure.getValue().isEmpty()))
-                        .collect(Collectors.toList());
-    }
 
     private void addNameQuay(Quay quay) {
         // Gestion du nom
@@ -386,20 +378,6 @@ public class StreamingPublicationDelivery {
         quay.setName(multilingualString);
     }
 
-    private String addZdepInQuayId(Quay quay) {
-        // Gestion de l'id avec le Zdep
-        String zdep = quay
-                .getKeyList().getKeyValue()
-                .stream()
-                .filter(keyValueStructure -> keyValueStructure.getKey().equals(NetexIdMapper.ORIGINAL_ZDEP_KEY))
-                .findFirst()
-                .map(KeyValueStructure::getValue)
-                .orElse(null);
-
-
-        quay.setId("FR::Quay:" + zdep + ":FR1");
-        return zdep;
-    }
 
     private void addPrivateStopCode(Quay quay) {
         PrivateCodeStructure privateCodeStructure = new PrivateCodeStructure();
@@ -454,9 +432,9 @@ public class StreamingPublicationDelivery {
                                 .withSrsName("EPSG:2154")));
     }
 
-    private void addPostalAdress(String providerName, Quay quay, String zdep) {
+    private void addPostalAdress(String providerName, Quay quay) {
         PostalAddress postalAddress = new PostalAddress();
-        postalAddress.setId(providerName + ":PostalAddress:" + zdep + ":");
+        postalAddress.setId(providerName + ":PostalAddress:"+quay.getId());
         postalAddress.setPostalRegion(quay.getPostalAddress().getPostalRegion());
         postalAddress.setVersion("any");
 
@@ -481,7 +459,7 @@ public class StreamingPublicationDelivery {
         quay.setPostalAddress(postalAddress);
     }
 
-    private void addAccessibilityAssessment(String providerName, Quay quay, String zdep) {
+    private void addAccessibilityAssessment(String providerName, Quay quay) {
         AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
 
         if (quay.getAccessibilityAssessment() == null) {
@@ -495,7 +473,7 @@ public class StreamingPublicationDelivery {
             accessibilityAssessment = quay.getAccessibilityAssessment();
         }
 
-        accessibilityAssessment.setId(providerName + ":AccessibilityAssessment:" + zdep + ":");
+        accessibilityAssessment.setId(providerName + ":AccessibilityAssessment:"+quay.getId());
         accessibilityAssessment.setVersion("any");
 
         AccessibilityLimitations_RelStructure limitations = quay.getAccessibilityAssessment().getLimitations();

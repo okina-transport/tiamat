@@ -242,14 +242,16 @@ public class NetexMapper {
         quay.getValidBetween().add(validBetween);
         CountryRef cr = new CountryRef();
         cr.setValue("fr");
-        quay.getPostalAddress().setCountryRef(cr);
-        quay.getPostalAddress().setPlaceTypes(placeRefs);
 
-        MultilingualString multilingualStringAddressShortName = new MultilingualString();
-        multilingualStringAddressShortName.setValue(quay.getId()+"-address");
-        multilingualStringAddressShortName.setLang("fr");
-        quay.getPostalAddress().setShortName(multilingualStringAddressShortName);
-        quay.getPostalAddress().setName(multilingualStringAddressShortName);
+        if (quay.getPostalAddress() != null) {
+            quay.getPostalAddress().setCountryRef(cr);
+            quay.getPostalAddress().setPlaceTypes(placeRefs);
+            MultilingualString multilingualStringAddressShortName = new MultilingualString();
+            multilingualStringAddressShortName.setValue(quay.getId()+"-address");
+            multilingualStringAddressShortName.setLang("fr");
+            quay.getPostalAddress().setShortName(multilingualStringAddressShortName);
+            quay.getPostalAddress().setName(multilingualStringAddressShortName);
+        }
     }
 
     public static Optional<String> getImportedName(Zone_VersionStructure stopPlace){

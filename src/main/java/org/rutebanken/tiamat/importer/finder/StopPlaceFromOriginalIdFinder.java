@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -151,31 +152,31 @@ public class StopPlaceFromOriginalIdFinder {
 
     private List<StopPlace> findByKeyValue(Set<String> originalIds) {
 
-        Set<String> zeroPaddedOrUnchangedOriginalIds = originalIds.stream()
-                .flatMap(this::zeroStrippedPostfixAndUnchanged)
-                .collect(Collectors.toSet());
+//        Set<String> zeroPaddedOrUnchangedOriginalIds = originalIds.stream()
+//                .flatMap(this::zeroStrippedPostfixAndUnchanged)
+//                .collect(Collectors.toSet());
 
-        for (String zeroPaddedOrUnchangedOriginalId : zeroPaddedOrUnchangedOriginalIds) {
-            String cacheKey = keyValKey(ORIGINAL_ID_KEY, zeroPaddedOrUnchangedOriginalId);
-            Set<String> matchingStopPlaceNetexIds = keyValueCache.getIfPresent(cacheKey);
-            if (matchingStopPlaceNetexIds != null) {
-                if (!matchingStopPlaceNetexIds.isEmpty()) {
-                    List<StopPlace> stopPlaces = matchingStopPlaceNetexIds.stream()
-                            .peek(matchingStopPlaceNetexId -> logger.debug("Cache match. Key {}, stop place id: {}", cacheKey, matchingStopPlaceNetexId))
-                            .map(matchingStopPlaceNetexId -> stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(matchingStopPlaceNetexId))
-                            .collect(Collectors.toList());
+//        for (String originalId : originalIds) {
+//            String cacheKey = keyValKey(ORIGINAL_ID_KEY, originalId);
+//            Set<String> matchingStopPlaceNetexIds = keyValueCache.getIfPresent(cacheKey);
+//            if (matchingStopPlaceNetexIds != null) {
+//                if (!matchingStopPlaceNetexIds.isEmpty()) {
+//                    List<StopPlace> stopPlaces = matchingStopPlaceNetexIds.stream()
+//                            .peek(matchingStopPlaceNetexId -> logger.debug("Cache match. Key {}, stop place id: {}", cacheKey, matchingStopPlaceNetexId))
+//                            .map(matchingStopPlaceNetexId -> stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(matchingStopPlaceNetexId))
+//                            .collect(Collectors.toList());
+//
+//                    if(!stopPlaces.isEmpty()) {
+//                        return stopPlaces;
+//                    }
+//                }
+//            }
+//        }
 
-                    if(!stopPlaces.isEmpty()) {
-                        return stopPlaces;
-                    }
-                }
-            }
-        }
-
-        logger.debug("Looking for stop places from original IDs: {}", zeroPaddedOrUnchangedOriginalIds);
+        logger.debug("Looking for stop places from original IDs: {}", originalIds);
 
         // No cache match
-        Set<String> stopPlaceNetexIds = stopPlaceRepository.findByKeyValues(ORIGINAL_ID_KEY, zeroPaddedOrUnchangedOriginalIds);
+        Set<String> stopPlaceNetexIds = stopPlaceRepository.findByKeyValues(ORIGINAL_ID_KEY, originalIds);
         return stopPlaceNetexIds
                 .stream()
                 .map(stopPlaceNetexId -> stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceNetexId))

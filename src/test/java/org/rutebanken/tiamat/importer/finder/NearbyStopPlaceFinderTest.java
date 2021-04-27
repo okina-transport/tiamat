@@ -82,6 +82,7 @@ public class NearbyStopPlaceFinderTest {
 
 
         when(stopPlaceRepository.findNearbyStopPlace(any(), any(), any())).thenReturn(stopPlaceId);
+        when(stopPlaceRepository.findNearbyStopPlace(any(), any(), any(),any())).thenReturn(stopPlaceId);
         when(stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceId)).thenReturn(stopPlace);
 
         StopPlace actual = nearbyStopPlaceFinder.find(stopPlace);

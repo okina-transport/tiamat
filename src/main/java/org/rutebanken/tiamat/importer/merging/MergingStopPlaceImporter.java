@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -108,7 +109,7 @@ public class MergingStopPlaceImporter {
      * <p>
      * Attempts to use saveAndFlush or hibernate flush mode always have not been successful.
      */
-    public org.rutebanken.netex.model.StopPlace importStopPlace(StopPlace newStopPlace, boolean noMergeOnMoveOnly, boolean onMoveOnlyImport) throws InterruptedException, ExecutionException {
+    public org.rutebanken.netex.model.StopPlace importStopPlace(StopPlace newStopPlace) throws InterruptedException, ExecutionException {
 
         logger.debug("Transaction active: {}. Isolation level: {}", TransactionSynchronizationManager.isActualTransactionActive(), TransactionSynchronizationManager.getCurrentTransactionIsolationLevel());
 
@@ -117,22 +118,11 @@ public class MergingStopPlaceImporter {
                     + "TransactionSynchronizationManager.isActualTransactionActive(): " + TransactionSynchronizationManager.isActualTransactionActive());
         }
 
-        return netexMapper.mapToNetexModel(importStopPlaceWithoutNetexMapping(newStopPlace, noMergeOnMoveOnly, onMoveOnlyImport));
+        return netexMapper.mapToNetexModel(importStopPlaceWithoutNetexMapping(newStopPlace));
     }
 
-    public StopPlace importStopPlaceWithoutNetexMapping(StopPlace incomingStopPlace, boolean noMergeOnMoveOnly, boolean onMoveOnlyImport) throws InterruptedException, ExecutionException {
-        StopPlace foundStopPlace = null;
-        if(!noMergeOnMoveOnly){
-            foundStopPlace = findNearbyOrExistingStopPlace(incomingStopPlace);
-        }
-        final StopPlace stopPlace;
-        if (foundStopPlace != null) {
-            stopPlace = handleAlreadyExistingStopPlace(foundStopPlace, incomingStopPlace, onMoveOnlyImport);
-        } else {
-            stopPlace = handleCompletelyNewStopPlace(incomingStopPlace);
-        }
-
-        return stopPlace;
+    public StopPlace importStopPlaceWithoutNetexMapping(StopPlace incomingStopPlace) throws InterruptedException, ExecutionException {
+        return handleCompletelyNewStopPlace(incomingStopPlace);
     }
 
 

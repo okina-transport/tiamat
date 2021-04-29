@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -191,7 +192,9 @@ public class NetexMapper {
         netexStopPlace.setWeighting(InterchangeWeightingEnumeration.INTERCHANGE_ALLOWED);
 
         initTypeOfPlace(netexStopPlace);
-        netexStopPlace.getQuays().getQuayRefOrQuay().forEach(quay->initQuayProperties(netexStopPlace,(Quay)quay));
+        if (netexStopPlace.getQuays() != null) {
+            netexStopPlace.getQuays().getQuayRefOrQuay().forEach(quay -> initQuayProperties(netexStopPlace, (Quay) quay));
+        }
 
         ValidBetween validBetween = new ValidBetween();
         validBetween.setFromDate(LocalDateTime.now());
@@ -202,11 +205,16 @@ public class NetexMapper {
 
     private void initTypeOfPlace(StopPlace netexStopPlace){
 
-        List<VehicleModeEnumeration> tranportModeList = netexStopPlace.getQuays().getQuayRefOrQuay().stream()
-                                                                                                    .map(obj -> ((Quay) obj).getTransportMode())
-                                                                                                    .filter(transportMode -> transportMode != null)
-                                                                                                    .distinct()
-                                                                                                    .collect(Collectors.toList());
+        List<VehicleModeEnumeration> tranportModeList = new ArrayList<>();
+
+        if (netexStopPlace.getQuays() != null){
+            tranportModeList    = netexStopPlace.getQuays().getQuayRefOrQuay().stream()
+                    .map(obj -> ((Quay) obj).getTransportMode())
+                    .filter(transportMode -> transportMode != null)
+                    .distinct()
+                    .collect(Collectors.toList());
+        }
+
 
         TypeOfPlaceRefs_RelStructure placeRefs = new TypeOfPlaceRefs_RelStructure();
         TypeOfPlaceRefStructure typeOfPlace = new TypeOfPlaceRefStructure();
@@ -267,6 +275,21 @@ public class NetexMapper {
                             .collect(Collectors.toList());
 
                     return Optional.of(idList.get(0));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    public static Optional<String> getImportedId(Zone_VersionStructure stopPlace){
+
+        KeyListStructure keyList = stopPlace.getKeyList();
+        if (keyList != null && keyList.getKeyValue() != null) {
+            List<KeyValueStructure> keyValue = keyList.getKeyValue();
+            for (KeyValueStructure structure : keyValue) {
+                if (structure != null && "imported-id".equals(structure.getKey())) {
+
+                    return Optional.of(structure.getValue());
                 }
             }
         }

@@ -36,20 +36,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.rutebanken.tiamat.exporter.params.ExportParams.newExportParamsBuilder;
 import static org.rutebanken.tiamat.exporter.params.StopPlaceSearch.newStopPlaceSearchBuilder;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.MERGED_ID_KEY;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 
 @Transactional
+@TestPropertySource(locations="classpath:application.properties")
 public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
     @Autowired
@@ -57,8 +63,6 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
     @Autowired
     private TagRepository tagRepository;
-
-    private Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 
     @Test
     public void scrollableResult() throws InterruptedException {
@@ -199,7 +203,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         child.setParentSiteRef(new SiteRefStructure(parent.getNetexId(), String.valueOf(parent.getVersion())));
         stopPlaceRepository.save(child);
 
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = new PageRequest(0, 10);
 
         Page<StopPlace> result = stopPlaceRepository.findStopPlacesWithin(southEastLongitude, southEastLatitude, northWestLongitude, northWestLatitude, null, pageable);
         assertThat(result.getContent()).extracting(EntityStructure::getNetexId).contains(child.getNetexId());
@@ -217,15 +221,15 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         StopPlace version1 = createStopPlace(59.875679, 10.500430);
         version1.setVersion(1L);
         version1.setNetexId("NSR:StopPlace:977777");
-        version1.setValidBetween(new ValidBetween(Instant.EPOCH, now.minusMillis(1000000)));
+        version1.setValidBetween(new ValidBetween(Instant.EPOCH, Instant.now().minusMillis(1000000)));
         StopPlace version2 = createStopPlace(59.875679, 10.500430);
         version2.setVersion(2L);
         version2.setNetexId(version1.getNetexId());
-        version2.setValidBetween(new ValidBetween(now.minusMillis(1000001), now.plusMillis(1000000)));
+        version2.setValidBetween(new ValidBetween(Instant.now().minusMillis(1000001), Instant.now().plusMillis(1000000)));
         stopPlaceRepository.save(version1);
         stopPlaceRepository.save(version2);
 
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = new PageRequest(0, 10);
 
         Page<StopPlace> result = stopPlaceRepository.findStopPlacesWithin(southEastLongitude, southEastLatitude, northWestLongitude, northWestLatitude, null, pageable);
         assertThat(result).hasSize(1);
@@ -261,7 +265,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         double northWestLongitude = 11;
 
         StopPlace stopPlace = createStopPlace(59.5, 10.5);
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = new PageRequest(0, 10);
 
         stopPlaceRepository.save(stopPlace);
 
@@ -288,7 +292,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         StopPlace otherStopPlace = createStopPlace(59.5, 10.5);
         stopPlaceRepository.save(otherStopPlace);
 
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = new PageRequest(0, 10);
 
         Page<StopPlace> result = stopPlaceRepository.findStopPlacesWithin(southEastLongitude, southEastLatitude, northWestLongitude, northWestLatitude, ignoredStopPlace.getNetexId(), pageable);
 
@@ -311,7 +315,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
         StopPlace expiredStopPlace = createStopPlace(59.3, 10.5);
 
-        ValidBetween expiredValidBetween = new ValidBetween(now.minusSeconds(1000), now.minusSeconds(100));
+        ValidBetween expiredValidBetween = new ValidBetween(Instant.now().minusSeconds(1000), Instant.now().minusSeconds(100));
         expiredStopPlace.setValidBetween(expiredValidBetween);
 
         StopPlace openEndedStopPlace = createStopPlace(59.4, 10.6);
@@ -321,7 +325,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         expiredStopPlace = stopPlaceRepository.save(expiredStopPlace);
         openEndedStopPlace = stopPlaceRepository.save(openEndedStopPlace);
 
-        Pageable pageable = PageRequest.of(0, 10);
+        Pageable pageable = new PageRequest(0, 10);
 
         Page<StopPlace> result = stopPlaceRepository.findStopPlacesWithin(xMin, yMin, xMax, yMax, null, pageable);
         assertThat(result).hasSize(1);
@@ -566,7 +570,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         v1.setStopPlaceType(StopTypeEnumeration.BUS_STATION);
         v1.setVersion(1L);
 
-        Instant yesterday = now.minus(1, ChronoUnit.DAYS);
+        Instant yesterday = Instant.now().minus(1, ChronoUnit.DAYS);
         v1.setValidBetween(new ValidBetween(Instant.EPOCH, yesterday));
         stopPlaceRepository.save(v1);
 
@@ -594,7 +598,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
     @Test
     public void findStopPlacesDefaultsToVersionValidityCurrent() {
 
-        Instant yesterday = now.minus(1, ChronoUnit.DAYS);
+        Instant yesterday = Instant.now().minus(1, ChronoUnit.DAYS);
 
         StopPlace v1 = new StopPlace(new EmbeddableMultilingualString("stop"));
         v1.setStopPlaceType(StopTypeEnumeration.BUS_STATION);
@@ -991,7 +995,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
     @Test
     public void scrollStopsWithEffectiveChangesInPeriod() {
-        Instant endOfPeriod = now;
+        Instant endOfPeriod = Instant.now();
         Instant startOfPeriod = endOfPeriod.minusSeconds(100);
 
         StopPlace historicVersion = saveStop("NSR:StopPlace:900", 1L, startOfPeriod.minusSeconds(10), startOfPeriod.minusSeconds(2));
@@ -1021,6 +1025,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
         String importedIdPosix = "321";
         String importedId = "XXX:StopPlace:" + importedIdPosix;
+        Instant now = Instant.now();
 
         StopPlace childStop = new StopPlace();
         childStop.setVersion(1L);
@@ -1054,19 +1059,19 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
     public void findStopPlaceForSpecificPointInTime() throws Exception {
         String stopPlaceName = "Nesbru";
 
-        ValidBetween expiredValidBetween = new ValidBetween(now.minusSeconds(1000), now.minusSeconds(100));
+        ValidBetween expiredValidBetween = new ValidBetween(Instant.now().minusSeconds(1000), Instant.now().minusSeconds(100));
         StopPlace expiredStopPlace = createStopPlaceWithMunicipality(stopPlaceName, null);
         expiredStopPlace.setValidBetween(expiredValidBetween);
         stopPlaceRepository.save(expiredStopPlace);
 
-        ValidBetween openendedValidBetween = new ValidBetween(now.minusSeconds(100));
+        ValidBetween openendedValidBetween = new ValidBetween(Instant.now().minusSeconds(100));
         StopPlace newestStopPlace = createStopPlaceWithMunicipality(stopPlaceName, null);
         newestStopPlace.setValidBetween(openendedValidBetween);
         stopPlaceRepository.save(newestStopPlace);
 
         StopPlaceSearch search = newStopPlaceSearchBuilder()
                 .setQuery(stopPlaceName)
-                .setPointInTime(now.minusSeconds(1000))
+                .setPointInTime(Instant.now().minusSeconds(1000))
                 .build();
 
         Page<StopPlace> result = stopPlaceRepository.findStopPlace(newExportParamsBuilder().setStopPlaceSearch(search).build());
@@ -1077,7 +1082,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
         search = newStopPlaceSearchBuilder()
                 .setQuery(stopPlaceName)
-                .setPointInTime(now)
+                .setPointInTime(Instant.now())
                 .build();
 
         result = stopPlaceRepository.findStopPlace(newExportParamsBuilder().setStopPlaceSearch(search).build());
@@ -1092,6 +1097,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
     public void findStopPlaceFromQuayOriginalIdReturnsOnlyStopsValidAtPointInTime() {
         String orgIdSuffix = "2";
         String orgId = "XXX:Quay:" + orgIdSuffix;
+        Instant now = Instant.now();
 
         StopPlace historicMatchingStopV1 = saveStop("NSR:StopPlace:1", 1l, now.minusSeconds(200), now.minusSeconds(10));
         saveQuay(historicMatchingStopV1, "NSR:Quay:1", 1l, ORIGINAL_ID_KEY, orgId);
@@ -1101,18 +1107,19 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         StopPlace currentMatchingStop = saveStop("NSR:StopPlace:2", 1l, now.minusSeconds(10), null);
         saveQuay(currentMatchingStop, "NSR:Quay:2", 1l, ORIGINAL_ID_KEY, orgId);
 
-        List<String> currentMatchingStopPlaceIds = stopPlaceRepository.findStopPlaceFromQuayOriginalId(orgIdSuffix, now);
+        List<String> currentMatchingStopPlaceIds = stopPlaceRepository.findStopPlaceFromQuayOriginalId(orgId, now);
         Assert.assertEquals(Arrays.asList(currentMatchingStop.getNetexId()), currentMatchingStopPlaceIds);
 
-        List<String> historicMatchingStopPlaceIds = stopPlaceRepository.findStopPlaceFromQuayOriginalId(orgIdSuffix, now.minusSeconds(100));
+        List<String> historicMatchingStopPlaceIds = stopPlaceRepository.findStopPlaceFromQuayOriginalId(orgId, now.minusSeconds(100));
         Assert.assertEquals(Arrays.asList(historicMatchingStopV1.getNetexId()), historicMatchingStopPlaceIds);
 
         // No imported-ids are valid for point in time 300 seconds ago
-        Assert.assertTrue(CollectionUtils.isEmpty(stopPlaceRepository.findStopPlaceFromQuayOriginalId(orgIdSuffix, now.minusSeconds(300))));
+        Assert.assertTrue(CollectionUtils.isEmpty(stopPlaceRepository.findStopPlaceFromQuayOriginalId(orgId, now.minusSeconds(300))));
     }
 
     @Test
     public void listStopPlaceIdsAndQuayIds() {
+        Instant now = Instant.now();
         Instant startOfPeriod = now.minusSeconds(100);
         Instant endOfPeriod = now.plusSeconds(100);
         StopPlace stopPlace1 = saveStop("NSR:StopPlace:1", 1l, startOfPeriod, endOfPeriod);
@@ -1144,6 +1151,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
     public void findKeyValueMappingsForStopPlaceReturnsStopPlacesWithParentValidAtPointIntimeForMergedId() {
 
         String mergedId = "XXX:StopPlace:321";
+        Instant now = Instant.now();
 
         StopPlace childStop = new StopPlace();
         childStop.getKeyValues().put(MERGED_ID_KEY, new Value(mergedId));
@@ -1169,6 +1177,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
         String importedIdPosix = "321";
         String importedId = "XXX:StopPlace:" + importedIdPosix;
+        Instant now = Instant.now();
 
         StopPlace childStop = new StopPlace();
         childStop.setVersion(1L);
@@ -1190,7 +1199,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         childStop.setParentSiteRef(new SiteRefStructure(parentStop.getNetexId(), String.valueOf(parentStop.getVersion())));
         stopPlaceRepository.save(childStop);
 
-        List<String> idMapping = stopPlaceRepository.findStopPlaceFromQuayOriginalId(importedIdPosix, now);
+        List<String> idMapping = stopPlaceRepository.findStopPlaceFromQuayOriginalId(importedId, now);
         assertThat(idMapping).contains(childStop.getNetexId());
     }
 
@@ -1200,6 +1209,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
         String importedIdPosix = "322";
         String importedId = "XXX:StopPlace:" + importedIdPosix;
+        Instant now = Instant.now();
 
         StopPlace childStop = new StopPlace();
         childStop.setVersion(1L);
@@ -1232,6 +1242,8 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
         stopPlace.setVersion(2L);
 
+        Instant now = Instant.now();
+
         stopPlace.setValidBetween(new ValidBetween(now.minusSeconds(10)));
 
         stopPlaceRepository.save(stopPlace);
@@ -1256,6 +1268,8 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         StopPlace parentStopPlace = new StopPlace();
         parentStopPlace.setParentStopPlace(true);
         parentStopPlace.setVersion(2L);
+
+        Instant now = Instant.now();
 
         parentStopPlace.setValidBetween(new ValidBetween(now.minusSeconds(10)));
 
@@ -1287,6 +1301,8 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         parentStopPlace.setParentStopPlace(true);
         parentStopPlace.setVersion(2L);
 
+        Instant now = Instant.now();
+
         parentStopPlace.setValidBetween(new ValidBetween(now.minusSeconds(10)));
 
         stopPlaceRepository.save(parentStopPlace);
@@ -1316,6 +1332,8 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         StopPlace stopPlace = new StopPlace();
         stopPlace.setVersion(2L);
 
+        Instant now = Instant.now();
+
         stopPlace.setValidBetween(new ValidBetween(now.minusSeconds(10)));
 
         stopPlaceRepository.save(stopPlace);
@@ -1339,6 +1357,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         StopPlace stopPlace = new StopPlace();
         stopPlace.setVersion(2L);
 
+        Instant now = Instant.now();
 
         stopPlace.setValidBetween(new ValidBetween(now.minusSeconds(10)));
 
@@ -1365,6 +1384,8 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
         StopPlace stopPlace = new StopPlace();
         stopPlace.setVersion(2L);
+
+        Instant now = Instant.now();
 
         stopPlace.setValidBetween(new ValidBetween(now.minusSeconds(10)));
 
@@ -1393,6 +1414,8 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         StopPlace parentStopPlace = new StopPlace();
         parentStopPlace.setParentStopPlace(true);
         parentStopPlace.setVersion(2L);
+
+        Instant now = Instant.now();
 
         parentStopPlace.setValidBetween(new ValidBetween(now.minusSeconds(10)));
 
@@ -1451,6 +1474,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
     public void testFindKeyValueMappingsForStopPlaceReturnsOnlyStopPlacesValidAtPointInTime(String orgIdKey) {
         String orgIdSuffix = "2";
         String orgId = "XXX:StopPlace:" + orgIdSuffix;
+        Instant now = Instant.now();
 
         StopPlace historicMatchingStopV1 = saveStop("NSR:StopPlace:1", 1l, now.minusSeconds(200), now.minusSeconds(10));
         historicMatchingStopV1.getKeyValues().put(orgIdKey, new Value(orgId));
@@ -1464,7 +1488,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         Assert.assertEquals(1, currentMapping.size());
         Assert.assertEquals(orgId, currentMapping.get(0).originalId);
         Assert.assertEquals(currentMatchingStop.getNetexId(), currentMapping.get(0).netexId);
-        Assert.assertEquals(currentMatchingStop.getValidBetween().getFromDate(), currentMapping.get(0).validFrom);
+        Assert.assertEquals(currentMatchingStop.getValidBetween().getFromDate().getEpochSecond(), currentMapping.get(0).validFrom.getEpochSecond());
         Assert.assertEquals(currentMatchingStop.getValidBetween().getToDate(), currentMapping.get(0).validTo);
 
         Instant hundredSecondsAgo = now.minusSeconds(100);
@@ -1472,8 +1496,8 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         Assert.assertEquals(1, historicMapping.size());
         Assert.assertEquals(orgId, historicMapping.get(0).originalId);
         Assert.assertEquals(historicMatchingStopV1.getNetexId(), historicMapping.get(0).netexId);
-        Assert.assertEquals(historicMatchingStopV1.getValidBetween().getFromDate(), historicMapping.get(0).validFrom);
-        Assert.assertEquals(historicMatchingStopV1.getValidBetween().getToDate(), historicMapping.get(0).validTo);
+        Assert.assertEquals(historicMatchingStopV1.getValidBetween().getFromDate().getEpochSecond(), historicMapping.get(0).validFrom.getEpochSecond());
+        Assert.assertEquals(historicMatchingStopV1.getValidBetween().getToDate().getEpochSecond(), historicMapping.get(0).validTo.getEpochSecond());
 
         // No imported-ids or merged-ids are valid for point in time 300 seconds ago
         Instant threeHundredSecondsAgo = now.minusSeconds(300);
@@ -1638,28 +1662,97 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         return stopPlace;
     }
 
-//    private void createStopPlacesWithProviders(String stopPlaceName, String stopPlaceNameWithProvider, String stopPlaceNameWithProvider2) {
-//        Provider provider = new Provider(1L, "exemple-provider");
-//        provider.setCode("test-code");
-//        provider = providerRepository.save(provider);
-//
-//        Provider provider2 = new Provider(2L, "exemple-provider2");
-//        provider2.setCode("test-code2");
-//        provider2 = providerRepository.save(provider2);
-//
-//        StopPlace stopPlace = new StopPlace();
-//        stopPlace.setName(new EmbeddableMultilingualString(stopPlaceName, ""));
-//
-//        StopPlace stopPlaceWithProvider = new StopPlace();
-//        stopPlaceWithProvider.setName(new EmbeddableMultilingualString(stopPlaceNameWithProvider, ""));
-//        stopPlaceWithProvider.setProvider(provider);
-//
-//        StopPlace stopPlaceWithProvider2 = new StopPlace();
-//        stopPlaceWithProvider2.setName(new EmbeddableMultilingualString(stopPlaceNameWithProvider2, ""));
-//        stopPlaceWithProvider2.setProvider(provider2);
-//
-//        stopPlaceRepository.save(stopPlace);
-//        stopPlaceRepository.save(stopPlaceWithProvider);
-//        stopPlaceRepository.save(stopPlaceWithProvider2);
-//    }
+    @Test
+    public void findNearbyStopPlace_ProviderCheck() throws Exception {
+
+        Provider prov1 = new Provider();
+        prov1.name = "prov1";
+
+        StopPlace stopPlace = new StopPlace();
+        stopPlace.setName(new EmbeddableMultilingualString("name1", ""));
+        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+
+        stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
+        stopPlace.setProvider("prov1");
+        stopPlaceRepository.save(stopPlace);
+
+        StopPlace stopPlace2 = new StopPlace();
+        stopPlace2.setName(new EmbeddableMultilingualString("name2", ""));
+        stopPlace2.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+
+        stopPlace2.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
+        stopPlace2.setProvider("prov2");
+
+        stopPlaceRepository.save(stopPlace2);
+
+        Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
+
+        String result = stopPlaceRepository.findNearbyStopPlace(envelope, stopPlace.getName().getValue(), StopTypeEnumeration.ONSTREET_BUS, prov1);
+        assertThat(result).isNotNull();
+        StopPlace actual = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(result);
+        assertThat(actual.getName().getValue()).isEqualTo(stopPlace.getName().getValue());
+    }
+
+    @Test
+    public void findNearbyStopPlace_3ArgsFunction() throws Exception {
+
+        Provider prov1 = new Provider();
+        prov1.name = "prov1";
+
+        StopPlace stopPlace = new StopPlace();
+        stopPlace.setName(new EmbeddableMultilingualString("name1", ""));
+        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+
+        stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
+        stopPlace.setProvider("prov1");
+        stopPlaceRepository.save(stopPlace);
+
+        StopPlace stopPlace2 = new StopPlace();
+        stopPlace2.setName(new EmbeddableMultilingualString("name2", ""));
+        stopPlace2.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+
+        stopPlace2.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
+        stopPlace2.setProvider("prov2");
+
+        stopPlaceRepository.save(stopPlace2);
+
+        Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
+
+        String result = stopPlaceRepository.findNearbyStopPlace(envelope, stopPlace.getName().getValue(),  prov1);
+        assertThat(result).isNotNull();
+        StopPlace actual = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(result);
+        assertThat(actual.getName().getValue()).isEqualTo(stopPlace.getName().getValue());
+    }
+
+    @Test
+    public void findNearbyStopPlace_2ArgsFunction() throws Exception {
+
+        Provider prov1 = new Provider();
+        prov1.name = "prov1";
+
+        StopPlace stopPlace = new StopPlace();
+        stopPlace.setName(new EmbeddableMultilingualString("name1", ""));
+        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+
+        stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
+        stopPlace.setProvider("prov1");
+        stopPlaceRepository.save(stopPlace);
+
+        StopPlace stopPlace2 = new StopPlace();
+        stopPlace2.setName(new EmbeddableMultilingualString("name2", ""));
+        stopPlace2.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+
+        stopPlace2.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
+        stopPlace2.setProvider("prov2");
+
+        stopPlaceRepository.save(stopPlace2);
+
+        Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
+
+        List<String> result = stopPlaceRepository.findNearbyStopPlace(envelope, StopTypeEnumeration.ONSTREET_BUS);
+        assertTrue(!result.isEmpty());
+        StopPlace actual = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(result.get(0));
+        assertThat(actual.getName().getValue()).isEqualTo(stopPlace.getName().getValue());
+    }
+
 }

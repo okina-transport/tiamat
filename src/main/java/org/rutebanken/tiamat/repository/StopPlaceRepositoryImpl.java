@@ -26,6 +26,7 @@ import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.domain.Provider;
+import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -36,6 +37,7 @@ import org.rutebanken.tiamat.repository.search.StopPlaceQueryFromSearchBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -127,6 +129,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
     @Autowired
     private SearchHelper searchHelper;
+
+    @Value("${stopPlace.sharing.policy}")
+    protected StopPlaceSharingPolicy sharingPolicy;
 
     /**
      * Find nearby stop places that are valid 'now', specifying a bounding box.
@@ -222,7 +227,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                 "AND s.stop_place_type = :stopPlaceType ";
 
         if(provider != null){
-            sql += "AND s.provider_id = :providerId";
+            sql += "AND s.provider = :providerName";
         }
 
         sql +=  ") sub " +
@@ -235,7 +240,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         query.setParameter("stopPlaceType", stopTypeEnumeration.toString());
         query.setParameter("name", name);
         if (provider != null){
-            query.setParameter("providerId", provider.getId());
+            query.setParameter("providerName", provider.name);
         }
         return getOneOrNull(query);
     }
@@ -251,7 +256,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                                                            "AND s.name_value = :name ";
 
         if(provider != null){
-            sql += "AND s.provider_id = :providerId";
+            sql += "AND s.provider = :providerName";
         }
 
         Query query = entityManager.createNativeQuery(sql);
@@ -259,7 +264,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         query.setParameter("name", name);
         query.setParameter("pointInTime", Date.from(Instant.now()));
         if (provider != null){
-            query.setParameter("providerId", provider.getId());
+            query.setParameter("providerName", provider.name);
         }
         return getOneOrNull(query);
     }
@@ -492,8 +497,8 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         Query query = entityManager.createNativeQuery(sql);
 
-        String valueParameter = quayOriginalId.contains(":") ? quayOriginalId : "%:" + quayOriginalId;
-        query.setParameter("value", valueParameter);
+
+        query.setParameter("value", quayOriginalId);
         query.setParameter("originalIdKey", ORIGINAL_ID_KEY);
         query.setParameter("pointInTime",  Date.from(pointInTime));
 
@@ -509,6 +514,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
             return null;
         }
     }
+
+
+
 
     @Override
     public Map<String, Set<String>> listStopPlaceIdsAndQuayIds(Instant validFrom, Instant validTo) {

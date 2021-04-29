@@ -62,7 +62,7 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
         firstStopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
 
         // Import first stop place.
-        StopPlace firstImportResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(firstStopPlace, false, false);
+        StopPlace firstImportResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(firstStopPlace);
 
         StopPlace secondStopPlace = createStopPlace(name,
                 stopPlaceLongitude, stopPlaceLatitude, null);
@@ -71,7 +71,7 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
 
 
         // Import second stop place
-        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace, false, false);
+        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace);
 
         assertThat(importResult.getNetexId()).isEqualTo(firstImportResult.getNetexId());
         assertThat(importResult.getQuays()).hasSize(1);
@@ -91,13 +91,13 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
         SiteFrame siteFrame = new SiteFrame();
 
         // Import first stop place.
-        mergingStopPlaceImporter.importStopPlace(firstStopPlace, false, false);
+        mergingStopPlaceImporter.importStopPlace(firstStopPlace);
 
         StopPlace secondStopPlace = createStopPlace(name, longitude, latitude, null);
         secondStopPlace.getQuays().add(createQuay(name, longitude, latitude, null));
 
         // Import second stop place
-        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace, false, false);
+        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace);
 
         assertThat(importResult.getNetexId()).isEqualTo(importResult.getNetexId());
         assertThat(importResult.getQuays()).hasSize(1);
@@ -114,12 +114,12 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
         StopPlace firstStopPlace = createStopPlace("Filipstad", 10.7096245, 59.9086885, null);
         firstStopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
 
-        mergingStopPlaceImporter.importStopPlace(firstStopPlace, false, false);
+        mergingStopPlaceImporter.importStopPlace(firstStopPlace);
 
         StopPlace secondStopPlace = createStopPlace("Filipstad ferjeterminal", 10.709707, 59.908737, null);
         secondStopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
 
-        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace, false, false);
+        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace);
 
         assertThat(importResult.getNetexId()).isEqualTo(importResult.getNetexId());
         assertThat(importResult.getName().getValue()).isEqualTo(firstStopPlace.getName().getValue());
@@ -131,9 +131,9 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
     public void reproduceIssueWithCollectionNotAssosiatedWithAnySession() throws ExecutionException, InterruptedException {
         String name = "Skillebekkgata";
         StopPlace firstStopPlace = createStopPlaceWithQuay(name, 6, 60, "11063200", "11063200");
-        mergingStopPlaceImporter.importStopPlace(firstStopPlace, false, false);
+        mergingStopPlaceImporter.importStopPlace(firstStopPlace);
         StopPlace secondStopPlace = createStopPlaceWithQuay(name, 6, 60.0001, "11063198", "11063198");
-        mergingStopPlaceImporter.importStopPlace(secondStopPlace, false, false);
+        mergingStopPlaceImporter.importStopPlace(secondStopPlace);
     }
 
     /**
@@ -158,7 +158,7 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
         newStopPlace.getOrCreateValues(NetexIdMapper.ORIGINAL_ID_KEY).add("original-id-filipstad");
         newStopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
 
-        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(newStopPlace, false, false);
+        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(newStopPlace);
 
         assertThat(importResult.getNetexId()).isEqualTo(firstStopPlace.getNetexId());
         assertThat(importResult.getStopPlaceType()).isEqualTo(StopTypeEnumeration.ONSTREET_BUS);
@@ -191,7 +191,7 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
         terminal2.setCentroid(point(60.01, 10.78));
         secondStopPlace.getQuays().add(terminal2);
 
-        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace, false, false);
+        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace);
 
         assertThat(importResult.getNetexId()).isEqualTo(firstStopPlace.getNetexId());
         assertThat(importResult.getQuays()).hasSize(2);
@@ -214,7 +214,7 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
         terminal1.setCentroid(point(70.000, 10.78));
         firstStopPlace.getQuays().add(terminal1);
 
-        stopPlaceRepository.save(firstStopPlace);
+        firstStopPlace= stopPlaceRepository.save(firstStopPlace);
 
         StopPlace secondStopPlace = new StopPlace();
 
@@ -229,7 +229,7 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
         stopPlaceRepository.save(secondStopPlace);
 
         // Import only the second stop place as the first one is already "saved" (mocked)
-        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace, false, false);
+        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace);
 
         assertThat(importResult.getNetexId()).isEqualTo(firstStopPlace.getNetexId());
         assertThat(importResult.getQuays()).hasSize(1);
@@ -262,7 +262,7 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
         secondStopPlace.getQuays().add(terminal2);
 
         // Import only the second stop place as the first one is already saved
-        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace, false, false);
+        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace);
 
         assertThat(importResult.getNetexId()).isEqualTo(firstStopPlace.getNetexId());
         // Expect only one quay when two quays have the same coordinates

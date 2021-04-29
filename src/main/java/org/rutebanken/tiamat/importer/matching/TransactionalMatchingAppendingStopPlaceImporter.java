@@ -21,6 +21,7 @@ import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
 import org.rutebanken.tiamat.importer.AlternativeStopTypes;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
+import org.rutebanken.tiamat.importer.finder.SimpleNearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByIdFinder;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
 import org.rutebanken.tiamat.importer.merging.QuayMerger;
@@ -76,6 +77,9 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
     @Autowired
     private StopPlaceByIdFinder stopPlaceByIdFinder;
+
+    @Autowired
+    private SimpleNearbyStopPlaceFinder simpleNearbyStopPlaceFinder;
 
     @Autowired
     private ZoneDistanceChecker zoneDistanceChecker;
@@ -154,13 +158,17 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             foundStopPlaces = filteredStopPlaces;
         }
-        // Désactiver pour Mobi-iti car fusionne des pa au nom proche au sein d'un même pa commercial
-//        if (foundStopPlaces.isEmpty()) {
-//            org.rutebanken.tiamat.model.StopPlace nearbyStopPlace = nearbyStopPlaceFinder.find(incomingStopPlace, ALLOW_OTHER_TYPE_AS_ANY_MATCH, provider, noMergeOnMoveOnly);
-//            if (nearbyStopPlace != null) {
-//                foundStopPlaces = Arrays.asList(nearbyStopPlace);
-//            }
-//        }
+
+        if (foundStopPlaces.isEmpty()){
+            //No stop place were found using ids. Looking for stop place by location
+            simpleNearbyStopPlaceFinder.find(incomingStopPlace)
+                                       .ifPresent(foundStopPlaces::add);
+
+            logger.warn("Neaby Finder : foundStopPlaces:"+foundStopPlaces.size());
+        }
+
+
+
 
         if (foundStopPlaces.isEmpty()) {
             logger.warn("Cannot find stop place from IDs or location: {}. StopPlace toString: {}. Will add it as a new one",
@@ -169,7 +177,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             StopPlace newStopPlace = null;
             try {
-                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace, noMergeOnMoveOnly, onMoveOnlyImport);
+                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace);
             } catch (InterruptedException | ExecutionException e) {
                 logger.error("Problem while adding new stop place", e);
             }

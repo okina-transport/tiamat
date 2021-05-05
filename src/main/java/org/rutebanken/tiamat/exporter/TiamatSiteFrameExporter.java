@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.exporter;
 
+import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.rutebanken.tiamat.repository.PathLinkRepository;
@@ -27,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class TiamatSiteFrameExporter {
@@ -68,12 +70,38 @@ public class TiamatSiteFrameExporter {
         StopPlacesInFrame_RelStructure stopPlacesInFrame_relStructure = new StopPlacesInFrame_RelStructure();
 
         if (iterableStopPlaces != null) {
-            iterableStopPlaces.forEach(stopPlace -> stopPlacesInFrame_relStructure.getStopPlace().add(stopPlace));
+            iterableStopPlaces.forEach(stopPlace -> {
+                feedAdditionalInfo(stopPlace);
+                stopPlacesInFrame_relStructure.getStopPlace().add(stopPlace);
+            });
             logger.info("Adding {} stop places", stopPlacesInFrame_relStructure.getStopPlace().size());
             siteFrame.setStopPlaces(stopPlacesInFrame_relStructure);
             if (siteFrame.getStopPlaces().getStopPlace().isEmpty()) {
                 siteFrame.setStopPlaces(null);
             }
+        }
+    }
+
+    private void feedAdditionalInfo(StopPlace stopPlace){
+
+        VehicleModeEnumeration transportMode = TiamatVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(stopPlace.getStopPlaceType());
+        stopPlace.setTransportMode(transportMode);
+        for (Quay quay : stopPlace.getQuays()) {
+            if (quay.getTransportMode() == null){
+                quay.setTransportMode(transportMode);
+            }
+
+            List<String> originalNames = quay.getOriginalNames().stream().collect(Collectors.toList());
+
+            if (originalNames.size() > 0){
+                quay.setName(new EmbeddableMultilingualString(originalNames.get(0)));
+            }else{
+                quay.setName(stopPlace.getName());
+            }
+
+            SiteRefStructure siteRef = new SiteRefStructure();
+            siteRef.setRef(stopPlace.getNetexId());
+            quay.setSiteRef(siteRef);
         }
     }
 

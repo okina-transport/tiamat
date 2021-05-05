@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
 import org.rutebanken.netex.model.*;
+import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -122,5 +123,12 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
                 .withKeyValue(new KeyValueStructure()
                         .withKey(IS_PARENT_STOP_PLACE)
                         .withValue(String.valueOf(stopPlace.isParentStopPlace())));
+
+
+        if (stopPlace.getTransportMode() == null && stopPlace.getStopPlaceType() != null ){
+            org.rutebanken.tiamat.model.VehicleModeEnumeration transportMode = TiamatVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(stopPlace.getStopPlaceType());
+            netexStopPlace.setTransportMode(VehicleModeEnumeration.fromValue(transportMode.value()));
+        }
+
     }
 }

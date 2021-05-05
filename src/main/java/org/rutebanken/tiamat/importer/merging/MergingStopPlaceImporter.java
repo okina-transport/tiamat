@@ -154,72 +154,7 @@ public class MergingStopPlaceImporter {
         return updateCache(incomingStopPlace);
     }
 
-    public StopPlace handleAlreadyExistingStopPlace(StopPlace existingStopPlace, StopPlace incomingStopPlace, boolean onMoveOnlyImport) {
-        logger.debug("Found existing stop place {} from incoming {}", existingStopPlace, incomingStopPlace);
 
-        StopPlace copy = versionCreator.createCopy(existingStopPlace, StopPlace.class);
-
-        boolean stopPlaceAlone = quayMerger.checkNumberProducers(existingStopPlace.getKeyValues(), incomingStopPlace.getKeyValues());
-        boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, ADD_NEW_QUAYS, EXISTING_STOP_QUAY_MERGE_SHORT_DISTANCE_CHECK_BEFORE_ID_MATCH, stopPlaceAlone, onMoveOnlyImport);
-        boolean keyValuesChanged = (
-                keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy)
-                        && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy)
-                        && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_STOPCODE_KEY, incomingStopPlace, copy)
-        );
-        boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
-
-        boolean typeChanged = false;
-        if (copy.getStopPlaceType() == null && incomingStopPlace.getStopPlaceType() != null) {
-            copy.setStopPlaceType(incomingStopPlace.getStopPlaceType());
-            logger.info("Updated stop place type to {} for stop place {}", copy.getStopPlaceType(), copy);
-            typeChanged = true;
-        }
-
-        boolean alternativeNameChanged = false;
-        if(incomingStopPlace.getAlternativeNames() != null && incomingStopPlace.getAlternativeNames().size() != 0){
-            StopPlace alternativeNamesToCopy = copy;
-            int sizeList = alternativeNamesToCopy.getAlternativeNames().size();
-            incomingStopPlace.getAlternativeNames().forEach(incomingAlternativeName -> {
-                if (!alternativeNamesToCopy.getAlternativeNames().contains(incomingAlternativeName)){
-                    alternativeNamesToCopy.getAlternativeNames().add(incomingAlternativeName);
-                }
-            });
-            if(alternativeNamesToCopy.getAlternativeNames().size() != sizeList){
-                alternativeNameChanged = true;
-            }
-        }
-
-        boolean nameChanged = false;
-        if(incomingStopPlace.getName() != null && !incomingStopPlace.getName().equals(existingStopPlace.getName()) && stopPlaceAlone){
-            copy.setName(incomingStopPlace.getName());
-            nameChanged = true;
-        }
-
-        if (quayChanged || keyValuesChanged || centroidChanged || typeChanged || alternativeNameChanged || nameChanged) {
-            logger.info("Updating existing stop place. quays changed {}, key values changed: {}, centroid changed: {}, type changed:{} - {}, alternative names changed: {}, nameChanged: {}",
-                    quayChanged, keyValuesChanged, centroidChanged, typeChanged, alternativeNameChanged, nameChanged, existingStopPlace);
-
-            if(copy.getParentSiteRef() != null){
-                StopPlace parentExistingVersion = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(copy.getParentSiteRef().getRef());
-                StopPlace parentCopy = versionCreator.createCopy(parentExistingVersion, StopPlace.class);
-                parentCopy.getChildren().removeIf(stopPlace -> stopPlace.getNetexId().equals(existingStopPlace.getNetexId()));
-                parentCopy.getChildren().add(copy);
-
-                Set<String> childStopsUpdated = new HashSet<>();
-                childStopsUpdated.add(copy.getNetexId());
-                parentCopy = stopPlaceVersionedSaverService.saveNewVersion(parentExistingVersion, parentCopy, childStopsUpdated);
-                copy = parentCopy.getChildren().stream().filter(stopPlace -> stopPlace.getNetexId().equals(existingStopPlace.getNetexId())).findFirst().get();
-            }
-            else{
-                copy = stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, copy);
-            }
-            return updateCache(copy);
-        }
-
-        logger.debug("No changes. Returning existing stop {}", existingStopPlace);
-        return existingStopPlace;
-
-    }
     private StopPlace updateCache(StopPlace stopPlace) {
         // Keep the attached stop place reference in case it is merged.
 
@@ -229,43 +164,5 @@ public class MergingStopPlaceImporter {
         return stopPlace;
     }
 
-    private StopPlace findNearbyOrExistingStopPlace(StopPlace newStopPlace) {
-        final List<StopPlace> existingStopPlaces = stopPlaceFromOriginalIdFinder.find(newStopPlace);
-        if (existingStopPlaces != null && !existingStopPlaces.isEmpty()) {
-
-            Optional<StopPlace> nearbyExistingStopPlace = existingStopPlaces.stream()
-                    .filter(existingStopPlace -> {
-                        if (zoneDistanceChecker.exceedsLimit(newStopPlace, existingStopPlace)) {
-                            logger.warn("Found stop place, but the distance between incoming and found stop place is too far in meters: {}. Incoming: {}. Found: {}",
-                                    ZoneDistanceChecker.DEFAULT_MAX_DISTANCE,
-                                    newStopPlace, existingStopPlace);
-                            return false;
-                        }
-                        return true;
-                    })
-                    .findAny();
-
-            if(nearbyExistingStopPlace.isPresent()) {
-                return nearbyExistingStopPlace.get();
-            }
-        }
-
-        if (newStopPlace.getName() != null) {
-            final StopPlace nearbyStopPlace = nearbyStopPlaceFinder.find(newStopPlace, true, null, false);
-            if (nearbyStopPlace != null) {
-                logger.debug("Found nearby stop place with name: {}, id: {}", nearbyStopPlace.getName(), nearbyStopPlace.getNetexId());
-                return nearbyStopPlace;
-            }
-        }
-
-        // Find existing nearby stop place based on type
-        final List<StopPlace> nearbyStopsWithSameType = nearbyStopsWithSameTypeFinder.find(newStopPlace);
-        if (!nearbyStopsWithSameType.isEmpty()) {
-            StopPlace nearbyStopWithSameType = nearbyStopsWithSameType.get(0);
-            logger.debug("Found nearby stop place with same type: {}", nearbyStopWithSameType);
-            return nearbyStopWithSameType;
-        }
-        return null;
-    }
 
 }

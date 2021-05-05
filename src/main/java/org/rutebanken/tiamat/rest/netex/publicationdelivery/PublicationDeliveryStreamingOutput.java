@@ -45,6 +45,8 @@ public class PublicationDeliveryStreamingOutput {
 
     private final NeTExValidator neTExValidator = NeTExValidator.getNeTExValidator();
 
+    private static final JAXBContext publicationDeliveryContext = createContext(PublicationDeliveryStructure.class);
+
     static {
         try {
             jaxbContext = newInstance(PublicationDeliveryStructure.class);
@@ -61,7 +63,9 @@ public class PublicationDeliveryStreamingOutput {
     }
 
     public StreamingOutput stream(PublicationDeliveryStructure publicationDelivery) throws JAXBException, IOException, SAXException {
-        Marshaller marshaller = jaxbContext.createMarshaller();
+        Marshaller marshaller = createMarshaller();
+
+        publicationDelivery.setParticipantRef("MOBIITI");
 
         JAXBElement<PublicationDeliveryStructure> jaxPublicationDelivery = objectFactory.createPublicationDelivery(publicationDelivery);
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
@@ -71,6 +75,8 @@ public class PublicationDeliveryStreamingOutput {
         if(validateAgainstSchema) {
             marshaller.setSchema(neTExValidator.getSchema());
         }
+
+
 
 
         return outputStream -> {
@@ -92,5 +98,33 @@ public class PublicationDeliveryStreamingOutput {
             logger.debug("Logging marshalled NeTEx XML as debug is enabled. \n{}", byteArrayOutputStream.toString());
         }
     }
+
+    private Marshaller createMarshaller() throws JAXBException, IOException, SAXException {
+        Marshaller marshaller = publicationDeliveryContext.createMarshaller();
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+        marshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, "");
+        marshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
+        marshaller.setProperty("com.sun.xml.bind.xmlDeclaration", Boolean.FALSE);
+        marshaller.setProperty("com.sun.xml.bind.xmlHeaders", "<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+
+        if (validateAgainstSchema) {
+            marshaller.setSchema(neTExValidator.getSchema());
+        }
+
+        return marshaller;
+    }
+
+    private static JAXBContext createContext(Class clazz) {
+        try {
+            JAXBContext jaxbContext = newInstance(clazz);
+            logger.info("Created context {}", jaxbContext.getClass());
+            return jaxbContext;
+        } catch (JAXBException e) {
+            String message = "Could not create instance of jaxb context for class " + clazz;
+            logger.warn(message, e);
+            throw new RuntimeException("Could not create instance of jaxb context for class " + clazz, e);
+        }
+    }
+
 
 }

@@ -145,8 +145,8 @@ public class StopPlaceQueryFromSearchBuilder {
     @Autowired
     private NetexIdHelper netexIdHelper;
 
-    @Value("${stopPlace.sharing.policy}")
-    protected StopPlaceSharingPolicy sharingPolicy;
+    @Value("${administration.space.name}")
+    protected String administrationSpaceName;
 
     /**
      * Configure some common words to be skipped during stop place search by name.
@@ -499,7 +499,7 @@ public class StopPlaceQueryFromSearchBuilder {
             createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements);
         }
 
-        if (provider.getChouetteInfo().getReferential() != null && StopPlaceSharingPolicy.ISOLATED.equals(sharingPolicy)){
+        if (provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName)){
             operators.add("and");
             parameters.put("providerName", provider.getChouetteInfo().getReferential());
             wheres.add("s.provider = :providerName");

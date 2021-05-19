@@ -94,13 +94,15 @@ public class SiteElementMapper {
                     limitationFromInput.getAudibleSignalsAvailable() != limitation.getAudibleSignalsAvailable() |
                     limitationFromInput.getStepFreeAccess() != limitation.getStepFreeAccess() |
                     limitationFromInput.getLiftFreeAccess() != limitation.getLiftFreeAccess() |
-                    limitationFromInput.getEscalatorFreeAccess() != limitation.getEscalatorFreeAccess()) {
+                    limitationFromInput.getEscalatorFreeAccess() != limitation.getEscalatorFreeAccess() |
+                    limitationFromInput.getVisualSignsAvailable() != limitation.getVisualSignsAvailable() ) {
 
                 limitation.setWheelchairAccess(limitationFromInput.getWheelchairAccess());
                 limitation.setAudibleSignalsAvailable(limitationFromInput.getAudibleSignalsAvailable());
                 limitation.setStepFreeAccess(limitationFromInput.getStepFreeAccess());
                 limitation.setLiftFreeAccess(limitationFromInput.getLiftFreeAccess());
                 limitation.setEscalatorFreeAccess(limitationFromInput.getEscalatorFreeAccess());
+                limitation.setVisualSignsAvailable(limitationFromInput.getVisualSignsAvailable());
 
 
                 limitations.clear();

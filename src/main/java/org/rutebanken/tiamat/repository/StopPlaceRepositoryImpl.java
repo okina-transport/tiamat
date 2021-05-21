@@ -245,6 +245,43 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         return getOneOrNull(query);
     }
 
+    /**
+     * Search nearby stopPlace
+     *
+     * @param envelope            bounding box     *
+     * @param stopTypeEnumeration stop place type
+     * @param provider provider to search
+     * @return the stop place within bounding box if equal type, within envelope and closest similarity in name
+     */
+    @Override
+    public List<String> findNearbyStopPlace(Envelope envelope, StopTypeEnumeration stopTypeEnumeration, Provider provider) {
+        Geometry geometryFilter = geometryFactory.toGeometry(envelope);
+
+        String sql ="SELECT s.netex_id FROM stop_place s " +
+                SQL_LEFT_JOIN_PARENT_STOP +
+                "WHERE ST_within(s.centroid, :filter) = true " +
+                "AND " + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME +
+                "AND s.stop_place_type = :stopPlaceType ";
+
+        if(provider != null){
+            sql += "AND s.provider = :providerName";
+        }
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("filter", geometryFilter);
+        query.setParameter("stopPlaceType", stopTypeEnumeration.toString());
+        query.setParameter("pointInTime", Date.from(Instant.now()));
+        if (provider != null){
+            query.setParameter("providerName", provider.name);
+        }
+        try {
+            List<String> resultList = query.getResultList();
+            return resultList;
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
+
     @Override
     public String findNearbyStopPlace(Envelope envelope, String name, Provider provider) {
         Geometry geometryFilter = geometryFactory.toGeometry(envelope);

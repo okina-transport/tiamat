@@ -36,6 +36,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -47,14 +49,20 @@ public class SimpleNearbyStopPlaceFinderTest {
     private AlternativeStopTypes alternativeTypes = new AlternativeStopTypes();
     private PeriodicCacheLogger periodicCacheLogger = new PeriodicCacheLogger();
 
+    //30m ~  0.0002695°
+    private static final double BOUNDING_BOX_BUFFER_30M = 0.0002695;
+
+    //100m ~  0.0008983°
+    private static final double BOUNDING_BOX_BUFFER_100M = 0.0008983;
+
     @Test
     public void nullCentroid() throws Exception {
         StopPlaceRepository stopPlaceRepository = mock(StopPlaceRepository.class);
         ProviderRepository providerRepository = mock(ProviderRepository.class);
         SimpleNearbyStopPlaceFinder nearbyStopPlaceFinder = new SimpleNearbyStopPlaceFinder(mock(StopPlaceRepository.class), 0, 0, TimeUnit.DAYS, periodicCacheLogger, providerRepository);
         StopPlace stopPlace = new StopPlace();
-        Optional<StopPlace> actual = nearbyStopPlaceFinder.find(stopPlace);
-        assertFalse(actual.isPresent());
+        List<StopPlace> actual = nearbyStopPlaceFinder.find(stopPlace,BOUNDING_BOX_BUFFER_30M);
+        assertTrue(actual.isEmpty());
     }
 
     @Test
@@ -63,8 +71,8 @@ public class SimpleNearbyStopPlaceFinderTest {
         ProviderRepository providerRepository = mock(ProviderRepository.class);
         SimpleNearbyStopPlaceFinder nearbyStopPlaceFinder = new SimpleNearbyStopPlaceFinder(mock(StopPlaceRepository.class),0, 0, TimeUnit.DAYS, periodicCacheLogger, providerRepository);
         StopPlace stopPlace = new StopPlace();
-        Optional<StopPlace> actual = nearbyStopPlaceFinder.find(stopPlace);
-        assertFalse(actual.isPresent());
+        List<StopPlace> actual = nearbyStopPlaceFinder.find(stopPlace,BOUNDING_BOX_BUFFER_30M);
+        assertTrue(actual.isEmpty());
     }
 
 
@@ -84,9 +92,10 @@ public class SimpleNearbyStopPlaceFinderTest {
 
         org.locationtech.jts.geom.Geometry envelope = (org.locationtech.jts.geom.Geometry) stopPlace.getCentroid().getEnvelope().clone();
 
-
-        when(stopPlaceRepository.findNearbyStopPlace(any(), any(), any())).thenReturn(stopPlaceId);
-        when(stopPlaceRepository.findNearbyStopPlace(any(), any(), any(),any())).thenReturn(stopPlaceId);
+        List<String> returnList = new ArrayList<>();
+        returnList.add(stopPlaceId);
+        when(stopPlaceRepository.findNearbyStopPlace(any(),eq(StopTypeEnumeration.BUS_STATION), any())).thenReturn(returnList);
+        //when(stopPlaceRepository.findNearbyStopPlace(any(), any(), any(),any())).thenReturn(stopPlaceId);
         when(stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceId)).thenReturn(stopPlace);
 
         Provider prov1 = new Provider();
@@ -98,8 +107,10 @@ public class SimpleNearbyStopPlaceFinderTest {
         providerList.add(prov1);
         when(providerRepository.getProviders()).thenReturn(providerList);
 
-        Optional<StopPlace> actual = nearbyStopPlaceFinder.find(stopPlace);
-        org.locationtech.jts.geom.Geometry actualEnvelope = (org.locationtech.jts.geom.Geometry) actual.get().getCentroid().getEnvelope().clone();
+        List<StopPlace> actual = nearbyStopPlaceFinder.findUnder30M(stopPlace);
+        assertFalse(actual.isEmpty());
+
+        org.locationtech.jts.geom.Geometry actualEnvelope = (org.locationtech.jts.geom.Geometry) actual.get(0).getCentroid().getEnvelope().clone();
 
         assertThat(actualEnvelope).isEqualTo(envelope);
     }

@@ -45,6 +45,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -161,14 +162,18 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
         if (foundStopPlaces.isEmpty()){
             //No stop place were found using ids. Looking for stop place by location
-            simpleNearbyStopPlaceFinder.find(incomingStopPlace)
-                                       .ifPresent(foundStopPlaces::add);
-
-            logger.warn("Neaby Finder : foundStopPlaces:"+foundStopPlaces.size());
+            foundStopPlaces = simpleNearbyStopPlaceFinder.findUnder30M(incomingStopPlace);
+            logger.warn("Neaby Finder under 30m : foundStopPlaces:"+foundStopPlaces.size());
         }
 
-
-
+        if (foundStopPlaces.isEmpty()){
+            //No stop place were found around 30m. Looking for stop places around 100m with exact name
+            List<org.rutebanken.tiamat.model.StopPlace> placesUnder100m = simpleNearbyStopPlaceFinder.findUnder100M(incomingStopPlace);
+            logger.warn("Neaby Finder under 100m : foundStopPlaces:" + placesUnder100m.size());
+            Optional<org.rutebanken.tiamat.model.StopPlace> matchingPlace = filterByName(incomingStopPlace, placesUnder100m);
+            //If a stop place is found under 100m with the same name, it is added to the result list that will be processed
+            matchingPlace.ifPresent(foundStopPlaces::add);
+        }
 
         if (foundStopPlaces.isEmpty()) {
             logger.warn("Cannot find stop place from IDs or location: {}. StopPlace toString: {}. Will add it as a new one",
@@ -261,6 +266,20 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
             }
         }
     }
+
+    /**
+     * Read the list of nearby places and search for an existing place with the same name.
+     * If an existing place is found with the exact name, it is returned
+     * @param incomingStopPlace
+     * @param nearByStopPlaces
+     * @return
+     */
+    private Optional<org.rutebanken.tiamat.model.StopPlace> filterByName(org.rutebanken.tiamat.model.StopPlace incomingStopPlace, List<org.rutebanken.tiamat.model.StopPlace> nearByStopPlaces){
+        return nearByStopPlaces.stream()
+                               .filter(stopPlace -> stopPlace.getName().getValue().equals(incomingStopPlace.getName().getValue()))
+                               .findFirst();
+    }
+
 
     private List<org.rutebanken.tiamat.model.StopPlace> checkIfQuaysAlreadyPresentInOtherStopPlace(List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces, org.rutebanken.tiamat.model.StopPlace incomingStopPlace) throws ExecutionException {
         quayMover.doMove(foundStopPlaces, incomingStopPlace);

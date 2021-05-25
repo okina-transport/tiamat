@@ -111,6 +111,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                                  AtomicInteger stopPlacesCreatedOrUpdated, boolean onMoveOnlyImport) {
 
 
+        stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
         List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
         final int foundStopPlacesCount = foundStopPlaces.size();
 

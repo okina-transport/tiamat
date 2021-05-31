@@ -62,7 +62,7 @@ public class PublicationDeliveryTestHelper {
         }
     }
 
-    @MockBean
+    @Autowired
     private ImportResource importResource;
 
     public PublicationDeliveryStructure createPublicationDeliveryTopographicPlace(TopographicPlace... topographicPlace) {

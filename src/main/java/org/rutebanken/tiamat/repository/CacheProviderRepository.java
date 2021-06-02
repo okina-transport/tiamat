@@ -20,9 +20,11 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.domain.Provider;
+import org.rutebanken.tiamat.service.IServiceApiLogin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
@@ -41,6 +43,10 @@ public class CacheProviderRepository implements ProviderRepository {
 
     @Autowired
     RestProviderDAO restProviderService;
+
+    @Autowired
+    @Qualifier("mainti4serviceapilogin")
+    IServiceApiLogin mainti4ServiceLogin;
 
     @Value("${tiamat.provider.cache.refresh.max.size:200}")
     private Integer cacheMaxSize;

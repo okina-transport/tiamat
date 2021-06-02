@@ -111,6 +111,9 @@
         <fabric8.version>2.3.7</fabric8.version>
         <metrics.version>3.2.3</metrics.version>
 
+        <!-- MAINTI4 -->
+        <mainti4-client.version>0.0.1</mainti4-client.version>
+
     </properties>
 
     <!-- This repository list can be deleted, as it is now plied by rutebanken nexus.
@@ -171,6 +174,11 @@
                 <version>${metrics.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.okina.mainti4</groupId>
+                <artifactId>mainti4-api-client</artifactId>
+                <version>${mainti4-client.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -277,6 +285,11 @@
                     <artifactId>servlet-api</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.okina.mainti4</groupId>
+            <artifactId>mainti4-api-client</artifactId>
         </dependency>
 
         <dependency>

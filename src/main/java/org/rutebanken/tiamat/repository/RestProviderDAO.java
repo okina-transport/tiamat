@@ -22,14 +22,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -47,6 +44,7 @@ public class RestProviderDAO {
 
 
     public Collection<Provider> getProviders() {
+/*
         RestTemplate restTemplate = new RestTemplate();
 
         ResponseEntity<List<Provider>> rateResponse =
@@ -54,6 +52,32 @@ public class RestProviderDAO {
                         HttpMethod.GET, getEntityWithAuthenticationToken(), new ParameterizedTypeReference<List<Provider>>() {
                         });
         return rateResponse.getBody();
+*/
+        return getFakeProviders();
+    }
+
+    /**
+     * Recupere une liste de faux 'providers' de donnees
+     * @return une liste de faux 'providers' de donnees
+     */
+    private List<Provider> getFakeProviders() {
+        List<Provider> listFakeProviders = new ArrayList<>();
+        listFakeProviders.add(getFakeProvider(1L, "PROVIDER1"));
+        listFakeProviders.add(getFakeProvider(2L, "PROVIDER2"));
+        return listFakeProviders;
+    }
+
+    /**
+     * Cree un faux 'provider" de donnee
+     * @param rId : identifiant
+     * @param rName : Nom du provider
+     * @return la classe Provider
+     */
+    private Provider getFakeProvider(Long rId, String rName) {
+        Provider fakeProvider = new Provider();
+        fakeProvider.id = rId;
+        fakeProvider.name = rName;
+        return fakeProvider;
     }
 
     private HttpEntity<String> getEntityWithAuthenticationToken() {

@@ -20,6 +20,9 @@ import ma.glasnost.orika.MappingContext;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
+import org.rutebanken.tiamat.repository.StopPlaceRepositoryImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
@@ -28,6 +31,8 @@ import java.util.List;
 public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiamat.model.StopPlace> {
 
     public static final String IS_PARENT_STOP_PLACE = "IS_PARENT_STOP_PLACE";
+
+    private static final Logger logger = LoggerFactory.getLogger(StopPlaceMapper.class);
 
     private final PublicationDeliveryHelper publicationDeliveryHelper;
 
@@ -127,6 +132,9 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
 
         if (stopPlace.getTransportMode() == null && stopPlace.getStopPlaceType() != null ){
             org.rutebanken.tiamat.model.VehicleModeEnumeration transportMode = TiamatVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(stopPlace.getStopPlaceType());
+            if (transportMode == null ){
+                logger.error("Unable to find transportMode for stopPlaceType:" + stopPlace.getStopPlaceType() + ", on stopPlace:" + stopPlace.getNetexId());
+            }
             netexStopPlace.setTransportMode(VehicleModeEnumeration.fromValue(transportMode.value()));
         }
 

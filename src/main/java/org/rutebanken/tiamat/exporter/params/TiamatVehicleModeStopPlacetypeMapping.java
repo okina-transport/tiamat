@@ -24,6 +24,10 @@ public class TiamatVehicleModeStopPlacetypeMapping {
             stopPlaceTypeVehicleMode.put(StopTypeEnumeration.COACH_STATION, VehicleModeEnumeration.COACH);
             stopPlaceTypeVehicleMode.put(StopTypeEnumeration.FERRY_STOP, VehicleModeEnumeration.FERRY);
             stopPlaceTypeVehicleMode.put(StopTypeEnumeration.FERRY_PORT, VehicleModeEnumeration.FERRY);
+            stopPlaceTypeVehicleMode.put(StopTypeEnumeration.HARBOUR_PORT, VehicleModeEnumeration.WATER);
+            stopPlaceTypeVehicleMode.put(StopTypeEnumeration.LIFT_STATION, VehicleModeEnumeration.CABLEWAY);
+            stopPlaceTypeVehicleMode.put(StopTypeEnumeration.TRAM_STATION, VehicleModeEnumeration.TRAM);
+            stopPlaceTypeVehicleMode.put(StopTypeEnumeration.OTHER, VehicleModeEnumeration.OTHER);
         }
         return stopPlaceTypeVehicleMode.get(stopTypeEnumeration);
     }

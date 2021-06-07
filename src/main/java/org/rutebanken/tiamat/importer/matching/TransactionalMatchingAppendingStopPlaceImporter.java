@@ -20,6 +20,7 @@ import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
 import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
 import org.rutebanken.tiamat.importer.AlternativeStopTypes;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
+import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
 import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.SimpleNearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByIdFinder;
@@ -106,6 +107,9 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     @Autowired
     private QuayMover quayMover;
 
+    @Value("${stopPlace.sharing.policy}")
+    protected StopPlaceSharingPolicy sharingPolicy;
+
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
                                  AtomicInteger stopPlacesCreatedOrUpdated, boolean onMoveOnlyImport) {
@@ -161,13 +165,13 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
             foundStopPlaces = filteredStopPlaces;
         }
 
-        if (foundStopPlaces.isEmpty()){
+        if (foundStopPlaces.isEmpty() && StopPlaceSharingPolicy.SHARED.equals(sharingPolicy)){
             //No stop place were found using ids. Looking for stop place by location
             foundStopPlaces = simpleNearbyStopPlaceFinder.findUnder30M(incomingStopPlace);
             logger.warn("Neaby Finder under 30m : foundStopPlaces:"+foundStopPlaces.size());
         }
 
-        if (foundStopPlaces.isEmpty()){
+        if (foundStopPlaces.isEmpty() && StopPlaceSharingPolicy.SHARED.equals(sharingPolicy)){
             //No stop place were found around 30m. Looking for stop places around 100m with exact name
             List<org.rutebanken.tiamat.model.StopPlace> placesUnder100m = simpleNearbyStopPlaceFinder.findUnder100M(incomingStopPlace);
             logger.warn("Neaby Finder under 100m : foundStopPlaces:" + placesUnder100m.size());

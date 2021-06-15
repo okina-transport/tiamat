@@ -79,22 +79,15 @@ public class StopPlaceByQuayOriginalIdFinder {
     }
 
     private Optional<String> find(String quayOriginalId) {
-        try {
-            return originalQuayIdCache.get(quayOriginalId, () -> {
-                logger.debug("Cache miss. Fetching stop place repository to find stop place from {}", quayOriginalId);
-                List<String> stopPlaceNetexIds = stopPlaceRepository.findStopPlaceFromQuayOriginalId(quayOriginalId, Instant.now());
-                if(stopPlaceNetexIds == null || stopPlaceNetexIds.isEmpty()) {
-                    return Optional.empty();
-                }
-
-                if(stopPlaceNetexIds.size() > 1) {
-                    logger.warn("Found more than one stop place from quay imported ID: {} - {}", quayOriginalId, stopPlaceNetexIds);
-                }
-                return Optional.of(stopPlaceNetexIds.get(0));
-            });
-        } catch (ExecutionException e) {
-            logger.warn("Caught exception when looking for stop place from quay imported ID {}", quayOriginalId);
+        logger.debug("Cache miss. Fetching stop place repository to find stop place from {}", quayOriginalId);
+        List<String> stopPlaceNetexIds = stopPlaceRepository.findStopPlaceFromQuayOriginalId(quayOriginalId, Instant.now());
+        if(stopPlaceNetexIds == null || stopPlaceNetexIds.isEmpty()) {
             return Optional.empty();
         }
+
+        if(stopPlaceNetexIds.size() > 1) {
+            logger.warn("Found more than one stop place from quay imported ID: {} - {}", quayOriginalId, stopPlaceNetexIds);
+        }
+        return Optional.of(stopPlaceNetexIds.get(0));
     }
 }

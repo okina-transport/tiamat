@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.rest.graphql.fetchers;
 
+import com.okina.mainti4.mainti4apiclient.model.BtDto;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.rutebanken.helper.organisation.RoleAssignment;
@@ -22,14 +23,18 @@ import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.dtoassembling.dto.BoundingBoxDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
+import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.rest.graphql.helpers.KeyValueWrapper;
+import org.rutebanken.tiamat.service.mainti4.IServiceTiamatApi;
 import org.rutebanken.tiamat.service.stopplace.ParentStopPlacesFetcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -50,41 +55,15 @@ import java.util.stream.Collectors;
 
 import static org.rutebanken.tiamat.exporter.params.ExportParams.newExportParamsBuilder;
 import static org.rutebanken.tiamat.exporter.params.StopPlaceSearch.newStopPlaceSearchBuilder;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.ALL_VERSIONS;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.COUNTRY_REF;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.COUNTY_REF;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.HAS_PARKING;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.ID;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.IGNORE_STOPPLACE_ID;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.IMPORTED_ID_QUERY;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.INCLUDE_EXPIRED;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.KEY;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.LATITUDE_MAX;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.LATITUDE_MIN;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.LONGITUDE_MAX;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.LONGITUDE_MIN;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.MUNICIPALITY_REF;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.ONLY_MONOMODAL_STOPPLACES;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.PAGE;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.POINT_IN_TIME;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.QUERY;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.SEARCH_WITH_CODE_SPACE;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.SIZE;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.STOP_PLACE_TYPE;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.TAGS;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.VALUES;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.VERSION;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.VERSION_VALIDITY_ARG;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.WITHOUT_LOCATION_ONLY;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.WITHOUT_QUAYS_ONLY;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.WITH_DUPLICATED_QUAY_IMPORTED_IDS;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.WITH_NEARBY_SIMILAR_DUPLICATES;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.WITH_TAGS;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
 
 @Service("stopPlaceFetcher")
 @Transactional
 class StopPlaceFetcher implements DataFetcher {
 
+    @Autowired
+    @Qualifier("mainti4serviceapilogin")
+    IServiceTiamatApi mainti4ServiceLogin;
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceFetcher.class);
 
@@ -230,6 +209,15 @@ class StopPlaceFetcher implements DataFetcher {
                     );
                 }
 
+                List<String> btStateListRef = environment.getArgument(BTSTATELIST_REF);
+                if (btStateListRef != null && !btStateListRef.isEmpty()) {
+                    exportParamsBuilder.setBtStateList(
+                            btStateListRef.stream()
+                                    .filter(btStateListRefValue -> btStateListRefValue != null && !btStateListRefValue.isEmpty())
+                                    .collect(Collectors.toList())
+                    );
+                }
+
                 if (environment.getArgument(SEARCH_WITH_CODE_SPACE) != null) {
                     String code = environment.getArgument(SEARCH_WITH_CODE_SPACE);
                     exportParamsBuilder.setCodeSpace(code.toLowerCase());
@@ -275,6 +263,58 @@ class StopPlaceFetcher implements DataFetcher {
             List<StopPlace> userOrgFilteredStopPlaces = stopPlacesPage.getContent().stream().filter(stopPlace -> userOrgs.contains(stopPlace.getProvider())).collect(Collectors.toList());
             stopPlacesPage = new PageImpl<>(userOrgFilteredStopPlaces, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), 1L);
         }
+
+        //--------------------------------------------------------------------------------------------------------------
+        // Si liste d'etats BT Mainti4, on ne garde que les points d'arrets qui correspondent
+        if (!stopPlacesPage.getContent().isEmpty() && exportParamsBuilder.getBtStateList() != null && !exportParamsBuilder.getBtStateList().isEmpty()) {
+            //Recupere tous les BTS selon les etats
+            List<BtDto> listeTravaux = this.mainti4ServiceLogin.searchBTFromIds(exportParamsBuilder.getBtStateList());
+            logger.info("liste recuperee !");
+            //S'il y a des travaux on ne garde que les stopplaces recuperes qui correspondent a ces travaux
+            if (listeTravaux != null && !listeTravaux.isEmpty()) {
+                List<StopPlace> filterStopPlaces = new ArrayList<>();
+                //Parcours les travaux
+                for (BtDto trav: listeTravaux) {
+                    //Recupere le stopplace qui correspond
+                    StopPlace stop = stopPlacesPage.getContent().stream().filter(
+                            stopPlace -> {
+                                //Code du PA cote RIMO
+                                //a noter : on ajoute "A" devant si on doit prendre le code public
+                                String lsCode = KeyValueWrapper.extractCodeFromKeyValues(stopPlace.getKeyValues(), "A"+stopPlace.getPublicCode());
+                                //Code cote MAINTI4 du BT
+                                String lsCodeBT = trav.getTopologie().getCode();
+                                //On test d'abord le code de base (PA rimo <=> AR mainti4). Si c'est le bon, on garde
+                                if ((lsCode + "AR").equals(lsCodeBT)) {
+                                    return true;
+                                } else {
+                                    //Regarde si un des quais de ce PA est concerne par le BT
+                                    for (Quay lQuay: stopPlace.getQuays()) {
+                                        //Code du quai cote RIMO
+                                        //a noter : on ajoute "P" devant si on doit prendre le code public
+                                        String lsCodeQ = KeyValueWrapper.extractCodeFromKeyValues(lQuay.getKeyValues(), "P"+lQuay.getPublicCode());
+                                        //Si code est le bon on garde
+                                        if ((lsCodeQ + "PA").equals(lsCodeBT)) {
+                                            return true;
+                                        }
+                                    }
+                                }
+                                return false;
+                            }).findAny()
+                            .orElse(null);
+                    //Ajoute le stopplace s'il a ete trouve dans la liste
+                    if (stop != null) {
+                        //Maj BT etat sur l'objet stopplace
+                        stop.setBtstate(trav.getEtat().getValue().toString());
+                        //Ajoute a la liste le stopplace
+                        filterStopPlaces.add(stop);
+                    }
+                }
+                //Redefinit les donnees a renvoyer
+                //TODO: a verifier le getPageable sur la liste qu'on renvoie pas, doit pas etre bon
+                stopPlacesPage = new PageImpl<>(filterStopPlaces, stopPlacesPage.getPageable(), filterStopPlaces.size());
+            }
+        }
+        //--------------------------------------------------------------------------------------------------------------
 
         final List<StopPlace> stopPlaces = stopPlacesPage.getContent();
         boolean onlyMonomodalStopplaces = false;

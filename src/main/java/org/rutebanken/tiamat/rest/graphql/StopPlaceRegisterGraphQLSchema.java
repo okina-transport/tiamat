@@ -189,6 +189,14 @@ public class StopPlaceRegisterGraphQLSchema {
                         .build()
         );
 
+        //Champ btstate
+        commonFieldsList.add(
+                newFieldDefinition()
+                        .name(BTSTATE)
+                        .type(GraphQLString)
+                        .build()
+        );
+
         List<GraphQLFieldDefinition> zoneCommandFieldList = zoneCommonFieldListCreator.create();
 
         commonFieldsList.addAll(zoneCommandFieldList);
@@ -527,6 +535,11 @@ public class StopPlaceRegisterGraphQLSchema {
                 .name(MUNICIPALITY_REF)
                 .type(new GraphQLList(GraphQLString))
                 .description(MUNICIPALITY_REF_ARG_DESCRIPTION)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(BTSTATELIST_REF)
+                .type(new GraphQLList(GraphQLString))
+                .description(BTSTATELIST_REF_DESCRIPTION)
                 .build());
         arguments.add(GraphQLArgument.newArgument()
                 .name(QUERY)

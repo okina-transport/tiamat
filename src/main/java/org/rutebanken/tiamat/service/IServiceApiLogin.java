@@ -1,5 +1,7 @@
 package org.rutebanken.tiamat.service;
 
+import com.okina.mainti4.mainti4apiclient.ApiClient;
+
 public interface IServiceApiLogin {
 
     /**
@@ -25,4 +27,10 @@ public interface IServiceApiLogin {
      * @return la chaine token
      */
     String getToken();
+
+    /**
+     * Recupere la classe ApiClient afin de generer les clients pour effectuer les appels l'API
+     * @return la classe ApiClient
+     */
+    ApiClient getApi();
 }

@@ -20,10 +20,14 @@ import org.rutebanken.tiamat.externalapis.ApiProxyService;
 import org.rutebanken.tiamat.model.PrivateCodeStructure;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.Value;
+import org.rutebanken.tiamat.rest.graphql.helpers.KeyValueWrapper;
+import org.rutebanken.tiamat.service.mainti4.IServiceTiamatApi;
 import org.rutebanken.tiamat.service.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -31,6 +35,8 @@ import java.math.MathContext;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.COMPASS_BEARING;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.ID;
@@ -38,6 +44,7 @@ import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.PRIVATE_CODE;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.PUBLIC_CODE;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.TYPE;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.VALUE;
+import static org.rutebanken.tiamat.rest.graphql.helpers.KeyValueWrapper.extractCodeFromKeyValues;
 
 @Component
 public class QuayMapper {
@@ -47,10 +54,21 @@ public class QuayMapper {
     @Autowired
     private GroupOfEntitiesMapper groupOfEntitiesMapper;
 
+    @Autowired
+    @Qualifier("mainti4serviceapilogin")
+    IServiceTiamatApi mainti4ServiceLogin;
+
     private ApiProxyService apiProxyService = new ApiProxyService();
 
     public boolean populateQuayFromInput(StopPlace stopPlace, Map quayInputMap) {
+        boolean isnewquay = false;
         Quay quay;
+
+        //Tente d'extraire l'identifiant du point d'arret (le parent des quais)
+        //a noter : on ajoute "A" devant si on doit prendre le code public
+        String lsCode = (stopPlace != null) ?
+                KeyValueWrapper.extractCodeFromKeyValues(stopPlace.getKeyValues(), "A"+stopPlace.getPublicCode()) : null;
+
         if (quayInputMap.get(ID) != null) {
             Optional<Quay> existingQuay = stopPlace.getQuays().stream()
                     .filter(q -> q.getNetexId() != null)
@@ -64,6 +82,7 @@ public class QuayMapper {
             quay = existingQuay.get();
             logger.info("Updating Quay {} for StopPlace {}", quay.getNetexId(), stopPlace.getNetexId());
         } else {
+            isnewquay = true;
             quay = new Quay();
             logger.info("Creating new Quay");
         }
@@ -107,6 +126,11 @@ public class QuayMapper {
                 stopPlace.getQuays().add(quay);
             }
         }
+
+        if (isnewquay) {
+            this.mainti4ServiceLogin.createPA(quay, lsCode);
+        }
+
         return isQuayUpdated;
     }
 

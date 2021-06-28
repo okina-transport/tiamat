@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.rest.graphql.helpers;
 
 import org.rutebanken.tiamat.model.Value;
 
+import java.util.Map;
 import java.util.Set;
 
 public class KeyValueWrapper {
@@ -29,4 +30,36 @@ public class KeyValueWrapper {
             this.values = value.getItems();
         }
     }
+
+    /**
+     * Extrait le code de reference d'apres la Map de cle/valeur de la topo
+     * @param rKeyV : La Map
+     * @param rDefaultIsNull : Valeur a affecter si null
+     * @return le code de reference ou null si pas trouve
+     */
+    public static String extractCodeFromKeyValues(Map<String, Value> rKeyV, String rDefaultIsNull) {
+        String code = extractCodeFromKeyValues(rKeyV);
+        return (code == null) ? rDefaultIsNull : code;
+    }
+
+    /**
+     * Extrait le code de reference d'apres la Map de cle/valeur de la topo
+     * @param rKeyV : La Map
+     * @return le code de reference ou null si pas trouve
+     */
+    public static String extractCodeFromKeyValues(Map<String, Value> rKeyV) {
+        //Tente d'extraire l'identifiant du point d'arret (le parent des quais)
+        if (rKeyV != null) {
+            Value lReference = rKeyV.get("imported-id");
+            if (lReference != null) {
+                String lDataRef = lReference.getItems().stream().findFirst().orElse(null);
+                //Si on a effectivement trouve l'element
+                if (lDataRef != null) {
+                    return lDataRef.substring(lDataRef.lastIndexOf(':')+1);
+                }
+            } else { return null; }
+        }
+        return null;
+    }
+
 }

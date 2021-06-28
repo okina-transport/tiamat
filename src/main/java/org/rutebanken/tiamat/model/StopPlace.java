@@ -91,6 +91,9 @@ public class StopPlace
     @Enumerated(EnumType.STRING)
     private ModificationEnumeration modificationEnumeration;
 
+    @Transient
+    private String btstate; //Etat BT travaux Mainti4
+
     private String provider;
 
     public StopPlace(EmbeddableMultilingualString name) {
@@ -287,6 +290,14 @@ public class StopPlace
 
     public void setModificationEnumeration(ModificationEnumeration modificationEnumeration) {
         this.modificationEnumeration = modificationEnumeration;
+    }
+
+    public String getBtstate() {
+        return btstate;
+    }
+
+    public void setBtstate(String btstate) {
+        this.btstate = btstate;
     }
 
     public String getProvider() {

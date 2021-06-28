@@ -296,6 +296,10 @@ public class GraphQLNames {
     public static final String MUNICIPALITY_REF = "municipalityReference";
     public static final String MUNICIPALITY_REF_ARG_DESCRIPTION = "Only return StopPlaces located in given municipalities.";
 
+    public static final String BTSTATE = "btstate";
+    public static final String BTSTATELIST_REF = "btStateList";
+    public static final String BTSTATELIST_REF_DESCRIPTION = "Only return StopPlaces with those BTs states on Mainti4";
+
     public static final String QUERY = "query";
     public static final String QUERY_ARG_DESCRIPTION = "Searches for StopPlace by name, " + ID + ", " + ORIGINAL_ID_KEY + ", " + MERGED_ID_KEY + " or a single tag prefixed with #";
     public static final String PAGE = "page";

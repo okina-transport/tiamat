@@ -1,9 +1,16 @@
 package org.rutebanken.tiamat.service.mainti4;
 
+import com.google.common.base.Strings;
 import com.okina.mainti4.mainti4apiclient.ApiClient;
-import com.okina.mainti4.mainti4apiclient.api.AccountApi;
-import com.okina.mainti4.mainti4apiclient.model.LoginModel;
-import org.rutebanken.tiamat.service.IServiceApiLogin;
+import com.okina.mainti4.mainti4apiclient.api.*;
+import com.okina.mainti4.mainti4apiclient.model.*;
+import org.apache.commons.io.IOUtils;
+import org.codehaus.jettison.json.JSONObject;
+import org.locationtech.jts.geom.Point;
+import org.rutebanken.tiamat.externalapis.GouvApiReverseGeocoding;
+import org.rutebanken.tiamat.model.Quay;
+import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.rest.graphql.helpers.KeyValueWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,11 +18,24 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.imageio.ImageIO;
+import javax.net.ssl.HttpsURLConnection;
+import javax.validation.constraints.NotNull;
+import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.math.BigDecimal;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @Service(value = "mainti4serviceapilogin")
-public class Mainti4ServiceApiLogin implements IServiceApiLogin {
+public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
 
     private static final Logger logger = LoggerFactory.getLogger(Mainti4ServiceApiLogin.class);
 
@@ -94,6 +114,96 @@ public class Mainti4ServiceApiLogin implements IServiceApiLogin {
         return token;
     }
 
+    @Override
+    public ApiClient getApi() {
+        return this.api;
+    }
+
+    @Override
+    public TopologieDto createPA(Quay rQuay, String rsCodeParent) {
+        TopologiesApi topologies = null;
+        try {
+            if (rsCodeParent == null) {
+                logger.warn("Pas de code parent, impossible de creer le PA dans Mainti4");
+                return null;
+            }
+            String lsCode = getARCodeNameFromCode(rsCodeParent);
+            logger.debug("Cherche la topologie [{}]", lsCode);
+            topologies = getApi().buildClient(TopologiesApi.class);
+            TopologieDto topo = getTopoByCode(topologies, lsCode);
+            //on attend qu'une seule topo sinon c'est pas normal
+            if (topo != null) {
+                //Cree le quai okina sous forme de point d'arret chez mainti4
+                TopologieDto lPA = this.createPA(topologies, topo, rQuay);
+                //Cree le quai fictif
+                this.createQuai(topologies, lPA);
+                //Renvoie le PA de base
+                return lPA;
+            }
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Erreur de traitement lors de l'appel api tiamat ", e);
+            return null;
+        }
+    }
+
+    @Override
+    public List<BtDto> searchBT(List<EtatBT> rlstEtats) {
+        try {
+            if (rlstEtats == null || rlstEtats.isEmpty()) {
+                throw new Exception("searchBT-Aucun etat fourni en parametre !");
+            }
+            BTsApi bts = getApi().buildClient(BTsApi.class);
+            //Filtre de recherche des bons de travaux uniquement par etat pour l'instant
+            BTFilter filterBts = new BTFilter();
+            List<EtatBT> lstEtats = new ArrayList<EtatBT>();
+            //On alimente la liste d'etats
+            lstEtats.addAll(rlstEtats);
+            //Affecte filtre de recherche
+            filterBts.setEtats(lstEtats);
+            //Effectue la recherche et renvoie le resultat
+            return bts.bTsSearch(filterBts);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
+    public List<BtDto> searchBTFromIds(List<String> rlstEtats) {
+        if (rlstEtats == null) {
+            return null;
+        }
+        List<EtatBT> llstBTs = new ArrayList<EtatBT>();
+        //Alimente liste d'etat
+        for (String idState: rlstEtats) {
+            llstBTs.add(EtatBT.fromValue(Integer.valueOf(idState)));
+        }
+        //Effectue la recherche
+        return searchBT(llstBTs);
+    }
+
+    @Override
+    public BufferedImage photoByCode(Quay rQuay) {
+        //Tente de recuperer le code
+        String lsCode = KeyValueWrapper.extractCodeFromKeyValues(rQuay.getKeyValues(), "P"+rQuay.getPublicCode());
+        //Construit le code cote MAINTI4
+        String lsCodePA = getPACodeNameFromCode(lsCode); // Code du PA ou se trouve la photo
+        //Renvoie la photo
+        return getPhotoByCode(lsCodePA);
+    }
+
+    @Override
+    public BufferedImage photoByCode(StopPlace rStopPlace) {
+        //Tente de recuperer le code
+        String lsCode = KeyValueWrapper.extractCodeFromKeyValues(rStopPlace.getKeyValues(), "A"+rStopPlace.getPublicCode());
+        //Construit le code cote MAINTI4
+        String lsCodePA = getARCodeNameFromCode(lsCode); // Code du PA ou se trouve la photo
+        //Renvoie la photo
+        return getPhotoByCode(lsCodePA);
+    }
+
     /**
      * Initialisation de la classe ApiClient sur le modele d'interface AccountApi
      */
@@ -112,6 +222,8 @@ public class Mainti4ServiceApiLogin implements IServiceApiLogin {
         }
     }
 
+
+
     /**
      * Construit la cle d'api que l'on devra fournir a la classe ApiClient
      * Cette cle sera injectee dans le champ Authorization du header
@@ -120,6 +232,195 @@ public class Mainti4ServiceApiLogin implements IServiceApiLogin {
      */
     private String getApiKeyFromToken(String rsToken) {
         return (rsToken != null) ? BEARER + " " + rsToken : "";
+    }
+
+    /**
+     * Renvoie le nom de code d'un Arrêt dans tiamat d'apres le code dans rimo
+     * @param rsCode : code dans rimo
+     * @return  nom de code dans tiamat d'apres le code public dans rimo
+     */
+    private String getARCodeNameFromCode(String rsCode) {
+        return (rsCode != null) ? rsCode + "AR" : "";
+    }
+
+    /**
+     * Renvoie le nom de code d'un PA dans tiamat d'apres le code dans rimo
+     * @param rsCode : code dans rimo
+     * @return  nom de code dans tiamat d'apres le code public dans rimo
+     */
+    private String getPACodeNameFromCode(String rsCode) {
+        return (rsCode != null) ? rsCode + "PA" : "";
+    }
+
+    /**
+     * Cree le quai sous forme de point d'arret dans tiamat4
+     * @param rTopologies : Topologie
+     * @param rtopoParent : Topologie parente
+     * @param rQuay : Le quai
+     * @return renvoie la topo cree
+     */
+    private TopologieDto createPA(TopologiesApi rTopologies, TopologieDto rtopoParent, Quay rQuay) {
+        try {
+            String lsCodeQuay = KeyValueWrapper.extractCodeFromKeyValues(rQuay.getKeyValues(), "P"+rQuay.getPublicCode());
+            lsCodeQuay = getPACodeNameFromCode(lsCodeQuay);
+            logger.debug("Creation PA Rimo [{}] -> Quai Tiamat [{}]", rQuay.getPublicCode(), lsCodeQuay);
+            TopologieDto newTopo = new TopologieDto();
+            newTopo.setCode(lsCodeQuay);
+            newTopo.setLibelleOrigine(rtopoParent.getLibelle());
+            newTopo.setIdTopoParent(rtopoParent.getId());
+            newTopo.setDateCreation(LocalDateTime.now().toString());
+            newTopo.setFamilleTopologie(1L);
+            Point location = rQuay.getCentroid();
+            if (location != null) {
+                newTopo.setGeolocation(new LeafletLatLng().alt(0.0E00).lat(location.getY()).lng(location.getX()));
+            }
+            //Il nous faut absolument une type de topo sinon on aura une valeur null qui sera rejetee par le serveur
+            newTopo.setTypeTopo(getDefaultTypeTopo());
+            //Creation de la topo enfant
+            TopologieDto returnTopo = rTopologies.topologiesPost(newTopo);
+            if (returnTopo != null) {
+                logger.debug("Topologie enfant cree ! [" + returnTopo.getCodeLibelle() + "]");
+            }
+            return returnTopo;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private TopologieDto createQuai(TopologiesApi rTopologies, TopologieDto rtopoParent) {
+        try {
+            logger.debug("Creation topo QUAI");
+            logger.debug("    ==> " + rtopoParent.getCodeLibelle());
+            TopologieDto newTopo = new TopologieDto();
+            newTopo.setCode(rtopoParent.getCode()+"QU");
+            newTopo.setLibelleOrigine("QUAI - " + rtopoParent.getLibelle());
+            newTopo.setIdTopoParent(rtopoParent.getId());
+            newTopo.setDateCreation(LocalDateTime.now().toString());
+            //newTopo.setGeolocation(new LeafletLatLng().alt(0.0E00).lat(46.1598836962393).lng(-1.17963759925538));
+            //Il nous faut absolument une type de topo sinon on aura une valeur null qui sera rejetee par le serveur
+            newTopo.setTypeTopo(getDefaultTypeTopo());
+            //Famille fonctionnelle
+            newTopo.setFamilleTopologie(3L);
+            //On ne cree pas les elements de la famille fonctionnelle car il faudrait renseigner les TechFicheDto
+            //qu'il attend et on a pas l'info. Si on veut mettre un tableau vide ca marche pas
+//            FamilleFonctionnelleDto familleFct = new FamilleFonctionnelleDto();
+//            familleFct.setId(newTopo.getFamilleTopologie());
+//            familleFct.setCode("QU");
+//            familleFct.setLibelle("QUAI");
+//            familleFct.setFichesTechnique(new ArrayList<TechFicheDto>());
+//            newTopo.setFamilleFonctionnelle(familleFct);
+            //Creation de la topo enfant
+            TopologieDto returnTopo = rTopologies.topologiesPost(newTopo);
+            if (returnTopo != null) {
+                logger.debug("Topologie quai fictif cree ! [" + returnTopo.getCodeLibelle() + "]");
+            }
+            return returnTopo;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Renvoie un type de topologie par défaut
+     */
+    private TypeTopoDto getDefaultTypeTopo() {
+        TypeTopoDto typTopo = new TypeTopoDto();
+        typTopo.setColor("#000000");
+        typTopo.setDisplayName("lblEquipement");
+        typTopo.setValue(ETypeTopo.NUMBER_0);
+        return typTopo;
+    }
+
+    /**
+     * Renvoie la topologie selon le code
+     * Genere une exception s'il y a plus d'une topo et renvoie null si pas de topo trouvee
+     * @param rCode : le code chez MAINTI4 (ex: 4900AR)
+     * @return la topologie
+     * @throws Exception
+     */
+    private TopologieDto getTopoByCode(TopologiesApi rTopologies, String rCode) throws Exception {
+        //Filtre de recherche de la topologie
+        TopologieFilter filter = new TopologieFilter();
+        filter.setCode(rCode);
+        filter.setTypeTopologie(ETypeTopo.NUMBER_0);
+        filter.setAvecLocalisationTopo(true);
+        //Effectue la requete
+        List<TopologieDto> listeTopo = rTopologies.topologiesSearch(filter);
+        if (listeTopo != null && !listeTopo.isEmpty()) {
+            //Si plus d'une topo c'est pas normal
+            if (listeTopo.size() > 1) {
+                throw new Exception("Plus d'une topo trouvee pour le code " + rCode);
+            }
+            logger.debug("Trouve topologie {}", rCode);
+            return listeTopo.get(0);
+        } else {
+            System.out.println("Aucune topologie trouvee");
+            return null;
+        }
+    }
+
+
+    /**
+     * Recupere la photo correspondant au code dans Mainti4
+     * @param rCode : Code tel qu'il est dans Mainti4
+     * @return le buffer d'image
+     */
+    private BufferedImage getPhotoByCode(String rCode) {
+        try {
+            //Cree le client
+            TopologiesApi topologies = getApi().buildClient(TopologiesApi.class);
+            DocumentsApi docs = getApi().buildClient(DocumentsApi.class);
+            FilesApi files = getApi().buildClient(FilesApi.class);
+            //Recupere la topo
+            TopologieDto topo = getTopoByCode(topologies, rCode);
+            if (topo != null) {
+                //Filtre pour recuperer infos sur la photo (le nom surtout !)
+                DocumentFilter filterDoc = new DocumentFilter();
+                filterDoc.setIdObjet(topo.getId());
+                List<TypePieceJointe> lstTypesPJ = new ArrayList<>();
+                lstTypesPJ.add(TypePieceJointe.NUMBER_4);
+                filterDoc.setTypesDocuments(lstTypesPJ);
+                //Recupere les infos de la photo
+                List<PieceJointeDto> lstPJ = docs.documentsSearch(filterDoc);
+                //Si pas de photo
+                if (lstPJ == null || lstPJ.isEmpty()) {
+                    System.out.println("Aucune photo trouvee pour le code " + rCode + " avec id " + topo.getId());
+                    return null;
+                }
+                //On prend la premiere image...
+                PieceJointeDto imagePA = lstPJ.get(0);
+                //Recupere l'image et la renvoie
+                //File image = files.filesDownload(imagePA.getFileName(), TypePieceJointe.NUMBER_4.getValue());
+                return getPhotoFIXME(imagePA.getFileName(), TypePieceJointe.NUMBER_4.getValue());
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+    //FIXME:pour le probleme d'image MAINTI4
+    private BufferedImage getPhotoFIXME(String rFilename, Integer rTypePJ) throws Exception {
+        if (rFilename == null || rTypePJ == null) {
+            throw new Exception("getPhotoFIXME-parametre null");
+        }
+        //Prepare l'url pour l'appel
+        URL apiUrl = new URL(this.getApi().getBasePath() + "/api/files/download?filename=" + rFilename + "&typePieceJointe=" + rTypePJ);
+        HttpsURLConnection conn = (HttpsURLConnection) apiUrl.openConnection();
+        conn.setRequestProperty("Authorization","Bearer "+getToken());
+        conn.setRequestProperty("Content-Type","image/*");
+        conn.setRequestProperty("Accept-Encoding","gzip, deflate, br");
+        conn.setRequestMethod("GET");
+        conn.connect(); //Connexion
+        //Recupere l'image
+        BufferedImage img = ImageIO.read(conn.getInputStream());
+        conn.disconnect();
+        return img;
     }
 
 }

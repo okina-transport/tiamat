@@ -26,11 +26,7 @@ import javax.ws.rs.QueryParam;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.COUNTY_REF_ARG_DESCRIPTION;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.COUNTRY_REF_ARG_DESCRIPTION;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.MUNICIPALITY_REF_ARG_DESCRIPTION;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.SEARCH_WITH_CODE_SPACE_ARG_DESCRIPTION;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.SEARCH_WITH_PROVIDER_ID_ARG_DESCRIPTION;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
 
 /**
  * Export parameters.
@@ -87,6 +83,11 @@ public class ExportParams {
     @ApiModelProperty("codeSpace")
     private String codeSpace;
 
+    @QueryParam(value = "btStateList")
+    @ApiParam(value = BTSTATELIST_REF)
+    @ApiModelProperty("btStateList")
+    private List<String> btStateList;
+
     @QueryParam(value = "providerId")
     @ApiParam(value = SEARCH_WITH_PROVIDER_ID_ARG_DESCRIPTION)
     private Long providerId;
@@ -95,7 +96,7 @@ public class ExportParams {
     @ApiModelProperty(hidden = true)
     private StopPlaceSearch stopPlaceSearch;
 
-    private ExportParams(ExportMode topographicPlaceExportMode, ExportMode tariffZoneExportMode, ExportMode groupOfStopPlacesExportMode, List<String> municipalityReferences, List<String> countyReferences, List<String> countryReferences, StopPlaceSearch stopPlaceSearch, String codeSpace, Long providerId) {
+    private ExportParams(ExportMode topographicPlaceExportMode, ExportMode tariffZoneExportMode, ExportMode groupOfStopPlacesExportMode, List<String> municipalityReferences, List<String> countyReferences, List<String> countryReferences, StopPlaceSearch stopPlaceSearch, String codeSpace, Long providerId, List<String> btStateList) {
         this.topographicPlaceExportMode = topographicPlaceExportMode;
         this.tariffZoneExportMode = tariffZoneExportMode;
         this.groupOfStopPlacesExportMode = groupOfStopPlacesExportMode;
@@ -105,6 +106,7 @@ public class ExportParams {
         this.stopPlaceSearch = stopPlaceSearch;
         this.codeSpace = codeSpace;
         this.providerId = providerId;
+        this.btStateList = btStateList;
     }
 
     public ExportParams(StopPlaceSearch stopPlaceSearch) {
@@ -128,6 +130,10 @@ public class ExportParams {
 
     public List<String> getMunicipalityReferences() {
         return municipalityReferences;
+    }
+
+    public List<String> getBtStateList() {
+        return btStateList;
     }
 
     public List<String> getCountyReferences() {
@@ -164,6 +170,7 @@ public class ExportParams {
                 .add("tariffZoneExportMode", tariffZoneExportMode)
                 .add("codeSpace", codeSpace)
                 .add("providerId", providerId)
+                .add("btStateList", btStateList)
                 .toString();
     }
 
@@ -177,6 +184,7 @@ public class ExportParams {
         private StopPlaceSearch stopPlaceSearch;
         private String codeSpace;
         private Long providerId;
+        private List<String> btStateList;
 
         private Builder() {
         }
@@ -191,8 +199,22 @@ public class ExportParams {
             return this;
         }
 
+        public Builder setBtStateList(List<String> btStateList) {
+            this.btStateList = btStateList;
+            return this;
+        }
+
+        public List<String> getBtStateList() {
+            return this.btStateList;
+        }
+
         public Builder setMunicipalityReference(String... municipalityReference) {
             this.municipalityReferences = Arrays.asList(municipalityReference);
+            return this;
+        }
+
+        public Builder setBtStateList(String... btStateList) {
+            this.btStateList = Arrays.asList(btStateList);
             return this;
         }
 
@@ -242,7 +264,7 @@ public class ExportParams {
         }
 
         public ExportParams build() {
-            return new ExportParams(topographicPlaceExportMode, tariffZoneExportMode, groupOfStopPlacesExportMode, municipalityReferences, countyReferences, countryReferences, stopPlaceSearch, codeSpace, providerId);
+            return new ExportParams(topographicPlaceExportMode, tariffZoneExportMode, groupOfStopPlacesExportMode, municipalityReferences, countyReferences, countryReferences, stopPlaceSearch, codeSpace, providerId, btStateList);
         }
     }
 }

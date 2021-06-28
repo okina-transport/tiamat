@@ -185,7 +185,7 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
     }
 
     @Override
-    public BufferedImage photoByCode(Quay rQuay) {
+    public BufferedImage getPhoto(Quay rQuay) {
         //Tente de recuperer le code
         String lsCode = KeyValueWrapper.extractCodeFromKeyValues(rQuay.getKeyValues(), "P"+rQuay.getPublicCode());
         //Construit le code cote MAINTI4
@@ -195,7 +195,7 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
     }
 
     @Override
-    public BufferedImage photoByCode(StopPlace rStopPlace) {
+    public BufferedImage getPhoto(StopPlace rStopPlace) {
         //Tente de recuperer le code
         String lsCode = KeyValueWrapper.extractCodeFromKeyValues(rStopPlace.getKeyValues(), "A"+rStopPlace.getPublicCode());
         //Construit le code cote MAINTI4

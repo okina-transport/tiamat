@@ -105,6 +105,9 @@ public class StopPlaceRegisterGraphQLSchema {
     private TariffZoneObjectTypeCreator tariffZoneObjectTypeCreator;
 
     @Autowired
+    private Mainti4ImageObjectTypeCreator mainti4ImageObjectTypeCreator;
+
+    @Autowired
     private AuthorizationCheckDataFetcher authorizationCheckDataFetcher;
 
     @Autowired
@@ -142,6 +145,9 @@ public class StopPlaceRegisterGraphQLSchema {
 
     @Autowired
     DataFetcher parkingUpdater;
+
+    @Autowired
+    DataFetcher imageMainti4Fetcher;
 
     @Autowired
     DateScalar dateScalar;
@@ -325,6 +331,18 @@ public class StopPlaceRegisterGraphQLSchema {
                                 .type(GraphQLString)
                                 .build())
                         .dataFetcher(stopPlaceNameRecommendationsFetcher))
+                .field(newFieldDefinition()
+                        .type(new GraphQLList(stopPlaceInterface))
+                        .name(FIND_STOPPLACE)
+                        .description("Search for StopPlaces")
+                        .argument(createFindStopPlaceArguments(allVersionsArgument))
+                        .dataFetcher(stopPlaceFetcher))
+                .field(newFieldDefinition()
+                        .type(mainti4ImageObjectTypeCreator.create())
+                        .name("imageMainti4")
+                        .description("get Mainti4 image")
+                        .argument(createImageMainti4Arguments())
+                        .dataFetcher(imageMainti4Fetcher))
                 .build();
 
 
@@ -488,6 +506,18 @@ public class StopPlaceRegisterGraphQLSchema {
                 .name(QUERY)
                 .type(GraphQLString)
                 .description("Searches for TopographicPlaces by name.")
+                .build());
+        return arguments;
+    }
+
+
+    private List<GraphQLArgument> createImageMainti4Arguments() {
+        List<GraphQLArgument> arguments = new ArrayList<>();
+        //Image criteria
+        arguments.add(GraphQLArgument.newArgument()
+                .name("id")
+                .type(GraphQLString)
+                .description("Identifiant du stop place")
                 .build());
         return arguments;
     }

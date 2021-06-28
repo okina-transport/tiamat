@@ -47,11 +47,11 @@ public interface IServiceTiamatApi extends IServiceApiLogin {
      * Recupere la photo d'un quai (PA cote MAINTI4)
      * @param rQuay : Le quai
      */
-    BufferedImage photoByCode(Quay rQuay);
+    BufferedImage getPhoto(Quay rQuay);
 
     /**
      * Recupere la photo d'un point d'arret (AR cote MAINTI4)
      * @param rStopPlace : Le point d'arret
      */
-    BufferedImage photoByCode(StopPlace rStopPlace);
+    BufferedImage getPhoto(StopPlace rStopPlace);
 }

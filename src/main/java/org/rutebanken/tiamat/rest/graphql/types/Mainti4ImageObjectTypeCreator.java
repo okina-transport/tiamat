@@ -39,6 +39,7 @@ public class Mainti4ImageObjectTypeCreator {
     public GraphQLObjectType create() {
         List<GraphQLFieldDefinition> fieldList = new ArrayList<>();
         fieldList.add(newFieldDefinition().name("id").type(GraphQLString).build());
+        fieldList.add(newFieldDefinition().name("type").type(GraphQLString).build());
         fieldList.add(newFieldDefinition().name("image").type(GraphQLString).build());
         return newObject()
                 .name("imageMainti4")

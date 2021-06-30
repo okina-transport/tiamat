@@ -517,7 +517,12 @@ public class StopPlaceRegisterGraphQLSchema {
         arguments.add(GraphQLArgument.newArgument()
                 .name("id")
                 .type(GraphQLString)
-                .description("Identifiant du stop place")
+                .description("Identifiant du stop place ou quai")
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name("type")
+                .type(GraphQLString)
+                .description("Type (stopplace/quai)")
                 .build());
         return arguments;
     }

@@ -18,8 +18,10 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.Zone_VersionStructure;
+import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.service.mainti4.IServiceTiamatApi;
 import org.slf4j.Logger;
@@ -49,26 +51,63 @@ public class ImageMainti4Fetcher implements DataFetcher {
     @Autowired
     private StopPlaceRepository stopPlaceRepository;
 
+    @Autowired
+    private QuayRepository quayRepository;
+
     private static final Logger logger = LoggerFactory.getLogger(ImageMainti4Fetcher.class);
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
         String id = environment.getArgument("id");
-        logger.debug("Demande image pour stop place avec id {}", id);
+        String type = environment.getArgument("type");
+        Map<String, String> data;
+        switch (type) {
+            case "quay":
+                data = getImageQuay(id);
+                break;
+            default:
+                data = getImageStopPlace(id);
+                break;
+        }
+        if (data != null) { data.put("type", type); }
+        return data;
+    }
+
+    private Map<String, String> getImageQuay(String rId) {
+        logger.debug("Demande image pour quai avec id {}", rId);
         //Recupere le stopplace
-        List<StopPlace> lStop = stopPlaceRepository.findByNetexId(id);
+        List<Quay> lQuay = quayRepository.findByNetexId(rId);
+        if (lQuay != null) {
+            logger.debug("Recuperation de l'image pour le quai avec id {}", rId);
+            //Demande l'image cote mainti4
+            //FIXED: on prend premier resultat
+            BufferedImage lImage = this.mainti4ServiceLogin.getPhoto(lQuay.get(0));
+            //Met l'image en base64 dans une map pour repondre
+            Map<String, String> data = new HashMap<>();
+            data.put("id", rId);
+            data.put("image", (lImage != null) ? imageToBase64String(lImage, "png") : "");
+            return data;
+        }
+        logger.debug("Pas de quai trouve avec id {}", rId);
+        return null;
+    }
+
+    private Map<String, String> getImageStopPlace(String rId) {
+        logger.debug("Demande image pour stop place avec id {}", rId);
+        //Recupere le stopplace
+        List<StopPlace> lStop = stopPlaceRepository.findByNetexId(rId);
         if (lStop != null) {
-            logger.debug("Recuperation de l'image pour le stop place avec id {}", id);
+            logger.debug("Recuperation de l'image pour le stop place avec id {}", rId);
             //Demande l'image cote mainti4
             //FIXED: on prend premier resultat
             BufferedImage lImage = this.mainti4ServiceLogin.getPhoto(lStop.get(0));
             //Met l'image en base64 dans une map pour repondre
             Map<String, String> data = new HashMap<>();
-            data.put("id", id);
+            data.put("id", rId);
             data.put("image", (lImage != null) ? imageToBase64String(lImage, "png") : "");
             return data;
         }
-        logger.debug("Pas de stop place trouve avec id {}", id);
+        logger.debug("Pas de stop place trouve avec id {}", rId);
         return null;
     }
 

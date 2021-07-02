@@ -113,14 +113,16 @@ public class PublicationDeliveryExporter {
         return new PublicationDeliveryStructure()
                 .withVersion("1.1:FR-NETEX-2.2")
                 .withPublicationTimestamp(LocalDateTime.now().withNano(0))
-                .withParticipantRef(idSite);
+                .withParticipantRef(idSite)
+                .withParticipantRef("MOBIITI");
     }
 
     public PublicationDeliveryStructure createPublicationDelivery(String idSite, LocalDateTime localDateTime) {
         return new PublicationDeliveryStructure()
                 .withVersion("1.1:FR-NETEX-2.2")
                 .withPublicationTimestamp(localDateTime)
-                .withParticipantRef(idSite);
+                .withParticipantRef(idSite)
+                .withParticipantRef("MOBIITI");
     }
 
     @SuppressWarnings("unchecked")

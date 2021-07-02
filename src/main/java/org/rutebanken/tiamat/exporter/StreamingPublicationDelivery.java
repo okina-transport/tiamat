@@ -58,11 +58,14 @@ import org.rutebanken.tiamat.exporter.eviction.EntitiesEvictor;
 import org.rutebanken.tiamat.exporter.eviction.SessionEntitiesEvictor;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.IDFMVehicleModeStopPlacetypeMapping;
+import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.geo.geo.Lambert;
 import org.rutebanken.tiamat.geo.geo.LambertPoint;
 import org.rutebanken.tiamat.geo.geo.LambertZone;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.GroupOfStopPlaces;
 import org.rutebanken.tiamat.model.TopographicPlace;
+import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
@@ -223,8 +226,11 @@ public class StreamingPublicationDelivery {
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
+
+        JAXBElement<PublicationDeliveryStructure> publicationDelivery = netexObjectFactory.createPublicationDelivery(publicationDeliveryStructure);
+
         logger.info("Start marshalling publication delivery");
-        marshaller.marshal(netexObjectFactory.createPublicationDelivery(publicationDeliveryStructure), byteArrayOutputStream);
+        marshaller.marshal(publicationDelivery, byteArrayOutputStream);
 
         doLastModifications(outputStream, byteArrayOutputStream);
 
@@ -235,6 +241,7 @@ public class StreamingPublicationDelivery {
                 mappedGroupOfStopPlacesCount,
                 mappedTariffZonesCount);
     }
+
 
     /**
      * Moche Workaround : les ns sont générés bizarrement
@@ -579,17 +586,39 @@ public class StreamingPublicationDelivery {
             logger.info("There are stop places to export");
 
             final Iterator<org.rutebanken.tiamat.model.StopPlace> stopPlaceIterator = stopPlaceRepository.scrollStopPlaces(stopPlacePrimaryIds);
+            List<org.rutebanken.tiamat.model.StopPlace> recoveredStopPlaces = new ArrayList<>();
+            stopPlaceIterator.forEachRemaining(recoveredStopPlaces::add);
+            recoveredStopPlaces.forEach(this::addAdditionalInfo);
+
+
             StopPlacesInFrame_RelStructure stopPlacesInFrame_relStructure = new StopPlacesInFrame_RelStructure();
 
             // Use Listening iterator to collect stop place IDs.
-            ParentStopFetchingIterator parentStopFetchingIterator = new ParentStopFetchingIterator(stopPlaceIterator, stopPlaceRepository);
+            ParentStopFetchingIterator parentStopFetchingIterator = new ParentStopFetchingIterator(recoveredStopPlaces.iterator(), stopPlaceRepository);
             NetexMappingIterator<org.rutebanken.tiamat.model.StopPlace, StopPlace> netexMappingIterator = new NetexMappingIterator<>(netexMapper, parentStopFetchingIterator, StopPlace.class, mappedStopPlaceCount, evicter);
 
             List<StopPlace> stopPlaces = new NetexMappingIteratorList<>(() -> new NetexReferenceRemovingIterator(netexMappingIterator, exportParams));
+
             setField(StopPlacesInFrame_RelStructure.class, "stopPlace", stopPlacesInFrame_relStructure, stopPlaces);
             netexSiteFrame.setStopPlaces(stopPlacesInFrame_relStructure);
         } else {
             logger.info("No stop places to export");
+        }
+    }
+
+    private void addAdditionalInfo(org.rutebanken.tiamat.model.StopPlace stopPlace){
+        VehicleModeEnumeration transportMode = TiamatVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(stopPlace.getStopPlaceType());
+        stopPlace.setTransportMode(transportMode);
+        for (org.rutebanken.tiamat.model.Quay quay : stopPlace.getQuays()) {
+            if (quay.getSiteRef() == null) {
+                org.rutebanken.tiamat.model.SiteRefStructure siteRef = new org.rutebanken.tiamat.model.SiteRefStructure();
+                siteRef.setRef(stopPlace.getNetexId());
+                quay.setSiteRef(siteRef);
+            }
+
+            if (quay.getTransportMode() == null) {
+                quay.setTransportMode(transportMode);
+            }
         }
     }
 

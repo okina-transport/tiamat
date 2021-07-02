@@ -225,6 +225,7 @@ public class GraphQLNames {
     public static final String ESCALATOR_FREE_ACCESS = "escalatorFreeAccess";
     public static final String LIFT_FREE_ACCESS = "liftFreeAccess";
     public static final String AUDIBLE_SIGNALS_AVAILABLE = "audibleSignalsAvailable";
+    public static final String VISUAL_SIGNS_AVAILABLE = "visualSignsAvailable";
 
     public static final String PLACE_EQUIPMENTS = "placeEquipments";
     public static final String TICKETING_EQUIPMENT = "ticketingEquipment";

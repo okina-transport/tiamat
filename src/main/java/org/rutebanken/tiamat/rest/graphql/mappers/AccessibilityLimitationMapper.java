@@ -34,6 +34,7 @@ public class AccessibilityLimitationMapper {
         limitation.setStepFreeAccess(limitationsInput.get(STEP_FREE_ACCESS));
         limitation.setLiftFreeAccess(limitationsInput.get(LIFT_FREE_ACCESS));
         limitation.setEscalatorFreeAccess(limitationsInput.get(ESCALATOR_FREE_ACCESS));
+        limitation.setVisualSignsAvailable(limitationsInput.get(VISUAL_SIGNS_AVAILABLE));
         return limitation;
     }
 }

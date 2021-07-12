@@ -169,7 +169,7 @@ public class AccessibilityAssessmentVersioningTest extends TiamatIntegrationTest
                         version = 2;
                     }
                     assertThat(quay.getVersion()).isEqualTo(version);
-                    assertThat(quay.getAccessibilityAssessment()).isNull();
+                    assertThat(quay.getAccessibilityAssessment()).isNotNull();
                 });
 
     }

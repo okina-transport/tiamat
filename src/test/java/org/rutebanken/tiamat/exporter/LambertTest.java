@@ -18,9 +18,9 @@ public class LambertTest {
         //LambertPoint lambertPoint = Lambert.convertToLambert(2.011310f,48.803673f, LambertZone.LambertIIExtended);
         LambertPoint lambertPoint = Lambert.convertToLambert(48.803673f,2.011310f, LambertZone.LambertIIExtended);
         System.out.println(lambertPoint.getX());
-        assertTrue(lambertPoint.getX() >0 );
+        assertTrue(lambertPoint.getX() < 0 );
         System.out.println(lambertPoint.getY());
-        assertTrue(lambertPoint.getY() >0 );
+        assertTrue(lambertPoint.getY() <0 );
     }
 
     @Test
@@ -55,7 +55,7 @@ public class LambertTest {
         double l = toDouble("1,005 526 536 48");
         double e = toDouble("0,081 991 889 98");
         double c = toDouble("1.10", "11");
-        double p = toDouble("0,872 664 626 00");
+        double p = toDouble("0,87265534613");
 
         // THEN
         double v = Lambert.latitudeFromLatitudeISO(l, e, c);

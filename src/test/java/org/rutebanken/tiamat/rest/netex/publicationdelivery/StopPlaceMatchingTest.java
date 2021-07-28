@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.rutebanken.netex.model.KeyListStructure;
 import org.rutebanken.netex.model.KeyValueStructure;
@@ -143,6 +144,8 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
                 .withVersion("1")
                 .withTransportMode(VehicleModeEnumeration.BUS)
                 .withName(new MultilingualString().withValue("Vennesla"))
+                .withQuays(new Quays_RelStructure()
+                        .withQuayRefOrQuay(createQuay("NSR:Quay:1", new BigDecimal("10"),new BigDecimal("74"))))
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("10"))
@@ -161,6 +164,8 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
                 .withVersion("1")
                 .withTransportMode(VehicleModeEnumeration.BUS)
                 .withName(new MultilingualString().withValue("Vennesla"))
+                .withQuays(new Quays_RelStructure()
+                        .withQuayRefOrQuay(createQuay("NSR:Quay:2", new BigDecimal("10"),new BigDecimal("74"))))
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("10"))
@@ -258,6 +263,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
     }
 
     /**
+     * DEACTIVATED TEST : MERGE MODE NO LONGER USED
      * See https://rutebanken.atlassian.net/browse/NRP-1601
      *
      * IDs might match incorrectly because of bad data.
@@ -266,6 +272,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
      * fall back to look for nearby stops.
      */
     @Test
+    @Ignore
     public void matchNearByStopPlaceIfIDMatchIsTooFarAway() throws Exception {
 
         StopPlace tooFarAwayStopPlace = new StopPlace()
@@ -323,7 +330,12 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
     }
 
+    /**
+     * DEACTIVATED TEST : ID_MATCH NO LONGER USED
+     * @throws Exception
+     */
     @Test
+    @Ignore
     public void matchImportedStopOnNonNumericId() throws Exception {
 
         StopPlace stopPlaceToBeMatched = new StopPlace()
@@ -357,7 +369,13 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         publicationDeliveryTestHelper.hasOriginalId(stopPlaceToBeMatched.getId(), result.get(0));
     }
 
+    /**
+     * DEACTIVATED TEST : ID_MATCH no longer used
+     * @throws Exception
+     */
+
     @Test
+    @Ignore
     public void doNotmatchStopOnSimilarOriginalId() throws Exception {
 
         StopPlace stopPlaceNotToBeMatched = new StopPlace()
@@ -392,7 +410,12 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         assertThat(result).as("no match as stop has different ID").hasSize(0);
     }
 
+    /**
+     * DEACTIVATED TEST : no longer used
+     * @throws Exception
+     */
     @Test
+    @Ignore
     public void matchImportedStopWithoutLeadingZeroOriginalId() throws Exception {
 
         StopPlace stopPlaceToBeMatched = new StopPlace()
@@ -427,7 +450,12 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         publicationDeliveryTestHelper.hasOriginalId("RUT:StopPlace:0111111111", result.get(0));
     }
 
+    /***
+     * IDMATCH mode no longer used. TEst deactivated
+     * @throws Exception
+     */
     @Test
+    @Ignore
     public void matchImportedStopOnLeadingZeroOriginalId() throws Exception {
 
         StopPlace stopPlaceToBeMatched = new StopPlace()
@@ -435,6 +463,8 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
                 .withVersion("1")
                 .withTransportMode(VehicleModeEnumeration.BUS)
                 .withName(new MultilingualString().withValue("somewhere"))
+                .withQuays(new Quays_RelStructure()
+                        .withQuayRefOrQuay(createQuay("NSR:Quay:1", new BigDecimal("9"),new BigDecimal("71"))))
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("11"))
@@ -568,7 +598,13 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         publicationDeliveryTestHelper.hasOriginalId(stopPlace1.getId(), result.get(0));
     }
 
+
+    /**
+     * DEACTIVATED TEST : ID_MATCH mode no longer used
+     * @throws Exception
+     */
     @Test
+    @Ignore
     public void matchStopsOnQuayNonNumericImportedId() throws Exception {
 
         StopPlace stopPlace1 = new StopPlace()
@@ -607,7 +643,12 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         publicationDeliveryTestHelper.hasOriginalId(stopPlace1.getId(), result.get(0));
     }
 
+    /**
+     * DEACTIVATED TEST : ID_MATCH NO LONGER USED
+     * @throws Exception
+     */
     @Test
+    @Ignore
     public void matchStopsWithZeroPaddedQuayOriginalId() throws Exception {
 
         StopPlace stopPlace1 = new StopPlace()
@@ -646,7 +687,13 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         publicationDeliveryTestHelper.hasOriginalId(stopPlace1.getId(), result.get(0));
     }
 
+
+    /**
+     * DEACTIVATED TEST : ID_MATCH no longer used
+     * @throws Exception
+     */
     @Test
+    @Ignore
     public void matchStopsOnQuayNetexId() throws Exception {
 
         StopPlace stopPlace1 = new StopPlace()
@@ -686,9 +733,11 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
     }
 
     /**
+     * DEACTIVATED TEST : ID_MATCH mode no longer used
      * https://rutebanken.atlassian.net/browse/NRP-1558
      */
     @Test
+    @Ignore
     public void matchOneIncomingStopToMultipleTiamatStops() throws JAXBException, IOException, SAXException {
 
         String initiallyImportedStops = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

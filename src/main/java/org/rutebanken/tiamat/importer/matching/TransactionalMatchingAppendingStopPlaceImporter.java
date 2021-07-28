@@ -257,7 +257,18 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 }
 
                 if (quayChanged || keyValuesChanged || centroidChanged || typeChanged || alternativeNameChanged || nameChanged) {
-                    copy = stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, copy);
+                    if (existingStopPlace.getParentSiteRef() != null && !existingStopPlace.isParentStopPlace()) {
+                        org.rutebanken.tiamat.model.StopPlace existingParentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingStopPlace.getParentSiteRef().getRef());
+                        org.rutebanken.tiamat.model.StopPlace copyParentStopPlace = versionCreator.createCopy(existingParentStopPlace, org.rutebanken.tiamat.model.StopPlace.class);
+                        org.rutebanken.tiamat.model.StopPlace stopPlaceWithParentToCopy = copy;
+                        copyParentStopPlace.getChildren().removeIf(stopPlace -> stopPlace.getNetexId().equals(stopPlaceWithParentToCopy.getNetexId()));
+                        copyParentStopPlace.getChildren().add(copy);
+                        copyParentStopPlace = stopPlaceVersionedSaverService.saveNewVersion(existingParentStopPlace, copyParentStopPlace);
+                        copy = copyParentStopPlace.getChildren().stream().filter(stopPlace -> stopPlace.getNetexId().equals(stopPlaceWithParentToCopy.getNetexId())).findFirst().get();
+                    }
+                    else{
+                        copy = stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, copy);
+                    }
                 }
 
                 String netexId = copy.getNetexId();

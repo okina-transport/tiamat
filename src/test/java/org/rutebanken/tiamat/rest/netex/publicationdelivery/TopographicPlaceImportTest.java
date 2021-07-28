@@ -21,6 +21,8 @@ import net.opengis.gml._3.ObjectFactory;
 import org.junit.Test;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
+import org.rutebanken.tiamat.importer.ImportParams;
+import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.netex.mapping.converter.PolygonConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -95,6 +97,12 @@ public class TopographicPlaceImportTest extends TiamatIntegrationTest {
 
     @Test
     public void publicationDeliveryWithParentTopographicPlace() throws Exception {
+
+        ImportParams importParams = new ImportParams();
+        importParams.importType = ImportType.INITIAL;
+        importParams.providerCode = "PROV1";
+
+
         MultilingualString countyName = new MultilingualString().withValue("Vestfold").withLang("nb");
 
         TopographicPlace county = new TopographicPlace()
@@ -117,7 +125,7 @@ public class TopographicPlaceImportTest extends TiamatIntegrationTest {
 
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryTopographicPlace(municipality, county);
 
-        PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
+        PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery,importParams);
 
         List<TopographicPlace> result = publicationDeliveryTestHelper.extractTopographicPlace(response);
         assertThat(result).as("Expecting topographic place in return").hasSize(2);

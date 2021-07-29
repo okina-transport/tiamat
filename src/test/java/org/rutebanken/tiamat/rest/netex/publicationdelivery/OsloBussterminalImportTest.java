@@ -20,6 +20,8 @@ import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.Quay;
 import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
+import org.rutebanken.tiamat.importer.ImportParams;
+import org.rutebanken.tiamat.importer.ImportType;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -61,17 +63,21 @@ public class OsloBussterminalImportTest extends TiamatIntegrationTest {
             "                     <Latitude>59.91176224246809312035111361183226108551025390625</Latitude>\n" +
             "                  </Location>\n" +
             "               </Centroid>\n" +
+            "         <TransportMode>bus</TransportMode>\n" +
             "               <StopPlaceType>onstreetBus</StopPlaceType>\n" +
             "               <quays>\n" +
             "                  <Quay version=\"1\" id=\"RUT:StopArea:0301061917\">\n" +
             "                     <Name lang=\"no\" textIdType=\"\">Oslo Bussterminal</Name>\n" +
             "                     <Description>Plattform 17</Description>\n" +
+
             "                     <Centroid>\n" +
             "                        <Location>\n" +
             "                           <Longitude>10.7600201712276106746912773814983665943145751953125</Longitude>\n" +
             "                           <Latitude>59.911577472464529137141653336584568023681640625</Latitude>\n" +
             "                        </Location>\n" +
             "                     </Centroid>\n" +
+            "              <SiteRef ref=\"RUT:StopArea:03010619\"/>\n" +
+            "        <TransportMode>bus</TransportMode>\n" +
             "                     <CompassBearing>209.0</CompassBearing>\n" +
             "                  </Quay>\n" +
             "                  <Quay version=\"1\" id=\"RUT:StopArea:0301061930\">\n" +
@@ -83,6 +89,8 @@ public class OsloBussterminalImportTest extends TiamatIntegrationTest {
             "                           <Latitude>59.91176224246809312035111361183226108551025390625</Latitude>\n" +
             "                        </Location>\n" +
             "                     </Centroid>\n" +
+            "              <SiteRef ref=\"RUT:StopArea:03010619\"/>\n" +
+            "        <TransportMode>bus</TransportMode>\n" +
             "                     <CompassBearing>9.0</CompassBearing>\n" +
             "                  </Quay>\n" +
             "               </quays>\n" +
@@ -95,7 +103,11 @@ public class OsloBussterminalImportTest extends TiamatIntegrationTest {
     @Test
     public void extractPlatformCodeFromDescription() throws Exception {
 
-        PublicationDeliveryStructure publicationDeliveryResponse = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(OSLO_BUSSTERMINAL_XML);
+        ImportParams importParams = new ImportParams();
+        importParams.importType = ImportType.INITIAL;
+        importParams.providerCode = "PROV1";
+
+        PublicationDeliveryStructure publicationDeliveryResponse = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(OSLO_BUSSTERMINAL_XML,importParams);
 
         StopPlace actualStopPlace = publicationDeliveryTestHelper.findFirstStopPlace(publicationDeliveryResponse);
 

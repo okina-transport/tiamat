@@ -59,6 +59,7 @@ import javax.persistence.EntityTransaction;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
@@ -140,7 +141,7 @@ public abstract class TiamatIntegrationTest {
     @MockBean
     protected BlobStoreService blobStoreService ;
 
-    @MockBean
+    @Autowired
     protected ReflectionAuthorizationService reflectionAuthorizationService;
 
     @Value("${local.server.port}")
@@ -149,15 +150,18 @@ public abstract class TiamatIntegrationTest {
     @Before
     public void initProviderRepository() {
 
+        Provider prov1 = createProvider("PROV1", 2L);
+
         List<Provider> providers = new ArrayList<>();
         providers.add(createProvider("test",1L));
-        providers.add(createProvider("PROV1",2L));
+        providers.add(prov1);
         providers.add(createProvider("PROV2",3L));
 
         when(providerRepository.getProviders()).thenReturn(providers);
         when(providerRepository.getProvider(anyLong())).thenReturn(providers.get(0));
+        when(providerRepository.getByReferential("PROV1")).thenReturn(Optional.of(prov1));
 
-        when(reflectionAuthorizationService.isAuthorized(eq(ROLE_EDIT_STOPS),any())).thenReturn(true);
+      //  when(reflectionAuthorizationService.isAuthorized(eq(ROLE_EDIT_STOPS),any())).thenReturn(true);
 
 
         doNothing().when(blobStoreService).upload(isA(String.class), isA(File.class));

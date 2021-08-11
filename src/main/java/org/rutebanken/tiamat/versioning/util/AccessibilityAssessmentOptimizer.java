@@ -106,6 +106,7 @@ public class AccessibilityAssessmentOptimizer {
         limitation.setLiftFreeAccess(stopLimitation.getLiftFreeAccess());
         limitation.setEscalatorFreeAccess(stopLimitation.getEscalatorFreeAccess());
         limitation.setStepFreeAccess(stopLimitation.getStepFreeAccess());
+        limitation.setVisualSignsAvailable(stopLimitation.getVisualSignsAvailable());
 
         AccessibilityAssessment quayAssessment = new AccessibilityAssessment();
         quayAssessment.setMobilityImpairedAccess(accessibilityAssessment.getMobilityImpairedAccess());

@@ -117,7 +117,7 @@ It's all initiated by an entity listener annotated with `PrePersist` on the clas
 
 ## Keycloak
 Both Tiamat and Abzu are set up to be used with Keycloak.
-### Keycloak configuraiton
+### Keycloak configuration
 - Create realm e.g. Entur
 - Create client for frontend e.g. abzu
 - Under client setting  configure Mapper e.g. entur-roles
@@ -311,8 +311,11 @@ https://github.com/entur/tiamat-scripts
 ## CircleCI
 Tiamat is built using CircleCI. See the .circleci folder.
 
-
-
+## Sharing policy
+Sharing policy defines if points must be shared between 2 providers or not.
+2 modes:
+- shared : points are shared between providers and merged if located nerby each other
+- isoled : each provider have their points. 2 points at the same place from different providers will not be merged
 
 ##Versions
 0.0.4 : allow chouette to update stop places during import

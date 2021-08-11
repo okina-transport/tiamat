@@ -18,8 +18,11 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
 import org.rutebanken.netex.model.AlternativeNames_RelStructure;
+import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.netex.model.PostalAddress;
 import org.rutebanken.netex.model.Quay;
+import org.rutebanken.netex.model.SiteRefStructure;
+import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.model.AlternativeName;
 
 import java.util.ArrayList;
@@ -97,14 +100,40 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
             quay2.setAlternativeNames(null);
         }
 
+        if (quay.getSiteRef() != null){
+            SiteRefStructure siteRef = new SiteRefStructure();
+            siteRef.withRef(quay.getSiteRef().getRef());
+            quay2.setSiteRef(siteRef);
+        }
+
+        if (quay.getOriginalNames().size() > 0){
+            MultilingualString name = new MultilingualString();
+            name.setValue(quay.getOriginalNames().stream().findFirst().get());
+            quay2.setName(name);
+        }
 
         if(quay.getZipCode() != null){
-            PostalAddress postalAddress = new PostalAddress();
-            postalAddress.setPostalRegion(quay.getZipCode());
-            String postalAddressId = quay.getNetexId().replace("Quay", "PostalAddress");
-            postalAddress.setId(postalAddressId);
-            postalAddress.setVersion("any");
-            quay2.setPostalAddress(postalAddress);
+            feedPostalAddress(quay,quay2);
         }
+
+    }
+
+    private void feedPostalAddress(org.rutebanken.tiamat.model.Quay tiamatQuay, Quay netexQuay){
+
+        PostalAddress postalAddress = new PostalAddress();
+        postalAddress.setPostalRegion(tiamatQuay.getZipCode());
+        String postalAddressId = tiamatQuay.getNetexId().replace("Quay", "PostalAddress");
+        postalAddress.setId(postalAddressId);
+        postalAddress.setVersion("any");
+        MultilingualString addressName = new MultilingualString();
+
+        if (tiamatQuay.getName() != null){
+            addressName.setValue(tiamatQuay.getName().getValue());
+            postalAddress.setName(addressName);
+        }else if (netexQuay.getName() != null){
+            addressName.setValue(netexQuay.getName().getValue());
+            postalAddress.setName(addressName);
+        }
+        netexQuay.setPostalAddress(postalAddress);
     }
 }

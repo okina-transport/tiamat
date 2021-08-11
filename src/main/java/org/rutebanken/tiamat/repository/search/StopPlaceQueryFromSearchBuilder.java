@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.domain.Provider;
+import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -143,6 +144,9 @@ public class StopPlaceQueryFromSearchBuilder {
 
     @Autowired
     private NetexIdHelper netexIdHelper;
+
+    @Value("${administration.space.name}")
+    protected String administrationSpaceName;
 
     /**
      * Configure some common words to be skipped during stop place search by name.
@@ -495,7 +499,7 @@ public class StopPlaceQueryFromSearchBuilder {
             createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements);
         }
 
-        if (provider.getChouetteInfo().getReferential() != null){
+        if (provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName)){
             operators.add("and");
             parameters.put("providerName", provider.getChouetteInfo().getReferential());
             wheres.add("s.provider = :providerName");

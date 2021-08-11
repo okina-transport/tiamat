@@ -108,6 +108,9 @@ public class StopPlaceRegisterGraphQLSchema {
     private Mainti4ImageObjectTypeCreator mainti4ImageObjectTypeCreator;
 
     @Autowired
+    private Mainti4UrlObjectTypeCreator mainti4UrlObjectTypeCreator;
+
+    @Autowired
     private AuthorizationCheckDataFetcher authorizationCheckDataFetcher;
 
     @Autowired
@@ -148,6 +151,9 @@ public class StopPlaceRegisterGraphQLSchema {
 
     @Autowired
     DataFetcher imageMainti4Fetcher;
+
+    @Autowired
+    DataFetcher mainti4UrlFetcher;
 
     @Autowired
     DateScalar dateScalar;
@@ -341,8 +347,14 @@ public class StopPlaceRegisterGraphQLSchema {
                         .type(mainti4ImageObjectTypeCreator.create())
                         .name("imageMainti4")
                         .description("get Mainti4 image")
-                        .argument(createImageMainti4Arguments())
+                        .argument(createIdStopOrQuayArguments())
                         .dataFetcher(imageMainti4Fetcher))
+                .field(newFieldDefinition()
+                        .type(mainti4UrlObjectTypeCreator.create())
+                        .name("stopPlaceUrlOnMainti4")
+                        .description("Get StopPlace url on mainti4")
+                        .argument(createIdStopOrQuayArguments())
+                        .dataFetcher(mainti4UrlFetcher))
                 .build();
 
 
@@ -511,7 +523,7 @@ public class StopPlaceRegisterGraphQLSchema {
     }
 
 
-    private List<GraphQLArgument> createImageMainti4Arguments() {
+    private List<GraphQLArgument> createIdStopOrQuayArguments() {
         List<GraphQLArgument> arguments = new ArrayList<>();
         //Image criteria
         arguments.add(GraphQLArgument.newArgument()

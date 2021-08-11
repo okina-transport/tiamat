@@ -149,6 +149,28 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
     }
 
     @Override
+    public TopologieDto getTopoPAFromQuay(Quay rQuay)  throws Exception  {
+        //Tente de recuperer le code
+        String lsCode = KeyValueWrapper.extractCodeFromKeyValues(rQuay.getKeyValues(), "P"+rQuay.getPublicCode());
+        //Construit le code cote MAINTI4
+        String lsCodePA = getPACodeNameFromCode(lsCode); // Code du PA ou se trouve la photo
+        logger.debug("Cherche la topologie [{}]", lsCode);
+        TopologiesApi topologies = getApi().buildClient(TopologiesApi.class);
+        return getTopoByCode(topologies, lsCodePA);
+    }
+
+    @Override
+    public TopologieDto getTopoPAQUFromQuay(Quay rQuay)  throws Exception  {
+        //Tente de recuperer le code
+        String lsCode = KeyValueWrapper.extractCodeFromKeyValues(rQuay.getKeyValues(), "P"+rQuay.getPublicCode());
+        //Construit le code cote MAINTI4
+        String lsCodePAQU = getPAQUCodeNameFromCode(lsCode); // Code du PA ou se trouve la photo
+        logger.debug("Cherche la topologie [{}]", lsCode);
+        TopologiesApi topologies = getApi().buildClient(TopologiesApi.class);
+        return getTopoByCode(topologies, lsCodePAQU);
+    }
+
+    @Override
     public List<BtDto> searchBT(List<EtatBT> rlstEtats) {
         try {
             if (rlstEtats == null || rlstEtats.isEmpty()) {
@@ -185,6 +207,16 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
     }
 
     @Override
+    public List<BtDto> searchBTFromCode(String rCode) {
+        return null;
+    }
+
+    @Override
+    public List<BtDto> searchBTFromIdTopo(String rIdTopo) {
+        return null;
+    }
+
+    @Override
     public BufferedImage getPhoto(Quay rQuay) {
         //Tente de recuperer le code
         String lsCode = KeyValueWrapper.extractCodeFromKeyValues(rQuay.getKeyValues(), "P"+rQuay.getPublicCode());
@@ -202,6 +234,55 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
         String lsCodePA = getARCodeNameFromCode(lsCode); // Code du PA ou se trouve la photo
         //Renvoie la photo
         return getPhotoByCode(lsCodePA);
+    }
+
+    @Override
+    public String getUrlFromIdStopPlace(StopPlace rStopPlace) {
+        //Tente de recuperer le code
+        String lsCode = KeyValueWrapper.extractCodeFromKeyValues(rStopPlace.getKeyValues(), "A"+rStopPlace.getPublicCode());
+        //Construit le code cote MAINTI4
+        String lsCodePA = getARCodeNameFromCode(lsCode); // Code du PA ou se trouve la photo
+        return getUrlFromIdTopo(lsCodePA);
+    }
+
+    @Override
+    public String getUrlFromIdQuay(Quay rQuay) {
+        //Tente de recuperer le code
+        String lsCode = KeyValueWrapper.extractCodeFromKeyValues(rQuay.getKeyValues(), "P"+rQuay.getPublicCode());
+        //Construit le code cote MAINTI4
+        String lsCodePA = getPACodeNameFromCode(lsCode); // Code du PA ou se trouve la photo
+        //Renvoie la photo
+        return getUrlFromIdTopo(lsCodePA);
+    }
+
+
+    /**
+     * Construit une url selon l'id d'une topologie
+     * Les url sont construites a partir de l'id technique
+     * @param rIdTopo : id de la topologie
+     * @return
+     */
+    private String getUrlFromIdTopo(String rIdTopo) {
+        String lsURL = null;
+
+        if (rIdTopo != null) {
+            //Recupere la topo
+            logger.debug("Cherche la topologie [{}]", rIdTopo);
+            TopologiesApi topologies = getApi().buildClient(TopologiesApi.class);
+            TopologieDto topo = null;
+            try {
+                topo = getTopoByCode(topologies, rIdTopo);
+                if (topo != null) {
+                    //Construit l'url sous la forme :
+                    //"https://agglolarochelletest.mainti4.com/#/topologies/topologie/consulter/8030/0/"
+                    lsURL = getApi().getBasePath()+"/#/topologies/topologie/consulter/"+topo.getId()+"/0/";
+                    logger.debug("URL construite pour la topologie [{}] : [{}]", rIdTopo, lsURL);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return lsURL;
     }
 
     /**
@@ -253,6 +334,16 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
     }
 
     /**
+     * Renvoie le nom de code d'un quai de PA dans tiamat d'apres le code dans rimo
+     * @param rsCode : code dans rimo
+     * @return  nom de code dans tiamat d'apres le code public dans rimo
+     */
+    private String getPAQUCodeNameFromCode(String rsCode) {
+        String lsCode = getPACodeNameFromCode(rsCode);
+        return (lsCode != null) ? lsCode + "QU" : "";
+    }
+
+    /**
      * Cree le quai sous forme de point d'arret dans tiamat4
      * @param rTopologies : Topologie
      * @param rtopoParent : Topologie parente
@@ -293,6 +384,7 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
             logger.debug("Creation topo QUAI");
             logger.debug("    ==> " + rtopoParent.getCodeLibelle());
             TopologieDto newTopo = new TopologieDto();
+            //a noter, on passe pas par getPAQUCodeNameFromCode, c'est volontaire car le code on le recupere deja formatte
             newTopo.setCode(rtopoParent.getCode()+"QU");
             newTopo.setLibelleOrigine("QUAI - " + rtopoParent.getLibelle());
             newTopo.setIdTopoParent(rtopoParent.getId());

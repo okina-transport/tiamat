@@ -29,6 +29,10 @@ public interface IServiceTiamatApi extends IServiceApiLogin {
      */
     TopologieDto createPA(Quay rQuay, String rsCodeParent);
 
+    TopologieDto getTopoPAFromQuay(Quay rQuay) throws Exception ;
+
+    TopologieDto getTopoPAQUFromQuay(Quay rQuay) throws Exception ;
+
     /**
      * Cherche les Bons de travaux selon une liste d'etats definis
      * @param rlstEtats : liste d'etats
@@ -44,6 +48,21 @@ public interface IServiceTiamatApi extends IServiceApiLogin {
     List<BtDto> searchBTFromIds(List<String> rlstEtats);
 
     /**
+     * Cherche les travaux concernant un code donne
+     * @param rCode : le code concerne
+     * @return
+     */
+    List<BtDto> searchBTFromCode(String rCode);
+
+    /**
+     * Cherche les travaux concernant un id de topo donne
+     * @param rIdTopo : id topologie
+     * @return
+     */
+    List<BtDto> searchBTFromIdTopo(String rIdTopo);
+
+
+    /**
      * Recupere la photo d'un quai (PA cote MAINTI4)
      * @param rQuay : Le quai
      */
@@ -54,4 +73,18 @@ public interface IServiceTiamatApi extends IServiceApiLogin {
      * @param rStopPlace : Le point d'arret
      */
     BufferedImage getPhoto(StopPlace rStopPlace);
+
+    /**
+     * Recupere l'url de la fiche concernee dans mainti4 d'apres l'id du point d'arret
+     * @param rStopPlace : objet stopplace
+     * @return l'url de la fiche de la topologie
+     */
+    String getUrlFromIdStopPlace(StopPlace rStopPlace);
+
+    /**
+     * Recupere l'url de la fiche concernee dans mainti4 d'apres l'id du quai
+     * @param rQuay : objet quay
+     * @return l'url de la fiche de la topologie
+     */
+    String getUrlFromIdQuay(Quay rQuay);
 }

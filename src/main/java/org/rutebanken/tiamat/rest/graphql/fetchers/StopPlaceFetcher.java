@@ -23,6 +23,7 @@ import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.dtoassembling.dto.BoundingBoxDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
+import org.rutebanken.tiamat.importer.finder.Mainti4TravauxFinder;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -44,12 +45,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -64,6 +60,9 @@ class StopPlaceFetcher implements DataFetcher {
     @Autowired
     @Qualifier("mainti4serviceapilogin")
     IServiceTiamatApi mainti4ServiceLogin;
+
+    @Autowired
+    Mainti4TravauxFinder mainti4TravauxFinder;
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceFetcher.class);
 
@@ -284,7 +283,7 @@ class StopPlaceFetcher implements DataFetcher {
                                 //Code cote MAINTI4 du BT
                                 String lsCodeBT = trav.getTopologie().getCode();
                                 //On test d'abord le code de base (PA rimo <=> AR mainti4). Si c'est le bon, on garde
-                                if ((lsCode + "AR").equals(lsCodeBT)) {
+                                if (lsCodeBT.equals(mainti4ServiceLogin.getARCodeNameFromCode(lsCode))) {
                                     return true;
                                 } else {
                                     //Regarde si un des quais de ce PA est concerne par le BT
@@ -293,7 +292,7 @@ class StopPlaceFetcher implements DataFetcher {
                                         //a noter : on ajoute "P" devant si on doit prendre le code public
                                         String lsCodeQ = KeyValueWrapper.extractCodeFromKeyValues(lQuay.getKeyValues(), "P"+lQuay.getPublicCode());
                                         //Si code est le bon on garde
-                                        if ((lsCodeQ + "PA").equals(lsCodeBT)) {
+                                        if (lsCodeBT.equals(mainti4ServiceLogin.getPACodeNameFromCode(lsCodeQ))) {
                                             return true;
                                         }
                                     }
@@ -315,6 +314,39 @@ class StopPlaceFetcher implements DataFetcher {
             }
         }
         //--------------------------------------------------------------------------------------------------------------
+
+        //Etats BTs d'apres le cache -----------------------------------------------------------------------------------
+        if (!stopPlacesPage.getContent().isEmpty()) {
+            //Pour chaque stopplace on verifie les travaux
+            stopPlacesPage.getContent().forEach(stopPlace -> {
+                //Code du PA cote RIMO
+                //a noter : on ajoute "A" devant si on doit prendre le code public
+                String lsCode = KeyValueWrapper.extractCodeFromKeyValues(stopPlace.getKeyValues(), "A"+stopPlace.getPublicCode());
+                Optional<BtDto> btData = this.mainti4TravauxFinder.getCacheEntry(mainti4ServiceLogin.getARCodeNameFromCode(lsCode));
+                //met le code etat dans la classe si il en existe un
+                btData.ifPresent(data -> stopPlace.setBtstate(data.getEtat().getValue().toString()));
+                //On verifie si les quais ont des travaux egalement
+                for (Quay lQuay: stopPlace.getQuays()) {
+                    //Code du quai cote RIMO
+                    //a noter : on ajoute "P" devant si on doit prendre le code public
+                    String lsCodeQ = KeyValueWrapper.extractCodeFromKeyValues(lQuay.getKeyValues(), "P"+lQuay.getPublicCode());
+                    Optional<BtDto> btDataQ = this.mainti4TravauxFinder.getCacheEntry(mainti4ServiceLogin.getPACodeNameFromCode(lsCodeQ));
+                    //Si on a trouve on affecte mais on ne sort pas car on veut les autres quais aussi potentiellement
+                    btDataQ.ifPresent(data -> {
+                        //On met a jour que si pas d'etat deja renseigne au cas ou le stopplace parent aurait des travaux
+                        if (stopPlace.getBtstate() == null) {
+                            stopPlace.setBtstate(data.getEtat().getValue().toString());
+                        }
+                        //Puis on met a jour l'etat pour le quai
+                        lQuay.setBtstate(data.getEtat().getValue().toString());
+                    });
+                }
+                if (lsCode.equals("A6652")) {
+                    logger.info("pour s'arreter sur ce qu'on cherche en debug !");
+                }
+            });
+        }
+        //----------------------------------------------------------------------------------- Etats BTs d'apres le cache
 
         final List<StopPlace> stopPlaces = stopPlacesPage.getContent();
         boolean onlyMonomodalStopplaces = false;

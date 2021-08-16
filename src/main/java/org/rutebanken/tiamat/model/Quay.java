@@ -43,6 +43,9 @@ public class Quay extends StopPlaceSpace_VersionStructure {
     @Column(name = "url")
     protected String url;
 
+    @Transient
+    private String btstate; //Etat BT travaux Mainti4
+
     /**
      * TODO: reconsider data type for compass bearing.
      * https://rutebanken.atlassian.net/browse/NRP-895
@@ -86,6 +89,12 @@ public class Quay extends StopPlaceSpace_VersionStructure {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getBtstate() { return btstate; }
+
+    public void setBtstate(String btstate) {
+        this.btstate = btstate;
     }
 
     @Override

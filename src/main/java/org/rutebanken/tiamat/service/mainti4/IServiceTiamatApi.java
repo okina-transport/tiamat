@@ -50,14 +50,14 @@ public interface IServiceTiamatApi extends IServiceApiLogin {
     /**
      * Cherche les travaux concernant un code donne
      * @param rCode : le code concerne
-     * @return
+     * @return une liste d'etats travaux mainti4
      */
     List<BtDto> searchBTFromCode(String rCode);
 
     /**
      * Cherche les travaux concernant un id de topo donne
      * @param rIdTopo : id topologie
-     * @return
+     * @return une liste d'etats travaux mainti4
      */
     List<BtDto> searchBTFromIdTopo(String rIdTopo);
 
@@ -87,4 +87,10 @@ public interface IServiceTiamatApi extends IServiceApiLogin {
      * @return l'url de la fiche de la topologie
      */
     String getUrlFromIdQuay(Quay rQuay);
+
+    String getARCodeNameFromCode(String rsCode);
+
+    String getPACodeNameFromCode(String rsCode);
+
+    String getPAQUCodeNameFromCode(String rsCode);
 }

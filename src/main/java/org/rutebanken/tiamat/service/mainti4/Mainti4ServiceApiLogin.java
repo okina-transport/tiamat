@@ -30,6 +30,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -121,7 +122,7 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
 
     @Override
     public TopologieDto createPA(Quay rQuay, String rsCodeParent) {
-        TopologiesApi topologies = null;
+        TopologiesApi topologies;
         try {
             if (rsCodeParent == null) {
                 logger.warn("Pas de code parent, impossible de creer le PA dans Mainti4");
@@ -172,6 +173,9 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
 
     @Override
     public List<BtDto> searchBT(List<EtatBT> rlstEtats) {
+        LocalDateTime debut = LocalDateTime.now().minusMonths(6); //debut = date actuelle - 6 mois
+        LocalDateTime fin   = LocalDateTime.now().plusMonths(12); //fin = date actuelle + 12 mois
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         try {
             if (rlstEtats == null || rlstEtats.isEmpty()) {
                 throw new Exception("searchBT-Aucun etat fourni en parametre !");
@@ -179,11 +183,16 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
             BTsApi bts = getApi().buildClient(BTsApi.class);
             //Filtre de recherche des bons de travaux uniquement par etat pour l'instant
             BTFilter filterBts = new BTFilter();
-            List<EtatBT> lstEtats = new ArrayList<EtatBT>();
             //On alimente la liste d'etats
-            lstEtats.addAll(rlstEtats);
+            List<EtatBT> lstEtats = new ArrayList<>(rlstEtats);
             //Affecte filtre de recherche
             filterBts.setEtats(lstEtats);
+            //On doit specifier une date de debut et de fin pour que ca fonctionne
+            //a noter que le champ DateFiltre n'est pas utilise. Il est cependant explique dans le fichier
+            //mainti4-swagger-spec.json et pourra servir si besoin
+            //(il definit a quoi correspondent ces dates de debut/fin dans la recherche)
+            filterBts.setDateDebut(debut);
+            filterBts.setDateFin(fin);
             //Effectue la recherche et renvoie le resultat
             return bts.bTsSearch(filterBts);
         } catch (Exception e) {
@@ -197,7 +206,7 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
         if (rlstEtats == null) {
             return null;
         }
-        List<EtatBT> llstBTs = new ArrayList<EtatBT>();
+        List<EtatBT> llstBTs = new ArrayList<>();
         //Alimente liste d'etat
         for (String idState: rlstEtats) {
             llstBTs.add(EtatBT.fromValue(Integer.valueOf(idState)));
@@ -260,7 +269,7 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
      * Construit une url selon l'id d'une topologie
      * Les url sont construites a partir de l'id technique
      * @param rIdTopo : id de la topologie
-     * @return
+     * @return l'url correspondant à la topologie dans mainti4
      */
     private String getUrlFromIdTopo(String rIdTopo) {
         String lsURL = null;
@@ -269,7 +278,7 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
             //Recupere la topo
             logger.debug("Cherche la topologie [{}]", rIdTopo);
             TopologiesApi topologies = getApi().buildClient(TopologiesApi.class);
-            TopologieDto topo = null;
+            TopologieDto topo;
             try {
                 topo = getTopoByCode(topologies, rIdTopo);
                 if (topo != null) {
@@ -320,7 +329,8 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
      * @param rsCode : code dans rimo
      * @return  nom de code dans tiamat d'apres le code public dans rimo
      */
-    private String getARCodeNameFromCode(String rsCode) {
+    @Override
+    public String getARCodeNameFromCode(String rsCode) {
         return (rsCode != null) ? rsCode + "AR" : "";
     }
 
@@ -329,7 +339,8 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
      * @param rsCode : code dans rimo
      * @return  nom de code dans tiamat d'apres le code public dans rimo
      */
-    private String getPACodeNameFromCode(String rsCode) {
+    @Override
+    public String getPACodeNameFromCode(String rsCode) {
         return (rsCode != null) ? rsCode + "PA" : "";
     }
 
@@ -338,7 +349,8 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
      * @param rsCode : code dans rimo
      * @return  nom de code dans tiamat d'apres le code public dans rimo
      */
-    private String getPAQUCodeNameFromCode(String rsCode) {
+    @Override
+    public String getPAQUCodeNameFromCode(String rsCode) {
         String lsCode = getPACodeNameFromCode(rsCode);
         return (lsCode != null) ? lsCode + "QU" : "";
     }

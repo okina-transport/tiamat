@@ -23,7 +23,7 @@ import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.dtoassembling.dto.BoundingBoxDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
-import org.rutebanken.tiamat.importer.finder.Mainti4TravauxFinder;
+import org.rutebanken.tiamat.importer.finder.IMainti4TravauxFinder;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -62,7 +62,7 @@ class StopPlaceFetcher implements DataFetcher {
     IServiceTiamatApi mainti4ServiceLogin;
 
     @Autowired
-    Mainti4TravauxFinder mainti4TravauxFinder;
+    IMainti4TravauxFinder mainti4TravauxFinder;
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceFetcher.class);
 

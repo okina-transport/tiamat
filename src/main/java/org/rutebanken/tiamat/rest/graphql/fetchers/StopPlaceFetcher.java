@@ -300,8 +300,9 @@ class StopPlaceFetcher implements DataFetcher {
                                 return false;
                             }).findAny()
                             .orElse(null);
-                    //Ajoute le stopplace s'il a ete trouve dans la liste
-                    if (stop != null) {
+                    //Ajoute le stopplace s'il a ete trouve dans la liste et s'il n'est pas deja dedans (peut arriver
+                    //si plusieurs travaux sur meme stopplace/quais lies
+                    if (stop != null && !filterStopPlaces.contains(stop)) {
                         //Maj BT etat sur l'objet stopplace
                         stop.setBtstate(trav.getEtat().getValue().toString());
                         //Ajoute a la liste le stopplace
@@ -341,9 +342,9 @@ class StopPlaceFetcher implements DataFetcher {
                         lQuay.setBtstate(data.getEtat().getValue().toString());
                     });
                 }
-                if (lsCode.equals("A6652")) {
-                    logger.info("pour s'arreter sur ce qu'on cherche en debug !");
-                }
+//                if (lsCode.equals("A6652")) {
+//                    logger.info("pour s'arreter sur ce qu'on cherche en debug !");
+//                }
             });
         }
         //----------------------------------------------------------------------------------- Etats BTs d'apres le cache

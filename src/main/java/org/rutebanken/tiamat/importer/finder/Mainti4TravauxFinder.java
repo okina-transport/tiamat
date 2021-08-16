@@ -18,31 +18,34 @@ package org.rutebanken.tiamat.importer.finder;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.okina.mainti4.mainti4apiclient.model.BtDto;
 import org.rutebanken.tiamat.service.mainti4.IServiceTiamatApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class Mainti4TravauxFinder {
+public class Mainti4TravauxFinder implements IMainti4TravauxFinder {
 
     private static final Logger logger = LoggerFactory.getLogger(Mainti4TravauxFinder.class);
 
     //On considere qu'il n'y aura qu'un seul BT pour un point/quai donne
     //La cle c'est l'id du point/quai
     //pour l'instant on met le tps de rafraichissement en dur
-    private Cache<String, Optional<BtDto>> mainti4TravauxCache = CacheBuilder.newBuilder()
+    private LoadingCache<String, Optional<BtDto>> mainti4TravauxCache = CacheBuilder.newBuilder()
             .maximumSize(300000)
-            .refreshAfterWrite(15, TimeUnit.MINUTES)
+            //.refreshAfterWrite(15, TimeUnit.MINUTES)
             .build(CacheLoader.from(this::getBtDtoFromId));
 
     @Autowired
@@ -97,13 +100,13 @@ public class Mainti4TravauxFinder {
     }
 
     /**
-     * Cette fonction est utilisee pour la creaction du cacheloader.
+     * Cette fonction est utilisee pour la creation du cacheloader.
      * Ce dernier va redemander les travaux et tenter de trouver l'id correspondant dans la liste s'il n'y est pas
      * @param rsId : id du PA/QU tel que attendu dans TIAMAT !
-     * @return
+     * @return un etat de travaux
      */
     private Optional<BtDto> getBtDtoFromId(String rsId) {
-        logger.info("Passage dans cache loader !");
+        //logger.info("Passage dans cache loader !");
         //TODO: attention, methode searchBTFromCode non implementee pour l'instant, ca renvoie null
         //Recupere les BTs lie a un code donne
         List<BtDto> listeTravaux = mainti4ServiceLogin.searchBTFromCode(rsId);
@@ -124,7 +127,11 @@ public class Mainti4TravauxFinder {
 
     /**
      * Mise a jour du cache, on ne vide pas le cache avant
+     * a noter : fixedDelayString au lieu de fixedRatedString car on veut s'assurer que la precedente mise a
+     * jour est terminee avant de repartir sur un delai d'attente pour le prochain
      */
+    @Override
+    @Scheduled(fixedDelayString = "${mainti4.cache.refresh.interval:20000}")
     public void updateCache() {
         logger.info("Mise a jour du cache mainti4");
         List<BtDto> listeTravaux = mainti4ServiceLogin.searchBTFromIds(mstEtatsBT);
@@ -136,7 +143,22 @@ public class Mainti4TravauxFinder {
                 mainti4TravauxCache.put(lsCodeBT, Optional.of(trav));
             }
         }
-        logger.info("Fin de mise a jour du cache mainti4");
+        logger.info("Fin de mise a jour du cache mainti4. Nb entrees -> {}", mainti4TravauxCache.size());
+    }
+
+    /**
+     * Renvoie l'entree du cache qui correspond
+     * @param rId : id dans le cache, correspond au code dans Mainti4 (ex: A4844AR)
+     * @return la donnee BtDto ou null
+     */
+    @Override
+    public Optional<BtDto> getCacheEntry(String rId) {
+        try {
+            return mainti4TravauxCache == null ? Optional.empty() : mainti4TravauxCache.get(rId);
+        } catch (ExecutionException err) {
+            logger.error("Erreur acces au cache mainti4TravauxCache : {}", err.getMessage());
+            return Optional.empty();
+        }
     }
 
 }

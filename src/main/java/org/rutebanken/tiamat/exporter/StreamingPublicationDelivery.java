@@ -201,6 +201,9 @@ public class StreamingPublicationDelivery {
         // The primary ID represents a stop place with a certain version
 
         final Set<Long> stopPlacePrimaryIds = stopPlaceRepository.getDatabaseIds(exportParams, ignorePaging, provider);
+        final Set<Long> stopPlacePrimaryIdsWithParents = stopPlaceRepository.addParentIds(stopPlacePrimaryIds);
+
+
         logger.info("Got {} stop place IDs from stop place search", stopPlacePrimaryIds.size());
 
         //TODO: stream path links, handle export mode
@@ -210,7 +213,7 @@ public class StreamingPublicationDelivery {
         org.rutebanken.netex.model.SiteFrame netexSiteFrame = netexMapper.mapToNetexModel(siteFrame);
 
         logger.info("Preparing scrollable iterators");
-        prepareTopographicPlaces(exportParams, stopPlacePrimaryIds, mappedTopographicPlacesCount, netexSiteFrame, entitiesEvictor);
+        prepareTopographicPlaces(exportParams, stopPlacePrimaryIdsWithParents, mappedTopographicPlacesCount, netexSiteFrame, entitiesEvictor);
         prepareTariffZones(exportParams, stopPlacePrimaryIds, mappedTariffZonesCount, netexSiteFrame, entitiesEvictor);
         prepareStopPlaces(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexSiteFrame, entitiesEvictor);
         prepareParkings(exportParams, stopPlacePrimaryIds, mappedParkingCount, netexSiteFrame, entitiesEvictor);
@@ -259,6 +262,10 @@ public class StreamingPublicationDelivery {
             e.printStackTrace();
         }
         s = s.replace("ns2:pos", "gml:pos");
+        s = s.replace("ns2:Polygon ns2:id","gml:Polygon gml:id");
+        s = s.replace("/ns2:Polygon","/gml:Polygon");
+        s = s.replace("ns2:exterior","gml:exterior");
+        s = s.replace("ns2:LinearRing","gml:LinearRing");
         s = s.replace("ns3:", "siri:");
 
         Document document = stringToDocument(s);

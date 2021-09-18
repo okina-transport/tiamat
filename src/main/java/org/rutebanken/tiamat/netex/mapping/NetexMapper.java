@@ -68,6 +68,7 @@ public class NetexMapper {
 
         mapperFactory.classMap(TopographicPlace.class, org.rutebanken.tiamat.model.TopographicPlace.class)
                 .fieldBToA("name", "descriptor.name")
+                .customize(new TopographicPlaceMapper())
                 .byDefault()
                 .register();
 

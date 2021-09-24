@@ -67,11 +67,13 @@ public class ParentTreeTopographicPlaceFetchingIterator implements Iterator<Topo
 
         if(parents.isEmpty()) {
             logger.debug("No parents. Returning from iterator");
+            fetchedTopographicRefs.add(topographicPlace.getNetexId() + "-" + topographicPlace.getVersion());
             return topographicPlace;
         } else {
             logger.debug("There are newly fetched parents. Return parent");
             next = topographicPlace;
-            return parents.pollLast();
+            TopographicPlace pollLast = parents.pollLast();
+            return pollLast;
         }
 
     }

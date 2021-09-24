@@ -68,6 +68,7 @@ public class NetexMapper {
 
         mapperFactory.classMap(TopographicPlace.class, org.rutebanken.tiamat.model.TopographicPlace.class)
                 .fieldBToA("name", "descriptor.name")
+                .customize(new TopographicPlaceMapper())
                 .byDefault()
                 .register();
 
@@ -229,7 +230,11 @@ public class NetexMapper {
 
     private void initQuayProperties(StopPlace stopPlace,Quay quay){
         MultilingualString multilingualString = new MultilingualString();
-        multilingualString.setValue(getImportedName(quay).get());
+        Optional<String> importedNameOpt = getImportedName(quay);
+        if (!importedNameOpt.isPresent()){
+            logger.error("Unable to find importedName for quay:" + quay.getId());
+        }
+        multilingualString.setValue(importedNameOpt.get());
         multilingualString.setLang("fr");
         quay.setName(multilingualString);
 

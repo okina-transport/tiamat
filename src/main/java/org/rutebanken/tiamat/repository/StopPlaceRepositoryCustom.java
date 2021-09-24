@@ -84,4 +84,6 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
     Iterator<StopPlace> scrollStopPlaces(Set<Long> stopPlacePrimaryIds);
 
     Map<String, Set<String>> listStopPlaceIdsAndQuayIds(Instant validFrom, Instant validTo);
+
+    Set<Long> addParentIds(Set<Long> stopPlaceDbIds);
 }

@@ -23,6 +23,7 @@ import org.rutebanken.netex.model.PathLink;
 import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
+import org.rutebanken.tiamat.importer.ImportParams;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
@@ -43,18 +44,42 @@ public class PathLinkImportTest extends TiamatIntegrationTest {
         StopPlace fromStopPlace = new StopPlace()
                 .withId("RUT:StopPlace:123123")
                 .withVersion("1")
+                .withName(new MultilingualString().withValue("fromStopPlace").withLang("no"))
+                .withTransportMode(VehicleModeEnumeration.BUS)
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("9"))
-                                .withLongitude(new BigDecimal("71"))));
+                                .withLongitude(new BigDecimal("71"))))
+                .withQuays(new Quays_RelStructure()
+                        .withQuayRefOrQuay(new Quay()
+                                .withVersion("1")
+                                .withId("RUT:StopArea:87654")
+                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withSiteRef(new SiteRefStructure().withValue("RUT:StopPlace:123123").withRef("RUT:StopPlace:123123"))
+                                .withName(new MultilingualString().withValue("q1").withLang("no"))
+                                .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
+                                        .withLatitude(new BigDecimal("58.966910"))
+                                        .withLongitude(new BigDecimal("5.732949"))))));
 
         StopPlace toStopPlace = new StopPlace()
                 .withId("RUT:StopPlace:321654")
                 .withVersion("1")
+                .withName(new MultilingualString().withValue("toStopPlace").withLang("no"))
+                .withTransportMode(VehicleModeEnumeration.BUS)
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("9.6"))
-                                .withLongitude(new BigDecimal("76"))));
+                                .withLongitude(new BigDecimal("76"))))
+                .withQuays(new Quays_RelStructure()
+                        .withQuayRefOrQuay(new Quay()
+                                .withVersion("1")
+                                .withId("RUT:StopArea:87655")
+                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withSiteRef(new SiteRefStructure().withValue("RUT:StopPlace:321654").withRef("RUT:StopPlace:321654"))
+                                .withName(new MultilingualString().withValue("q2").withLang("no"))
+                                .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
+                                        .withLatitude(new BigDecimal("58.966910"))
+                                        .withLongitude(new BigDecimal("5.732949"))))));
 
         LineStringType lineStringType = new LineStringType()
                 .withId("LineString")
@@ -89,7 +114,10 @@ public class PathLinkImportTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(fromStopPlace, toStopPlace);
         publicationDeliveryTestHelper.addPathLinks(publicationDelivery, netexPathLink);
 
-        PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
+        ImportParams importParams = new ImportParams();
+        importParams.providerCode = "NSR";
+
+        PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery,importParams);
 
         List<PathLink> result = publicationDeliveryTestHelper.extractPathLinks(response);
         assertThat(result).as("Expecting path link in return").hasSize(1);

@@ -122,7 +122,7 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
 
         PostalAddress postalAddress = new PostalAddress();
         postalAddress.setPostalRegion(tiamatQuay.getZipCode());
-        String postalAddressId = tiamatQuay.getNetexId().replace("Quay", "PostalAddress");
+        String postalAddressId = tiamatQuay.getNetexId().replace("Quay", "PostalAddress") + "_" + tiamatQuay.getId();
         postalAddress.setId(postalAddressId);
         postalAddress.setVersion("any");
         MultilingualString addressName = new MultilingualString();

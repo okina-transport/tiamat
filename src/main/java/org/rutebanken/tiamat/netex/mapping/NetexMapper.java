@@ -136,6 +136,7 @@ public class NetexMapper {
                 .register();
 
         mapperFactory.classMap(ShelterEquipment.class, org.rutebanken.tiamat.model.ShelterEquipment.class)
+                .customize(new ShelterEquipmentMapper())
                 .byDefault()
                 .register();
 

@@ -17,10 +17,8 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
-import net.logstash.logback.encoder.org.apache.commons.lang.StringUtils;
-import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.netex.model.ShelterEquipment;
-import org.rutebanken.netex.model.TopographicPlace;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +31,7 @@ public class ShelterEquipmentMapper extends CustomMapper<ShelterEquipment, org.r
         try{
             super.mapAtoB(netexShelterEquipment, tiamatShelterEquipment, context);
         }catch(Exception e){
-            logger.error("Can't map to tiamat stopPlace for object:" + netexShelterEquipment.getId());
+            logger.error("Can't map to tiamat shelter for object:" + netexShelterEquipment.getId());
         }
     }
 
@@ -42,9 +40,11 @@ public class ShelterEquipmentMapper extends CustomMapper<ShelterEquipment, org.r
         try {
             super.mapBtoA(tiamatShelterEquipment, netexShelterEquipment, context);
             netexShelterEquipment.setVersion(String.valueOf(tiamatShelterEquipment.getVersion()));
+            netexShelterEquipment.setId(tiamatShelterEquipment.getNetexId());
 
         }catch(Exception e){
-            logger.error("Can't map to netex stopPlace for object:" + tiamatShelterEquipment.getNetexId());
+            logger.error("Can't map to netex shelter for object:" + tiamatShelterEquipment.getNetexId());
+            logger.error(e.getStackTrace().toString());
         }
     }
 }

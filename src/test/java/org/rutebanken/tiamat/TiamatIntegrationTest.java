@@ -69,7 +69,7 @@ import static org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService.INITIAL_L
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment= SpringBootTest.WebEnvironment.RANDOM_PORT, classes = TiamatTestApplication.class)
-@ActiveProfiles("geodb")
+@ActiveProfiles("test")
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 public abstract class TiamatIntegrationTest {
 

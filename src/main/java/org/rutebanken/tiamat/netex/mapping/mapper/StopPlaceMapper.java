@@ -146,7 +146,10 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
             if (stopPlace.getName() == null || StringUtils.isEmpty(stopPlace.getName().getValue())){
                 //handle empty or null name in stopPlace
 
-                stopPlace.setName(new EmbeddableMultilingualString("","fr"));
+                MultilingualString name = new MultilingualString();
+                name.setValue("");
+                name.setLang("fr");
+                netexStopPlace.setName(name);
             }
 
         }catch(Exception e){

@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -78,6 +79,19 @@ public class StopPlaceQuayMover {
             StopPlace response = addQuaysToDestinationStop(destinationStopPlaceId, quaysToMove, toVersionComment, now);
 
             logger.info("Moved quays: {} from stop {} to {}", quayIds, sourceStopPlace.getNetexId(), response.getNetexId());
+            return response;
+        });
+    }
+
+    public StopPlace moveNewQuay(List<String> quayIds, String targetStopPlaceId, String toVersionComment) {
+        return mutateLock.executeInLock(() -> {
+
+            Instant now = Instant.now();
+            Set<Quay> quays = resolveQuays(quayIds);
+
+            StopPlace response = addQuaysToDestinationStop(targetStopPlaceId, quays, toVersionComment, now);
+
+            logger.info("Added new quays : {} to stop {}", quayIds, response.getNetexId());
             return response;
         });
     }

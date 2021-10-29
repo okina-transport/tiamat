@@ -2,8 +2,10 @@ package org.rutebanken.tiamat.importer.matching;
 
 import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
+import org.rutebanken.tiamat.importer.merging.QuayMerger;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.service.stopplace.StopPlaceQuayMover;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,10 +33,10 @@ public class QuayMover {
     @Autowired
     private MergingStopPlaceImporter mergingStopPlaceImporter;
 
-    private org.rutebanken.tiamat.model.StopPlace targetStopPlace;
+    @Autowired
+    private QuayRepository quayRepository;
 
-    @Value("${stopPlace.sharing.policy}")
-    protected StopPlaceSharingPolicy sharingPolicy;
+    private org.rutebanken.tiamat.model.StopPlace targetStopPlace;
 
 
     /**
@@ -78,16 +80,50 @@ public class QuayMover {
             if (stopPlace.getNetexId().equals(targetStopPlace.getNetexId())) {
                 continue;
             }
-            //on déplace tous les quais concernés en comparant avec la liste préalablement construite
             for (Quay quay : stopPlace.getQuays()) {
-                if (quay.getOriginalIds().stream().anyMatch(originalId -> incomingQuaysOriginalIds.contains(originalId))) {
+                //On vérifie si le quai à déplacer doit l'être pour tout les producteurs
+                if (incomingQuaysOriginalIds.containsAll(quay.getOriginalIds())) {
                     if (incomingStopPlaceAlreadyExists) {
                         stopPlaceQuayMover.moveQuays(Collections.singletonList(quay.getNetexId()), targetStopPlace.getNetexId(), "Move the quay to existing stop place", "Move the quay to existing stop place");
                     } else {
                         stopPlaceQuayMover.moveQuays(Collections.singletonList(quay.getNetexId()), targetStopPlace.getNetexId(), "Move the quay to new stop place", "Move the quay to new stop place");
                     }
+
+                } else {
+                    //il faut créer un nouveau quai et séparer les importe id correspondants
+                    Quay newQuay = createNewQuay(quay);
+                    boolean hasToMove = false;
+                    List<String> originalsToMove = new ArrayList<>();
+                    for (String originalId : quay.getOriginalIds()) {
+                        if (incomingQuaysOriginalIds.contains(originalId)) {
+                            originalsToMove.add(originalId);
+                        }
+                    }
+
+                    if (!originalsToMove.isEmpty()) {
+                        newQuay.getOriginalIds().addAll(originalsToMove);
+                        quay.getOriginalIds().removeAll(originalsToMove);
+                        hasToMove = true;
+                    }
+
+                    if (hasToMove) {
+                        if (incomingStopPlaceAlreadyExists) {
+                            stopPlaceQuayMover.moveNewQuay(Collections.singletonList(newQuay.getNetexId()), targetStopPlace.getNetexId(), "Move the quay to existing stop place");
+                        } else {
+                            stopPlaceQuayMover.moveNewQuay(Collections.singletonList(newQuay.getNetexId()), targetStopPlace.getNetexId(), "Move the quay to new stop place");
+                        }
+                    }
                 }
             }
         }
+    }
+
+    private Quay createNewQuay(Quay incomingQuay) {
+        Quay newQuay = versionCreator.createCopy(incomingQuay, Quay.class);
+        newQuay.getOriginalIds().clear();
+        newQuay.setNetexId(null);
+        newQuay.setVersion(1);
+        newQuay.setAccessibilityAssessment(null);
+        return quayRepository.save(newQuay);
     }
 }

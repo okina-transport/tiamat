@@ -55,11 +55,6 @@ public class H2Functions implements InitializingBean {
                 logger.info("H2. Creating alias to method generate_series");
                 jdbcTemplate.execute("CREATE ALIAS IF NOT EXISTS generate_series FOR \"org.rutebanken.tiamat.config.H2Functions.generateSeries\"");
 
-                logger.info("H2. Creating alias to method ST_WITHIN");
-                jdbcTemplate.execute("CREATE ALIAS ST_Within FOR \"geodb.GeoDB.ST_Within\"");
-
-                logger.info("H2. Creating alias to method ST_CONTAINS");
-                jdbcTemplate.execute("CREATE ALIAS ST_Contains FOR \"geodb.GeoDB.ST_Contains\"");
             }
         } catch (SQLException sqlException) {
             logger.warn("Cannot create h2 aliases", sqlException);

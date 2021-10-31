@@ -224,10 +224,10 @@ public class VersionCreatorTest extends TiamatIntegrationTest {
 
         StopPlace copy = versionCreator.createCopy(stopPlace, StopPlace.class);
         assertThat(copy.getPlaceEquipments() != null);
-        assertPlaceEquipmentIdAndVersionIsEmpty(copy.getPlaceEquipments());
     }
 
     @Test
+    @Ignore //place equipments are now copied with netex and version
     public void quayPlaceEquipmentSholdBeCopiedWithoutNetexIdAndVersion() {
         Quay quay = new Quay();
         quay.setNetexId(randomizedTestNetexIdGenerator.generateRandomizedNetexId(quay));
@@ -236,6 +236,18 @@ public class VersionCreatorTest extends TiamatIntegrationTest {
 
         Quay copy = versionCreator.createCopy(quay, Quay.class);
         assertPlaceEquipmentIdAndVersionIsEmpty(copy.getPlaceEquipments());
+    }
+
+
+    @Test
+    public void quayPlaceEquipmentSholdBeCopied() {
+        Quay quay = new Quay();
+        quay.setNetexId(randomizedTestNetexIdGenerator.generateRandomizedNetexId(quay));
+        quay.setVersion(1L);
+        quay.setPlaceEquipments(createPlaceEquipment());
+
+        Quay copy = versionCreator.createCopy(quay, Quay.class);
+        assertThat(copy.getPlaceEquipments() != null);
     }
 
     private void assertPlaceEquipmentIdAndVersionIsEmpty(PlaceEquipment placeEquipment) {

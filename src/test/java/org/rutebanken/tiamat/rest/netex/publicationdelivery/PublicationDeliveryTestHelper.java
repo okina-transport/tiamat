@@ -196,7 +196,9 @@ public class PublicationDeliveryTestHelper {
     }
 
     public PublicationDeliveryStructure postAndReturnPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure) throws JAXBException, IOException, SAXException {
-        return postAndReturnPublicationDelivery(publicationDeliveryStructure, null);
+        ImportParams importParams = new ImportParams();
+        importParams.providerCode = "PROV1";
+        return postAndReturnPublicationDelivery(publicationDeliveryStructure, importParams);
     }
 
     public PublicationDeliveryStructure postAndReturnPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams) throws JAXBException, IOException, SAXException {
@@ -251,7 +253,7 @@ public class PublicationDeliveryTestHelper {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         marshaller.marshal(jaxPublicationDelivery, outputStream);
-        InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+        InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());        
 
         return importResource.importPublicationDelivery(inputStream, importParams);
     }

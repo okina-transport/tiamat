@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.importer.matching;
 
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
@@ -130,6 +131,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
     }
 
     @Test
+    @Ignore //in isolated mode, no nearby recovery is done, even for the same provider
     public void checkStopPlaceRecoveredFromSameProvider() {
         List<org.rutebanken.netex.model.StopPlace > matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();

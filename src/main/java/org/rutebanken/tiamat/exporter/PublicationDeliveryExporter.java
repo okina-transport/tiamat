@@ -17,7 +17,9 @@ package org.rutebanken.tiamat.exporter;
 
 import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.netex.model.SiteRefStructure;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
+import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.ValidPrefixList;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
@@ -98,6 +100,10 @@ public class PublicationDeliveryExporter {
         Page<StopPlace> stopPlacePage = stopPlaceRepository.findStopPlacesWithEffectiveChangeInPeriod(search);
         logger.debug("Found {} changed stop places", stopPlacePage.getSize());
 
+
+        //Feed children objects with information from parent
+        stopPlacePage.forEach(this::feedChildrenInfo);
+
         PublicationDeliveryStructure publicationDelivery = exportPublicationDeliveryWithStops(stopPlacePage.getContent(), exportParams, MultiModalFetchMode.CHILDREN);
 
         PublicationDeliveryStructurePage publicationDeliveryStructure = new PublicationDeliveryStructurePage(
@@ -107,6 +113,29 @@ public class PublicationDeliveryExporter {
                 stopPlacePage.hasNext());
         logger.debug("Returning publication delivery structure: {}", publicationDeliveryStructure);
         return publicationDeliveryStructure;
+    }
+
+
+    /**
+     * Feed children objects with information from parent
+     * @param stopPlace
+     *  The parent stop place
+     */
+    private void feedChildrenInfo(StopPlace stopPlace){
+        for (Quay quay : stopPlace.getQuays()) {
+            feedQuayWithParentInfo(quay,stopPlace);
+        }
+    }
+
+    /**
+     * Feed a quay with information from parent stop place
+     * @param childQuay
+     *  Child for which information must be filled
+     * @param parentStopPlace
+     *  Parent that contain information
+     */
+    private void feedQuayWithParentInfo(Quay childQuay, StopPlace parentStopPlace){
+        childQuay.setTransportMode(parentStopPlace.getTransportMode());
     }
 
     public PublicationDeliveryStructure createPublicationDelivery(String idSite) {

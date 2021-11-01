@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.importer.ImportParams;
+import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.slf4j.Logger;
@@ -198,6 +199,7 @@ public class PublicationDeliveryTestHelper {
     public PublicationDeliveryStructure postAndReturnPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure) throws JAXBException, IOException, SAXException {
         ImportParams importParams = new ImportParams();
         importParams.providerCode = "PROV1";
+        importParams.importType = ImportType.MATCH;
         return postAndReturnPublicationDelivery(publicationDeliveryStructure, importParams);
     }
 

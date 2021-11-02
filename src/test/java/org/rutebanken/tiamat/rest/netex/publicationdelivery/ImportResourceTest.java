@@ -59,6 +59,14 @@ public class ImportResourceTest extends TiamatIntegrationTest {
 
     private LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 
+
+    private ImportParams createStandardParamsForImport(){
+        ImportParams importParams = new ImportParams();
+        importParams.importType = ImportType.MATCH;
+        importParams.providerCode ="PROV1";
+        return importParams;
+    }
+
     /**
      * When sending a stop place with the same ID twice, the same stop place must be returned.
      * When importing multiple stop places and those exists, make sure no Lazy Initialization Exception is thrown.
@@ -74,7 +82,17 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("9"))
-                                .withLongitude(new BigDecimal("71"))));
+                                .withLongitude(new BigDecimal("71"))))
+                .withQuays(new Quays_RelStructure()
+                        .withQuayRefOrQuay(new Quay()
+                                .withVersion("1")
+                                .withId("RUT:StopArea:87654")
+                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withSiteRef(new SiteRefStructure().withValue("RUT:StopPlace:123123").withRef("RUT:StopPlace:123123"))
+                                .withName(new MultilingualString().withValue("q1").withLang("no"))
+                                .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
+                                        .withLatitude(new BigDecimal("58.966910"))
+                                        .withLongitude(new BigDecimal("5.732949"))))));
 
         StopPlace stopPlace2 = new StopPlace()
                 .withId("RUT:StopPlace:123123")
@@ -84,7 +102,17 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("10"))
-                                .withLongitude(new BigDecimal("72"))));
+                                .withLongitude(new BigDecimal("72"))))
+                .withQuays(new Quays_RelStructure()
+                        .withQuayRefOrQuay(new Quay()
+                                .withVersion("1")
+                                .withId("RUT:StopArea:87654")
+                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withSiteRef(new SiteRefStructure().withValue("RUT:StopPlace:123123").withRef("RUT:StopPlace:123123"))
+                                .withName(new MultilingualString().withValue("q1").withLang("no"))
+                                .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
+                                        .withLatitude(new BigDecimal("58.966910"))
+                                        .withLongitude(new BigDecimal("5.732949"))))));
 
 
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace);
@@ -206,9 +234,9 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                                         .withLatitude(new BigDecimal("58.966910"))
                                         .withLongitude(new BigDecimal("5.732949"))))));
 
-        ImportParams importParams = new ImportParams();
+        ImportParams importParams = createStandardParamsForImport();
         importParams.forceStopType = org.rutebanken.tiamat.model.StopTypeEnumeration.BUS_STATION;
-        importParams.providerCode = "1";
+
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace);
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery, importParams);
         List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
@@ -247,8 +275,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
 
         PublicationDeliveryStructure publicationDelivery2 = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(incomingStopPlace);
-        ImportParams importParams = new ImportParams();
-        importParams.importType = ImportType.MATCH;
+        ImportParams importParams = createStandardParamsForImport();
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery2, importParams);
 
 
@@ -364,6 +391,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 .withName(new MultilingualString().withValue(name))
                 .withId("OST:StopArea:01360680")
                 .withVersion("1")
+                .withTransportMode(VehicleModeEnumeration.BUS)
                 .withStopPlaceType(StopTypeEnumeration.ONSTREET_BUS)
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
@@ -373,6 +401,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                         .withQuayRefOrQuay(new Quay()
                                 .withId("OST:StopArea:0136068001")
                                 .withVersion("1")
+                                .withTransportMode(VehicleModeEnumeration.BUS)
                                 .withName(new MultilingualString().withValue(name))
                                 .withCentroid(new SimplePoint_VersionStructure()
                                         .withLocation(new LocationStructure()
@@ -719,6 +748,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
         StopPlace stopPlace = new StopPlace()
                 .withId("XYZ:StopPlace:123")
                 .withTransportMode(VehicleModeEnumeration.BUS)
+                .withStopPlaceType(StopTypeEnumeration.ONSTREET_BUS)
                 .withVersion("1")
                 .withName(new MultilingualString().withValue("new"))
                 .withQuays(new Quays_RelStructure()
@@ -759,6 +789,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
         StopPlace stopPlace = new StopPlace()
                 .withId("XYZ:StopPlace:123")
                 .withTransportMode(VehicleModeEnumeration.BUS)
+                .withStopPlaceType(StopTypeEnumeration.BUS_STATION)
                 .withVersion("1")
                 .withName(new MultilingualString().withValue("new"))
                 .withQuays(new Quays_RelStructure()
@@ -890,6 +921,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                                 .withId(originalQuayId)
                                 .withVersion("1")
                                 .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withSiteRef(new SiteRefStructure().withValue("XYZ:StopPlace:123123").withRef("XYZ:StopPlace:123123"))
                                 .withName(new MultilingualString().withValue("quay"))
                                 .withCentroid(new SimplePoint_VersionStructure()
                                         .withLocation(new LocationStructure()
@@ -930,6 +962,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                         .withQuayRefOrQuay(new Quay()
                                 .withId("XYZ:boardingpos:2")
                                 .withVersion("1")
+                                .withTransportMode(VehicleModeEnumeration.BUS)
                                 .withSiteRef(new SiteRefStructure().withValue("RUT:StopPlace:1").withRef("RUT:StopPlace:1"))
                                 .withName(new MultilingualString().withValue("Steinerskolen [tog]"))
                                 .withCentroid(new SimplePoint_VersionStructure()
@@ -1110,6 +1143,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                    <StopPlaceType>onstreetBus</StopPlaceType>\n" +
                 "                    <quays>\n" +
                 "                        <Quay version=\"01\" created=\"2016-04-21T09:01:00.0Z\" id=\"nhr:Quay:1\">\n" +
+                "               <Name lang=\"no\">q1</Name>\n" +
                 "                            <Centroid>\n" +
                 "                                <Location srsName=\"EPSG:4326\">\n" +
                 "                                    <Longitude>10.8577903</Longitude>\n" +
@@ -1130,8 +1164,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
 
         InputStream stream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
 
-        ImportParams importParams = new ImportParams();
-        importParams.importType = ImportType.MATCH;
+        ImportParams importParams = createStandardParamsForImport();
 
         Response response = importResource.importPublicationDelivery(stream, importParams);
 
@@ -1218,9 +1251,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "\n";
 
         InputStream stream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
-        ImportParams importParams = new ImportParams();
-        importParams.importType = ImportType.MATCH;
-
+        ImportParams importParams = createStandardParamsForImport();
         Response response = importResource.importPublicationDelivery(stream,importParams);
         assertThat(response.getStatus()).isEqualTo(200);
 
@@ -1320,7 +1351,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                  </TicketingService>\n" +
                 "               </localServices>\n" +
                 "         <TransportMode>bus</TransportMode>\n" +
-                "               <StopPlaceType>railStation</StopPlaceType>\n" +
+                "               <StopPlaceType>busStation</StopPlaceType>\n" +
                 "               <Weighting>interchangeAllowed</Weighting>\n" +
                 "               <quays>\n" +
                 "                  <Quay id=\"NSB:Quay:0076021461\" version=\"1\">\n" +
@@ -1334,11 +1365,14 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                           <Value>7602146</Value>\n" +
                 "                        </KeyValue>\n" +
                 "                     </keyList>\n" +
+                "               <Name lang=\"no\">q1</Name>\n" +
                 "                     <Centroid>\n" +
                 "                        <Location srsName=\"EPSG:4326\"><!--Match on NRI quays--><Longitude>8.769146</Longitude>\n" +
                 "                           <Latitude>58.465256</Latitude>\n" +
                 "                        </Location>\n" +
                 "                     </Centroid>\n" +
+                "    <SiteRef ref=\"NSB:StopPlace:007602146\"/> \n"+
+                "         <TransportMode>bus</TransportMode>\n" +
                 "                     <PublicCode>1</PublicCode>\n" +
                 "                  </Quay>\n" +
                 "               </quays>\n" +
@@ -1351,8 +1385,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
 
         InputStream stream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
 
-        ImportParams importParams = new ImportParams();
-        importParams.importType = ImportType.MATCH;
+        ImportParams importParams = createStandardParamsForImport();
         Response response = importResource.importPublicationDelivery(stream, importParams);
         assertThat(response.getStatus()).isEqualTo(200);
 
@@ -1437,11 +1470,13 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                           <Value>7602146</Value>\n" +
                 "                        </KeyValue>\n" +
                 "                     </keyList>\n" +
+                "               <Name lang=\"no\">Q1</Name>\n" +
                 "                     <Centroid>\n" +
                 "                        <Location srsName=\"EPSG:4326\"><!--Match on NRI quays--><Longitude>8.769146</Longitude>\n" +
                 "                           <Latitude>58.465256</Latitude>\n" +
                 "                        </Location>\n" +
                 "                     </Centroid>\n" +
+                "    <SiteRef ref=\"NSR:StopPlace:2\"/> \n"+
                 "         <TransportMode>bus</TransportMode>\n" +
                 "                     <PublicCode>1</PublicCode>\n" +
                 "                  </Quay>\n" +
@@ -1455,8 +1490,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
 
         InputStream stream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
 
-        ImportParams importParams = new ImportParams();
-        importParams.importType = ImportType.MATCH;
+        ImportParams importParams = createStandardParamsForImport();
 
         Response response = importResource.importPublicationDelivery(stream, importParams);
         assertThat(response.getStatus()).isEqualTo(200);
@@ -1513,6 +1547,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                           <Value>NRI:Quay:762023206</Value>\n" +
                 "                        </KeyValue>\n" +
                 "                     </keyList>\n" +
+                "               <Name lang=\"no\">q0602100201</Name>\n" +
                 "                     <Centroid>\n" +
                 "                        <Location srsName=\"EPSG:4326\">\n" +
                 "                           <Longitude>10.203526</Longitude>\n" +
@@ -1553,6 +1588,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                           <Value>NRI:Quay:762023204</Value>\n" +
                 "                        </KeyValue>\n" +
                 "                     </keyList>\n" +
+                "               <Name lang=\"no\">q0602100202</Name>\n" +
                 "                     <Centroid>\n" +
                 "                        <Location srsName=\"EPSG:4326\">\n" +
                 "                           <Longitude>10.203558</Longitude>\n" +
@@ -1590,6 +1626,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                           <Value>NRI:Quay:762023205</Value>\n" +
                 "                        </KeyValue>\n" +
                 "                     </keyList>\n" +
+                "               <Name lang=\"no\">q0+02100203</Name>\n" +
                 "                     <Centroid>\n" +
                 "                        <Location srsName=\"EPSG:4326\">\n" +
                 "                           <Longitude>10.203966</Longitude>\n" +
@@ -1630,6 +1667,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                           <Value>NRI:Quay:762023203</Value>\n" +
                 "                        </KeyValue>\n" +
                 "                     </keyList>\n" +
+                "               <Name lang=\"no\">q0602100204</Name>\n" +
                 "                     <Centroid>\n" +
                 "                        <Location srsName=\"EPSG:4326\">\n" +
                 "                           <Longitude>10.204596</Longitude>\n" +
@@ -1673,8 +1711,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
 
         InputStream stream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
 
-        ImportParams importParams = new ImportParams();
-        importParams.importType = ImportType.MATCH;
+        ImportParams importParams = createStandardParamsForImport();
 
         Response response = importResource.importPublicationDelivery(stream,importParams);
         assertThat(response.getStatus()).isEqualTo(200);

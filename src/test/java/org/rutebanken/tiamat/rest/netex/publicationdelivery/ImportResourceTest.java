@@ -131,6 +131,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     }
 
     @Test
+    @Ignore //disable test as stop place types are different, they should not be merged
     public void publicationDeliveriesWithBusStationStopAndOnStreetBus() throws Exception {
 
         StopPlace stopPlace = new StopPlace()
@@ -778,7 +779,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void createdAndChangedTimestampsMustBeSetOnStopPlaceAndQuays() throws Exception {
+    public void createdAndChangedTimestampsMustBeSetOnStopPlace() throws Exception {
 
         StopPlace stopPlace = new StopPlace()
                 .withId("XYZ:StopPlace:4")
@@ -804,9 +805,9 @@ public class ImportResourceTest extends TiamatIntegrationTest {
         StopPlace actualStopPlace = publicationDeliveryTestHelper.findFirstStopPlace(response);
         assertThat(actualStopPlace.getCreated()).as("The imported stop place's created date must not be null").isNotNull();
 
-        List<Quay> actualQuays = publicationDeliveryTestHelper.extractQuays(actualStopPlace);
-
-        assertThat(actualQuays.get(0).getCreated()).as("The imported quay's created date must not be null").isNotNull();
+        //Created field in quays are no longer initialized
+        //List<Quay> actualQuays = publicationDeliveryTestHelper.extractQuays(actualStopPlace);
+       // assertThat(actualQuays.get(0).getCreated()).as("The imported quay's created date must not be null").isNotNull();
     }
 
     @Test
@@ -1069,6 +1070,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     }
 
     @Test
+    @Ignore // no remove is done on child now, even if it is same as parent
     public void expectQuayNameToBeRemovedIfSameAsParentStopPlaceName() throws Exception {
         StopPlace stopPlace = new StopPlace()
                 .withId("XYZ:stoparea:2")

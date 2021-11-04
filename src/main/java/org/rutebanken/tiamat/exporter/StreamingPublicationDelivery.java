@@ -47,6 +47,7 @@ import org.rutebanken.netex.model.TariffZonesInFrame_RelStructure;
 import org.rutebanken.netex.model.TopographicPlacesInFrame_RelStructure;
 import org.rutebanken.netex.model.TypeOfPlaceRefStructure;
 import org.rutebanken.netex.model.TypeOfPlaceRefs_RelStructure;
+import org.rutebanken.netex.model.Zone_VersionStructure;
 import org.rutebanken.netex.validation.NeTExValidator;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.async.NetexMappingIterator;
@@ -557,7 +558,14 @@ public class StreamingPublicationDelivery {
             List<TariffZone> tariffZones = new NetexMappingIteratorList<>(() -> tariffZoneMappingIterator);
 
             TariffZonesInFrame_RelStructure tariffZonesInFrame_relStructure = new TariffZonesInFrame_RelStructure();
-            setField(TariffZonesInFrame_RelStructure.class, "tariffZone", tariffZonesInFrame_relStructure, tariffZones);
+
+            List<JAXBElement<? extends Zone_VersionStructure>> tariffZoneJaxbList = tariffZones.stream()
+                                                                                            .map(tariffZone -> (JAXBElement<? extends Zone_VersionStructure>) netexObjectFactory.createTariffZone(tariffZone))
+                                                                                            .collect(Collectors.toList());
+
+
+            tariffZonesInFrame_relStructure.withTariffZone_(tariffZoneJaxbList);
+            //setField(TariffZonesInFrame_RelStructure.class, "tariffZone_", tariffZonesInFrame_relStructure, tariffZones);
             netexSiteFrame.setTariffZones(tariffZonesInFrame_relStructure);
         } else {
             logger.info("No tariff zones to export");

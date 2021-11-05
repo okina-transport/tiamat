@@ -420,7 +420,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
         assertThat(result).as("Expecting one stop place in return, as there is no need to return duplicates").hasSize(1);
         assertThat(result2).as("Expecting one stop place in return, as there is no need to return duplicates").hasSize(1);
         assertThat(result3).as("Expecting one stop place in return, as there is no need to return duplicates").hasSize(1);
-        assertThat(result3.get(0).getVersion()).isEqualTo("3");
+        assertThat(result3.get(0).getVersion()).isEqualTo("1");
     }
 
 

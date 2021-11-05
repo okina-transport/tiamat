@@ -555,7 +555,9 @@ public class StreamingPublicationDelivery {
             NetexMappingIterator<org.rutebanken.tiamat.model.TariffZone, TariffZone> tariffZoneMappingIterator =
                     new NetexMappingIterator<>(netexMapper, tariffZoneIterator, TariffZone.class, mappedTariffZonesCount, evicter);
 
-            List<TariffZone> tariffZones = new NetexMappingIteratorList<>(() -> tariffZoneMappingIterator);
+
+            List<TariffZone> tariffZones = new ArrayList<>();
+            tariffZoneMappingIterator.forEachRemaining(tariffZones::add);
 
             TariffZonesInFrame_RelStructure tariffZonesInFrame_relStructure = new TariffZonesInFrame_RelStructure();
 

@@ -67,6 +67,7 @@ def class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLResourc
 
         String stopPlaceName = "StopPlace"
         StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString(stopPlaceName))
+        stopPlace.setProvider("NOT_YET_CHECKED")
 
         stopPlace.setQuays(new HashSet<>())
         stopPlace.getQuays().add(quay)
@@ -77,7 +78,7 @@ def class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLResourc
 
 
         String graphQlJsonQuery = """{
-                  stopPlace:  ${GraphQLNames.FIND_STOPPLACE} (${QUERY}:"${stopPlace.getNetexId()}", allVersions:true) {
+                  stopPlace:  ${GraphQLNames.FIND_STOPPLACE} (${QUERY}:"${stopPlace.getNetexId()}",  onlyMonomodalStopPlaces:true, allVersions:true) {
                             id
                             name { value }
                             ... on StopPlace {
@@ -140,17 +141,18 @@ def class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLResourc
     void searchForStopPlaceByOriginalId() throws Exception {
         String stopPlaceName = "Eselstua"
         StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString(stopPlaceName))
-
+        stopPlace.setProvider("NOT_YET_CHECKED")
         stopPlaceRepository.save(stopPlace)
 
         String originalId = "RUT:Stop:1234"
         Value value = new Value(originalId)
         stopPlace.getKeyValues().put(NetexIdMapper.ORIGINAL_ID_KEY, value)
+        stopPlace.setProvider("NOT_YET_CHECKED")
         stopPlaceRepository.save(stopPlace)
 
 
         String graphQlJsonQuery = """{
-                  stopPlace:  ${GraphQLNames.FIND_STOPPLACE} (${IMPORTED_ID_QUERY}:"${originalId}", allVersions:true) {
+                  stopPlace:  ${GraphQLNames.FIND_STOPPLACE} (${IMPORTED_ID_QUERY}:"${originalId}", onlyMonomodalStopPlaces:true, allVersions:true) {
                             id
                             name { value }
                         }
@@ -299,6 +301,7 @@ def class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLResourc
 
         String stopPlaceName = "TestPlace"
         StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString(stopPlaceName))
+        stopPlace.setProvider("NOT_YET_CHECKED")
 
         stopPlace = stopPlaceVersionedSaverService.saveNewVersion(stopPlace)
         StopPlace copy = versionCreator.createCopy(stopPlace, StopPlace.class)
@@ -309,7 +312,7 @@ def class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLResourc
 
         String graphQlJsonQuery = "{" +
                 "\"query\":\"{stopPlace: " + GraphQLNames.FIND_STOPPLACE +
-                " (" + GraphQLNames.ID + ":\\\"" + stopPlace.getNetexId() + "\\\" allVersions:true)" +
+                " (" + GraphQLNames.ID + ":\\\"" + stopPlace.getNetexId() + "\\\"   onlyMonomodalStopPlaces:true allVersions:true)" +
                 " { " +
                 "  id " +
                 "  version " +
@@ -408,13 +411,14 @@ def class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLResourc
         String stopPlaceName = "KeyValueStop"
         StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString(stopPlaceName))
         stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.533212, 59.678080)))
+        stopPlace.setProvider("NOT_YET_CHECKED")
         String key = "testKey"
         String value = "testValue"
         stopPlace.getKeyValues().put(key, new Value(value))
         stopPlaceRepository.save(stopPlace)
 
         String graphQlJsonQuery = """{
-                  stopPlace:  ${GraphQLNames.FIND_STOPPLACE} (key:"${key}", values:"${value}" allVersions:true) {
+                  stopPlace:  ${GraphQLNames.FIND_STOPPLACE} (key:"${key}", values:"${value}"   onlyMonomodalStopPlaces:true allVersions:true) {
                             id
                             name { value }
                             keyValues { key values }

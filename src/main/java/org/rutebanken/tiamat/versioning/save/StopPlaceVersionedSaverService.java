@@ -210,8 +210,7 @@ public class StopPlaceVersionedSaverService {
 
         nearbyStopPlaceFinder.update(newVersion);
         newVersion.getChildren().forEach(nearbyStopPlaceFinder::update);
-        // Because no Irkalla
-//        entityChangedListener.onChange(newVersion);
+        entityChangedListener.onChange(newVersion);
 
         return newVersion;
     }

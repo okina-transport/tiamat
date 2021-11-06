@@ -125,10 +125,10 @@ public class MultiModalStopPlaceEditorTest extends TiamatIntegrationTest {
         assertThat(result.getChildren())
                 .extracting(StopPlace::getName)
                 .containsExactlyInAnyOrder(
-                        new EmbeddableMultilingualString(differentChildStopPlaceName, nb),
-                        // Same name but different language should not have been removed:
+                        new EmbeddableMultilingualString(equalStopPlaceNameLowerCase, nb),
                         new EmbeddableMultilingualString(equalStopPlaceName, en),
-                        null)
+                        // Same name but different language should not have been removed:
+                        new EmbeddableMultilingualString(differentChildStopPlaceName, nb))
                 .doesNotContain(new EmbeddableMultilingualString(equalStopPlaceName, nb));
 
         verifyChildValidBetween(result);

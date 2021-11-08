@@ -60,6 +60,8 @@ public class QuayMover {
             }
         }
 
+        final String moveQuayComment = incomingStopPlaceAlreadyExists ? "Move the quay to existing stop place" : "Move the quay to new stop place";
+
         //Sinon on le crée
         if (!incomingStopPlaceAlreadyExists) {
             StopPlace copyIncomingStopPlace = versionCreator.createCopy(incomingStopPlace, StopPlace.class);
@@ -83,12 +85,7 @@ public class QuayMover {
             for (Quay quay : stopPlace.getQuays()) {
                 //On vérifie si le quai à déplacer doit l'être pour tout les producteurs
                 if (incomingQuaysOriginalIds.containsAll(quay.getOriginalIds())) {
-                    if (incomingStopPlaceAlreadyExists) {
-                        stopPlaceQuayMover.moveQuays(Collections.singletonList(quay.getNetexId()), targetStopPlace.getNetexId(), "Move the quay to existing stop place", "Move the quay to existing stop place");
-                    } else {
-                        stopPlaceQuayMover.moveQuays(Collections.singletonList(quay.getNetexId()), targetStopPlace.getNetexId(), "Move the quay to new stop place", "Move the quay to new stop place");
-                    }
-
+                        stopPlaceQuayMover.moveQuays(Collections.singletonList(quay.getNetexId()), targetStopPlace.getNetexId(), moveQuayComment, moveQuayComment);
                 } else {
                     //il faut créer un nouveau quai et séparer les importe id correspondants
                     Quay newQuay = createNewQuay(quay);
@@ -107,11 +104,7 @@ public class QuayMover {
                     }
 
                     if (hasToMove) {
-                        if (incomingStopPlaceAlreadyExists) {
-                            stopPlaceQuayMover.moveNewQuay(Collections.singletonList(newQuay.getNetexId()), targetStopPlace.getNetexId(), "Move the quay to existing stop place");
-                        } else {
-                            stopPlaceQuayMover.moveNewQuay(Collections.singletonList(newQuay.getNetexId()), targetStopPlace.getNetexId(), "Move the quay to new stop place");
-                        }
+                        stopPlaceQuayMover.moveNewQuay(Collections.singletonList(newQuay.getNetexId()), targetStopPlace.getNetexId(), moveQuayComment);
                     }
                 }
             }

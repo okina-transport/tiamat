@@ -116,6 +116,7 @@ public class QuayMoverTest extends TiamatIntegrationTest {
         assertThat(targetStopPlace.getQuays()).hasSize(1);
 
         assertThat(fromStopPlace.getQuays().stream().findFirst().get().getOriginalIds().contains("ORGA2:Quay:1")).isTrue();
+        assertThat(fromStopPlace.getQuays().stream().findFirst().get().getOriginalIds().contains("ORGA1:Quay:1")).isFalse();
         assertThat(targetStopPlace.getQuays().stream().findFirst().get().getOriginalIds().contains("ORGA1:Quay:1")).isTrue();
     }
 

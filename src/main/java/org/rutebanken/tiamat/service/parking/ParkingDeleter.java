@@ -103,8 +103,7 @@ public class ParkingDeleter {
         }
 
         parkingRepository.deleteAll(parkings);
-        // Because no Irkalla
-//        notifyDeleted(parkings);
+        notifyDeleted(parkings);
 
         logger.warn("All versions ({}) of parking {} deleted by user {}", parkings.size(), parkingId, usernameForAuthenticatedUser);
 

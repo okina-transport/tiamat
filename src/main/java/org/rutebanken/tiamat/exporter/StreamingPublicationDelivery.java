@@ -47,6 +47,7 @@ import org.rutebanken.netex.model.TariffZonesInFrame_RelStructure;
 import org.rutebanken.netex.model.TopographicPlacesInFrame_RelStructure;
 import org.rutebanken.netex.model.TypeOfPlaceRefStructure;
 import org.rutebanken.netex.model.TypeOfPlaceRefs_RelStructure;
+import org.rutebanken.netex.model.Zone_VersionStructure;
 import org.rutebanken.netex.validation.NeTExValidator;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.async.NetexMappingIterator;
@@ -219,9 +220,7 @@ public class StreamingPublicationDelivery {
         prepareParkings(exportParams, stopPlacePrimaryIds, mappedParkingCount, netexSiteFrame, entitiesEvictor);
         prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, netexSiteFrame, entitiesEvictor);
 
-//        prepareQuays(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexGeneralFrame, entitiesEvictor, siteName);
 
-        String idSite = provider.getChouetteInfo().getCodeIdfm();
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexSiteFrame);
 
@@ -556,10 +555,19 @@ public class StreamingPublicationDelivery {
             NetexMappingIterator<org.rutebanken.tiamat.model.TariffZone, TariffZone> tariffZoneMappingIterator =
                     new NetexMappingIterator<>(netexMapper, tariffZoneIterator, TariffZone.class, mappedTariffZonesCount, evicter);
 
-            List<TariffZone> tariffZones = new NetexMappingIteratorList<>(() -> tariffZoneMappingIterator);
+
+            List<TariffZone> tariffZones = new ArrayList<>();
+            tariffZoneMappingIterator.forEachRemaining(tariffZones::add);
 
             TariffZonesInFrame_RelStructure tariffZonesInFrame_relStructure = new TariffZonesInFrame_RelStructure();
-            setField(TariffZonesInFrame_RelStructure.class, "tariffZone", tariffZonesInFrame_relStructure, tariffZones);
+
+            List<JAXBElement<? extends Zone_VersionStructure>> tariffZoneJaxbList = tariffZones.stream()
+                                                                                            .map(tariffZone -> (JAXBElement<? extends Zone_VersionStructure>) netexObjectFactory.createTariffZone(tariffZone))
+                                                                                            .collect(Collectors.toList());
+
+
+            tariffZonesInFrame_relStructure.withTariffZone_(tariffZoneJaxbList);
+            //setField(TariffZonesInFrame_RelStructure.class, "tariffZone_", tariffZonesInFrame_relStructure, tariffZones);
             netexSiteFrame.setTariffZones(tariffZonesInFrame_relStructure);
         } else {
             logger.info("No tariff zones to export");

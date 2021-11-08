@@ -203,6 +203,7 @@ public class VersionCreatorTest extends TiamatIntegrationTest {
      * See NRP-2348 and relevant queries for detecting this issue here: https://github.com/entur/tiamat-scripts/tree/master/fix_inconsistent_equipment
      */
     @Test
+    @Ignore //Place equipments are now copied with netex and version
     public void stopPlacePlaceEquipmentSholdBeCopiedWithoutNetexIdAndVersion() {
         StopPlace stopPlace = new StopPlace();
         stopPlace.setNetexId(randomizedTestNetexIdGenerator.generateRandomizedNetexId(stopPlace));
@@ -214,6 +215,19 @@ public class VersionCreatorTest extends TiamatIntegrationTest {
     }
 
     @Test
+
+    public void stopPlacePlaceEquipmentSholdBeCopied() {
+        StopPlace stopPlace = new StopPlace();
+        stopPlace.setNetexId(randomizedTestNetexIdGenerator.generateRandomizedNetexId(stopPlace));
+        stopPlace.setVersion(1L);
+        stopPlace.setPlaceEquipments(createPlaceEquipment());
+
+        StopPlace copy = versionCreator.createCopy(stopPlace, StopPlace.class);
+        assertThat(copy.getPlaceEquipments() != null);
+    }
+
+    @Test
+    @Ignore //place equipments are now copied with netex and version
     public void quayPlaceEquipmentSholdBeCopiedWithoutNetexIdAndVersion() {
         Quay quay = new Quay();
         quay.setNetexId(randomizedTestNetexIdGenerator.generateRandomizedNetexId(quay));
@@ -222,6 +236,18 @@ public class VersionCreatorTest extends TiamatIntegrationTest {
 
         Quay copy = versionCreator.createCopy(quay, Quay.class);
         assertPlaceEquipmentIdAndVersionIsEmpty(copy.getPlaceEquipments());
+    }
+
+
+    @Test
+    public void quayPlaceEquipmentSholdBeCopied() {
+        Quay quay = new Quay();
+        quay.setNetexId(randomizedTestNetexIdGenerator.generateRandomizedNetexId(quay));
+        quay.setVersion(1L);
+        quay.setPlaceEquipments(createPlaceEquipment());
+
+        Quay copy = versionCreator.createCopy(quay, Quay.class);
+        assertThat(copy.getPlaceEquipments() != null);
     }
 
     private void assertPlaceEquipmentIdAndVersionIsEmpty(PlaceEquipment placeEquipment) {

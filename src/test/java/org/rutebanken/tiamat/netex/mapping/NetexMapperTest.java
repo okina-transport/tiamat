@@ -309,6 +309,8 @@ public class NetexMapperTest extends TiamatIntegrationTest {
         String netexId = "NSR:Quay:" + 1234567;
         org.rutebanken.tiamat.model.Quay tiamatQuay = new org.rutebanken.tiamat.model.Quay();
         tiamatQuay.setNetexId(netexId);
+        tiamatQuay.setName(new EmbeddableMultilingualString("nom","fr"));
+        tiamatQuay.getKeyValues().put("imported-name",new Value("nom"));
 
         stopPlace.getQuays().add(tiamatQuay);
 

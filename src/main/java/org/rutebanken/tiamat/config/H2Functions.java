@@ -54,6 +54,7 @@ public class H2Functions implements InitializingBean {
 
                 logger.info("H2. Creating alias to method generate_series");
                 jdbcTemplate.execute("CREATE ALIAS IF NOT EXISTS generate_series FOR \"org.rutebanken.tiamat.config.H2Functions.generateSeries\"");
+
             }
         } catch (SQLException sqlException) {
             logger.warn("Cannot create h2 aliases", sqlException);

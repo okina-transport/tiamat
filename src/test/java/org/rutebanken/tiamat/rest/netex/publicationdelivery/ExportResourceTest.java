@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 import org.glassfish.jersey.uri.internal.JerseyUriBuilder;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
@@ -194,8 +195,20 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         StopPlace stopPlace1 = new StopPlace()
                 .withId("XYZ:Stopplace:1")
                 .withVersion("1")
+                .withTransportMode(VehicleModeEnumeration.BUS)
                 .withName(new MultilingualString().withValue("Changed stop1"))
                 .withValidBetween(new ValidBetween().withFromDate(validFrom))
+                .withStopPlaceType(StopTypeEnumeration.BUS_STATION)
+                .withQuays(new Quays_RelStructure()
+                        .withQuayRefOrQuay(new Quay()
+                                .withVersion("1")
+                                .withId("RUT:StopArea:87654")
+                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withSiteRef(new SiteRefStructure().withValue("RUT:StopPlace:123123").withRef("RUT:StopPlace:123123"))
+                                .withName(new MultilingualString().withValue("q1").withLang("no"))
+                                .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
+                                        .withLatitude(new BigDecimal("59.914353"))
+                                        .withLongitude(new BigDecimal("10.806387"))))))
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("59.914353"))
@@ -205,11 +218,23 @@ public class ExportResourceTest extends TiamatIntegrationTest {
                 .withId("XYZ:Stopplace:2")
                 .withVersion("1")
                 .withName(new MultilingualString().withValue("Changed stop2"))
+                .withTransportMode(VehicleModeEnumeration.BUS)
+                .withStopPlaceType(StopTypeEnumeration.BUS_STATION)
                 .withValidBetween(new ValidBetween().withFromDate(validFrom.plusDays(1)))
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("22.914353"))
-                                .withLongitude(new BigDecimal("11.806387"))));
+                                .withLongitude(new BigDecimal("11.806387"))))
+                .withQuays(new Quays_RelStructure()
+                        .withQuayRefOrQuay(new Quay()
+                                .withVersion("1")
+                                .withId("RUT:StopArea:87655")
+                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withSiteRef(new SiteRefStructure().withValue("RUT:StopPlace:123123").withRef("RUT:StopPlace:123123"))
+                                .withName(new MultilingualString().withValue("q1").withLang("no"))
+                                .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
+                                        .withLatitude(new BigDecimal("22.914353"))
+                                        .withLongitude(new BigDecimal("11.806387"))))));
 
 
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace1, stopPlace2);
@@ -250,11 +275,23 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         StopPlace stopPlace = new StopPlace()
                 .withId("XYZ:Stopplace:1")
                 .withVersion("1")
+                .withTransportMode(VehicleModeEnumeration.BUS)
                 .withName(new MultilingualString().withValue("Østre gravlund"))
+                .withStopPlaceType(StopTypeEnumeration.BUS_STATION)
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("59.914353"))
-                                .withLongitude(new BigDecimal("10.806387"))));
+                                .withLongitude(new BigDecimal("10.806387"))))
+                .withQuays(new Quays_RelStructure()
+                        .withQuayRefOrQuay(new Quay()
+                                .withVersion("1")
+                                .withId("RUT:Quay:87655")
+                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withSiteRef(new SiteRefStructure().withValue("XYZ:Stopplace:1").withRef("XYZ:Stopplace:1"))
+                                .withName(new MultilingualString().withValue("q1").withLang("no"))
+                                .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
+                                        .withLatitude(new BigDecimal("58.966910"))
+                                        .withLongitude(new BigDecimal("5.732949"))))));
 
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace);
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);

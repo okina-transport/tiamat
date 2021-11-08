@@ -229,34 +229,8 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
                 boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
 
-                boolean nameChanged = false;
-                if(incomingStopPlace.getName() != null && !incomingStopPlace.getName().equals(existingStopPlace.getName()) && !onMoveOnlyImport){
-                    copy.setName(incomingStopPlace.getName());
-                    nameChanged = true;
-                }
 
-                boolean typeChanged = false;
-                if (copy.getStopPlaceType() == null && incomingStopPlace.getStopPlaceType() != null) {
-                    copy.setStopPlaceType(incomingStopPlace.getStopPlaceType());
-                    logger.info("Updated stop place type to {} for stop place {}", copy.getStopPlaceType(), copy);
-                    typeChanged = true;
-                }
-
-                boolean alternativeNameChanged = false;
-                if(incomingStopPlace.getAlternativeNames() != null && incomingStopPlace.getAlternativeNames().size() != 0){
-                    org.rutebanken.tiamat.model.StopPlace alternativeNamesToCopy = copy;
-                    int sizeList = alternativeNamesToCopy.getAlternativeNames().size();
-                    incomingStopPlace.getAlternativeNames().forEach(incomingAlternativeName -> {
-                        if (!alternativeNamesToCopy.getAlternativeNames().contains(incomingAlternativeName)){
-                            alternativeNamesToCopy.getAlternativeNames().add(incomingAlternativeName);
-                        }
-                    });
-                    if(alternativeNamesToCopy.getAlternativeNames().size() != sizeList){
-                        alternativeNameChanged = true;
-                    }
-                }
-
-                if (quayChanged || keyValuesChanged || centroidChanged || typeChanged || alternativeNameChanged || nameChanged) {
+                if (quayChanged || keyValuesChanged || centroidChanged  ) {
                     if (existingStopPlace.getParentSiteRef() != null && !existingStopPlace.isParentStopPlace()) {
                         org.rutebanken.tiamat.model.StopPlace existingParentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingStopPlace.getParentSiteRef().getRef());
                         org.rutebanken.tiamat.model.StopPlace copyParentStopPlace = versionCreator.createCopy(existingParentStopPlace, org.rutebanken.tiamat.model.StopPlace.class);

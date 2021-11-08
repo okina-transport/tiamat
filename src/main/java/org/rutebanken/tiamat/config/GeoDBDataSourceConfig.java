@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Profile;
 import javax.sql.DataSource;
 
 @Configuration
-@Profile("geodb & test")
+@Profile("geodb | test")
 public class GeoDBDataSourceConfig {
 
     @Bean

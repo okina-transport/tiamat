@@ -499,7 +499,7 @@ public class StopPlaceQueryFromSearchBuilder {
             createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements);
         }
 
-        if (provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName)){
+        if (provider != null && provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName)){
             operators.add("and");
             parameters.put("providerName", provider.getChouetteInfo().getReferential());
             wheres.add("s.provider = :providerName");

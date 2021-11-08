@@ -58,6 +58,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -111,10 +112,15 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
     @Test
     public void exportMoreThanDefaultPageSize() throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
 
+        Instant created = Instant.from(ZonedDateTime.now().minusDays(1).toInstant());
+
         final int numberOfStopPlaces = StopPlaceSearch.DEFAULT_PAGE_SIZE + 1;
         for(int i = 0; i < numberOfStopPlaces; i++) {
             StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("stop place numbber " + i));
             stopPlace.setVersion(1L);
+            ValidBetween validBetween = new ValidBetween();
+            validBetween.setFromDate(created);
+            stopPlace.setValidBetween(validBetween);
             stopPlaceRepository.save(stopPlace);
         }
         stopPlaceRepository.flush();
@@ -130,7 +136,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.fromString(byteArrayOutputStream.toString());
         List<org.rutebanken.netex.model.StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure);
-        assertThat(stopPlaces).hasSize(numberOfStopPlaces);
+        assertThat(stopPlaces).hasSize(StopPlaceSearch.DEFAULT_PAGE_SIZE);
     }
 
     @Test

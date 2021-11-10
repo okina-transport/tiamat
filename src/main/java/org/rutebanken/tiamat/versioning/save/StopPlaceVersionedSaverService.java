@@ -257,15 +257,6 @@ public class StopPlaceVersionedSaverService {
     private void clearUnwantedChildFields(StopPlace stopPlaceToSave) {
         if (stopPlaceToSave.getChildren() == null) return;
         stopPlaceToSave.getChildren().forEach(child -> {
-
-            if (child.getName() != null
-                        && stopPlaceToSave.getName() != null
-                        && child.getName().getValue().equalsIgnoreCase(stopPlaceToSave.getName().getValue())
-                        && (child.getName().getLang() == null || child.getName().getLang().equalsIgnoreCase(stopPlaceToSave.getName().getLang()))) {
-                logger.info("Name of child {}: {} is equal to parent's name {}. Clearing it", child.getNetexId(), stopPlaceToSave.getName(), stopPlaceToSave.getNetexId());
-                child.setName(null);
-            }
-
             child.setValidBetween(null);
         });
     }

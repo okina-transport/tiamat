@@ -15,7 +15,6 @@
 
 package org.rutebanken.tiamat.netex.mapping.mapper;
 
-import io.micrometer.core.instrument.util.StringUtils;
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
 import org.rutebanken.netex.model.*;
@@ -141,16 +140,6 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
             if (stopPlace.getTransportMode() == null){
                 feedTransportMode(stopPlace,netexStopPlace);
             }
-
-            if (stopPlace.getName() == null || StringUtils.isEmpty(stopPlace.getName().getValue())){
-                //handle empty or null name in stopPlace
-
-                MultilingualString name = new MultilingualString();
-                name.setValue("");
-                name.setLang("fr");
-                netexStopPlace.setName(name);
-            }
-
         }catch(Exception e){
             logger.error("Can't map to netex stop place:" + stopPlace.getNetexId());
         }

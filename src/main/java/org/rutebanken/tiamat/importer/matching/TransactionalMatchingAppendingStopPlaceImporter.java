@@ -26,6 +26,7 @@ import org.rutebanken.tiamat.importer.finder.SimpleNearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByIdFinder;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
 import org.rutebanken.tiamat.importer.merging.QuayMerger;
+import org.rutebanken.tiamat.model.DataManagedObjectStructure;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
@@ -44,9 +45,12 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -120,6 +124,14 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
         final int foundStopPlacesCount = foundStopPlaces.size();
 
         if (!foundStopPlaces.isEmpty()) {
+
+            if (isDuplicateImportedIds(foundStopPlaces)){
+                String errorMsg = "Duplicate imported-id found. Process stopped. Please clean Stop database before importing again";
+                logger.error(errorMsg);
+                throw new IllegalStateException(errorMsg);
+            }
+
+
 
             List<org.rutebanken.tiamat.model.StopPlace> filteredStopPlaces = foundStopPlaces
                     .stream()
@@ -255,6 +267,46 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             }
         }
+    }
+
+
+    /**
+     * Read a list of stopPlaces and verify that each imported-id is only attached to a single netex id.
+     * If not, error is logged
+     * @param stopPlaceList
+     * @return
+     *  true : an imported-id is attached to 2 or more netex id
+     *  false : no duplicates detected
+     */
+    private boolean isDuplicateImportedIds(List<org.rutebanken.tiamat.model.StopPlace>  stopPlaceList){
+        Map<String,String> importedIdMap = new HashMap<>();
+        boolean isDuplicateImportedIds = false;
+        for (org.rutebanken.tiamat.model.StopPlace stopPlace : stopPlaceList) {
+
+            isDuplicateImportedIds = isDuplicateImportedIds || isDuplicateImportIdInObject(stopPlace,importedIdMap);
+
+            for (Quay quay : stopPlace.getQuays()) {
+                isDuplicateImportedIds = isDuplicateImportedIds || isDuplicateImportIdInObject(quay,importedIdMap);
+            }
+
+        }
+        return isDuplicateImportedIds;
+    }
+
+    private boolean isDuplicateImportIdInObject(DataManagedObjectStructure dataObj, Map<String,String> importedIdMap ){
+        String netexId = dataObj.getNetexId();
+        boolean isDuplicateImportedIds = false;
+
+        Set<String> importedIds = dataObj.getOrCreateValues(NetexIdMapper.ORIGINAL_ID_KEY);
+        for (String importedId : importedIds) {
+            if (importedIdMap.containsKey(importedId) && importedIdMap.get(importedId) != netexId){
+                logger.error("DUPLICATE USE OF IMPORTED-ID:" + importedId + " (" + netexId + "," + importedIdMap.get(importedId) + ")");
+                isDuplicateImportedIds = true;
+            }else{
+                importedIdMap.put(importedId,netexId);
+            }
+        }
+        return isDuplicateImportedIds;
     }
 
     /**

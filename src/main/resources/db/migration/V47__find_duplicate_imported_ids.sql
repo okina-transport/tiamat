@@ -11,7 +11,7 @@ imported_id_record RECORD;
 
 BEGIN
 
-DROP TABLE tmp_duplicate_imported_ids;
+DROP TABLE IF EXISTS tmp_duplicate_imported_ids;
 
 CREATE TABLE tmp_duplicate_imported_ids (
                                             parent_netex_id varchar(255) NULL,

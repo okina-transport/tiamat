@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.repository.search;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.domain.Provider;
@@ -188,6 +189,7 @@ public class StopPlaceQueryFromSearchBuilder {
         List<String> orderByStatements = new ArrayList<>();
 
         queryString.append(SQL_LEFT_JOIN_PARENT_STOP);
+        queryString.append(SQL_LEFT_JOIN_IMPORTED_ID);
 
         boolean hasIdFilter = stopPlaceSearch.getNetexIdList() != null && !stopPlaceSearch.getNetexIdList().isEmpty();
 
@@ -570,11 +572,26 @@ public class StopPlaceQueryFromSearchBuilder {
             final String startingWithLowerMatchQuerySql = "concat(lower(:query), '%') ";
             final String containsLowerMatchQuerySql = "concat('%', lower(:query), '%') ";
             final String orNameMatchInParentStopSql = "or lower(p.name_value) like ";
+
+            final String netexIdContainsLowerMatchQuerySql = "concat('MOBIITI:%', lower(:query), '%') ";
+
+
+            String comparingString ;
             if (query.length() <= 3) {
-                wheres.add("(lower (s.name_value) like " + startingWithLowerMatchQuerySql + orNameMatchInParentStopSql + startingWithLowerMatchQuerySql + ")");
+                comparingString = startingWithLowerMatchQuerySql;
             } else {
-                wheres.add("(lower(s.name_value) like " + containsLowerMatchQuerySql + orNameMatchInParentStopSql + containsLowerMatchQuerySql + ")");
+                comparingString = containsLowerMatchQuerySql;
             }
+
+            String netexComparing = "";
+            if (NumberUtils.isCreatable(query)){
+                netexComparing =  " or s.netex_id like " + netexIdContainsLowerMatchQuerySql + "or p.netex_id like " + netexIdContainsLowerMatchQuerySql;
+            }
+
+
+            String importedIdSearchString = " or lower(vi.items) like " + containsLowerMatchQuerySql ;
+            wheres.add("(lower(s.name_value) like " + comparingString + orNameMatchInParentStopSql + comparingString + netexComparing + importedIdSearchString + " )");
+
 
             orderByStatements.add("similarity(concat(s.name_value, p.name_value), :query) desc");
         }

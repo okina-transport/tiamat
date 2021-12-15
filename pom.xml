@@ -75,6 +75,7 @@
         <docker.maven.plugin.version>0.21.0</docker.maven.plugin.version>
         <spring-boot-plugin.version>2.1.1.RELEASE</spring-boot-plugin.version>
         <spring-boot.version>2.1.1.RELEASE</spring-boot.version>
+        <log4j.version>2.15.0</log4j.version>
         <spring.security.version>5.0.7.RELEASE</spring.security.version>
         <keycloak.version>4.7.0.Final</keycloak.version>
         <postgresql.version>42.2.4</postgresql.version>
@@ -140,6 +141,19 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-to-slf4j</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+
 
             <dependency>
                 <groupId>com.okina.helpers</groupId>

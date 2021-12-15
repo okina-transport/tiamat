@@ -75,7 +75,6 @@
         <docker.maven.plugin.version>0.21.0</docker.maven.plugin.version>
         <spring-boot-plugin.version>2.1.1.RELEASE</spring-boot-plugin.version>
         <spring-boot.version>2.1.1.RELEASE</spring-boot.version>
-        <log4j.version>2.15.0</log4j.version>
         <spring.security.version>5.0.7.RELEASE</spring.security.version>
         <keycloak.version>4.7.0.Final</keycloak.version>
         <postgresql.version>42.2.4</postgresql.version>
@@ -112,6 +111,12 @@
         <fabric8.version>2.3.7</fabric8.version>
         <metrics.version>3.2.3</metrics.version>
 
+
+        <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
+        <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
+        <!--TODO temporary manual upgrade of Logback-->
+        <logback.version>1.2.8</logback.version>
+
     </properties>
 
     <!-- This repository list can be deleted, as it is now plied by rutebanken nexus.
@@ -141,26 +146,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-api</artifactId>
-                <version>${log4j.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-bom</artifactId>
-                <version>2.16.0</version>
-                <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-to-slf4j</artifactId>
-                <version>${log4j.version}</version>
-            </dependency>
-
 
             <dependency>
                 <groupId>com.okina.helpers</groupId>
@@ -275,6 +260,17 @@
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
             <version>${logstash-logback.version}</version>
+        </dependency>
+        <!--TODO temporary manual upgrade of Logback-->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>${logback.version}</version>
         </dependency>
 
         <dependency>
@@ -600,8 +596,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.plugin.version}</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>11</source>
+                    <target>11</target>
                     <encoding>UTF-8</encoding>
                     <compilerArgs>
                         <!--arg>-Werror</arg-->
@@ -620,7 +616,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M1</version>
+                <version>${maven-surefire-plugin.version}</version>
                 <configuration>
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <argLine>-Xmx3G</argLine>
@@ -632,7 +628,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.8</version>
+                <version>${maven-antrun-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>test-compile</id>
@@ -662,7 +658,6 @@
                 <version>${spring-boot-plugin.version}</version>
                 <configuration>
                     <mainClass>org.rutebanken.tiamat.TiamatApplication</mainClass>
-                    <excludeDevtools>false</excludeDevtools>
                 </configuration>
                 <executions>
                     <execution>

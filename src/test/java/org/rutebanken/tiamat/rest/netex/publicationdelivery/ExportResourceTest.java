@@ -29,6 +29,7 @@ import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.StopPlaceReference;
+import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.xml.sax.SAXException;
@@ -59,11 +60,11 @@ public class ExportResourceTest extends TiamatIntegrationTest {
     private PublicationDeliveryTestHelper publicationDeliveryTestHelper;
 
     @Test
-    public void exportStopPlacesWithoutTopographicPlaces() throws JAXBException, IOException, SAXException {
+    public void exportStopPlacesWithoutTopographicPlaces() throws JAXBException, IOException, SAXException, TiamatBusinessException {
         exportStopPlacesAndVerify(ExportParams.ExportMode.NONE);
     }
 
-    private void exportStopPlacesAndVerify(ExportParams.ExportMode includeTopographicPlaces) throws JAXBException, IOException, SAXException {
+    private void exportStopPlacesAndVerify(ExportParams.ExportMode includeTopographicPlaces) throws JAXBException, IOException, SAXException, TiamatBusinessException {
         // Import stop to make sure we have something to export, although other tests might have populated the test database.
         // Make ids and search string unique
 
@@ -266,7 +267,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
 
     private boolean testStopInserted = false;
 
-    private void insertTestStopsWithTopographicPlace() throws JAXBException, IOException, SAXException {
+    private void insertTestStopsWithTopographicPlace() throws JAXBException, IOException, SAXException, TiamatBusinessException {
         if (testStopInserted) {
             return;
         }

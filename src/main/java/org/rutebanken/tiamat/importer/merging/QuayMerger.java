@@ -145,9 +145,6 @@ public class QuayMerger {
                 matchingQuay = findMatchOnOriginalId(incomingQuay, result);
             }
 
-            if (!matchingQuay.isPresent()) {
-                matchingQuay = findMatch(incomingQuay, result, MERGE_DISTANCE_METERS);
-            }
 
             if (matchingQuay.isPresent()) {
                 updateIfChanged(matchingQuay.get(), incomingQuay, updatedQuaysCounter, stopPlaceAlone, onMoveOnlyImport);

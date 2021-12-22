@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.importer.matching;
 
 import org.rutebanken.netex.model.StopPlace;
+import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,15 +41,14 @@ public class MatchingAppendingIdStopPlacesImporter {
     @Autowired
     private TransactionalMatchingAppendingStopPlaceImporter transactionalMatchingAppendingStopPlaceImporter;
 
-    public List<StopPlace> importStopPlaces(List<org.rutebanken.tiamat.model.StopPlace> tiamatStops, AtomicInteger stopPlacesCreatedOrUpdated, boolean onMoveOnlyImport) {
+    public List<StopPlace> importStopPlaces(List<org.rutebanken.tiamat.model.StopPlace> tiamatStops, AtomicInteger stopPlacesCreatedOrUpdated, boolean onMoveOnlyImport) throws TiamatBusinessException{
 
         List<StopPlace> matchedStopPlaces = new ArrayList<>();
 
-        tiamatStops.forEach(incomingStopPlace -> {
 
+        for (org.rutebanken.tiamat.model.StopPlace incomingStopPlace : tiamatStops) {
             transactionalMatchingAppendingStopPlaceImporter.findAppendAndAdd(incomingStopPlace, matchedStopPlaces, stopPlacesCreatedOrUpdated, onMoveOnlyImport);
-
-        });
+        }
 
         return matchedStopPlaces;
     }

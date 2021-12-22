@@ -34,6 +34,7 @@ import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -739,7 +740,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
      */
     @Test
     @Ignore
-    public void matchOneIncomingStopToMultipleTiamatStops() throws JAXBException, IOException, SAXException {
+    public void matchOneIncomingStopToMultipleTiamatStops() throws JAXBException, IOException, SAXException, TiamatBusinessException {
 
         String initiallyImportedStops = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<PublicationDelivery xmlns=\"http://www.netex.org.uk/netex\">\n" +

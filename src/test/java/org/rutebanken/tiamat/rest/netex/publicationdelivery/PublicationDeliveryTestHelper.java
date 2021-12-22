@@ -21,6 +21,7 @@ import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 import org.rutebanken.tiamat.netex.id.NetexIdHelper;
+import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -196,14 +197,14 @@ public class PublicationDeliveryTestHelper {
                 .findFirst().get();
     }
 
-    public PublicationDeliveryStructure postAndReturnPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure) throws JAXBException, IOException, SAXException {
+    public PublicationDeliveryStructure postAndReturnPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure) throws JAXBException, IOException, SAXException, TiamatBusinessException {
         ImportParams importParams = new ImportParams();
         importParams.providerCode = "PROV1";
         importParams.importType = ImportType.MATCH;
         return postAndReturnPublicationDelivery(publicationDeliveryStructure, importParams);
     }
 
-    public PublicationDeliveryStructure postAndReturnPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams) throws JAXBException, IOException, SAXException {
+    public PublicationDeliveryStructure postAndReturnPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams) throws JAXBException, IOException, SAXException, TiamatBusinessException {
         Response response = postPublicationDelivery(publicationDeliveryStructure, importParams);
 
         if (!(response.getEntity() instanceof StreamingOutput)) {
@@ -212,11 +213,11 @@ public class PublicationDeliveryTestHelper {
         return fromResponse(response);
     }
 
-    public PublicationDeliveryStructure postAndReturnPublicationDelivery(String publicationDeliveryXml) throws JAXBException, IOException, SAXException {
+    public PublicationDeliveryStructure postAndReturnPublicationDelivery(String publicationDeliveryXml) throws JAXBException, IOException, SAXException, TiamatBusinessException {
         return postAndReturnPublicationDelivery(publicationDeliveryXml, null);
     }
 
-    public PublicationDeliveryStructure postAndReturnPublicationDelivery(String publicationDeliveryXml, ImportParams importParams) throws JAXBException, IOException, SAXException {
+    public PublicationDeliveryStructure postAndReturnPublicationDelivery(String publicationDeliveryXml, ImportParams importParams) throws JAXBException, IOException, SAXException, TiamatBusinessException {
 
         InputStream stream = new ByteArrayInputStream(publicationDeliveryXml.getBytes(StandardCharsets.UTF_8));
 
@@ -247,7 +248,7 @@ public class PublicationDeliveryTestHelper {
         return fromString(new String(outputStream.toByteArray()));
     }
 
-    public Response postPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams) throws JAXBException, IOException, SAXException {
+    public Response postPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams) throws JAXBException, IOException, SAXException, TiamatBusinessException {
         Marshaller marshaller = jaxbContext.createMarshaller();
 
         JAXBElement<PublicationDeliveryStructure> jaxPublicationDelivery = new ObjectFactory().createPublicationDelivery(publicationDeliveryStructure);

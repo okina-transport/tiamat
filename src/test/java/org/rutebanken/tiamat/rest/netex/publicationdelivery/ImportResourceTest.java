@@ -24,6 +24,7 @@ import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
+import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.xml.sax.SAXException;
 
@@ -300,7 +301,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 .withId("RUT:StopPlace:123546789")
                 .withVersion("1")
                 .withTransportMode(VehicleModeEnumeration.BUS)
-                .withStopPlaceType(StopTypeEnumeration.OTHER)
+                .withStopPlaceType(StopTypeEnumeration.BUS_STATION)
                 .withName(new MultilingualString().withValue("somewhere"))
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
@@ -1316,7 +1317,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
      */
     @Test
     @Ignore
-    public void importBasicStopPlace() throws JAXBException, IOException, SAXException {
+    public void importBasicStopPlace() throws JAXBException, IOException, SAXException, TiamatBusinessException {
 
         String xml = "<PublicationDelivery\n" +
                 " version=\"any\"\n" +
@@ -1359,7 +1360,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void importNSBStopPlace() throws JAXBException, IOException, SAXException {
+    public void importNSBStopPlace() throws JAXBException, IOException, SAXException, TiamatBusinessException {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<PublicationDelivery xmlns=\"http://www.netex.org.uk/netex\">\n" +
                 "   <PublicationTimestamp>2017-04-18T12:57:27.796+02:00</PublicationTimestamp>\n" +
@@ -1493,7 +1494,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void importNSBStopPlaceWithTicketValidatorEquipment() throws JAXBException, IOException, SAXException {
+    public void importNSBStopPlaceWithTicketValidatorEquipment() throws JAXBException, IOException, SAXException, TiamatBusinessException {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<PublicationDelivery xmlns=\"http://www.netex.org.uk/netex\">\n" +
                 "   <PublicationTimestamp>2017-04-18T12:57:27.796+02:00</PublicationTimestamp>\n" +
@@ -1599,7 +1600,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void importBrakarStopPlaceWithGeneralSignEquipment() throws JAXBException, IOException, SAXException {
+    public void importBrakarStopPlaceWithGeneralSignEquipment() throws JAXBException, IOException, SAXException, TiamatBusinessException {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<PublicationDelivery xmlns=\"http://www.netex.org.uk/netex\">\n" +
                 "   <PublicationTimestamp>2017-04-18T12:57:27.796+02:00</PublicationTimestamp>\n" +

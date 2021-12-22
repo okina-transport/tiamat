@@ -111,6 +111,13 @@
         <fabric8.version>2.3.7</fabric8.version>
         <metrics.version>3.2.3</metrics.version>
 
+
+        <maven-surefire-plugin.version>3.0.0-M1</maven-surefire-plugin.version>
+        <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
+        <!--TODO temporary manual upgrade of Logback-->
+        <logback.version>1.2.8</logback.version>
+        <log4j2.version>2.17.0</log4j2.version>
+
     </properties>
 
     <!-- This repository list can be deleted, as it is now plied by rutebanken nexus.
@@ -171,12 +178,32 @@
                 <version>${metrics.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${log4j2.version}</version>
+                <type>pom</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1652 -->
+                <artifactId>log4j-to-slf4j</artifactId>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1653 -->
+                <version>${log4j2.version}</version>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1654 -->
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
 
     <dependencies>
 
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-bom</artifactId>
+            <version>${log4j2.version}</version>
+            <type>pom</type>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -254,6 +281,17 @@
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
             <version>${logstash-logback.version}</version>
+        </dependency>
+        <!--TODO temporary manual upgrade of Logback-->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>${logback.version}</version>
         </dependency>
 
         <dependency>
@@ -599,7 +637,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M1</version>
+                <version>${maven-surefire-plugin.version}</version>
                 <configuration>
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <argLine>-Xmx3G</argLine>
@@ -611,7 +649,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.8</version>
+                <version>${maven-antrun-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>test-compile</id>
@@ -641,7 +679,6 @@
                 <version>${spring-boot-plugin.version}</version>
                 <configuration>
                     <mainClass>org.rutebanken.tiamat.TiamatApplication</mainClass>
-                    <excludeDevtools>false</excludeDevtools>
                 </configuration>
                 <executions>
                     <execution>

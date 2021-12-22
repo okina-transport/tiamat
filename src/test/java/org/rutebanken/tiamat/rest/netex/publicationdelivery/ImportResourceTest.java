@@ -301,7 +301,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 .withId("RUT:StopPlace:123546789")
                 .withVersion("1")
                 .withTransportMode(VehicleModeEnumeration.BUS)
-                .withStopPlaceType(StopTypeEnumeration.OTHER)
+                .withStopPlaceType(StopTypeEnumeration.BUS_STATION)
                 .withName(new MultilingualString().withValue("somewhere"))
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()

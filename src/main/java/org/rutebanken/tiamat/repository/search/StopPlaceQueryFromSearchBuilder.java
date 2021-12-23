@@ -189,7 +189,6 @@ public class StopPlaceQueryFromSearchBuilder {
         List<String> orderByStatements = new ArrayList<>();
 
         queryString.append(SQL_LEFT_JOIN_PARENT_STOP);
-        queryString.append(SQL_LEFT_JOIN_IMPORTED_ID);
 
         boolean hasIdFilter = stopPlaceSearch.getNetexIdList() != null && !stopPlaceSearch.getNetexIdList().isEmpty();
 
@@ -361,7 +360,6 @@ public class StopPlaceQueryFromSearchBuilder {
         List<String> orderByStatements = new ArrayList<>();
 
         queryString.append(SQL_LEFT_JOIN_PARENT_STOP);
-        queryString.append(SQL_LEFT_JOIN_IMPORTED_ID);
 
         boolean hasIdFilter = stopPlaceSearch.getNetexIdList() != null && !stopPlaceSearch.getNetexIdList().isEmpty();
 
@@ -590,7 +588,11 @@ public class StopPlaceQueryFromSearchBuilder {
             }
 
 
-            String importedIdSearchString = " or lower(vi.items) like " + containsLowerMatchQuerySql ;
+            String importedIdSearchString = "  or EXISTS(select 1 from stop_place_key_values spkv inner join " +
+                    " value_items vi on vi.value_id = spkv.key_values_id " +
+                    "  where  spkv.key_values_key= 'imported-id' and s.id = spkv.stop_place_id  and lower(vi.items) like " + containsLowerMatchQuerySql + " )" ;
+
+
             wheres.add("(lower(s.name_value) like " + comparingString + orNameMatchInParentStopSql + comparingString + netexComparing + importedIdSearchString + " )");
 
 

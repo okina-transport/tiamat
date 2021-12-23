@@ -22,6 +22,9 @@ import java.util.List;
 @XmlRootElement
 public class ErrorResponseEntity {
 
+    public List<Error> errors = new ArrayList<>();
+
+
     public ErrorResponseEntity() {
     }
 
@@ -29,14 +32,25 @@ public class ErrorResponseEntity {
         errors.add(new Error(message));
     }
 
-    public List<Error> errors = new ArrayList<>();
+    public ErrorResponseEntity(String message, int errorCode) {
+        errors.add(new Error(message, errorCode));
+    }
+
+
 
 
     public static class Error {
         public String message;
+        public int errorCode;
 
         public Error(String message) {
             this.message = message;
+        }
+
+        public Error(String message, int errorCode)
+        {
+            this.message = message;
+            this.errorCode = errorCode;
         }
     }
 }

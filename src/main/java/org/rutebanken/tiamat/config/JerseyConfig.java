@@ -27,6 +27,7 @@ import org.rutebanken.tiamat.rest.dto.DtoQuayResource;
 import org.rutebanken.tiamat.rest.dto.DtoStopPlaceResource;
 import org.rutebanken.tiamat.rest.exception.ErrorResponseEntityMessageBodyWriter;
 import org.rutebanken.tiamat.rest.exception.GeneralExceptionMapper;
+import org.rutebanken.tiamat.rest.exception.TiamatBusinessExceptionMapper;
 import org.rutebanken.tiamat.rest.graphql.GraphQLResource;
 import org.rutebanken.tiamat.rest.health.HealthResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource;
@@ -85,6 +86,7 @@ public class JerseyConfig {
         publicResources.add(GraphQLResource.class);
 
         publicResources.add(GeneralExceptionMapper.class);
+        publicResources.add(TiamatBusinessExceptionMapper.class);
         publicResources.add(ErrorResponseEntityMessageBodyWriter.class);
 
         publicResources.add(ApiListingResource.class);
@@ -124,6 +126,8 @@ public class JerseyConfig {
         resources.add(SwaggerSerializers.class);
 
         resources.add(GeneralExceptionMapper.class);
+        resources.add(TiamatBusinessExceptionMapper.class);
+
         resources.add(ErrorResponseEntityMessageBodyWriter.class);
 
         ResourceConfig resourceConfig = new ResourceConfig(resources);
@@ -154,6 +158,7 @@ public class JerseyConfig {
         Set<Class<?>> adminResources = new HashSet<>();
         adminResources.add(DtoJbvCodeMappingResource.class);
         adminResources.add(GeneralExceptionMapper.class);
+        adminResources.add(TiamatBusinessExceptionMapper.class);
 
         adminResources.add(ApiListingResource.class);
         adminResources.add(SwaggerSerializers.class);

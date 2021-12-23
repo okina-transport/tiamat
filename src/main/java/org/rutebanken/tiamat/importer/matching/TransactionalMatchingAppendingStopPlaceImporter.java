@@ -17,8 +17,12 @@ package org.rutebanken.tiamat.importer.matching;
 
 import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
+import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
 import org.rutebanken.tiamat.importer.AlternativeStopTypes;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
+import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
+import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
+import org.rutebanken.tiamat.importer.finder.SimpleNearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByIdFinder;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
 import org.rutebanken.tiamat.importer.merging.QuayMerger;
@@ -28,6 +32,9 @@ import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
+import org.rutebanken.tiamat.service.stopplace.StopPlaceDeleter;
+import org.rutebanken.tiamat.service.stopplace.StopPlaceQuayMover;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
@@ -38,13 +45,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -55,6 +66,8 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     private static final Logger logger = LoggerFactory.getLogger(TransactionalMatchingAppendingStopPlaceImporter.class);
 
     private static final boolean CREATE_NEW_QUAYS = true;
+
+    private static final boolean ALLOW_OTHER_TYPE_AS_ANY_MATCH = true;
 
     @Autowired
     private KeyValueListAppender keyValueListAppender;
@@ -69,7 +82,16 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     private NetexMapper netexMapper;
 
     @Autowired
+    private NearbyStopPlaceFinder nearbyStopPlaceFinder;
+
+    @Autowired
     private StopPlaceByIdFinder stopPlaceByIdFinder;
+
+    @Autowired
+    private SimpleNearbyStopPlaceFinder simpleNearbyStopPlaceFinder;
+
+    @Autowired
+    private ZoneDistanceChecker zoneDistanceChecker;
 
     @Autowired
     private AlternativeStopTypes alternativeStopTypes;
@@ -92,22 +114,23 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     @Autowired
     private QuayMover quayMover;
 
+    @Value("${stopPlace.sharing.policy}")
+    protected StopPlaceSharingPolicy sharingPolicy;
+
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
-                                 AtomicInteger stopPlacesCreatedOrUpdated, boolean onMoveOnlyImport) {
+                                 AtomicInteger stopPlacesCreatedOrUpdated, boolean onMoveOnlyImport) throws TiamatBusinessException {
 
 
         stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
         List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
         final int foundStopPlacesCount = foundStopPlaces.size();
 
-            if (!foundStopPlaces.isEmpty()) {
+        if (!foundStopPlaces.isEmpty()) {
 
-            if (isDuplicateImportedIds(foundStopPlaces)){
-                String errorMsg = "Duplicate imported-id found. Process stopped. Please clean Stop database before importing again";
-                logger.error(errorMsg);
-                throw new IllegalStateException(errorMsg);
-            }
+
+            executeQualityChecksOnRecoveredData(foundStopPlaces, incomingStopPlace);
+
 
             List<org.rutebanken.tiamat.model.StopPlace> filteredStopPlaces = foundStopPlaces
                     .stream()
@@ -218,6 +241,51 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             }
         }
+    }
+
+    /**
+     * Launch quality checks on recovered data.
+     *  - If duplicate ids are found in db, an exception is raised
+     *  - if stop place type is inconsistent between incoming stop place and recovered stop place from database, an exception is raised
+     *
+     * @param foundStopPlaces
+     *      List of stop places recovered from DB
+     * @param incomingStopPlace
+     *      New incoming stop place
+     */
+    private void executeQualityChecksOnRecoveredData( List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces, org.rutebanken.tiamat.model.StopPlace incomingStopPlace) throws TiamatBusinessException {
+
+        String errorMsg;
+        if (isDuplicateImportedIds(foundStopPlaces)){
+            errorMsg = "Duplicate imported-id found. Process stopped. Please clean Stop database before importing again";
+            logger.error(errorMsg);
+            throw new TiamatBusinessException(TiamatBusinessException.DUPLICATE_IMPORTED_ID, errorMsg);
+        }
+
+        List<org.rutebanken.tiamat.model.StopPlace> errorStopPlaces = new ArrayList<>();
+
+        for (org.rutebanken.tiamat.model.StopPlace foundStopPlace : foundStopPlaces) {
+            if (foundStopPlace.getStopPlaceType() != null && !foundStopPlace.getStopPlaceType().equals(incomingStopPlace.getStopPlaceType())){
+                logger.error("Transport mode mismatch between stop place in Database :" + foundStopPlace.getNetexId() + "(" + foundStopPlace.getStopPlaceType()
+                                        + "), and incoming stop place:" + incomingStopPlace.getNetexId() + "(" + incomingStopPlace.getStopPlaceType() + ")");
+                errorStopPlaces.add(foundStopPlace);
+            }
+        }
+
+
+        if (!errorStopPlaces.isEmpty()){
+            String errorStopPlacesStr = errorStopPlaces.stream()
+                    .map(org.rutebanken.tiamat.model.StopPlace::getNetexId)
+                    .collect(Collectors.joining(","));
+
+            String originalId = incomingStopPlace.getOriginalIds().stream().collect(Collectors.joining(","));
+
+            errorMsg = "Mismatch between incoming stop place " + originalId + " type (" + incomingStopPlace.getStopPlaceType()
+                    + ") and stop places found in database:" + errorStopPlacesStr;
+
+            throw new TiamatBusinessException(TiamatBusinessException.TRANSPORT_MODE_MISMATCH, errorMsg);
+        }
+
     }
 
 

@@ -361,6 +361,7 @@ public class StopPlaceQueryFromSearchBuilder {
         List<String> orderByStatements = new ArrayList<>();
 
         queryString.append(SQL_LEFT_JOIN_PARENT_STOP);
+        queryString.append(SQL_LEFT_JOIN_IMPORTED_ID);
 
         boolean hasIdFilter = stopPlaceSearch.getNetexIdList() != null && !stopPlaceSearch.getNetexIdList().isEmpty();
 

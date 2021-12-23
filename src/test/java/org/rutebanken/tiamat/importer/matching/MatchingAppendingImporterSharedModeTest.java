@@ -86,7 +86,8 @@ public class MatchingAppendingImporterSharedModeTest extends TiamatIntegrationTe
         assertEquals(quayImportedId,quayImportedIdOpt.get());
     }
 
-    @Test
+   // @Test
+    //No longer used : stop place merge has been de activated
     public void checkStopPlaceRecoveredFromAnotherProvider() throws TiamatBusinessException {
         List<org.rutebanken.netex.model.StopPlace > matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();

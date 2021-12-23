@@ -430,7 +430,8 @@ public class ImportResourceTest extends TiamatIntegrationTest {
      *
      * @throws Exception
      */
-    @Test
+    //No longer used because stop place merge has been de activated
+    // @Test
     public void publicationDeliveryWithDuplicateStopPlaceWithDifferentId() throws Exception {
 
         String name = "Varnaveien bensin";

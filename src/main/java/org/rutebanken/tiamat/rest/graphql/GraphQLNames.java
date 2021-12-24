@@ -318,6 +318,11 @@ public class GraphQLNames {
 
     public static final String WITH_NEARBY_SIMILAR_DUPLICATES = "withNearbySimilarDuplicates";
     public static final String WITH_NEARBY_SIMILAR_DUPLICATES_ARG_DESCRIPTION = "withNearbySimilarDuplicates";
+    public static final String NEARBY_STOP_PLACES = "nearbyStopPlaces";
+    public static final String NEARBY_RADIUS = "nearbyRadius";
+    public static final String NEARBY_RADIUS_DESCRIPTION = "Radius arround which neighbors must be searched";
+    public static final String NEARBY_STOP_PLACES_DESCRIPTION = "Set to true to only return stop places that have nearby stop place around them";
+
 
     public static final String HAS_PARKING = "hasParking";
     public static final String ONLY_MONOMODAL_STOPPLACES = "onlyMonomodalStopPlaces";

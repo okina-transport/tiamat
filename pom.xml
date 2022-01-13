@@ -118,7 +118,7 @@
         <logback.version>1.2.8</logback.version>
         <log4j2.version>2.17.1</log4j2.version>
 
-        <sonar.projectKey>mobi-iti:okina</sonar.projectKey>
+        <sonar.projectKey>mobi-iti:tiamat</sonar.projectKey>
 
     </properties>
 

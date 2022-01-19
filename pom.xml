@@ -20,7 +20,7 @@
 
     <groupId>org.rutebanken</groupId>
     <artifactId>tiamat</artifactId>
-    <version>2.2.5-mobi-iti-SNAPSHOT</version>
+    <version>2.2.6-mobi-iti-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Tiamat</name>
@@ -116,7 +116,9 @@
         <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
         <!--TODO temporary manual upgrade of Logback-->
         <logback.version>1.2.8</logback.version>
-        <log4j2.version>2.17.0</log4j2.version>
+        <log4j2.version>2.17.1</log4j2.version>
+
+        <sonar.projectKey>mobi-iti:tiamat</sonar.projectKey>
 
     </properties>
 
@@ -778,6 +780,55 @@
                 <defaultGoal>clean install docker:build</defaultGoal>
             </build>
         </profile>
+
+        <profile>
+            <id>sonar</id>
+            <properties>
+                <sonar.dependencyCheck.jsonReportPath>target/dependency-check-report.json</sonar.dependencyCheck.jsonReportPath>
+                <sonar.dependencyCheck.htmlReportPath>target/dependency-check-report.html</sonar.dependencyCheck.htmlReportPath>
+                <sonar.dependencyCheck.securityHotspot>true</sonar.dependencyCheck.securityHotspot>
+                <sonar.dependencyCheck.summarize>true</sonar.dependencyCheck.summarize>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.5</version>
+                        <executions>
+                            <execution>
+                                <id>default-prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>report</id>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                        <version>6.5.2</version>
+                        <configuration>
+                            <format>ALL</format>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>aggregate</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
     </profiles>
 
 </project>

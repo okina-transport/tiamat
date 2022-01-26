@@ -121,6 +121,16 @@ public class StopPlaceQueryFromSearchBuilder {
                     " AND nearby.stop_place_type = s.stop_place_type " +
                     " AND ST_Distance(s.centroid, nearby.centroid) < :nearbyThreshold ";
 
+    public static final String SQL_DETECT_MULTI_MODAL_POINTS =
+            "SELECT nearby.id " +
+                    "FROM stop_place nearby " +
+                    createLeftJoinParentStopQuery("nearbyparent") +
+                    "WHERE nearby.netex_id != s.netex_id " +
+                    " AND nearby.parent_stop_place = false " +
+                    " AND nearby.stop_place_type != s.stop_place_type " +
+                    " AND ST_Distance(s.centroid, nearby.centroid) < :nearbyThreshold "+
+                    " AND s.stop_place_type like 'ONSTREET_BUS'";
+
     public static final String SQL_NEARBY_NAME_CONDITION = " AND s.name_value = nearby.name_value ";
 
 
@@ -321,7 +331,11 @@ public class StopPlaceQueryFromSearchBuilder {
         }
 
         if (stopPlaceSearch.isWithNearbySimilarDuplicates() || stopPlaceSearch.isNearbyStopPlaces()) {
-            createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements);
+            createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements, SQL_NEARBY);
+        }
+
+        if (stopPlaceSearch.isDetectMultiModalPoints()){
+            createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements, SQL_DETECT_MULTI_MODAL_POINTS);
         }
 
         operators.add("and");
@@ -503,7 +517,7 @@ public class StopPlaceQueryFromSearchBuilder {
         }
 
         if (stopPlaceSearch.isWithNearbySimilarDuplicates()) {
-            createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements);
+            createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements, SQL_NEARBY);
         }
 
         if (provider != null && provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName)){
@@ -640,10 +654,10 @@ public class StopPlaceQueryFromSearchBuilder {
                 + formatRepeatedValue(pointInTimeQueryTemplate, parentStopPlaceAlias, 5) + "))";
     }
 
-    private void createAndAddNearbyCondition(StopPlaceSearch stopPlaceSearch, List<String> operators, List<String> wheres, Map<String, Object> parameters, List<String> orderByStatements) {
+    private void createAndAddNearbyCondition(StopPlaceSearch stopPlaceSearch, List<String> operators, List<String> wheres, Map<String, Object> parameters, List<String> orderByStatements, String sqlQuery) {
         operators.add("and");
 
-        String sqlNearby = "exists (" + SQL_NEARBY;
+        String sqlNearby = "exists (" + sqlQuery;
 
         if( stopPlaceSearch.isWithNearbySimilarDuplicates()){
             sqlNearby = sqlNearby + SQL_NEARBY_NAME_CONDITION;

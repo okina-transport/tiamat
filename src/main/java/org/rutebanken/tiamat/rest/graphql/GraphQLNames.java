@@ -323,6 +323,8 @@ public class GraphQLNames {
     public static final String NEARBY_RADIUS_DESCRIPTION = "Radius arround which neighbors must be searched";
     public static final String NEARBY_STOP_PLACES_DESCRIPTION = "Set to true to only return stop places that have nearby stop place around them";
 
+    public static final String DETECT_MULTI_MODAL_POINTS = "detectMultiModalPoints";
+    public static final String DETECT_MULTI_MODAL_POINTS_DESCRIPTION = "Set to true only bus stations that have another different type of stop place arround";
 
     public static final String HAS_PARKING = "hasParking";
     public static final String ONLY_MONOMODAL_STOPPLACES = "onlyMonomodalStopPlaces";

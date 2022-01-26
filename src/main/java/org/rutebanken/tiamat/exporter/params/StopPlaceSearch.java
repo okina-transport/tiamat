@@ -99,7 +99,9 @@ public class StopPlaceSearch implements SearchObject {
     @ApiParam(value = NEARBY_RADIUS)
     private int nearbyRadius;
 
-
+    @QueryParam(value = "detectMultiModalPoints")
+    @ApiParam(value = DETECT_MULTI_MODAL_POINTS)
+    private boolean detectMultiModalPoints;
 
     @QueryParam(value = "hasParking")
     @ApiParam(value = HAS_PARKING)
@@ -132,6 +134,7 @@ public class StopPlaceSearch implements SearchObject {
                             boolean withDuplicatedQuayImportedIds,
                             boolean withNearbySimilarDuplicates,
                             boolean nearbyStopPlaces,
+                            boolean detectMultiModalPoints,
                             int nearbyRadius,
                             boolean hasParking,
                             Instant pointInTime,
@@ -151,6 +154,7 @@ public class StopPlaceSearch implements SearchObject {
         this.withNearbySimilarDuplicates = withNearbySimilarDuplicates;
         this.nearbyStopPlaces = nearbyStopPlaces;
         this.nearbyRadius = nearbyRadius;
+        this.detectMultiModalPoints = detectMultiModalPoints;
         this.hasParking = hasParking;
         this.pointInTime = pointInTime;
         this.version = version;
@@ -210,6 +214,8 @@ public class StopPlaceSearch implements SearchObject {
         return nearbyStopPlaces;
     }
 
+    public boolean isDetectMultiModalPoints(){return detectMultiModalPoints;}
+
     public int getNearbyRadius() {
         return nearbyRadius;
     }
@@ -252,6 +258,7 @@ public class StopPlaceSearch implements SearchObject {
                 .add("withDuplicatedQuayImportedIds", isWithDuplicatedQuayImportedIds())
                 .add("nearbyStopPlaces", isNearbyStopPlaces())
                 .add("nearbyRadius", getNearbyRadius())
+                .add("detectMultiModalPoints",isDetectMultiModalPoints())
                 .add("withTags", tags)
                 .add("tags", tags)
                 .add("page", page)
@@ -275,6 +282,7 @@ public class StopPlaceSearch implements SearchObject {
         private boolean withDuplicatedQuayImportedIds;
         private boolean withNearbySimilarDuplicates;
         private boolean nearbyStopPlaces;
+        private boolean detectMultiModalPoints;
         private int nearbyRadius;
         private boolean hasParking;
         private boolean withTags;
@@ -349,6 +357,10 @@ public class StopPlaceSearch implements SearchObject {
             this.nearbyRadius = nearbyRadius;
         }
 
+        public void setDetectMultiModalPoints(boolean detectMultiModalPoints){
+            this.detectMultiModalPoints = detectMultiModalPoints;
+        }
+
         public void setHasParking(boolean hasParking) {
             this.hasParking = hasParking;
         }
@@ -388,6 +400,7 @@ public class StopPlaceSearch implements SearchObject {
                     withDuplicatedQuayImportedIds,
                     withNearbySimilarDuplicates,
                     nearbyStopPlaces,
+                    detectMultiModalPoints,
                     nearbyRadius,
                     hasParking,
                     pointInTime,

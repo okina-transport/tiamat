@@ -561,6 +561,12 @@ public class StopPlaceRegisterGraphQLSchema {
                 .description(NEARBY_STOP_PLACES_DESCRIPTION)
                 .build());
         arguments.add(GraphQLArgument.newArgument()
+                .name(DETECT_MULTI_MODAL_POINTS)
+                .type(GraphQLBoolean)
+                .defaultValue(Boolean.FALSE)
+                .description(DETECT_MULTI_MODAL_POINTS_DESCRIPTION)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
                 .name(NEARBY_RADIUS)
                 .type(GraphQLInt)
                 .defaultValue(0)

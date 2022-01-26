@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.importer.matching;
 
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
@@ -27,6 +28,7 @@ import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 
@@ -46,7 +48,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
 
     @Test
-    public void importSimpleStop() {
+    public void importSimpleStop() throws TiamatBusinessException {
 
         double longitude = 1.885889;
         double latitude = 48.695513;
@@ -85,7 +87,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
 
     @Test
-    public void checkStopPlaceNOTRecoveredFromAnotherProvider() {
+    public void checkStopPlaceNOTRecoveredFromAnotherProvider() throws TiamatBusinessException {
         List<org.rutebanken.netex.model.StopPlace > matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
 
@@ -130,7 +132,8 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
     }
 
     @Test
-    public void checkStopPlaceRecoveredFromSameProvider() {
+    @Ignore //in isolated mode, no nearby recovery is done, even for the same provider
+    public void checkStopPlaceRecoveredFromSameProvider() throws TiamatBusinessException {
         List<org.rutebanken.netex.model.StopPlace > matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
 

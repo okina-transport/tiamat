@@ -90,6 +90,17 @@ public class StopPlaceSearch implements SearchObject {
     @ApiParam(value = WITH_NEARBY_SIMILAR_DUPLICATES_ARG_DESCRIPTION)
     private boolean withNearbySimilarDuplicates;
 
+
+    @QueryParam(value = "nearbyStopPlaces")
+    @ApiParam(value = NEARBY_STOP_PLACES)
+    private boolean nearbyStopPlaces;
+
+    @QueryParam(value = "nearbyRadius")
+    @ApiParam(value = NEARBY_RADIUS)
+    private int nearbyRadius;
+
+
+
     @QueryParam(value = "hasParking")
     @ApiParam(value = HAS_PARKING)
     private boolean hasParking;
@@ -120,6 +131,8 @@ public class StopPlaceSearch implements SearchObject {
                             boolean withoutQuaysOnly,
                             boolean withDuplicatedQuayImportedIds,
                             boolean withNearbySimilarDuplicates,
+                            boolean nearbyStopPlaces,
+                            int nearbyRadius,
                             boolean hasParking,
                             Instant pointInTime,
                             Long version,
@@ -136,6 +149,8 @@ public class StopPlaceSearch implements SearchObject {
         this.withoutQuaysOnly = withoutQuaysOnly;
         this.withDuplicatedQuayImportedIds = withDuplicatedQuayImportedIds;
         this.withNearbySimilarDuplicates = withNearbySimilarDuplicates;
+        this.nearbyStopPlaces = nearbyStopPlaces;
+        this.nearbyRadius = nearbyRadius;
         this.hasParking = hasParking;
         this.pointInTime = pointInTime;
         this.version = version;
@@ -191,6 +206,15 @@ public class StopPlaceSearch implements SearchObject {
         return withNearbySimilarDuplicates;
     }
 
+    public boolean isNearbyStopPlaces() {
+        return nearbyStopPlaces;
+    }
+
+    public int getNearbyRadius() {
+        return nearbyRadius;
+    }
+
+
     public boolean isHasParking() {
         return hasParking;
     }
@@ -226,6 +250,8 @@ public class StopPlaceSearch implements SearchObject {
                 .add("withoutLocationOnly", isWithoutLocationOnly())
                 .add("withoutQuaysOnly", isWithoutQuaysOnly())
                 .add("withDuplicatedQuayImportedIds", isWithDuplicatedQuayImportedIds())
+                .add("nearbyStopPlaces", isNearbyStopPlaces())
+                .add("nearbyRadius", getNearbyRadius())
                 .add("withTags", tags)
                 .add("tags", tags)
                 .add("page", page)
@@ -248,6 +274,8 @@ public class StopPlaceSearch implements SearchObject {
         private boolean withoutQuaysOnly;
         private boolean withDuplicatedQuayImportedIds;
         private boolean withNearbySimilarDuplicates;
+        private boolean nearbyStopPlaces;
+        private int nearbyRadius;
         private boolean hasParking;
         private boolean withTags;
         private Long version;
@@ -313,6 +341,14 @@ public class StopPlaceSearch implements SearchObject {
             this.withNearbySimilarDuplicates = withNearbySimilarDuplicates;
         }
 
+        public void setNearbyStopPlaces(boolean nearbyStopPlaces) {
+            this.nearbyStopPlaces = nearbyStopPlaces;
+        }
+
+        public void setNearbyRadius(int nearbyRadius) {
+            this.nearbyRadius = nearbyRadius;
+        }
+
         public void setHasParking(boolean hasParking) {
             this.hasParking = hasParking;
         }
@@ -351,6 +387,8 @@ public class StopPlaceSearch implements SearchObject {
                     withoutQuaysOnly,
                     withDuplicatedQuayImportedIds,
                     withNearbySimilarDuplicates,
+                    nearbyStopPlaces,
+                    nearbyRadius,
                     hasParking,
                     pointInTime,
                     version,

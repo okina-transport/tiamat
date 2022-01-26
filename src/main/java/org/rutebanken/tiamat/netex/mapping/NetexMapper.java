@@ -120,6 +120,7 @@ public class NetexMapper {
 
         mapperFactory.classMap(InstalledEquipment_VersionStructure.class, org.rutebanken.tiamat.model.InstalledEquipment_VersionStructure.class)
                 .fieldBToA("netexId", "id")
+                .customize(new InstalledEquipmentMapper())
                 .byDefault()
                 .register();
 
@@ -136,6 +137,7 @@ public class NetexMapper {
                 .register();
 
         mapperFactory.classMap(ShelterEquipment.class, org.rutebanken.tiamat.model.ShelterEquipment.class)
+                .customize(new ShelterEquipmentMapper())
                 .byDefault()
                 .register();
 
@@ -144,6 +146,7 @@ public class NetexMapper {
                 .register();
 
         mapperFactory.classMap(GeneralSign.class, org.rutebanken.tiamat.model.GeneralSign.class)
+                .customize(new GeneralSignMapper())
                 .byDefault()
                 .register();
 

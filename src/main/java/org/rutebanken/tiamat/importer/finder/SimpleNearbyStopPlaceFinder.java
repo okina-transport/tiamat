@@ -102,8 +102,8 @@ public class SimpleNearbyStopPlaceFinder {
             for (String stopPlaceNetexid : nearbyPlacesNetex) {
 
                 StopPlace existingStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceNetexid);
-                logger.info("Station found near stopPlace (under "+maxDistanceLabel+stopPlace.getOriginalIds()+"("+stopPlace.getCentroid()+")");
-                logger.info("Existing stopPlace:"+existingStopPlace.getOriginalIds()+"("+existingStopPlace.getCentroid()+")");
+                logger.info("Station found near stopPlace (under " + maxDistanceLabel + stopPlace.getOriginalIds() + "(" + stopPlace.getCentroid() + ")");
+                logger.info("Existing stopPlace : " + existingStopPlace.getNetexId() + " - " + existingStopPlace.getOriginalIds() + "(" + existingStopPlace.getCentroid() + ")");
                 resultList.add(existingStopPlace);
             }
         }

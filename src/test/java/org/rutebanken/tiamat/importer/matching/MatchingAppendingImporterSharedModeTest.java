@@ -27,6 +27,7 @@ import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 
@@ -48,7 +49,7 @@ public class MatchingAppendingImporterSharedModeTest extends TiamatIntegrationTe
 
 
     @Test
-    public void importSimpleStop() {
+    public void importSimpleStop() throws TiamatBusinessException {
 
         double longitude = 1.885889;
         double latitude = 48.695513;
@@ -85,8 +86,9 @@ public class MatchingAppendingImporterSharedModeTest extends TiamatIntegrationTe
         assertEquals(quayImportedId,quayImportedIdOpt.get());
     }
 
-    @Test
-    public void checkStopPlaceRecoveredFromAnotherProvider() {
+   // @Test
+    //No longer used : stop place merge has been de activated
+    public void checkStopPlaceRecoveredFromAnotherProvider() throws TiamatBusinessException {
         List<org.rutebanken.netex.model.StopPlace > matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
 

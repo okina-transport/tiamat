@@ -472,6 +472,7 @@ public class QuayMergerTest {
         Point firstQuayPoint = geometryFactory.createPoint(new Coordinate(60, 11));
         first.setCentroid(firstQuayPoint);
         first.setCompassBearing(270f);
+        first.setPublicCode("test");
 
         Quay second = new Quay();
         second.setCentroid(getOffsetPoint(firstQuayPoint, 29, 15));

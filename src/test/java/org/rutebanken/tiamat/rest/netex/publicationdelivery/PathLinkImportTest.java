@@ -115,7 +115,7 @@ public class PathLinkImportTest extends TiamatIntegrationTest {
         publicationDeliveryTestHelper.addPathLinks(publicationDelivery, netexPathLink);
 
         ImportParams importParams = new ImportParams();
-        importParams.providerCode = "NSR";
+        importParams.providerCode = "PROV1";
 
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery,importParams);
 

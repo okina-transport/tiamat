@@ -20,7 +20,7 @@
 
     <groupId>org.rutebanken</groupId>
     <artifactId>tiamat</artifactId>
-    <version>2.2.0-mobi-iti-LRO-MAINTI4-SNAPSHOT</version>
+    <version>2.2.6-mobi-iti-LRO-MAINTI4-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Tiamat</name>
@@ -106,10 +106,19 @@
 
         <!-- NB: Concious choice of using snapshot version. This is to keep in
             sync, and fail fast if incompatibilities -->
-        <netex-java-model.version>2.0.1-NETEX-FR</netex-java-model.version>
+        <netex-java-model.version>2.0.2-NETEX-FR</netex-java-model.version>
         <okina-helper.version>1.0.23-SNAPSHOT</okina-helper.version>
         <fabric8.version>2.3.7</fabric8.version>
         <metrics.version>3.2.3</metrics.version>
+
+
+        <maven-surefire-plugin.version>3.0.0-M1</maven-surefire-plugin.version>
+        <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
+        <!--TODO temporary manual upgrade of Logback-->
+        <logback.version>1.2.8</logback.version>
+        <log4j2.version>2.17.1</log4j2.version>
+
+        <sonar.projectKey>mobi-iti:tiamat</sonar.projectKey>
 
         <!-- MAINTI4 -->
         <mainti4-client.version>1.0.0</mainti4-client.version>
@@ -175,6 +184,19 @@
             </dependency>
 
             <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${log4j2.version}</version>
+                <type>pom</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1652 -->
+                <artifactId>log4j-to-slf4j</artifactId>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1653 -->
+                <version>${log4j2.version}</version>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1654 -->
+            </dependency>
+
+            <dependency>
                 <groupId>com.okina.mainti4</groupId>
                 <artifactId>mainti4-api-client</artifactId>
                 <version>${mainti4-client.version}</version>
@@ -185,6 +207,13 @@
 
     <dependencies>
 
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-bom</artifactId>
+            <version>${log4j2.version}</version>
+            <type>pom</type>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -262,6 +291,17 @@
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
             <version>${logstash-logback.version}</version>
+        </dependency>
+        <!--TODO temporary manual upgrade of Logback-->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>${logback.version}</version>
         </dependency>
 
         <dependency>
@@ -612,7 +652,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M1</version>
+                <version>${maven-surefire-plugin.version}</version>
                 <configuration>
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <argLine>-Xmx3G</argLine>
@@ -624,7 +664,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.8</version>
+                <version>${maven-antrun-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>test-compile</id>
@@ -654,7 +694,6 @@
                 <version>${spring-boot-plugin.version}</version>
                 <configuration>
                     <mainClass>org.rutebanken.tiamat.TiamatApplication</mainClass>
-                    <excludeDevtools>false</excludeDevtools>
                 </configuration>
                 <executions>
                     <execution>
@@ -754,6 +793,55 @@
                 <defaultGoal>clean install docker:build</defaultGoal>
             </build>
         </profile>
+
+        <profile>
+            <id>sonar</id>
+            <properties>
+                <sonar.dependencyCheck.jsonReportPath>target/dependency-check-report.json</sonar.dependencyCheck.jsonReportPath>
+                <sonar.dependencyCheck.htmlReportPath>target/dependency-check-report.html</sonar.dependencyCheck.htmlReportPath>
+                <sonar.dependencyCheck.securityHotspot>true</sonar.dependencyCheck.securityHotspot>
+                <sonar.dependencyCheck.summarize>true</sonar.dependencyCheck.summarize>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.5</version>
+                        <executions>
+                            <execution>
+                                <id>default-prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>report</id>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                        <version>6.5.2</version>
+                        <configuration>
+                            <format>ALL</format>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>aggregate</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
     </profiles>
 
 </project>

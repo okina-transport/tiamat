@@ -20,12 +20,14 @@ import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.service.stopplace.StopPlaceQuayMover;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,6 +39,9 @@ public class StopPlaceQuayMoverTest extends TiamatIntegrationTest {
 
     @Autowired
     private StopPlaceQuayMover stopPlaceQuayMover;
+
+    @Autowired
+    private QuayRepository quayRepository;
 
     @Test
     public void moveQuayToExistingStop() {
@@ -73,6 +78,32 @@ public class StopPlaceQuayMoverTest extends TiamatIntegrationTest {
     }
 
     @Test
+    public void moveNewQuayToExistingStop() {
+
+        Quay quayToMove = new Quay(new EmbeddableMultilingualString("quay to be moved"));
+        quayToMove.setVersion(1L);
+        quayToMove = quayRepository.save(quayToMove);
+
+        StopPlace destinationStopPlace = new StopPlace(new EmbeddableMultilingualString("Destination stop place"));
+        destinationStopPlace.setVersion(1L);
+        stopPlaceRepository.save(destinationStopPlace);
+
+        StopPlace result = stopPlaceQuayMover.moveNewQuay(Arrays.asList(quayToMove.getNetexId()), destinationStopPlace.getNetexId(),null);
+
+        assertThat(result.getNetexId()).isEqualTo(destinationStopPlace.getNetexId());
+        assertThat(result.getQuays()).hasSize(1);
+        assertThat(result.getVersion()).isEqualTo(2L);
+
+        Quay actualQuay = result.getQuays().iterator().next();
+        assertThat(actualQuay.getName()).isNotNull();
+        assertThat(actualQuay.getVersion()).isEqualTo(2L);
+        assertThat(actualQuay.getName().getValue()).isEqualTo(quayToMove.getName().getValue());
+
+        destinationStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(destinationStopPlace.getNetexId());
+        assertThat(destinationStopPlace).isEqualTo(result);
+    }
+
+    @Test
     public void moveQuayToNewStop() {
 
         StopPlace fromStopPlace = new StopPlace();
@@ -88,6 +119,26 @@ public class StopPlaceQuayMoverTest extends TiamatIntegrationTest {
         fromStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(fromStopPlace.getNetexId());
         assertThat(fromStopPlace.getQuays()).isEmpty();
         assertThat(fromStopPlace.getVersion()).as("new version of source stop place with no quays").isEqualTo(2L);
+
+        StopPlace createdStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(result.getNetexId());
+        assertThat(createdStopPlace.getQuays()).hasSize(1);
+        Quay actualQuay = createdStopPlace.getQuays().iterator().next();
+        assertThat(actualQuay.getName()).isNotNull();
+        assertThat(actualQuay.getVersion()).isEqualTo(2L);
+        assertThat(actualQuay.getName().getValue()).isEqualTo(quayToMove.getName().getValue());
+        assertThat(result).isEqualTo(createdStopPlace);
+
+    }
+
+    @Test
+    public void moveNewQuayToNewStop() {
+
+        Quay quayToMove = new Quay(new EmbeddableMultilingualString("quay to be moved 2"));
+        quayToMove.setVersion(1L);
+        quayToMove = quayRepository.save(quayToMove);
+
+
+        StopPlace result = stopPlaceQuayMover.moveNewQuay(Collections.singletonList(quayToMove.getNetexId()), null, null);
 
         StopPlace createdStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(result.getNetexId());
         assertThat(createdStopPlace.getQuays()).hasSize(1);

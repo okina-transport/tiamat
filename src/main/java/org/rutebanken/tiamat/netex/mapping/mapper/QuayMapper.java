@@ -26,9 +26,14 @@ import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMappi
 import org.rutebanken.tiamat.model.AlternativeName;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Quay> {
+
+    private Map<String,Integer> postalAddressVersionMap = new HashMap<>();
+
     @Override
     public void mapAtoB(Quay quay, org.rutebanken.tiamat.model.Quay quay2, MappingContext context) {
         super.mapAtoB(quay, quay2, context);
@@ -124,7 +129,7 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
         postalAddress.setPostalRegion(tiamatQuay.getZipCode());
         String postalAddressId = tiamatQuay.getNetexId().replace("Quay", "PostalAddress");
         postalAddress.setId(postalAddressId);
-        postalAddress.setVersion("any");
+        postalAddress.setVersion(getPostalAdressVersion(postalAddressId));
         MultilingualString addressName = new MultilingualString();
 
         if (tiamatQuay.getName() != null){
@@ -135,5 +140,26 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
             postalAddress.setName(addressName);
         }
         netexQuay.setPostalAddress(postalAddress);
+    }
+
+
+    /**
+     * Get a new version number each time it is called for a netexQuayId
+     * @param netexQuayId
+     *  Quay for which a version number should be recovered
+     * @return
+     *  The postall address version
+     */
+    private String getPostalAdressVersion(String netexQuayId){
+        if (!postalAddressVersionMap.containsKey(netexQuayId)){
+            postalAddressVersionMap.put(netexQuayId,1);
+            return String.valueOf(1);
+        }
+
+        Integer currentVersion = postalAddressVersionMap.get(netexQuayId);
+        int newVersion = currentVersion + 1;
+        postalAddressVersionMap.put(netexQuayId,newVersion);
+        return String.valueOf(newVersion);
+
     }
 }

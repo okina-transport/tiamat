@@ -95,6 +95,11 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     public static final String SQL_LEFT_JOIN_PARENT_STOP_TEMPLATE =
             "LEFT JOIN stop_place %s ON s.parent_site_ref = %s.netex_id AND s.parent_site_ref_version = CAST(%s.version as text) ";
 
+    public static final String SQL_LEFT_JOIN_IMPORTED_ID =
+            "LEFT JOIN stop_place_key_values spkv ON s.id = spkv.stop_place_id AND spkv.key_values_key= 'imported-id' " +
+                    " LEFT JOIN value_items vi on vi.value_id = spkv.key_values_id ";
+
+
     public static String createLeftJoinParentStopQuery(String parentAlias) {
         return String.format(SQL_LEFT_JOIN_PARENT_STOP_TEMPLATE, Collections.nCopies(3, parentAlias).toArray());
     }

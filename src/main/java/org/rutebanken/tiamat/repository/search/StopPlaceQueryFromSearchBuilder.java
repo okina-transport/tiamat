@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.repository.search;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.domain.Provider;
@@ -103,6 +104,9 @@ public class StopPlaceQueryFromSearchBuilder {
     private static final double NEARBY_DECIMAL_DEGREES = 0.04;
     private static final double NEARBY_NAME_SIMILARITY = 0.6;
 
+    //50m ~  0,000449166666667°
+    private static final double DEFAULT_NEARBY_THRESHOLD = 0.000449166666667;
+
     /**
      * It is possible to search for nearby duplicates by meters, but it has a performance impact.
      * That's why decimal degrees is used.
@@ -115,8 +119,11 @@ public class StopPlaceQueryFromSearchBuilder {
                     "WHERE nearby.netex_id != s.netex_id " +
                     " AND nearby.parent_stop_place = false " +
                     " AND nearby.stop_place_type = s.stop_place_type " +
-                    " AND ST_Distance(s.centroid, nearby.centroid) < :nearbyThreshold " +
-                    " AND s.name_value = nearby.name_value ";
+                    " AND ST_Distance(s.centroid, nearby.centroid) < :nearbyThreshold ";
+
+    public static final String SQL_NEARBY_NAME_CONDITION = " AND s.name_value = nearby.name_value ";
+
+
     // Together with distinct and nearby search, the next line slows everything down too much:
 //                     "  AND similarity(s.name_value , s2.name_value) > :similarityThreshold ";
 
@@ -313,7 +320,7 @@ public class StopPlaceQueryFromSearchBuilder {
             wheres.add("s.netex_id IN (" + SQL_DUPLICATED_QUAY_IMPORTED_IDS + ")");
         }
 
-        if (stopPlaceSearch.isWithNearbySimilarDuplicates()) {
+        if (stopPlaceSearch.isWithNearbySimilarDuplicates() || stopPlaceSearch.isNearbyStopPlaces()) {
             createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements);
         }
 
@@ -499,7 +506,7 @@ public class StopPlaceQueryFromSearchBuilder {
             createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements);
         }
 
-        if (provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName)){
+        if (provider != null && provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName)){
             operators.add("and");
             parameters.put("providerName", provider.getChouetteInfo().getReferential());
             wheres.add("s.provider = :providerName");
@@ -570,13 +577,35 @@ public class StopPlaceQueryFromSearchBuilder {
             final String startingWithLowerMatchQuerySql = "concat(lower(:query), '%') ";
             final String containsLowerMatchQuerySql = "concat('%', lower(:query), '%') ";
             final String orNameMatchInParentStopSql = "or lower(p.name_value) like ";
+
+            final String netexIdContainsLowerMatchQuerySql = "concat('MOBIITI:%', lower(:query), '%') ";
+
+
+            String comparingString ;
             if (query.length() <= 3) {
-                wheres.add("(lower (s.name_value) like " + startingWithLowerMatchQuerySql + orNameMatchInParentStopSql + startingWithLowerMatchQuerySql + ")");
+                comparingString = startingWithLowerMatchQuerySql;
             } else {
-                wheres.add("(lower(s.name_value) like " + containsLowerMatchQuerySql + orNameMatchInParentStopSql + containsLowerMatchQuerySql + ")");
+                comparingString = containsLowerMatchQuerySql;
             }
 
-            orderByStatements.add("similarity(concat(s.name_value, p.name_value), :query) desc");
+            String netexComparing = "";
+            if (NumberUtils.isCreatable(query)){
+                netexComparing =  " or s.netex_id like " + netexIdContainsLowerMatchQuerySql + "or p.netex_id like " + netexIdContainsLowerMatchQuerySql;
+            }
+
+
+            String importedIdSearchString = "  or EXISTS(select 1 from stop_place_key_values spkv inner join " +
+                    " value_items vi on vi.value_id = spkv.key_values_id " +
+                    "  where  spkv.key_values_key= 'imported-id' and s.id = spkv.stop_place_id  and lower(vi.items) like " + containsLowerMatchQuerySql + " )" ;
+
+
+            wheres.add("(lower(s.name_value) like " + comparingString + orNameMatchInParentStopSql + comparingString + netexComparing + importedIdSearchString + " )");
+
+            if (!stopPlaceSearch.isNearbyStopPlaces()){
+                //For nearby stop place search, results must me order by distance, and not by name
+                orderByStatements.add("similarity(concat(s.name_value, p.name_value), :query) desc");
+            }
+
         }
     }
 
@@ -616,6 +645,11 @@ public class StopPlaceQueryFromSearchBuilder {
 
         String sqlNearby = "exists (" + SQL_NEARBY;
 
+        if( stopPlaceSearch.isWithNearbySimilarDuplicates()){
+            sqlNearby = sqlNearby + SQL_NEARBY_NAME_CONDITION;
+        }
+
+
         if (stopPlaceSearch.getPointInTime() == null) {
             sqlNearby += "  AND nearby.version = (select max(s3.version) from stop_place s3 where s3.netex_id = nearby.netex_id) ";
         } else {
@@ -623,13 +657,32 @@ public class StopPlaceQueryFromSearchBuilder {
             parameters.put("pointInTime", Timestamp.from(stopPlaceSearch.getPointInTime()));
 
         }
-        parameters.put("nearbyThreshold", NEARBY_DECIMAL_DEGREES);
+
+        double nearbyThreshold = stopPlaceSearch.getNearbyRadius() != 0 ? getThresholdInDegrees(stopPlaceSearch.getNearbyRadius()) : DEFAULT_NEARBY_THRESHOLD;
+        parameters.put("nearbyThreshold", nearbyThreshold);
 
         // parameters.put("similarityThreshold", NEARBY_NAME_SIMILARITY);
 
         wheres.add(sqlNearby + ")");
-        orderByStatements.add("s.name_value");
+        if (!stopPlaceSearch.isNearbyStopPlaces()){
+            //for nearby stop place search, results must be ordered by distance, not by name
+            orderByStatements.add("s.name_value");
+        }
+
         orderByStatements.add("s.centroid");
+    }
+
+
+    /**
+     * Converts threshold in meters to threshold in degrees
+     * (using 50m = 0,000449166666667° base)
+     *
+     * @param thresholdInMeters
+     *  the threshold, in meters
+     * @return
+     */
+    private double getThresholdInDegrees(double thresholdInMeters){
+        return thresholdInMeters * 0.000449166666667 / 50;
     }
 
     private String formatRepeatedValue(String format, String value, int repeated) {

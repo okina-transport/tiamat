@@ -31,6 +31,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+
 /**
  * Run integration tests for the rest interface without security
  */

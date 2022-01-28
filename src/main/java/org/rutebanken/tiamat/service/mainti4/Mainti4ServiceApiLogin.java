@@ -1,13 +1,24 @@
 package org.rutebanken.tiamat.service.mainti4;
 
-import com.google.common.base.Strings;
 import com.okina.mainti4.mainti4apiclient.ApiClient;
-import com.okina.mainti4.mainti4apiclient.api.*;
-import com.okina.mainti4.mainti4apiclient.model.*;
-import org.apache.commons.io.IOUtils;
-import org.codehaus.jettison.json.JSONObject;
+import com.okina.mainti4.mainti4apiclient.api.AccountApi;
+import com.okina.mainti4.mainti4apiclient.api.BTsApi;
+import com.okina.mainti4.mainti4apiclient.api.DocumentsApi;
+import com.okina.mainti4.mainti4apiclient.api.FilesApi;
+import com.okina.mainti4.mainti4apiclient.api.TopologiesApi;
+import com.okina.mainti4.mainti4apiclient.model.BTFilter;
+import com.okina.mainti4.mainti4apiclient.model.BtDto;
+import com.okina.mainti4.mainti4apiclient.model.DocumentFilter;
+import com.okina.mainti4.mainti4apiclient.model.ETypeTopo;
+import com.okina.mainti4.mainti4apiclient.model.EtatBT;
+import com.okina.mainti4.mainti4apiclient.model.LeafletLatLng;
+import com.okina.mainti4.mainti4apiclient.model.LoginModel;
+import com.okina.mainti4.mainti4apiclient.model.PieceJointeDto;
+import com.okina.mainti4.mainti4apiclient.model.TopologieDto;
+import com.okina.mainti4.mainti4apiclient.model.TopologieFilter;
+import com.okina.mainti4.mainti4apiclient.model.TypePieceJointe;
+import com.okina.mainti4.mainti4apiclient.model.TypeTopoDto;
 import org.locationtech.jts.geom.Point;
-import org.rutebanken.tiamat.externalapis.GouvApiReverseGeocoding;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.rest.graphql.helpers.KeyValueWrapper;
@@ -20,19 +31,12 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.imageio.ImageIO;
 import javax.net.ssl.HttpsURLConnection;
-import javax.validation.constraints.NotNull;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.math.BigDecimal;
-import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @Service(value = "mainti4serviceapilogin")
@@ -450,6 +454,8 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
         filter.setCode(rCode);
         filter.setTypeTopologie(ETypeTopo.NUMBER_0);
         filter.setAvecLocalisationTopo(true);
+        logger.info("Topologie recherchée : " + filter);
+
         //Effectue la requete
         List<TopologieDto> listeTopo = rTopologies.topologiesSearch(filter);
         if (listeTopo != null && !listeTopo.isEmpty()) {
@@ -460,7 +466,7 @@ public class Mainti4ServiceApiLogin implements IServiceTiamatApi {
             logger.debug("Trouve topologie {}", rCode);
             return listeTopo.get(0);
         } else {
-            System.out.println("Aucune topologie trouvee");
+            logger.error("Aucune topologie trouvee");
             return null;
         }
     }

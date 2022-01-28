@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.repository;
 
 
 import com.google.common.collect.Sets;
+import org.hibernate.query.NativeQuery;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -693,6 +694,56 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         return result;
     }
+
+    /**
+     * Takes a set of stop place id and search for parents. Add parent's ids to the set
+     * @param stopPlaceDbIds
+     * 		A set of children's ids
+     * @return
+     * 		A set with children ids + parents ids
+     *
+     */
+    @Override
+    public Set<Long> addParentIds(Set<Long> stopPlaceDbIds) {
+
+
+
+        Set<String> stopPlaceStringDbIds = stopPlaceDbIds.stream().map(lvalue -> String.valueOf(lvalue)).collect(Collectors.toSet());
+        String joinedStopPlaceDbIds = String.join(",", stopPlaceStringDbIds);
+        StringBuilder sql = new StringBuilder("SELECT id FROM stop_place sp " +
+                                                "WHERE parent_stop_place = TRUE " +
+                                                "AND sp.netex_id IN  ( " +
+                                                    "SELECT parent_site_ref FROM stop_place childrenSP " +
+                                                    "where childrenSP.id in (");
+
+        sql.append(joinedStopPlaceDbIds);
+        sql.append(") " +
+                " ) " +
+                "AND " +
+                "sp.from_date <= :pointInTime " +
+                "AND ( " +
+                "sp.to_date >= :pointInTime OR sp.to_date IS NULL )");
+
+
+        Session session = entityManager.unwrap(Session.class);
+        NativeQuery query = session.createNativeQuery(sql.toString());
+
+        Map<String,Object> parameters = new HashMap<>();
+        parameters.put("pointInTime", Date.from(Instant.now()));
+
+        searchHelper.addParams(query, parameters);
+
+        List<Long> results = query.getResultList().stream()
+                                    .mapToLong(bi-> ((BigInteger)bi).longValue())
+                                    .boxed()
+                                    .collect(Collectors.toList());
+
+        Set<Long> parentsAndChildrenIds = new HashSet<>();
+        parentsAndChildrenIds.addAll(stopPlaceDbIds);
+        parentsAndChildrenIds.addAll(results);
+        return parentsAndChildrenIds;
+    }
+
 
     @Override
     public Page<StopPlace> findStopPlace(ExportParams exportParams) {

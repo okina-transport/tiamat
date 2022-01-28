@@ -20,7 +20,7 @@
 
     <groupId>org.rutebanken</groupId>
     <artifactId>tiamat</artifactId>
-    <version>2.1.8-mobi-iti-LRO-MAINTI4-SNAPSHOT</version>
+    <version>2.2.0-mobi-iti-LRO-MAINTI4-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Tiamat</name>
@@ -112,7 +112,7 @@
         <metrics.version>3.2.3</metrics.version>
 
         <!-- MAINTI4 -->
-        <mainti4-client.version>0.0.2</mainti4-client.version>
+        <mainti4-client.version>1.0.0</mainti4-client.version>
 
     </properties>
 

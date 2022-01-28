@@ -112,7 +112,7 @@
         <metrics.version>3.2.3</metrics.version>
 
         <!-- MAINTI4 -->
-        <mainti4-client.version>0.0.1</mainti4-client.version>
+        <mainti4-client.version>0.0.2</mainti4-client.version>
 
     </properties>
 

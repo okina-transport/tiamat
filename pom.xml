@@ -121,7 +121,7 @@
         <sonar.projectKey>mobi-iti:tiamat</sonar.projectKey>
 
         <!-- MAINTI4 -->
-        <mainti4-client.version>1.0.0</mainti4-client.version>
+        <mainti4-client.version>1.0.1</mainti4-client.version>
 
     </properties>
 

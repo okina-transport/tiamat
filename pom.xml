@@ -20,7 +20,7 @@
 
     <groupId>org.rutebanken</groupId>
     <artifactId>tiamat</artifactId>
-    <version>2.2.6-mobi-iti-LRO-MAINTI4-SNAPSHOT</version>
+    <version>2.2.6-mobi-iti-LRO-MAINTI4-SNAPSHOT_RC2</version>
     <packaging>jar</packaging>
 
     <name>Tiamat</name>

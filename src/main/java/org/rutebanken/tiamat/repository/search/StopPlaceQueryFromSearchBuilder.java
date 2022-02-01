@@ -607,13 +607,14 @@ public class StopPlaceQueryFromSearchBuilder {
                 netexComparing =  " or s.netex_id like " + netexIdContainsLowerMatchQuerySql + "or p.netex_id like " + netexIdContainsLowerMatchQuerySql;
             }
 
-
             String importedIdSearchString = "  or EXISTS(select 1 from stop_place_key_values spkv inner join " +
                     " value_items vi on vi.value_id = spkv.key_values_id " +
                     "  where  spkv.key_values_key= 'imported-id' and s.id = spkv.stop_place_id  and lower(vi.items) like " + containsLowerMatchQuerySql + " )" ;
 
 
+
             wheres.add("(lower(s.name_value) like " + comparingString + orNameMatchInParentStopSql + comparingString + netexComparing + importedIdSearchString + " )");
+
 
             if (!stopPlaceSearch.isNearbyStopPlaces()){
                 //For nearby stop place search, results must me order by distance, and not by name
@@ -656,8 +657,19 @@ public class StopPlaceQueryFromSearchBuilder {
 
     private void createAndAddNearbyCondition(StopPlaceSearch stopPlaceSearch, List<String> operators, List<String> wheres, Map<String, Object> parameters, List<String> orderByStatements, String sqlQuery) {
         operators.add("and");
+        String organisationNameSearchString = "";
+        String importedIdSearchStringForNearbyStopPlaces = "";
 
-        String sqlNearby = "exists (" + sqlQuery;
+        if(!stopPlaceSearch.getOrganisationName().isEmpty()){
+             organisationNameSearchString = " AND vi.items like '" +stopPlaceSearch.getOrganisationName().toUpperCase()+ ":StopPlace%'";
+
+             importedIdSearchStringForNearbyStopPlaces = " AND EXISTS(select 1 from stop_place_key_values spkv inner join " +
+                    " value_items vi on vi.value_id = spkv.key_values_id " +
+                    "  where  spkv.key_values_key= 'imported-id' and nearby.id = spkv.stop_place_id "+ organisationNameSearchString +")" ;
+
+        }
+
+        String sqlNearby = "exists (" + sqlQuery + importedIdSearchStringForNearbyStopPlaces;
 
         if( stopPlaceSearch.isWithNearbySimilarDuplicates()){
             sqlNearby = sqlNearby + SQL_NEARBY_NAME_CONDITION;

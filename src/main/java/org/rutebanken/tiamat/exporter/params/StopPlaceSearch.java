@@ -103,6 +103,10 @@ public class StopPlaceSearch implements SearchObject {
     @ApiParam(value = DETECT_MULTI_MODAL_POINTS)
     private boolean detectMultiModalPoints;
 
+    @QueryParam(value = "organisationName")
+    @ApiParam(value = ORGANISATION_NAME)
+    private String organisationName;
+
     @QueryParam(value = "hasParking")
     @ApiParam(value = HAS_PARKING)
     private boolean hasParking;
@@ -136,6 +140,7 @@ public class StopPlaceSearch implements SearchObject {
                             boolean nearbyStopPlaces,
                             boolean detectMultiModalPoints,
                             int nearbyRadius,
+                            String organisationName,
                             boolean hasParking,
                             Instant pointInTime,
                             Long version,
@@ -155,6 +160,7 @@ public class StopPlaceSearch implements SearchObject {
         this.nearbyStopPlaces = nearbyStopPlaces;
         this.nearbyRadius = nearbyRadius;
         this.detectMultiModalPoints = detectMultiModalPoints;
+        this.organisationName = organisationName;
         this.hasParking = hasParking;
         this.pointInTime = pointInTime;
         this.version = version;
@@ -220,6 +226,7 @@ public class StopPlaceSearch implements SearchObject {
         return nearbyRadius;
     }
 
+    public String getOrganisationName(){return organisationName;}
 
     public boolean isHasParking() {
         return hasParking;
@@ -228,7 +235,6 @@ public class StopPlaceSearch implements SearchObject {
     public boolean isWithTags() {
         return withTags;
     }
-
 
     public Instant getPointInTime() {
         return pointInTime;
@@ -284,6 +290,7 @@ public class StopPlaceSearch implements SearchObject {
         private boolean nearbyStopPlaces;
         private boolean detectMultiModalPoints;
         private int nearbyRadius;
+        private String organisationName;
         private boolean hasParking;
         private boolean withTags;
         private Long version;
@@ -361,6 +368,8 @@ public class StopPlaceSearch implements SearchObject {
             this.detectMultiModalPoints = detectMultiModalPoints;
         }
 
+        public void setOrganisationName(String organisationName){ this.organisationName = organisationName; }
+
         public void setHasParking(boolean hasParking) {
             this.hasParking = hasParking;
         }
@@ -402,6 +411,7 @@ public class StopPlaceSearch implements SearchObject {
                     nearbyStopPlaces,
                     detectMultiModalPoints,
                     nearbyRadius,
+                    organisationName,
                     hasParking,
                     pointInTime,
                     version,

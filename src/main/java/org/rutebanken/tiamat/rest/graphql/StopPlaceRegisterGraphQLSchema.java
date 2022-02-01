@@ -573,6 +573,12 @@ public class StopPlaceRegisterGraphQLSchema {
                 .description(NEARBY_RADIUS_DESCRIPTION)
                 .build());
         arguments.add(GraphQLArgument.newArgument()
+                .name(ORGANISATION_NAME)
+                .type(GraphQLString)
+                .defaultValue("")
+                .description(ORGANISATION_NAME_DESCRIPTION)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
                 .name(WITHOUT_QUAYS_ONLY)
                 .type(GraphQLBoolean)
                 .defaultValue(Boolean.FALSE)

@@ -119,7 +119,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
-                                 AtomicInteger stopPlacesCreatedOrUpdated, boolean onMoveOnlyImport) throws TiamatBusinessException {
+                                 AtomicInteger stopPlacesCreatedOrUpdated, boolean keepStopGeolocalisation) throws TiamatBusinessException {
 
 
         stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
@@ -211,7 +211,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                     copy.getTariffZones().addAll(incomingStopPlace.getTariffZones());
                 }
 
-                boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS, onMoveOnlyImport);
+                boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS, keepStopGeolocalisation);
 
                 boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
 

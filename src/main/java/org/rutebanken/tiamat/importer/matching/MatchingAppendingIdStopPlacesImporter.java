@@ -41,13 +41,13 @@ public class MatchingAppendingIdStopPlacesImporter {
     @Autowired
     private TransactionalMatchingAppendingStopPlaceImporter transactionalMatchingAppendingStopPlaceImporter;
 
-    public List<StopPlace> importStopPlaces(List<org.rutebanken.tiamat.model.StopPlace> tiamatStops, AtomicInteger stopPlacesCreatedOrUpdated, boolean onMoveOnlyImport) throws TiamatBusinessException{
+    public List<StopPlace> importStopPlaces(List<org.rutebanken.tiamat.model.StopPlace> tiamatStops, AtomicInteger stopPlacesCreatedOrUpdated, boolean keepStopGeolocalisation) throws TiamatBusinessException{
 
         List<StopPlace> matchedStopPlaces = new ArrayList<>();
 
 
         for (org.rutebanken.tiamat.model.StopPlace incomingStopPlace : tiamatStops) {
-            transactionalMatchingAppendingStopPlaceImporter.findAppendAndAdd(incomingStopPlace, matchedStopPlaces, stopPlacesCreatedOrUpdated, onMoveOnlyImport);
+            transactionalMatchingAppendingStopPlaceImporter.findAppendAndAdd(incomingStopPlace, matchedStopPlaces, stopPlacesCreatedOrUpdated, keepStopGeolocalisation);
         }
 
         return matchedStopPlaces;

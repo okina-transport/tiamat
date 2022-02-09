@@ -1,6 +1,7 @@
 package org.rutebanken.tiamat.repository;
 
 import org.assertj.core.api.Assertions;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
+@Ignore
 public class ProviderRepositoryTest extends TiamatIntegrationTest {
 
     @Autowired

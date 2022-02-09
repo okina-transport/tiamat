@@ -44,6 +44,9 @@ public class ImportParams {
     @QueryParam(value = "providerCode")
     public String providerCode;
 
+    @QueryParam(value = "keepStopGeolocalisation")
+    public boolean keepStopGeolocalisation;
+
     /**
      * Do not return output netex file.
      */

@@ -20,7 +20,6 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -165,6 +164,9 @@ public class StopPlaceQueryFromSearchBuilder {
     @Value("${administration.space.name}")
     protected String administrationSpaceName;
 
+    @Autowired
+    private NearbyStopPlaceQueryBuilder stopPlaceQueryFromSearchBuilder;
+
     /**
      * Configure some common words to be skipped during stop place search by name.
      */
@@ -184,6 +186,10 @@ public class StopPlaceQueryFromSearchBuilder {
         this.exportParamsAndStopPlaceSearchValidator.validateExportParams(exportParams);
 
         StopPlaceSearch stopPlaceSearch = exportParams.getStopPlaceSearch();
+
+        if (stopPlaceSearch.isNearbyStopPlaces()){
+            return stopPlaceQueryFromSearchBuilder.buildNearbyQuery(stopPlaceSearch);
+        }
 
         final ExportParams.VersionValidity versionValidity;
         if(stopPlaceSearch.getPointInTime() == null

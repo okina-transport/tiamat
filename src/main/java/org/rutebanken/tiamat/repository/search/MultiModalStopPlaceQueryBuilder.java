@@ -14,9 +14,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class NearbyStopPlaceQueryBuilder {
+public class MultiModalStopPlaceQueryBuilder {
 
-    private static final Logger logger = LoggerFactory.getLogger(NearbyStopPlaceQueryBuilder.class);
+    private static final Logger logger = LoggerFactory.getLogger(MultiModalStopPlaceQueryBuilder.class);
 
     //50m ~  0,000449166666667°
     private final double DEFAULT_NEARBY_THRESHOLD = 0.000449166666667;
@@ -90,6 +90,13 @@ public class NearbyStopPlaceQueryBuilder {
                 "            SELECT nearby.id \n" +
                 "            FROM  stop_place nearby \n");
 
+
+        if (!stopPlaceSearch.getOrganisationName().isEmpty() || !stopPlaceSearch.getQuery().isEmpty()) {
+            queryBuilder.append("         LEFT JOIN    stop_place_key_values spkv_nearby  on  nearby.id = spkv_nearby.stop_place_id   \n" +
+                    "    LEFT JOIN    value_items vi_nearby on vi_nearby.value_id = spkv_nearby.key_values_id        ");
+
+
+        }
         return queryBuilder.toString();
     }
 
@@ -125,6 +132,10 @@ public class NearbyStopPlaceQueryBuilder {
                 "                    )               \n" +
                 "                )");
 
+        if (!stopPlaceSearch.getOrganisationName().isEmpty()) {
+            queryBuilder.append(" AND spkv_nearby.key_values_key = 'imported-id'  ");
+            queryBuilder.append(" AND  lower(vi_nearby.items) like :importedIdPattern  ");
+        }
 
         queryBuilder.append(" )");
         return queryBuilder.toString();

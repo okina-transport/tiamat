@@ -77,6 +77,8 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     List<StopPlace> findAll(List<String> stopPlacesNetexIds);
 
+    List<Quay> findQuayByNetexId(String netexId);
+
     StopPlace findByQuay(Quay quay);
 
     List<JbvCodeMappingDto> findJbvCodeMappingsForStopPlace();
@@ -86,4 +88,7 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
     Map<String, Set<String>> listStopPlaceIdsAndQuayIds(Instant validFrom, Instant validTo);
 
     Set<Long> addParentIds(Set<Long> stopPlaceDbIds);
-}
+
+    List<StopPlace> findStopPlaceByQuays(List<Quay> quays);
+
+    }

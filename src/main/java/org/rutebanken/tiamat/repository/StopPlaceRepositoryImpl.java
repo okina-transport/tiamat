@@ -767,11 +767,59 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     }
 
     @Override
+    public List<StopPlace> findStopPlaceByQuays(List<Quay> quays) {
+
+        List<Long> quaysIdList = quays.stream()
+                                      .map(Quay::getId)
+                                      .collect(Collectors.toList());
+
+
+        final String queryString = "SELECT sp.* FROM stop_place sp JOIN stop_place_quays spq on sp.id = spq.stop_place_id  " +
+                "                            WHERE spq.quays_id IN :quaysId";
+
+        List<StopPlace> stopPlaces = entityManager.createNativeQuery(queryString, StopPlace.class)
+                                    .setParameter("quaysId",quaysIdList)
+                                    .getResultList();
+
+        return stopPlaces;
+
+    }
+
+    @Override
     public List<StopPlace> findAll(List<String> stopPlacesNetexIds) {
         final String queryString = "SELECT stopPlace FROM StopPlace stopPlace WHERE stopPlace.netexId IN :netexIds";
         final TypedQuery<StopPlace> typedQuery = entityManager.createQuery(queryString, StopPlace.class);
         typedQuery.setParameter("netexIds", stopPlacesNetexIds);
         return typedQuery.getResultList();
+    }
+
+    @Override
+    public List<Quay> findQuayByNetexId(String netexId) {
+        final String queryString = "SELECT quay FROM Quay quay WHERE quay.netexId = :netexId";
+        final TypedQuery<Quay> typedQuery = entityManager.createQuery(queryString, Quay.class);
+        typedQuery.setParameter("netexId", netexId);
+        List<Quay> resultList = typedQuery.getResultList();
+
+        for (Quay quay : resultList) {
+            Hibernate.initialize(quay.getKeyValues());
+
+
+            System.out.println("a");
+            quay.getKeyValues().forEach((k,v) ->{
+                        System.out.println(v.getClass());
+                        Hibernate.initialize(v.getItems());
+
+
+                    }
+
+
+
+
+                    );
+
+        }
+
+        return resultList;
     }
 
     @Override

@@ -167,6 +167,9 @@ public class StopPlaceQueryFromSearchBuilder {
     @Autowired
     private NearbyStopPlaceQueryBuilder stopPlaceQueryFromSearchBuilder;
 
+    @Autowired
+    private SearchStopPlacesWithDistantQuaysBuilder searchStopPlacesWithDistantQuaysBuilder;
+
     /**
      * Configure some common words to be skipped during stop place search by name.
      */
@@ -190,6 +193,11 @@ public class StopPlaceQueryFromSearchBuilder {
         if (stopPlaceSearch.isNearbyStopPlaces()){
             return stopPlaceQueryFromSearchBuilder.buildNearbyQuery(stopPlaceSearch);
         }
+
+        if(stopPlaceSearch.isWithDistantQuays()){
+            return searchStopPlacesWithDistantQuaysBuilder.buildQuery(stopPlaceSearch);
+        }
+
 
         final ExportParams.VersionValidity versionValidity;
         if(stopPlaceSearch.getPointInTime() == null

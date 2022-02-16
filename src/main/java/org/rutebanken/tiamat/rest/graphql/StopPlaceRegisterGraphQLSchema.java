@@ -579,6 +579,12 @@ public class StopPlaceRegisterGraphQLSchema {
                 .description(ORGANISATION_NAME_DESCRIPTION)
                 .build());
         arguments.add(GraphQLArgument.newArgument()
+                .name(WITH_DISTANT_QUAYS)
+                .type(GraphQLBoolean)
+                .defaultValue(Boolean.FALSE)
+                .description(WITH_DISTANT_QUAYS_DESCRIPTION)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
                 .name(WITHOUT_QUAYS_ONLY)
                 .type(GraphQLBoolean)
                 .defaultValue(Boolean.FALSE)

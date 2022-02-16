@@ -112,6 +112,7 @@ class StopPlaceFetcher implements DataFetcher {
         setIfNonNull(environment, NEARBY_STOP_PLACES, stopPlaceSearchBuilder::setNearbyStopPlaces);
         setIfNonNull(environment, NEARBY_RADIUS, stopPlaceSearchBuilder::setNearbyRadius);
         setIfNonNull(environment, ORGANISATION_NAME, stopPlaceSearchBuilder::setOrganisationName);
+        setIfNonNull(environment, WITH_DISTANT_QUAYS, stopPlaceSearchBuilder::setWithDistantQuays);
         setIfNonNull(environment, DETECT_MULTI_MODAL_POINTS, stopPlaceSearchBuilder::setDetectMultiModalPoints);
         setIfNonNull(environment, HAS_PARKING, stopPlaceSearchBuilder::setHasParking);
         setIfNonNull(environment, WITH_TAGS, stopPlaceSearchBuilder::setWithTags);

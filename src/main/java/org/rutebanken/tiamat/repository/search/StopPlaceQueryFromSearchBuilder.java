@@ -20,6 +20,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.domain.Provider;
+import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -168,6 +169,9 @@ public class StopPlaceQueryFromSearchBuilder {
     private NearbyStopPlaceQueryBuilder stopPlaceQueryFromSearchBuilder;
 
     @Autowired
+    private MultiModalStopPlaceQueryBuilder multiModalStopPlaceQueryFromSearchBuilder;
+
+    @Autowired
     private SearchStopPlacesWithDistantQuaysBuilder searchStopPlacesWithDistantQuaysBuilder;
 
     /**
@@ -192,6 +196,10 @@ public class StopPlaceQueryFromSearchBuilder {
 
         if (stopPlaceSearch.isNearbyStopPlaces()){
             return stopPlaceQueryFromSearchBuilder.buildNearbyQuery(stopPlaceSearch);
+        }
+
+        if (stopPlaceSearch.isDetectMultiModalPoints()){
+            return multiModalStopPlaceQueryFromSearchBuilder.buildQuery(stopPlaceSearch);
         }
 
         if(stopPlaceSearch.isWithDistantQuays()){

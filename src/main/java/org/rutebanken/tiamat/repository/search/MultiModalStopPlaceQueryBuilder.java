@@ -26,13 +26,15 @@ public class MultiModalStopPlaceQueryBuilder {
     private SearchHelper searchHelper;
 
 
-    public Pair<String, Map<String, Object>> buildNearbyQuery(StopPlaceSearch stopPlaceSearch) {
+    public Pair<String, Map<String, Object>> buildQuery(StopPlaceSearch stopPlaceSearch) {
         Map<String, Object> parameters = generateParametersMap(stopPlaceSearch);
         String selectStatement = generateSelectStatement(stopPlaceSearch);
         String whereStatement = generateWhereStatement(stopPlaceSearch);
         String nearbySelectStatement = generateNearbySelectStatement(stopPlaceSearch);
         String nearbyWhereStatement = generateNearbyWhereStatement(stopPlaceSearch);
         String orderByStatement = generateOrderbyStatement();
+
+
 
         String generatedSql = selectStatement + whereStatement + nearbySelectStatement + nearbyWhereStatement + orderByStatement;
 
@@ -90,13 +92,6 @@ public class MultiModalStopPlaceQueryBuilder {
                 "            SELECT nearby.id \n" +
                 "            FROM  stop_place nearby \n");
 
-
-        if (!stopPlaceSearch.getOrganisationName().isEmpty() || !stopPlaceSearch.getQuery().isEmpty()) {
-            queryBuilder.append("         LEFT JOIN    stop_place_key_values spkv_nearby  on  nearby.id = spkv_nearby.stop_place_id   \n" +
-                    "    LEFT JOIN    value_items vi_nearby on vi_nearby.value_id = spkv_nearby.key_values_id        ");
-
-
-        }
         return queryBuilder.toString();
     }
 
@@ -114,28 +109,20 @@ public class MultiModalStopPlaceQueryBuilder {
         queryBuilder.append("   WHERE \n" +
                 "                nearby.netex_id != TMP_STOPS.netex_id  \n" +
                 "                AND nearby.parent_stop_place = false  \n" +
-                "                AND nearby.stop_place_type = TMP_STOPS.stop_place_type  \n" +
+                "                AND nearby.stop_place_type != TMP_STOPS.stop_place_type  \n" +
                 "                AND ST_Distance(TMP_STOPS.centroid, nearby.centroid) < :nearbyThreshold               \n" +
-                "                          AND (\n" +
+                "                AND (\n" +
                 "                    (                       \n" +
                 "                            (\n" +
-                "                                nearby.from_date IS NULL \n" +
-                "                                AND nearby.to_date IS NULL\n" +
+                "                                nearby.from_date IS NULL AND nearby.to_date IS NULL \n" +
                 "                            ) \n" +
                 "                            OR (\n" +
                 "                                nearby.from_date <= :pointInTime\n" +
-                "                                AND (\n" +
-                "                                    nearby.to_date IS NULL \n" +
-                "                                    OR nearby.to_date > :pointInTime\n" +
-                "                                )\n" +
-                "                            )                        \n" +
+                "                                AND ( nearby.to_date IS NULL OR nearby.to_date > :pointInTime  )  \n" +
+                "                            )        \n" +
                 "                    )               \n" +
                 "                )");
 
-        if (!stopPlaceSearch.getOrganisationName().isEmpty()) {
-            queryBuilder.append(" AND spkv_nearby.key_values_key = 'imported-id'  ");
-            queryBuilder.append(" AND  lower(vi_nearby.items) like :importedIdPattern  ");
-        }
 
         queryBuilder.append(" )");
         return queryBuilder.toString();
@@ -143,7 +130,7 @@ public class MultiModalStopPlaceQueryBuilder {
 
     private String generateWhereStatement(StopPlaceSearch stopPlaceSearch) {
         StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append("  WHERE  s.parent_stop_place = false \n" +
+        queryBuilder.append("  WHERE  s.parent_stop_place = false  AND  s.parent_site_ref IS NULL  AND s.stop_place_type = 'ONSTREET_BUS'  \n" +
                 "    AND (            \n" +
                 "                    (\n" +
                 "                        s.from_date IS NULL \n" +
@@ -178,8 +165,7 @@ public class MultiModalStopPlaceQueryBuilder {
     private String generateSelectStatement(StopPlaceSearch stopPlaceSearch) {
         StringBuilder selectBuilder = new StringBuilder();
         selectBuilder.append(" select * FROM      \n" +
-                "      \n" +
-                "(     select distinct\n" +
+                " (     select distinct\n" +
                 "        s.*\n" +
                 "                from\n" +
                 "        stop_place s");

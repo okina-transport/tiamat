@@ -112,6 +112,7 @@ class StopPlaceFetcher implements DataFetcher {
         setIfNonNull(environment, NEARBY_STOP_PLACES, stopPlaceSearchBuilder::setNearbyStopPlaces);
         setIfNonNull(environment, NEARBY_RADIUS, stopPlaceSearchBuilder::setNearbyRadius);
         setIfNonNull(environment, ORGANISATION_NAME, stopPlaceSearchBuilder::setOrganisationName);
+        setIfNonNull(environment, WITH_DISTANT_QUAYS, stopPlaceSearchBuilder::setWithDistantQuays);
         setIfNonNull(environment, DETECT_MULTI_MODAL_POINTS, stopPlaceSearchBuilder::setDetectMultiModalPoints);
         setIfNonNull(environment, HAS_PARKING, stopPlaceSearchBuilder::setHasParking);
         setIfNonNull(environment, WITH_TAGS, stopPlaceSearchBuilder::setWithTags);
@@ -257,8 +258,15 @@ class StopPlaceFetcher implements DataFetcher {
         if (environment.getArgument(ONLY_MONOMODAL_STOPPLACES) != null) {
             onlyMonomodalStopplaces = environment.getArgument(ONLY_MONOMODAL_STOPPLACES);
         }
+
+        boolean nearbyStopPlaceSearch = false;
+        if (environment.getArgument(NEARBY_STOP_PLACES) != null) {
+            nearbyStopPlaceSearch = environment.getArgument(NEARBY_STOP_PLACES);
+        }
+
+
         //By default stop should resolve parent stops
-        if (onlyMonomodalStopplaces) {
+        if (nearbyStopPlaceSearch || onlyMonomodalStopplaces) {
             return getStopPlaces(environment, stopPlaces, stopPlaces.size());
         } else {
             List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(stopPlaces, KEEP_CHILDREN);

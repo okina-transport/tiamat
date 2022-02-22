@@ -165,6 +165,15 @@ public class StopPlaceQueryFromSearchBuilder {
     @Value("${administration.space.name}")
     protected String administrationSpaceName;
 
+    @Autowired
+    private NearbyStopPlaceQueryBuilder stopPlaceQueryFromSearchBuilder;
+
+    @Autowired
+    private MultiModalStopPlaceQueryBuilder multiModalStopPlaceQueryFromSearchBuilder;
+
+    @Autowired
+    private SearchStopPlacesWithDistantQuaysBuilder searchStopPlacesWithDistantQuaysBuilder;
+
     /**
      * Configure some common words to be skipped during stop place search by name.
      */
@@ -184,6 +193,19 @@ public class StopPlaceQueryFromSearchBuilder {
         this.exportParamsAndStopPlaceSearchValidator.validateExportParams(exportParams);
 
         StopPlaceSearch stopPlaceSearch = exportParams.getStopPlaceSearch();
+
+        if (stopPlaceSearch.isNearbyStopPlaces()){
+            return stopPlaceQueryFromSearchBuilder.buildNearbyQuery(stopPlaceSearch);
+        }
+
+        if (stopPlaceSearch.isDetectMultiModalPoints()){
+            return multiModalStopPlaceQueryFromSearchBuilder.buildQuery(stopPlaceSearch);
+        }
+
+        if(stopPlaceSearch.isWithDistantQuays()){
+            return searchStopPlacesWithDistantQuaysBuilder.buildQuery(stopPlaceSearch);
+        }
+
 
         final ExportParams.VersionValidity versionValidity;
         if(stopPlaceSearch.getPointInTime() == null

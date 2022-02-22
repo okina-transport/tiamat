@@ -326,9 +326,11 @@ public class GraphQLNames {
     public static final String ORGANISATION_NAME = "organisationName";
     public static final String ORGANISATION_NAME_DESCRIPTION = "argument to filter the nearby stop places by the organisation name";
 
-
     public static final String DETECT_MULTI_MODAL_POINTS = "detectMultiModalPoints";
     public static final String DETECT_MULTI_MODAL_POINTS_DESCRIPTION = "Set to true only bus stations that have another different type of stop place arround";
+
+    public static final String WITH_DISTANT_QUAYS = "withDistantQuays";
+    public static final String WITH_DISTANT_QUAYS_DESCRIPTION = "retrieve all stop places with distant quays, at least more than 100m";
 
     public static final String HAS_PARKING = "hasParking";
     public static final String ONLY_MONOMODAL_STOPPLACES = "onlyMonomodalStopPlaces";

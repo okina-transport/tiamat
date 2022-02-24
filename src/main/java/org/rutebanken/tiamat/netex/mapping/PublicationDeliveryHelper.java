@@ -62,6 +62,30 @@ public class PublicationDeliveryHelper {
         return hasStops(netexSiteFrame) ? netexSiteFrame.getStopPlaces().getStopPlace().size() : 0;
     }
 
+    public GeneralFrame findGeneralFrame(PublicationDeliveryStructure incomingPublicationDelivery){
+
+        List<JAXBElement<? extends Common_VersionFrameStructure>> compositeFrameOrCommonFrame = incomingPublicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame();
+
+        Optional<GeneralFrame> optionalGeneralFrame = compositeFrameOrCommonFrame.stream()
+                .filter(element -> element.getValue() instanceof GeneralFrame)
+                .map(element -> (GeneralFrame)element.getValue())
+                .findFirst();
+
+        if(optionalGeneralFrame.isPresent()){
+            return optionalGeneralFrame.get();
+        }
+
+        return compositeFrameOrCommonFrame
+                .stream()
+                .filter(element -> element.getValue() instanceof CompositeFrame)
+                .map(element -> (CompositeFrame) element.getValue())
+                .map(compositeFrame -> compositeFrame.getFrames())
+                .flatMap(frames -> frames.getCommonFrame().stream())
+                .filter(jaxbElement -> jaxbElement.getValue() instanceof GeneralFrame)
+                .map(jaxbElement -> (GeneralFrame) jaxbElement.getValue())
+                .findAny().get();
+    }
+
     public SiteFrame findSiteFrame(PublicationDeliveryStructure incomingPublicationDelivery) {
 
         List<JAXBElement<? extends Common_VersionFrameStructure>> compositeFrameOrCommonFrame = incomingPublicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame();

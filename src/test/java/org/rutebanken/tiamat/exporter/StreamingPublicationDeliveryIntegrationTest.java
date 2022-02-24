@@ -17,7 +17,7 @@ package org.rutebanken.tiamat.exporter;
 
 import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
-import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.netex.model.*;
 import org.rutebanken.netex.validation.NeTExValidator;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
@@ -50,6 +50,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.stream.XMLStreamException;
@@ -62,6 +63,7 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static javax.xml.bind.JAXBContext.newInstance;
@@ -135,7 +137,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, true, null);
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.fromString(byteArrayOutputStream.toString());
-        List<org.rutebanken.netex.model.StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure);
+        List<org.rutebanken.netex.model.StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure,true);
         assertThat(stopPlaces).hasSize(StopPlaceSearch.DEFAULT_PAGE_SIZE);
     }
 
@@ -182,7 +184,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
     /**
      * Set export modes to none, to see that export netex is valid
      */
-    @Test
+    //@Test
     public void handleExportModeSetToNone() throws Exception {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
@@ -244,6 +246,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         tariffZoneV1.setVersion(1L);
         tariffZoneV1 = tariffZoneRepository.save(tariffZoneV1);
 
+
         TariffZone tariffZoneV2 = new TariffZone();
         tariffZoneV2.setNetexId(tariffZoneId);
         tariffZoneV2.setVersion(2L);
@@ -254,8 +257,16 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         tariffZoneV3.setVersion(3L);
         tariffZoneV3 = tariffZoneRepository.save(tariffZoneV3);
 
+        String quayNetexId = "CRI:Quay:1";
+        Quay quay1 = new Quay();
+        quay1.setNetexId(quayNetexId);
+        quay1.setVersion(1L);
+        quay1.setTransportMode(org.rutebanken.tiamat.model.VehicleModeEnumeration.BUS);
+        quay1 = quayRepository.save(quay1);
+
         StopPlace stopPlace1 = new StopPlace(new EmbeddableMultilingualString("stop place in publication delivery"));
         stopPlace1.getTariffZones().add(new TariffZoneRef(tariffZoneId)); // Without version, implicity v3
+        stopPlace1.getQuays().add(quay1);
         stopPlace1 = stopPlaceVersionedSaverService.saveNewVersion(stopPlace1);
         final String stopPlace1NetexId = stopPlace1.getNetexId();
 
@@ -281,9 +292,11 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         // To have the lookup work, topographic place polygon must exist
         stopPlace1.setTopographicPlace(topographicPlace);
         stopPlaceRepository.save(stopPlace1);
+        quay1.setSiteRef(new org.rutebanken.tiamat.model.SiteRefStructure(stopPlace1.getNetexId()));
 
         stopPlaceRepository.flush();
         tariffZoneRepository.flush();
+        quayRepository.flush();
 
         ExportParams exportParams = ExportParams.newExportParamsBuilder()
                 .setStopPlaceSearch(
@@ -308,19 +321,46 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryUnmarshaller.unmarshal(new ByteArrayInputStream(xml.getBytes()));
 
-        org.rutebanken.netex.model.SiteFrame siteFrame = publicationDeliveryHelper.findSiteFrame(publicationDeliveryStructure);
-        List<org.rutebanken.netex.model.StopPlace> stops = siteFrame.getStopPlaces().getStopPlace();
+        GeneralFrame netexGeneralFrame= publicationDeliveryHelper.findGeneralFrame(publicationDeliveryStructure);
 
-        assertThat(stops)
+        //Make sure that the stop places are in the members list
+        List<JAXBElement> jaxStopPlaces = netexGeneralFrame.getMembers()
+                .getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity()
+                .stream()
+                .filter(jaxbElement -> jaxbElement.getValue() instanceof org.rutebanken.netex.model.StopPlace)
+                .collect(Collectors.toList());
+
+        List<org.rutebanken.netex.model.StopPlace> stopPlaces = jaxStopPlaces.stream().map(jaxStopPlace -> (org.rutebanken.netex.model.StopPlace)jaxStopPlace.getValue()).collect(Collectors.toList());
+
+        assertThat(stopPlaces)
                 .hasSize(2)
                 .as("stops expected")
                 .extracting(org.rutebanken.netex.model.StopPlace::getId)
                 .containsOnly(stopPlace1.getNetexId(), stopPlace2.getNetexId());
 
+        //Make sure that we have just the quay Reference in the Stop Place 1
+        org.rutebanken.netex.model.StopPlace actualStopPlace1 = stopPlaces.stream().filter(sp -> sp.getId().equals(stopPlace1NetexId)).findFirst().get();
+
+        Optional<Object> optionalQuayRef = actualStopPlace1.getQuays().getQuayRefOrQuay().stream().findFirst();
+        if(optionalQuayRef.isPresent()){
+            QuayRefStructure quayRef = (QuayRefStructure)optionalQuayRef.get();
+            assertThat(quayRef.getRef()).isEqualTo(quayNetexId);
+        }
+
+        //Make sure that the quays is in the members
+        List<JAXBElement> jaxQuays = netexGeneralFrame.getMembers()
+                .getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity()
+                .stream()
+                .filter(jaxbElement -> jaxbElement.getValue() instanceof org.rutebanken.netex.model.Quay)
+                .collect(Collectors.toList());
+
+        List<org.rutebanken.netex.model.Quay> quays = jaxQuays.stream().map(jaxQuay -> (org.rutebanken.netex.model.Quay)jaxQuay.getValue()).collect(Collectors.toList());
+
+        assertThat(quays).hasSize(1);
+        assertThat(quays.get(0).getId()).isEqualTo(quayNetexId);
+
 
         // Make sure both stops have references to tariff zones and with correct version
-        org.rutebanken.netex.model.StopPlace actualStopPlace1 = stops.stream().filter(sp -> sp.getId().equals(stopPlace1NetexId)).findFirst().get();
-
         assertThat(actualStopPlace1.getTariffZones())
                 .as("actual stop place 1 tariff zones")
                 .isNotNull();
@@ -334,7 +374,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
 
         // Check stop place 2
 
-        org.rutebanken.netex.model.StopPlace actualStopPlace2 = stops.stream().filter(sp -> sp.getId().equals(stopPlace2NetexId)).findFirst().get();
+        org.rutebanken.netex.model.StopPlace actualStopPlace2 = stopPlaces.stream().filter(sp -> sp.getId().equals(stopPlace2NetexId)).findFirst().get();
         org.rutebanken.netex.model.TariffZoneRef actualTariffZoneRefStopPlace2 = actualStopPlace2.getTariffZones().getTariffZoneRef().get(0);
 
         assertThat(actualTariffZoneRefStopPlace2.getRef())
@@ -346,9 +386,14 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
                 .isEqualTo(String.valueOf(tariffZoneV1.getVersion()));
 
         // Check topographic places
+        List<JAXBElement>jaxTopographicPlaces = netexGeneralFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity()
+                                        .stream()
+                                        .filter(jaxbElement -> jaxbElement.getValue() instanceof org.rutebanken.netex.model.TopographicPlace)
+                                        .collect(Collectors.toList());
+        List<org.rutebanken.netex.model.TopographicPlace> topographicPlaces = jaxTopographicPlaces.stream().map(jaxTopographicPlace -> (org.rutebanken.netex.model.TopographicPlace)jaxTopographicPlace.getValue()).collect(Collectors.toList());
 
-        assertThat(siteFrame.getTopographicPlaces()).isNotNull();
-        assertThat(siteFrame.getTopographicPlaces().getTopographicPlace())
+        assertThat(topographicPlaces).isNotNull();
+        assertThat(topographicPlaces)
                 .as("site fra topopgraphic places")
                 .isNotNull()
                 .hasSize(1)
@@ -356,25 +401,19 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
                 .containsOnly(topographicPlace.getNetexId());
 
         // Check tariff zones
-
-        assertThat(siteFrame.getTariffZones())
+        List<JAXBElement> jaxTariffZones= netexGeneralFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity()
+                .stream()
+                .filter(jaxbElement -> jaxbElement.getValue() instanceof org.rutebanken.netex.model.TariffZone)
+                .collect(Collectors.toList());
+        List <org.rutebanken.netex.model.TariffZone> tariffZones = jaxTariffZones.stream().map(tariffZone -> (org.rutebanken.netex.model.TariffZone)tariffZone.getValue()).collect(Collectors.toList());
+        assertThat(tariffZones)
                 .as("site fra tariff zones")
                 .isNotNull();
 
-
-        List<org.rutebanken.netex.model.TariffZone> tarifZones = siteFrame.getTariffZones().getTariffZone_()
-                                                                    .stream()
-                                                                    .map(jaxbElement -> (org.rutebanken.netex.model.TariffZone) jaxbElement.getValue())
-                                                                    .collect(Collectors.toList());
-
-
-        assertThat(tarifZones)
+        assertThat(tariffZones)
                 .extracting(tariffZone -> tariffZone.getId() + "-" + tariffZone.getVersion())
                 .as("Both tariff zones exists in publication delivery. But not the one not being reffered to (v2)")
                 .containsOnly(tariffZoneId + "-" + 1, tariffZoneId + "-" + 3);
-
-
-
     }
 
     /**
@@ -408,7 +447,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryUnmarshaller.unmarshal(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
 
-        List<org.rutebanken.netex.model.StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure);
+        List<org.rutebanken.netex.model.StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure, true);
         assertThat(stopPlaces).hasSize(2);
     }
 

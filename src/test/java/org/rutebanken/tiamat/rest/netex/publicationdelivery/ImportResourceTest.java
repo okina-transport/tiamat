@@ -126,7 +126,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery2);
 
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).as("Expecting one stop place in return, as there is no need to return duplicates").hasSize(1);
     }
@@ -186,7 +186,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery2);
 
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).as("Expecting one stop place in return, as stops imported has onstreet bus and bus station as type").hasSize(1);
         publicationDeliveryTestHelper.hasOriginalId("RUT:StopPlace:123123", result.get(0));
@@ -236,7 +236,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
         importParams.allowOnlyStopTypes = Sets.newHashSet(org.rutebanken.tiamat.model.StopTypeEnumeration.METRO_STATION);
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace, other);
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery, importParams);
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStopPlaceType().equals(StopTypeEnumeration.METRO_STATION));
@@ -267,7 +267,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
 
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace);
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery, importParams);
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStopPlaceType()).isEqualTo(StopTypeEnumeration.BUS_STATION);
@@ -327,7 +327,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery2, importParams);
 
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).as("Expecting one stop place in return, as stops imported has onstreet bus and bus station as type").hasSize(1);
         publicationDeliveryTestHelper.hasOriginalId(stopPlaceToBeMatched.getId(), result.get(0));
@@ -414,9 +414,9 @@ public class ImportResourceTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure response3 = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery3);
 
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
-        List<StopPlace> result2 = publicationDeliveryTestHelper.extractStopPlaces(response2);
-        List<StopPlace> result3 = publicationDeliveryTestHelper.extractStopPlaces(response3);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
+        List<StopPlace> result2 = publicationDeliveryTestHelper.extractStopPlaces(response2, false);
+        List<StopPlace> result3 = publicationDeliveryTestHelper.extractStopPlaces(response3, false );
 
         assertThat(result).as("Expecting one stop place in return, as there is no need to return duplicates").hasSize(1);
         assertThat(result2).as("Expecting one stop place in return, as there is no need to return duplicates").hasSize(1);
@@ -486,7 +486,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
 
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).as("Expecting one stop place in return, as there is no need to return the same matching stop place twice").hasSize(1);
         String importedIds = result.get(0).getKeyList().getKeyValue()
@@ -1297,7 +1297,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace1);
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
 
-        List<StopPlace> changedStopPlaces = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> changedStopPlaces = publicationDeliveryTestHelper.extractStopPlaces(response, false);
         Assert.assertEquals(1, changedStopPlaces.size());
         StopPlace stopPlace = changedStopPlaces.get(0);
 

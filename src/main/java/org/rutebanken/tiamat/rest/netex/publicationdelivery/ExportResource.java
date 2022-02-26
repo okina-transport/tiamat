@@ -43,6 +43,7 @@ import javax.ws.rs.core.*;
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -140,6 +141,23 @@ public class ExportResource {
         List<StopPlaceView> stopPlaceViews = stopPlaces.stream()
                                                     .map(StopPlaceView::new)
                                                     .collect(Collectors.toList());
+
+        return Response.ok().entity(stopPlaceViews).build();
+
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("getStopPlaceInfo")
+    @Transactional
+    public Response getStopPlaceInfo(@QueryParam("stopPlaceNetexId") String stopPlaceNetexId){
+
+        List<StopPlace> stopPlaces = stopPlaceRepository.findAll(Arrays.asList(stopPlaceNetexId));
+
+
+        List<StopPlaceView> stopPlaceViews = stopPlaces.stream()
+                .map(StopPlaceView::new)
+                .collect(Collectors.toList());
 
         return Response.ok().entity(stopPlaceViews).build();
 

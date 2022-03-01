@@ -141,9 +141,7 @@ public class StreamingPublicationDelivery {
 
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime) throws JAXBException, IOException, SAXException {
 
-        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("LRA", localDateTime);
-
-        //org.rutebanken.tiamat.model.SiteFrame siteFrame = tiamatSiteFrameExporter.createTiamatSiteFrame("Site frame" + exportParams);
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
         AtomicInteger mappedParkingCount = new AtomicInteger();
@@ -167,7 +165,6 @@ public class StreamingPublicationDelivery {
         logger.info("Mapping site frame to netex model");
 
         GeneralFrame netexGeneralFrame = netexMapper.mapToNetexModel(generalFrame);
-        //SiteFrame netexSiteFrame = netexMapper.mapToNetexModel(siteFrame);
 
         //List that will contain all the members in the General Frame
         List <JAXBElement<? extends EntityStructure>> listMembers = new ArrayList<>();
@@ -187,10 +184,6 @@ public class StreamingPublicationDelivery {
         netexGeneralFrame.withMembers(general_VersionFrameStructure);
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame,"idSite",LocalDateTime.now());
-
-        //JAXBElement<SiteFrame> jaxSiteFrame = netexObjectFactory.createSiteFrame(netexSiteFrame);
-
-        //publicationDeliveryStructure.getDataObjects().withCompositeFrameOrCommonFrame(jaxSiteFrame);
 
         Marshaller marshaller = createMarshaller();
 

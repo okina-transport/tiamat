@@ -28,6 +28,7 @@ import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.rest.graphql.helpers.CleanupHelper;
 import org.rutebanken.tiamat.rest.graphql.mappers.StopPlaceMapper;
 import org.rutebanken.tiamat.service.Preconditions;
+import org.rutebanken.tiamat.service.Renamer;
 import org.rutebanken.tiamat.service.stopplace.StopPlaceRenamer;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
@@ -70,16 +71,10 @@ class StopPlaceUpdater implements DataFetcher {
     private MutateLock mutateLock;
 
     @Autowired
-    StopPlaceRenamer stopPlaceRenamer;
-
-    @Autowired
     private VersionCreator versionCreator;
 
     @Autowired
-    private RoleAssignmentExtractor roleAssignmentExtractor;
-
-    @Autowired
-    private CacheProviderRepository providerRepository;
+    private Renamer renamer;
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
@@ -165,7 +160,7 @@ class StopPlaceUpdater implements DataFetcher {
                         throw new IllegalArgumentException("Updated stop place must have name set: " + updatedStopPlace);
                     }
 
-                    verifyCorrectStopPlaceName(updatedStopPlace.getName().getValue(), stopPlaceRenamer.renameIfNeeded(updatedStopPlace.getName().getValue()));
+                    verifyCorrectStopPlaceName(updatedStopPlace.getName().getValue(), renamer.renameIfNeeded(updatedStopPlace.getName().getValue()));
 
                     updatedStopPlace = stopPlaceVersionedSaverService.saveNewVersion(existingVersion, updatedStopPlace, childStopsUpdated);
 

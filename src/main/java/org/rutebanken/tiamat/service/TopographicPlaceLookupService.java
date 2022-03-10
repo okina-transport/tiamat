@@ -92,7 +92,7 @@ public class TopographicPlaceLookupService {
 
             return true;
         } else {
-            logger.warn("Could not find topographic places from site's point: {}", siteVersionStructure);
+            logger.debug("Could not find topographic places from site's point: {}", siteVersionStructure);
             return false;
         }
     }

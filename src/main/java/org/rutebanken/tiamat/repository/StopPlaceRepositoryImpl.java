@@ -385,9 +385,16 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         sqlQuery.append(" AND (");
         Iterator<String> valuesIterator = values.iterator();
         for (int parameterCounter = 0; parameterCounter < values.size(); parameterCounter++) {
-            sqlQuery.append(" v.items LIKE :value").append(parameterCounter);
-            parameters.add(parameterPrefix + parameterCounter);
-            parametervalues.add((exactMatch ? "":"%") + valuesIterator.next());
+            if(exactMatch){
+                sqlQuery.append(" v.items = :value").append(parameterCounter);
+                parameters.add(parameterPrefix + parameterCounter);
+                parametervalues.add(valuesIterator.next());
+            }
+            else{
+                sqlQuery.append(" v.items LIKE :value").append(parameterCounter);
+                parameters.add(parameterPrefix + parameterCounter);
+                parametervalues.add("%" + valuesIterator.next());
+            }
             if (parameterCounter + 1 < values.size()) {
                 sqlQuery.append(" OR ");
             }
@@ -533,7 +540,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                              "  INNER JOIN quay_key_values qkv " +
                              "    ON q.id = qkv.quay_id AND qkv.key_values_key in (:originalIdKey) " +
                              "  INNER JOIN value_items vi " +
-                             "    ON vi.value_id = qkv.key_values_id AND vi.items LIKE :value " +
+                             "    ON vi.value_id = qkv.key_values_id AND vi.items = :value " +
                              SQL_LEFT_JOIN_PARENT_STOP +
                              " WHERE " +
                 SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME;

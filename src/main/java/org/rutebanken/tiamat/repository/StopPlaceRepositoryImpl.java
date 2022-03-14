@@ -719,6 +719,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     public Set<Long> addParentIds(Set<Long> stopPlaceDbIds) {
 
         if (stopPlaceDbIds == null || stopPlaceDbIds.size() == 0){
+            logger.info("No results where found");
             return stopPlaceDbIds;
         }
 

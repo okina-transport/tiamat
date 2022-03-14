@@ -718,7 +718,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     @Override
     public Set<Long> addParentIds(Set<Long> stopPlaceDbIds) {
 
-
+        if (stopPlaceDbIds == null || stopPlaceDbIds.size() == 0){
+            return stopPlaceDbIds;
+        }
 
         Set<String> stopPlaceStringDbIds = stopPlaceDbIds.stream().map(lvalue -> String.valueOf(lvalue)).collect(Collectors.toSet());
         String joinedStopPlaceDbIds = String.join(",", stopPlaceStringDbIds);

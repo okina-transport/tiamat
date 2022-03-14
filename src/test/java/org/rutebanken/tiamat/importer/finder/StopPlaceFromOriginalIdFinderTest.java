@@ -54,7 +54,7 @@ public class StopPlaceFromOriginalIdFinderTest {
 
         when(stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlace.getNetexId())).thenReturn(stopPlace);
         when(stopPlaceRepository
-                .findByKeyValues(anyString(), anySet()))
+                .findByKeyValues(anyString(), anySet(), anyBoolean()))
                 .thenAnswer(invocationOnMock -> !Collections.disjoint((Collection<?>) invocationOnMock.getArguments()[1], stopPlace.getOriginalIds()) ? Sets.newHashSet(stopPlace.getNetexId()) : Sets.newHashSet());
 
         List<StopPlace> actual = stopPlaceFromOriginalIdFinder.find(stopPlace);

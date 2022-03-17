@@ -22,8 +22,10 @@ import org.rutebanken.tiamat.model.ModificationEnumeration;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.lock.MutateLock;
+import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.CacheProviderRepository;
+import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.rest.graphql.helpers.CleanupHelper;
 import org.rutebanken.tiamat.rest.graphql.mappers.StopPlaceMapper;
@@ -37,11 +39,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CHILDREN;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CREATE_MULTI_MODAL_STOPPLACE;
@@ -74,6 +73,9 @@ class StopPlaceUpdater implements DataFetcher {
 
     @Autowired
     private VersionCreator versionCreator;
+
+    @Autowired
+    private QuayRepository quayRepository;
 
     @Autowired
     private RoleAssignmentExtractor roleAssignmentExtractor;
@@ -167,6 +169,30 @@ class StopPlaceUpdater implements DataFetcher {
 
                     verifyCorrectStopPlaceName(updatedStopPlace.getName().getValue(), stopPlaceRenamer.renameIfNeeded(updatedStopPlace.getName().getValue()));
 
+                    //On vérifie que l'imported id n'existe pas déjà
+                    for (String originalId : updatedStopPlace.getOriginalIds()) {
+                        List<String> stopPlacesFound = stopPlaceRepository.searchByKeyValue("imported-id", originalId);
+                        List<String> quaysfound = quayRepository.searchByKeyValue("imported-id", originalId);
+                        if ((existingVersion != null && !existingVersion.getOriginalIds().contains(originalId)) && ((stopPlacesFound != null && !stopPlacesFound.isEmpty()) || (quaysfound != null && !quaysfound.isEmpty()))) {
+                            throw new IllegalArgumentException("Updated stopPlace imported id already exists: " + originalId);
+                        }
+                    }
+
+                    List<String> existingImportedIds = new ArrayList<>();
+                    if (existingVersion != null && existingVersion.getQuays() != null) {
+                        existingVersion.getQuays().stream().forEach(quay -> {
+                            existingImportedIds.addAll(quay.getOriginalIds());
+                        });
+                    }
+                    for (Quay quay : updatedStopPlace.getQuays()) {
+                        for (String qOriginalId : quay.getOriginalIds()) {
+                            List<String> stopPlacesFound = stopPlaceRepository.searchByKeyValue("imported-id", qOriginalId);
+                            List<String> quaysfound = quayRepository.searchByKeyValue("imported-id", qOriginalId);
+                            if (!existingImportedIds.contains(qOriginalId) && ((quaysfound != null && !quaysfound.isEmpty()) || (stopPlacesFound != null && !stopPlacesFound.isEmpty()))) {
+                                throw new IllegalArgumentException("Updated quay imported id already exists: " + qOriginalId);                            }
+                        }
+                    }
+
                     updatedStopPlace = stopPlaceVersionedSaverService.saveNewVersion(existingVersion, updatedStopPlace, childStopsUpdated);
 
                     return updatedStopPlace;
@@ -241,5 +267,4 @@ class StopPlaceUpdater implements DataFetcher {
             throw new IllegalArgumentException("For respect the Modalis recommendations, the correct stop place name is : " + correctName);
         }
     }
-
 }

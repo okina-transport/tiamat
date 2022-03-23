@@ -117,9 +117,9 @@ public class ParkingsCSVHelper {
                 parking.setAllAreasWheelchairAccessible(false);
             }
 
-            if(!parkingDto.getNb_pmr().isEmpty() && Integer.valueOf(parkingDto.getNb_pmr())>1){
-                addAccessibilityAssessment(parking);
-            }
+//            if(!parkingDto.getNb_pmr().isEmpty() && Integer.valueOf(parkingDto.getNb_pmr())>1){
+//                addAccessibilityAssessment(parking);
+//            }
 
 
             if(!parkingDto.getNb_voitures_electriques().isEmpty() && Integer.valueOf(parkingDto.getNb_voitures_electriques())>=1){

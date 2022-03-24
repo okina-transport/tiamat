@@ -103,6 +103,8 @@
         <groovy-all.version>2.5.4</groovy-all.version>
         <jaxb-version>2.3.0.1</jaxb-version>
         <swagger-jersey2.version>1.5.20</swagger-jersey2.version>
+        <jersey-media-multipart.version>2.35</jersey-media-multipart.version>
+
 
         <!-- NB: Concious choice of using snapshot version. This is to keep in
             sync, and fail fast if incompatibilities -->
@@ -374,6 +376,11 @@
                     <artifactId>spring-boot-starter-tomcat</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-multipart</artifactId>
         </dependency>
 
         <dependency>

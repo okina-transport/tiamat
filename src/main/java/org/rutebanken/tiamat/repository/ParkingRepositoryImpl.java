@@ -27,10 +27,16 @@ import org.hibernate.Session;
 import org.rutebanken.tiamat.exporter.params.ParkingSearch;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
+import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.ParkingQueryFromSearchBuilder;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
 
@@ -59,6 +65,9 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
 
     @Autowired
     private ParkingQueryFromSearchBuilder parkingQueryFromSearchBuilder;
+
+    private static final Logger logger = LoggerFactory.getLogger(StopPlaceRepositoryImpl.class);
+
 
     /**
      * Find stop place's netex ID by key value
@@ -177,23 +186,37 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     }
 
     @Override
-    public String findNearbyParking(Envelope envelope, String name, ParkingTypeEnumeration parkingTypeEnumeration) {
+    public Page<Parking> findNearbyParking(Envelope envelope, String name, ParkingTypeEnumeration parkingTypeEnumeration, String ignoreParkingId, Pageable pageable) {
         Geometry geometryFilter = geometryFactory.toGeometry(envelope);
 
-        TypedQuery<String> query = entityManager
-                .createQuery("SELECT p.netexId FROM Parking p " +
-                        "WHERE within(p.centroid, :filter) = true " +
-                        "AND p.version = (SELECT MAX(pv.version) FROM Parking pv WHERE pv.netexId = p.netexId) " +
-                        "AND p.name.value = :name " +
-                        (parkingTypeEnumeration != null ? "AND p.parkingType = :parkingType":""),
-                        String.class);
+        String queryString = "SELECT * FROM parking p " +
+                        "WHERE ST_within(p.centroid, :filter) = true " +
+                        "AND p.parent_site_ref IS NULL " +
+                        "AND p.version = (SELECT MAX(pv.version) FROM parking pv WHERE pv.netex_id = p.netex_id) " +
+                        (name != null ? "AND p.name_value = :name":"") +
+                        (parkingTypeEnumeration != null ? "AND p.parking_type = :parkingType":"") +
+                        (ignoreParkingId != null ? "AND (p.netex_id != :ignoreParkingId)":"");
 
+
+        logger.debug("Finding parking within bounding box with query: {}", queryString);
+
+        final Query query = entityManager.createNativeQuery(queryString, Parking.class);
         query.setParameter("filter", geometryFilter);
-        query.setParameter("name", name);
+
+        if(name != null){
+            query.setParameter("name", name);
+        }
         if (parkingTypeEnumeration != null) {
             query.setParameter("parkingType", parkingTypeEnumeration);
         }
-        return getOneOrNull(query);
+        if(ignoreParkingId != null) {
+            query.setParameter("ignoreParkingId", ignoreParkingId);
+        }
+
+        query.setFirstResult(Math.toIntExact(pageable.getOffset()));
+        query.setMaxResults(pageable.getPageSize());
+        List<Parking> parkings = query.getResultList();
+        return new PageImpl<>(parkings, pageable, parkings.size());
     }
 
 

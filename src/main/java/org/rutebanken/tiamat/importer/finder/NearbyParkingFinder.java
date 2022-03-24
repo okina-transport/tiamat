@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -75,9 +76,9 @@ public class NearbyParkingFinder implements ParkingFinder {
             Optional<String> parkingNetexId = nearbyParkingCache.get(createKey(parking), () -> {
                 Envelope boundingBox = createBoundingBox(parking.getCentroid());
 
-                String matchingParkingId = parkingRepository.findNearbyParking(boundingBox, parking.getName().getValue(), parking.getParkingType());
+                Page<Parking> matchingParking = parkingRepository.findNearbyParking(boundingBox, parking.getName().getValue(), parking.getParkingType(), null, null);
 
-                return Optional.ofNullable(matchingParkingId);
+                return Optional.ofNullable(matchingParking.get().findFirst().get().getNetexId());
             });
             if(parkingNetexId.isPresent()) {
                 return parkingRepository.findFirstByNetexIdOrderByVersionDesc(parkingNetexId.get());

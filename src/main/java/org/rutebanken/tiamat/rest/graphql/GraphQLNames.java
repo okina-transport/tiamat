@@ -174,6 +174,8 @@ public class GraphQLNames {
     public static final String INPUT_TYPE_GEO_JSON = OUTPUT_TYPE_GEO_JSON + INPUT_TYPE_POSTFIX;
 
     public static final String OUTPUT_TYPE_PARKING = "Parking";
+    public static final String OUTPUT_TYPE_PARKING_INTERFACE = OUTPUT_TYPE_PARKING + "Interface";
+
     public static final String INPUT_TYPE_PARKING = OUTPUT_TYPE_PARKING + INPUT_TYPE_POSTFIX;
 
     public static final String OUTPUT_TYPE_PARKING_PROPERTIES = "ParkingProperties";
@@ -345,6 +347,7 @@ public class GraphQLNames {
     public static final String TYPE = "type";
     public static final String COORDINATES = "coordinates";
     public static final String IGNORE_STOPPLACE_ID = "ignoreStopPlaceId";
+    public static final String IGNORE_PARKING_ID = "ignoreParkingId";
     public static final String QUAYS = "quays";
     public static final String COMPASS_BEARING = "compassBearing";
     public static final String VALID_BETWEEN = "validBetween";
@@ -411,11 +414,12 @@ public class GraphQLNames {
 
     public static final String FIND_STOPPLACE = "stopPlace";
 
-    public static final String STOPPLACE_NAME_WITH_RECOMMENDATIONS = "stopPlaceNameRecommendations";
+    public static final String NAME_WITH_RECOMMENDATIONS = "nameRecommendations";
 
     /** Check if authorized to edit entity */
     public static final String CHECK_AUTHORIZED = "checkAuthorized";
     public static final String FIND_STOPPLACE_BY_BBOX = "stopPlaceBBox";
+    public static final String FIND_PARKING_BY_BBOX = "parkingBBox";
     public static final String FIND_TOPOGRAPHIC_PLACE = "topographicPlace";
     public static final String FIND_PATH_LINK = "pathLink";
     public static final String FIND_PARKING = "parking";

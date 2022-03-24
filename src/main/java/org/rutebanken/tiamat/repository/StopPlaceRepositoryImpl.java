@@ -171,7 +171,6 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                                         + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME;
             if(ignoreStopPlaceId != null) {
                 queryString += "AND " + SQL_IGNORE_STOP_PLACE_ID;
-
             }
         } else {
             // If no point in time is set, use max version to only get one version per stop place

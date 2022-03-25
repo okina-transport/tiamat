@@ -217,7 +217,7 @@ public class StreamingPublicationDelivery {
         prepareTopographicPlaces(exportParams, stopPlacePrimaryIdsWithParents, mappedTopographicPlacesCount, netexSiteFrame, entitiesEvictor);
         prepareTariffZones(exportParams, stopPlacePrimaryIds, mappedTariffZonesCount, netexSiteFrame, entitiesEvictor);
         prepareStopPlaces(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexSiteFrame, entitiesEvictor);
-        prepareParkings(exportParams, stopPlacePrimaryIds, mappedParkingCount, netexSiteFrame, entitiesEvictor);
+        prepareParkings(stopPlacePrimaryIds, mappedParkingCount, netexSiteFrame, entitiesEvictor);
         prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, netexSiteFrame, entitiesEvictor);
 
 
@@ -576,19 +576,26 @@ public class StreamingPublicationDelivery {
 
     }
 
-    private void prepareParkings(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedParkingCount, SiteFrame netexSiteFrame, EntitiesEvictor evicter) {
+    private void prepareParkings(Set<Long> stopPlacePrimaryIds, AtomicInteger mappedParkingCount, SiteFrame netexSiteFrame, EntitiesEvictor evicter) {
 
         // ExportParams could be used for parkingExportMode.
 
-        int parkingsCount = parkingRepository.countResult(stopPlacePrimaryIds);
-        if (parkingsCount > 0) {
+        int allParkingsCount = 0;
+        allParkingsCount += parkingRepository.countResultInStopPlaces(stopPlacePrimaryIds);
+        allParkingsCount += parkingRepository.countResult();
+        if (allParkingsCount > 0) {
             // Only set parkings if they will exist during marshalling.
-            logger.info("Parking count is {}, will create parking in publication delivery", parkingsCount);
+            logger.info("Parking count is {}, will create parking in publication delivery", allParkingsCount);
             ParkingsInFrame_RelStructure parkingsInFrame_relStructure = new ParkingsInFrame_RelStructure();
-            List<Parking> parkings = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, parkingRepository.scrollParkings(stopPlacePrimaryIds),
-                    Parking.class, mappedParkingCount, evicter));
+            List<Parking> allParkings = new ArrayList<>();
 
-            setField(ParkingsInFrame_RelStructure.class, "parking", parkingsInFrame_relStructure, parkings);
+            allParkings.addAll(new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, parkingRepository.scrollParkings(stopPlacePrimaryIds),
+                    Parking.class, mappedParkingCount, evicter)));
+
+            allParkings.addAll(new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, parkingRepository.scrollParkings(),
+                    Parking.class, mappedParkingCount, evicter)));
+
+            setField(ParkingsInFrame_RelStructure.class, "parking", parkingsInFrame_relStructure, allParkings);
             netexSiteFrame.setParkings(parkingsInFrame_relStructure);
         } else {
             logger.info("No parkings to export based on stop places");

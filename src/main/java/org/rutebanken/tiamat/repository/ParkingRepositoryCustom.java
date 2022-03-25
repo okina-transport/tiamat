@@ -19,7 +19,6 @@ import org.locationtech.jts.geom.Envelope;
 import org.rutebanken.tiamat.exporter.params.ParkingSearch;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
-import org.rutebanken.tiamat.model.StopPlace;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -35,9 +34,13 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
 
     int countResult(ParkingSearch parkingSearch);
 
-    int countResult(Set<Long> stopPlaceIds);
+    int countResult();
+
+    int countResultInStopPlaces(Set<Long> stopPlaceIds);
 
     Page<Parking> findNearbyParking(Envelope boundingBox, String name, ParkingTypeEnumeration parkingType, String ignoreParkingId, Pageable pageable);
+
+    String findNearbyParking(Envelope boundingBox, String name, ParkingTypeEnumeration parkingType);
 
     Iterator<Parking> scrollParkings();
 

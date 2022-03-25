@@ -20,14 +20,12 @@ import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.SQLQuery;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.rutebanken.tiamat.exporter.params.ParkingSearch;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
-import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.ParkingQueryFromSearchBuilder;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
@@ -107,9 +105,9 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
 
     @Override
     public Iterator<Parking> scrollParkings() {
-
-        return scrollParkings();
+        return scrollParkings(getParkings());
     }
+
 
     @Override
     public Iterator<Parking> scrollParkings(ParkingSearch parkingSearch) {
@@ -127,7 +125,13 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     }
 
     @Override
-    public int countResult(Set<Long> stopPlaceIds) {
+    public int countResult() {
+        return countResult(getParkings());
+    }
+
+
+    @Override
+    public int countResultInStopPlaces(Set<Long> stopPlaceIds) {
         if(stopPlaceIds == null || stopPlaceIds.isEmpty()) {
             return 0;
         }
@@ -185,6 +189,13 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         return Pair.of(sql.toString(), new HashMap<String, Object>(0));
     }
 
+    private Pair<String, Map<String, Object>> getParkings() {
+        String sql = "SELECT p.* FROM parking p WHERE p.parent_site_ref IS NULL AND " +
+                SQL_MAX_VERSION_OF_PARKING +
+                "ORDER BY p.netex_id, p.version";
+        return Pair.of(sql, new HashMap<String, Object>(0));
+    }
+
     @Override
     public Page<Parking> findNearbyParking(Envelope envelope, String name, ParkingTypeEnumeration parkingTypeEnumeration, String ignoreParkingId, Pageable pageable) {
         Geometry geometryFilter = geometryFactory.toGeometry(envelope);
@@ -194,8 +205,8 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
                         "AND p.parent_site_ref IS NULL " +
                         "AND p.version = (SELECT MAX(pv.version) FROM parking pv WHERE pv.netex_id = p.netex_id) " +
                         (name != null ? "AND p.name_value = :name":"") +
-                        (parkingTypeEnumeration != null ? "AND p.parking_type = :parkingType":"") +
-                        (ignoreParkingId != null ? "AND (p.netex_id != :ignoreParkingId)":"");
+                        (parkingTypeEnumeration != null ? " AND p.parking_type = :parkingType":"") +
+                        (ignoreParkingId != null ? " AND (p.netex_id != :ignoreParkingId)":"");
 
 
         logger.debug("Finding parking within bounding box with query: {}", queryString);
@@ -217,6 +228,26 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         query.setMaxResults(pageable.getPageSize());
         List<Parking> parkings = query.getResultList();
         return new PageImpl<>(parkings, pageable, parkings.size());
+    }
+
+    @Override
+    public String findNearbyParking(Envelope envelope, String name, ParkingTypeEnumeration parkingTypeEnumeration) {
+        Geometry geometryFilter = geometryFactory.toGeometry(envelope);
+
+        TypedQuery<String> query = entityManager
+                .createQuery("SELECT p.netexId FROM Parking p " +
+                                "WHERE within(p.centroid, :filter) = true " +
+                                "AND p.version = (SELECT MAX(pv.version) FROM Parking pv WHERE pv.netexId = p.netexId) " +
+                                "AND p.name.value = :name " +
+                                (parkingTypeEnumeration != null ? "AND p.parkingType = :parkingType":""),
+                        String.class);
+
+        query.setParameter("filter", geometryFilter);
+        query.setParameter("name", name);
+        if (parkingTypeEnumeration != null) {
+            query.setParameter("parkingType", parkingTypeEnumeration);
+        }
+        return getOneOrNull(query);
     }
 
 

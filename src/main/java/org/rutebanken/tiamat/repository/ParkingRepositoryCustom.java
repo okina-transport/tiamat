@@ -34,9 +34,9 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
 
     int countResult(ParkingSearch parkingSearch);
 
-    int countResult();
+    int countResult(Set<Long> stopPlaceIds);
 
-    int countResultInStopPlaces(Set<Long> stopPlaceIds);
+    int countResult();
 
     Page<Parking> findNearbyParking(Envelope boundingBox, String name, ParkingTypeEnumeration parkingType, String ignoreParkingId, Pageable pageable);
 

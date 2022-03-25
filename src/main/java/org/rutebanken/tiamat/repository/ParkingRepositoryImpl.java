@@ -125,17 +125,16 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     }
 
     @Override
-    public int countResult() {
-        return countResult(getParkings());
-    }
-
-
-    @Override
-    public int countResultInStopPlaces(Set<Long> stopPlaceIds) {
+    public int countResult(Set<Long> stopPlaceIds) {
         if(stopPlaceIds == null || stopPlaceIds.isEmpty()) {
             return 0;
         }
         return countResult(getParkingsByStopPlaceIdsSQL(stopPlaceIds));
+    }
+
+    @Override
+    public int countResult() {
+        return countResult(getParkings());
     }
 
     private int countResult(Pair<String, Map<String, Object>> sqlWithParams) {
@@ -190,7 +189,7 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     }
 
     private Pair<String, Map<String, Object>> getParkings() {
-        String sql = "SELECT p.* FROM parking p WHERE p.parent_site_ref IS NULL AND " +
+        String sql = "SELECT p.* FROM parking p WHERE " +
                 SQL_MAX_VERSION_OF_PARKING +
                 "ORDER BY p.netex_id, p.version";
         return Pair.of(sql, new HashMap<String, Object>(0));

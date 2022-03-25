@@ -45,7 +45,7 @@ public class ParkingRepositoryImplTest extends TiamatIntegrationTest {
         parkingRepository.flush();
 
         Set<Long> stopPlaceIds = Sets.newHashSet(stopPlace.getId());
-        int count = parkingRepository.countResultInStopPlaces(stopPlaceIds);
+        int count = parkingRepository.countResult(stopPlaceIds);
         assertThat(count).isEqualTo(1);
 
         Iterator<Parking> parkingIterator = parkingRepository.scrollParkings(stopPlaceIds);

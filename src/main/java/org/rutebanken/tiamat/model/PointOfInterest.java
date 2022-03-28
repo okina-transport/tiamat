@@ -15,8 +15,72 @@
 
 package org.rutebanken.tiamat.model;
 
-public class PointOfInterest
-        extends PointOfInterest_VersionStructure {
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.OneToMany;
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+public class PointOfInterest extends PointOfInterest_VersionStructure {
+
+    private String zipCode;
+    private String address;
+    private String city;
+    private String postalCode;
+
+    @OneToMany(cascade = CascadeType.MERGE)
+    private Set<PointOfInterestClassification> classifications = new HashSet<>();
+
+    private Integer pointOfInterestFacilitySetId;
+
+    public String getZipCode() {
+        return zipCode;
+    }
+
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getPostalCode() {
+        return postalCode;
+    }
+
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
+    }
 
 
+
+    public Set<PointOfInterestClassification> getClassifications() {
+        return classifications;
+    }
+
+    public void setClassifications(Set<PointOfInterestClassification> classifications) {
+        this.classifications = classifications;
+    }
+
+    public Integer getPointOfInterestFacilitySetId() {
+        return pointOfInterestFacilitySetId;
+    }
+
+    public void setPointOfInterestFacilitySetId(Integer pointOfInterestFacilitySetId) {
+        this.pointOfInterestFacilitySetId = pointOfInterestFacilitySetId;
+    }
 }

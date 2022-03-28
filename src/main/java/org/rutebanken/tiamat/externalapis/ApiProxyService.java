@@ -88,7 +88,28 @@ public class ApiProxyService {
 		return citycode;
 	}
 
-	private String getCitycode(URL apiUrl) throws Exception {
+	/**
+	 * Reverse geocoding d'après long / lat
+	 *
+	 * @param latitude
+	 * @param longitude
+	 * @return Geojson Object
+	 */
+	public DtoGeocode getGeocodeDataByReverseGeocoding(@NotNull BigDecimal latitude, @NotNull BigDecimal longitude) throws Exception {
+		if (latitude.compareTo(LAT_MIN_BOUND) < 0
+				|| latitude.compareTo(LAT_MAX_BOUND) > 0
+				|| longitude.compareTo(LON_MIN_BOUND) < 0
+				|| longitude.compareTo(LON_MAX_BOUND) > 0) {
+			throw new Exception("Latitude / Longitude hors des valeurs permises (LAT : -90 -> 90; LON : -180 -> 180)");
+		}
+
+		URL apiUrl = new URL(FIRST_GOUV_API_REVERSE_GEOCODE_REQUEST + "?lon=" + longitude + "&lat=" + latitude);
+		return getGeocodeData(apiUrl);
+	}
+
+
+
+	private DtoGeocode getGeocodeData(URL apiUrl) {
 		InputStream inputStream;
 		try {
 			inputStream = apiUrl.openStream();
@@ -97,20 +118,34 @@ public class ApiProxyService {
 			return null;
 		}
 
-        StringWriter writer = new StringWriter();
-        String encoding = StandardCharsets.UTF_8.name();
+		StringWriter writer = new StringWriter();
+		String encoding = StandardCharsets.UTF_8.name();
 
-        try{
+		try{
 			IOUtils.copy(inputStream, writer, encoding);
 			org.codehaus.jettison.json.JSONObject jsonObject = new JSONObject(writer.toString());
 			org.codehaus.jettison.json.JSONArray features = jsonObject.optJSONArray("features");
 			org.codehaus.jettison.json.JSONObject properties = (JSONObject) features.get(0);
-			org.codehaus.jettison.json.JSONObject cityCode = properties.getJSONObject("properties");
-			return cityCode.getString("citycode");
+			org.codehaus.jettison.json.JSONObject propJson = properties.getJSONObject("properties");
+			String cityCode = propJson.getString("citycode");
+			String postCode = propJson.getString("postcode");
+
+
+			DtoGeocode geocodeResult = new DtoGeocode();
+			geocodeResult.setCityCode(cityCode);
+			geocodeResult.setPostCode(postCode);
+			return geocodeResult;
 
 		}catch (Exception e){
-        	logger.error("Problème sur la récupération du city code");
-        	return null;
+			logger.error("Problème sur la récupération des données geocode");
+			return null;
 		}
+
+	}
+
+
+	private String getCitycode(URL apiUrl) throws Exception {
+		DtoGeocode geocode = getGeocodeData(apiUrl);
+		return geocode.getCityCode();
 	}
 }

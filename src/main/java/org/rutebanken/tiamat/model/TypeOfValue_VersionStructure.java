@@ -15,29 +15,58 @@
 
 package org.rutebanken.tiamat.model;
 
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.Column;
+import javax.persistence.Embedded;
+import javax.persistence.MappedSuperclass;
+import javax.persistence.Transient;
+
+@MappedSuperclass
 public abstract class TypeOfValue_VersionStructure
         extends DataManagedObjectStructure {
 
-    protected MultilingualStringEntity name;
-    protected MultilingualStringEntity shortName;
+
+    @AttributeOverrides({
+            @AttributeOverride(name = "value", column = @Column(name = "name_value")),
+            @AttributeOverride(name = "lang", column = @Column(name = "name_lang", length = 5))
+    })
+    @Embedded
+    protected EmbeddableMultilingualString name;
+
+
+    @AttributeOverrides({
+            @AttributeOverride(name = "value", column = @Column(name = "short_name_value")),
+            @AttributeOverride(name = "lang", column = @Column(name = "short_name_lang", length = 5))
+    })
+    @Embedded
+    protected EmbeddableMultilingualString shortName;
+
+    @Transient
     protected MultilingualStringEntity description;
+
+    @Transient
     protected String image;
+
+    @Transient
     protected String url;
+
+    @Transient
     protected PrivateCodeStructure privateCode;
 
-    public MultilingualStringEntity getName() {
+    public EmbeddableMultilingualString getName() {
         return name;
     }
 
-    public void setName(MultilingualStringEntity value) {
+    public void setName(EmbeddableMultilingualString value) {
         this.name = value;
     }
 
-    public MultilingualStringEntity getShortName() {
+    public EmbeddableMultilingualString getShortName() {
         return shortName;
     }
 
-    public void setShortName(MultilingualStringEntity value) {
+    public void setShortName(EmbeddableMultilingualString value) {
         this.shortName = value;
     }
 

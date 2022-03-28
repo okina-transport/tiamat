@@ -4,7 +4,7 @@ import com.google.common.io.ByteStreams;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.tiamat.general.ParkingsCSVHelper;
 import org.rutebanken.tiamat.model.Parking;
-import org.rutebanken.tiamat.rest.dto.DtoParkingCSV;
+import org.rutebanken.tiamat.rest.dto.DtoParking;
 import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,11 +44,11 @@ public class ImportParkingsResource {
         try {
             csvFile = new String(ByteStreams.toByteArray(inputStream));
 
-            List<DtoParkingCSV> dtoParkingCSV = ParkingsCSVHelper.parseDocument(csvFile);
+            List<DtoParking> dtoParking = ParkingsCSVHelper.parseDocument(csvFile);
 
-            ParkingsCSVHelper.checkDuplicatedParkings(dtoParkingCSV);
+            ParkingsCSVHelper.checkDuplicatedParkings(dtoParking);
 
-            List<Parking> parkings = ParkingsCSVHelper.mapFromDtoToEntity(dtoParkingCSV);
+            List<Parking> parkings = ParkingsCSVHelper.mapFromDtoToEntity(dtoParking);
 
             parkingsImportedService.createOrUpdateParkings(parkings);
 

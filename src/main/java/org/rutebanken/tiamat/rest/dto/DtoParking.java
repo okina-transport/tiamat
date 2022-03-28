@@ -2,7 +2,7 @@ package org.rutebanken.tiamat.rest.dto;
 
 import com.google.common.base.MoreObjects;
 
-public class DtoParkingCSV {
+public class DtoParking {
 
     private String id;
     private String nom;
@@ -35,7 +35,7 @@ public class DtoParkingCSV {
     private String type_ouvrage;
     private String info;
 
-    public DtoParkingCSV(String id, String nom, String insee, String adresse, String url, String type_usagers, String gratuit, String nb_places, String nb_pr, String nb_pmr, String nb_voitures_electriques, String nb_velo, String nb_2r_el, String nb_autopartage, String nb_2_rm, String nb_covoit, String hauteur_max, String num_siret, String xlong, String ylat, String tarif_pmr, String tarif_1h, String tarif_2h, String tarif_3h, String tarif_4h, String tarif_24h, String abo_resident, String abo_non_resident, String type_ouvrage, String info) {
+    public DtoParking(String id, String nom, String insee, String adresse, String url, String type_usagers, String gratuit, String nb_places, String nb_pr, String nb_pmr, String nb_voitures_electriques, String nb_velo, String nb_2r_el, String nb_autopartage, String nb_2_rm, String nb_covoit, String hauteur_max, String num_siret, String xlong, String ylat, String tarif_pmr, String tarif_1h, String tarif_2h, String tarif_3h, String tarif_4h, String tarif_24h, String abo_resident, String abo_non_resident, String type_ouvrage, String info) {
         this.id = id;
         this.nom = nom;
         this.insee = insee;

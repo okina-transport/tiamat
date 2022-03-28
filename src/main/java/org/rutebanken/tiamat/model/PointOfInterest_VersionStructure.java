@@ -15,14 +15,22 @@
 
 package org.rutebanken.tiamat.model;
 
+import javax.persistence.Transient;
+
 public class PointOfInterest_VersionStructure
         extends Site_VersionStructure {
 
+    @Transient
     protected PointOfInterestClassificationsViews_RelStructure classifications;
+    @Transient
     protected PointOfInterestSpaces_RelStructure spaces;
+    @Transient
     protected TopographicPlaceRefs_RelStructure nearTopographicPlaces;
+    @Transient
     protected SitePathLinks_RelStructure pathLinks;
+    @Transient
     protected PathJunctions_RelStructure pathJunctions;
+    @Transient
     protected NavigationPaths_RelStructure navigationPaths;
 
     public PointOfInterestClassificationsViews_RelStructure getClassifications() {

@@ -15,9 +15,12 @@
 
 package org.rutebanken.tiamat.model;
 
+import javax.persistence.Transient;
+
 public class PointOfInterestClassification_VersionStructure
         extends TypeOfValue_VersionStructure {
 
+    @Transient
     protected ClassificationDescriptors_RelStructure alternativeDescriptors;
 
     public ClassificationDescriptors_RelStructure getAlternativeDescriptors() {

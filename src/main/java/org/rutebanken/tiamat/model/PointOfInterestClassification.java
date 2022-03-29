@@ -21,5 +21,31 @@ import javax.persistence.Entity;
 public class PointOfInterestClassification
         extends PointOfInterestClassification_VersionStructure {
 
+    private Long parentId;
+    private Boolean osm;
+    private Boolean active;
 
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
+    }
+
+    public Boolean getOsm() {
+        return osm;
+    }
+
+    public void setOsm(Boolean osm) {
+        this.osm = osm;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
 }

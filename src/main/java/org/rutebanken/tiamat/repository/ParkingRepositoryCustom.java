@@ -46,6 +46,8 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
 
     Iterator<Parking> scrollParkings(ParkingSearch parkingSearch);
 
+    Page<Parking> findByName(String query, Pageable pageable);
+
     /**
      * Find parkings that belong to StopPlace
      * @param netexStopPlaceId

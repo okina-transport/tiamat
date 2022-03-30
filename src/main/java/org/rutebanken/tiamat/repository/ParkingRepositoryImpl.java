@@ -249,6 +249,28 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         return getOneOrNull(query);
     }
 
+    @Override
+    public Page<Parking> findByName(String name, Pageable pageable){
+        String queryString = "SELECT * FROM parking p " +
+                "WHERE p.parent_site_ref IS NULL " +
+                "AND p.version = (SELECT MAX(pv.version) FROM parking pv WHERE pv.netex_id = p.netex_id) " +
+                (name != null ? "AND LOWER(p.name_value) LIKE concat('%', LOWER(:name), '%')":"");
+
+
+        logger.debug("Finding parking by similarity name: {}", queryString);
+
+        final Query query = entityManager.createNativeQuery(queryString, Parking.class);
+
+        if(query != null){
+            query.setParameter("name", name);
+        }
+
+        query.setFirstResult(Math.toIntExact(pageable.getOffset()));
+        query.setMaxResults(pageable.getPageSize());
+        List<Parking> parkings = query.getResultList();
+        return new PageImpl<>(parkings, pageable, parkings.size());
+    }
+
 
     @Override
     public List<String> findByStopPlaceNetexId(String netexStopPlaceId) {

@@ -24,9 +24,9 @@ public class ParkingsCSVHelper {
 
     public final static String DELIMETER_PARKING_ID_NAME = " : ";
 
-    private final static String delimeterToIgnoreCommasInQuotes1 = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
+    private final static String delimeterToIgnoreCommasInQuotes1 = ";(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
 
-    private final static Pattern patternXlongYlat = Pattern.compile("^-?([1-8]?[1-9]|[1-9]0)\\.{1}\\d{1,6}");
+    private final static Pattern patternXlongYlat = Pattern.compile("^-?([1-8]?[1-9]|[1-9]0)\\.{1}\\d{1,20}");
 
     private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
@@ -81,7 +81,6 @@ public class ParkingsCSVHelper {
     }
 
     private static void validateParking(DtoParkingCSV parking) throws IllegalArgumentException{
-        Preconditions.checkArgument(!parking.getId().isEmpty(),"ID is required in all your parkings" );
         Preconditions.checkArgument(!parking.getId().isEmpty(),"ID is required in all your parkings" );
         Preconditions.checkArgument(!parking.getNom().isEmpty() ,"NAME is required to parking with Id "+parking.getId());
         Preconditions.checkArgument(patternXlongYlat.matcher(parking.getXlong()).matches(),"X Longitud is not correct in the parking with" + parking.getId());

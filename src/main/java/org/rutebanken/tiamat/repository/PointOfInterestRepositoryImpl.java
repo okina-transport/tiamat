@@ -4,6 +4,15 @@ package org.rutebanken.tiamat.repository;
 import org.rutebanken.tiamat.model.PointOfInterestFacilitySet;
 import org.rutebanken.tiamat.model.TicketingFacilityEnumeration;
 import org.rutebanken.tiamat.model.TicketingServiceFacilityEnumeration;
+import org.hibernate.ScrollMode;
+import org.hibernate.ScrollableResults;
+import org.hibernate.Session;
+import org.hibernate.query.NativeQuery;
+import org.rutebanken.tiamat.model.PointOfInterest;
+import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
+import org.rutebanken.tiamat.repository.search.SearchHelper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -11,16 +20,62 @@ import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.transaction.Transactional;
-import java.util.List;
-import java.util.Set;
+import java.math.BigInteger;
+import java.util.*;
 
 @Repository
 @Transactional
 public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryCustom{
 
+    protected static final String SQL_MAX_VERSION_OF_POI = "p.version = (select max(pv.version) from point_of_interest pv where pv.netex_id = p.netex_id) ";
+
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Autowired
+    private SearchHelper searchHelper;
+
+    private Pair<String, Map<String, Object>> getPointsOfInterest() {
+        String sql = "SELECT p.* FROM point_of_interest p WHERE " +
+                SQL_MAX_VERSION_OF_POI +
+                "ORDER BY p.netex_id, p.version";
+        return Pair.of(sql, new HashMap<String, Object>(0));
+    }
+
+    @Override
+    public int countResult() {
+        return countResult(getPointsOfInterest());
+    }
+
+    private int countResult(Pair<String, Map<String, Object>> sqlWithParams) {
+        Session session = entityManager.unwrap(Session.class);
+        NativeQuery query = session.createNativeQuery("SELECT COUNT(*) from (" + sqlWithParams.getFirst() + ") as numberOfPointsOfInterest");
+        searchHelper.addParams(query, sqlWithParams.getSecond());
+        return ((BigInteger) query.uniqueResult()).intValue();
+    }
+
+    @Override
+    public Iterator<PointOfInterest> scrollPointsOfInterest() {
+        return scrollPointsOfInterest(getPointsOfInterest());
+    }
+
+    private Iterator<PointOfInterest> scrollPointsOfInterest(Pair<String, Map<String, Object>> sqlWithParams) {
+        final int fetchSize = 100;
+
+        Session session = entityManager.unwrap(Session.class);
+        NativeQuery query = session.createNativeQuery(sqlWithParams.getFirst());
+        searchHelper.addParams(query, sqlWithParams.getSecond());
+
+        query.addEntity(PointOfInterest.class);
+        query.setReadOnly(true);
+        query.setFetchSize(fetchSize);
+        query.setCacheable(false);
+        ScrollableResults results = query.scroll(ScrollMode.FORWARD_ONLY);
+
+        ScrollableResultIterator<PointOfInterest> pointOfInterestEntityIterator = new ScrollableResultIterator<>(results, fetchSize, session);
+
+        return pointOfInterestEntityIterator;
+    }
 
     @Override
     public String findFirstByKeyValues(String key, Set<String> values) {

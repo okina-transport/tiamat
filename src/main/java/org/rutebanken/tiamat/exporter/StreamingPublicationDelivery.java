@@ -33,6 +33,8 @@ import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.netex.model.Parking;
 import org.rutebanken.netex.model.ParkingsInFrame_RelStructure;
+import org.rutebanken.netex.model.PointOfInterest;
+import org.rutebanken.netex.model.PointsOfInterestInFrame_RelStructure;
 import org.rutebanken.netex.model.PostalAddress;
 import org.rutebanken.netex.model.PrivateCodeStructure;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
@@ -63,17 +65,10 @@ import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMappi
 import org.rutebanken.tiamat.geo.geo.Lambert;
 import org.rutebanken.tiamat.geo.geo.LambertPoint;
 import org.rutebanken.tiamat.geo.geo.LambertZone;
-import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
-import org.rutebanken.tiamat.model.GroupOfStopPlaces;
-import org.rutebanken.tiamat.model.TopographicPlace;
-import org.rutebanken.tiamat.model.VehicleModeEnumeration;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
-import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
-import org.rutebanken.tiamat.repository.ParkingRepository;
-import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.repository.TariffZoneRepository;
-import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
+import org.rutebanken.tiamat.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -137,6 +132,7 @@ public class StreamingPublicationDelivery {
 
     private final StopPlaceRepository stopPlaceRepository;
     private final ParkingRepository parkingRepository;
+    private final PointOfInterestRepository pointOfInterestRepository;
     private final PublicationDeliveryExporter publicationDeliveryExporter;
     private final TiamatSiteFrameExporter tiamatSiteFrameExporter;
     private final TiamatGeneralFrameExporter tiamatGeneralFrameExporter;
@@ -157,6 +153,7 @@ public class StreamingPublicationDelivery {
     @Autowired
     public StreamingPublicationDelivery(StopPlaceRepository stopPlaceRepository,
                                         ParkingRepository parkingRepository,
+                                        PointOfInterestRepository pointOfInterestRepository,
                                         PublicationDeliveryExporter publicationDeliveryExporter,
                                         TiamatSiteFrameExporter tiamatSiteFrameExporter,
                                         TiamatGeneralFrameExporter tiamatGeneralFrameExporter,
@@ -167,6 +164,7 @@ public class StreamingPublicationDelivery {
                                         @Value("${asyncNetexExport.validateAgainstSchema:false}") boolean validateAgainstSchema) throws IOException, SAXException {
         this.stopPlaceRepository = stopPlaceRepository;
         this.parkingRepository = parkingRepository;
+        this.pointOfInterestRepository = pointOfInterestRepository;
         this.publicationDeliveryExporter = publicationDeliveryExporter;
         this.tiamatSiteFrameExporter = tiamatSiteFrameExporter;
         this.tiamatGeneralFrameExporter = tiamatGeneralFrameExporter;
@@ -194,6 +192,7 @@ public class StreamingPublicationDelivery {
         AtomicInteger mappedTariffZonesCount = new AtomicInteger();
         AtomicInteger mappedTopographicPlacesCount = new AtomicInteger();
         AtomicInteger mappedGroupOfStopPlacesCount = new AtomicInteger();
+        AtomicInteger mappedPointOfInterestCount = new AtomicInteger();
 
         EntitiesEvictor entitiesEvictor = instantiateEvictor();
 
@@ -217,7 +216,8 @@ public class StreamingPublicationDelivery {
         prepareTopographicPlaces(exportParams, stopPlacePrimaryIdsWithParents, mappedTopographicPlacesCount, netexSiteFrame, entitiesEvictor);
         prepareTariffZones(exportParams, stopPlacePrimaryIds, mappedTariffZonesCount, netexSiteFrame, entitiesEvictor);
         prepareStopPlaces(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexSiteFrame, entitiesEvictor);
-        prepareParkings(mappedParkingCount, netexSiteFrame, entitiesEvictor);
+        prepareParkings(mappedPointOfInterestCount, netexSiteFrame, entitiesEvictor);
+        preparePointsOfInterest(mappedParkingCount, netexSiteFrame, entitiesEvictor);
         prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, netexSiteFrame, entitiesEvictor);
 
 
@@ -236,9 +236,10 @@ public class StreamingPublicationDelivery {
 
         doLastModifications(outputStream, byteArrayOutputStream);
 
-        logger.info("Mapped {} stop places, {} parkings, {} topographic places, {} group of stop places and {} tariff zones to netex",
+        logger.info("Mapped {} stop places, {} parkings, {} points of interest, {} topographic places, {} group of stop places and {} tariff zones to netex",
                 mappedStopPlaceCount.get(),
                 mappedParkingCount.get(),
+                mappedPointOfInterestCount,
                 mappedTopographicPlacesCount,
                 mappedGroupOfStopPlacesCount,
                 mappedTariffZonesCount);
@@ -592,6 +593,22 @@ public class StreamingPublicationDelivery {
             netexSiteFrame.setParkings(parkingsInFrame_relStructure);
         } else {
             logger.info("No parkings to export based on stop places");
+        }
+    }
+
+    private void preparePointsOfInterest(AtomicInteger mappedPointOfInterestCount, SiteFrame netexSiteFrame, EntitiesEvictor evicter) {
+
+        int poiCount = pointOfInterestRepository.countResult();
+        if (poiCount > 0) {
+            logger.info("POI count is {}, will create poi in publication delivery", poiCount);
+            PointsOfInterestInFrame_RelStructure pointsOfInterestInFrame_relStructure = new PointsOfInterestInFrame_RelStructure();
+            List<PointOfInterest> pointsOfInterest = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, pointOfInterestRepository.scrollPointsOfInterest(),
+                    PointOfInterest.class, mappedPointOfInterestCount, evicter));
+
+            setField(PointsOfInterestInFrame_RelStructure.class, "pointOfInterest", pointsOfInterestInFrame_relStructure, pointsOfInterest);
+            netexSiteFrame.setPointsOfInterest(pointsOfInterestInFrame_relStructure);
+        } else {
+            logger.info("No poi to export");
         }
     }
 

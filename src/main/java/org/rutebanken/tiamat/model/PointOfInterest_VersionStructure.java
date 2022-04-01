@@ -20,8 +20,7 @@ import javax.persistence.Transient;
 public class PointOfInterest_VersionStructure
         extends Site_VersionStructure {
 
-    @Transient
-    protected PointOfInterestClassificationsViews_RelStructure classifications;
+
     @Transient
     protected PointOfInterestSpaces_RelStructure spaces;
     @Transient
@@ -33,12 +32,6 @@ public class PointOfInterest_VersionStructure
     @Transient
     protected NavigationPaths_RelStructure navigationPaths;
 
-    public PointOfInterestClassificationsViews_RelStructure getClassifications() {
-        return classifications;
-    }
-
-    public void setClassifications(PointOfInterestClassificationsViews_RelStructure value) {
-    }
 
     public PointOfInterestSpaces_RelStructure getSpaces() {
         return spaces;

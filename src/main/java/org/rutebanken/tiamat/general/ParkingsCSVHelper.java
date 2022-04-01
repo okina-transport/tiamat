@@ -9,7 +9,7 @@ import org.rutebanken.tiamat.model.AccessibilityAssessment;
 import org.rutebanken.tiamat.model.AccessibilityLimitation;
 import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
-import org.rutebanken.tiamat.rest.dto.DtoParkingCSV;
+import org.rutebanken.tiamat.rest.dto.DtoParking;
 import org.rutebanken.tiamat.service.Preconditions;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -31,7 +31,7 @@ public class ParkingsCSVHelper {
     private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
 
-    public static List<DtoParkingCSV> parseDocument(String csvFile) throws IllegalArgumentException{
+    public static List<DtoParking> parseDocument(String csvFile) throws IllegalArgumentException{
         String csvRows = csvFile.substring(csvFile.indexOf("\n")+1);
 
         List<String> rowsParkings = Arrays.asList(csvRows.split("\n"));
@@ -40,7 +40,7 @@ public class ParkingsCSVHelper {
 
             String[] values = row.split(delimeterToIgnoreCommasInQuotes1);
 
-            DtoParkingCSV parking = new DtoParkingCSV(
+            DtoParking parking = new DtoParking(
                     values[0],
                     values[1],
                     values[2],
@@ -80,21 +80,21 @@ public class ParkingsCSVHelper {
         }).collect(Collectors.toList());
     }
 
-    private static void validateParking(DtoParkingCSV parking) throws IllegalArgumentException{
+    private static void validateParking(DtoParking parking) throws IllegalArgumentException{
         Preconditions.checkArgument(!parking.getId().isEmpty(),"ID is required in all your parkings" );
         Preconditions.checkArgument(!parking.getNom().isEmpty() ,"NAME is required to parking with Id "+parking.getId());
         Preconditions.checkArgument(patternXlongYlat.matcher(parking.getXlong()).matches(),"X Longitud is not correct in the parking with" + parking.getId());
         Preconditions.checkArgument(patternXlongYlat.matcher(parking.getYlat()).matches(),"Y Latitud is not correct in the parking with" + parking.getId());
     }
 
-    public static void checkDuplicatedParkings(List<DtoParkingCSV> parkings) throws IllegalArgumentException{
+    public static void checkDuplicatedParkings(List<DtoParking> parkings) throws IllegalArgumentException{
         List <String> compositeKey = parkings.stream().map(parking -> parking.getId()+parking.getNom()).collect(Collectors.toList());
         Set listWithoutDuplicatedValues = new HashSet(compositeKey);
         if(compositeKey.size()>listWithoutDuplicatedValues.size()) throw new IllegalArgumentException("There are duplicated parkings in your CSV File 'With the same ID & Name'");
     }
 
 
-    public static List<Parking> mapFromDtoToEntity(List<DtoParkingCSV> dtoParkingsCSV){
+    public static List<Parking> mapFromDtoToEntity(List<DtoParking> dtoParkingsCSV){
         return  dtoParkingsCSV.stream().map(parkingDto -> {
 
             Parking parking = new Parking();

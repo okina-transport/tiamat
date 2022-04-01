@@ -1,6 +1,9 @@
 package org.rutebanken.tiamat.repository;
 
 
+import org.rutebanken.tiamat.model.PointOfInterestFacilitySet;
+import org.rutebanken.tiamat.model.TicketingFacilityEnumeration;
+import org.rutebanken.tiamat.model.TicketingServiceFacilityEnumeration;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -48,5 +51,44 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
         } catch (NoResultException noResultException) {
             return null;
         }
+    }
+
+    @Override
+    public PointOfInterestFacilitySet getOrCreateFacilitySet(TicketingFacilityEnumeration ticketingFacility, TicketingServiceFacilityEnumeration ticketingServiceFacility) {
+        Query query = entityManager.createNativeQuery("SELECT fs.* " +
+                "FROM point_of_interest_facility_set fs " +
+                "WHERE fs.ticketing_facility = :ticketing_facility " +
+                "AND fs.ticketing_service_facility = :ticketing_service_facility " ,PointOfInterestFacilitySet.class );
+
+        query.setParameter("ticketing_facility", ticketingFacility.toString());
+        query.setParameter("ticketing_service_facility", ticketingServiceFacility.toString());
+
+
+
+
+        try {
+            @SuppressWarnings("unchecked")
+            List<PointOfInterestFacilitySet> results = query.getResultList();
+            if (results.isEmpty()) {
+                return createFacilitySet(ticketingFacility, ticketingServiceFacility);
+            } else {
+                return results.get(0);
+            }
+        } catch (NoResultException noResultException) {
+            return null;
+        }
+    }
+
+
+    private PointOfInterestFacilitySet createFacilitySet(TicketingFacilityEnumeration ticketingFacility, TicketingServiceFacilityEnumeration ticketingServiceFacility){
+        PointOfInterestFacilitySet newFacilitySet = new PointOfInterestFacilitySet();
+        newFacilitySet.setTicketingFacility(ticketingFacility);
+        newFacilitySet.setTicketingServiceFacility(ticketingServiceFacility);
+        entityManager.persist(newFacilitySet);
+        return newFacilitySet;
+    }
+
+    public void clearAllPois(){
+        entityManager.createNativeQuery("TRUNCATE TABLE point_of_interest CASCADE").executeUpdate();
     }
 }

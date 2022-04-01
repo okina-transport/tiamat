@@ -15,22 +15,32 @@
 
 package org.rutebanken.tiamat.model;
 
+
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 
 @Entity
 public class PointOfInterestClassification
         extends PointOfInterestClassification_VersionStructure {
 
-    private Long parentId;
+
+    @ManyToOne(fetch = FetchType.LAZY ,cascade = { CascadeType.PERSIST})
+    @JoinColumn(name = "parent_id")
+    private PointOfInterestClassification parent;
     private Boolean osm;
     private Boolean active;
 
-    public Long getParentId() {
-        return parentId;
+    public PointOfInterestClassification getParent() {
+        return parent;
     }
 
-    public void setParentId(Long parentId) {
-        this.parentId = parentId;
+
+
+    public void setParent(PointOfInterestClassification parent) {
+        this.parent = parent;
     }
 
     public Boolean getOsm() {
@@ -48,4 +58,5 @@ public class PointOfInterestClassification
     public void setActive(Boolean active) {
         this.active = active;
     }
+
 }

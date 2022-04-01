@@ -1,8 +1,6 @@
 package org.rutebanken.tiamat.repository;
 
 
-import org.rutebanken.tiamat.model.MultilingualStringEntity;
-import org.rutebanken.tiamat.model.PointOfInterestClassification;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -11,7 +9,8 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.transaction.Transactional;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
+
 
 @Repository
 @Transactional
@@ -20,64 +19,40 @@ public class PointOfInterestClassificationRepositoryImpl implements PointOfInter
     @PersistenceContext
     private EntityManager entityManager;
 
-    public PointOfInterestClassification getOrCreateClassification(String classificationName){
-        Query query = entityManager.createNativeQuery("SELECT p " +
+
+
+    public Optional<String> getClassification(String classificationName, Long parentId){
+
+        String queryStr = "SELECT p.netex_id " +
                 "FROM point_of_interest_classification p " +
-                " WHERE p.name = :className ");
+                " WHERE p.name_value = :className ";
 
-        query.setParameter("className", classificationName);
-
-        try {
-            @SuppressWarnings("unchecked")
-            List<PointOfInterestClassification> results = query.getResultList();
-            if (results.isEmpty()) {
-                return createNewClassification(classificationName, null);
-            } else {
-                return results.get(0);
-            }
-        } catch (NoResultException noResultException) {
-            return null;
-        }
-    }
-
-    private PointOfInterestClassification createNewClassification(String classificationName, Long parentId){
-        PointOfInterestClassification newClass = new PointOfInterestClassification();
-        newClass.setName(new MultilingualStringEntity(classificationName));
 
         if (parentId != null){
-            newClass.setParentId(parentId);
+            queryStr = queryStr + " AND p.parent_id = :parentId";
         }
 
-        entityManager.persist(newClass);
-        return newClass;
-    }
 
-    public PointOfInterestClassification getOrCreateClassification(String classificationName, String parentClassificationName){
 
-        PointOfInterestClassification parentClassification = getOrCreateClassification(parentClassificationName);
-        Long parentId = parentClassification.getId();
-
-        Query query = entityManager.createNativeQuery("SELECT p " +
-                "FROM point_of_interest_classification p " +
-                " WHERE p.name = :className AND p.parent_id = :parentId");
-
+        Query query = entityManager.createNativeQuery(queryStr);
         query.setParameter("className", classificationName);
-        query.setParameter("parentId", parentId);
+
+        if (parentId != null){
+            query.setParameter("parentId", parentId);
+        }
+
 
         try {
             @SuppressWarnings("unchecked")
-            List<PointOfInterestClassification> results = query.getResultList();
+            List<String> results = query.getResultList();
             if (results.isEmpty()) {
-                return createNewClassification(classificationName, parentId);
+                return Optional.empty();
             } else {
-                return results.get(0);
+                return Optional.of(results.get(0));
             }
         } catch (NoResultException noResultException) {
-            return null;
+            return Optional.empty();
         }
-        
     }
-
-
 
 }

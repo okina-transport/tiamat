@@ -615,6 +615,11 @@
             <artifactId>resteasy-jackson2-provider</artifactId>
             <version>3.1.4.Final</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.9.0</version>
+        </dependency>
 
     </dependencies>
 

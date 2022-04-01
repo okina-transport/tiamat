@@ -1,18 +1,26 @@
 package org.rutebanken.tiamat.general;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
-import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
-import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.AccessibilityAssessment;
 import org.rutebanken.tiamat.model.AccessibilityLimitation;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
+import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.rest.dto.DtoParkingCSV;
 import org.rutebanken.tiamat.service.Preconditions;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -24,77 +32,83 @@ public class ParkingsCSVHelper {
 
     public final static String DELIMETER_PARKING_ID_NAME = " : ";
 
-    private final static String delimeterToIgnoreCommasInQuotes1 = ";(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
-
     private final static Pattern patternXlongYlat = Pattern.compile("^-?([1-8]?[1-9]|[1-9]0)\\.{1}\\d{1,20}");
 
     private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
 
-    public static List<DtoParkingCSV> parseDocument(String csvFile) throws IllegalArgumentException{
-        String csvRows = csvFile.substring(csvFile.indexOf("\n")+1);
+    public static List<DtoParkingCSV> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
 
-        List<String> rowsParkings = Arrays.asList(csvRows.split("\n"));
+        Reader reader = new InputStreamReader(csvFile);
+        List<DtoParkingCSV> dtoParkingCSVList = new ArrayList<>();
 
-        return rowsParkings.stream().map(row ->{
 
-            String[] values = row.split(delimeterToIgnoreCommasInQuotes1);
+        Iterable<CSVRecord> records = CSVFormat.DEFAULT
+                .builder()
+                .setHeader()
+                .setSkipHeaderRecord(true)
+                .setDelimiter(';')
+                .build()
+                .parse(reader);
 
-            DtoParkingCSV parking = new DtoParkingCSV(
-                    values[0],
-                    values[1],
-                    values[2],
-                    values[3],
-                    values[4],
-                    values[5],
-                    values[6],
-                    values[7],
-                    values[8],
-                    values[9],
-                    values[10],
-                    values[11],
-                    values[12],
-                    values[13],
-                    values[14],
-                    values[15],
-                    values[16],
-                    values[17],
-                    values[18],
-                    values[19],
-                    values[20],
-                    values[21],
-                    values[22],
-                    values[23],
-                    values[24],
-                    values[25],
-                    values[26],
-                    values[27],
-                    values[28],
-                    values[29]
+        for (CSVRecord csvRecord : records) {
+            DtoParkingCSV dtoParkingCSV = new DtoParkingCSV(
+                    csvRecord.get(0),
+                    csvRecord.get(1),
+                    csvRecord.get(2),
+                    csvRecord.get(3),
+                    csvRecord.get(4),
+                    csvRecord.get(5),
+                    csvRecord.get(6),
+                    csvRecord.get(7),
+                    csvRecord.get(8),
+                    csvRecord.get(9),
+                    csvRecord.get(10),
+                    csvRecord.get(11),
+                    csvRecord.get(12),
+                    csvRecord.get(13),
+                    csvRecord.get(14),
+                    csvRecord.get(15),
+                    csvRecord.get(16),
+                    csvRecord.get(17),
+                    csvRecord.get(18),
+                    csvRecord.get(19),
+                    csvRecord.get(20),
+                    csvRecord.get(21),
+                    csvRecord.get(22),
+                    csvRecord.get(23),
+                    csvRecord.get(24),
+                    csvRecord.get(25),
+                    csvRecord.get(26),
+                    csvRecord.get(27),
+                    csvRecord.get(28),
+                    csvRecord.get(29)
             );
 
-            validateParking(parking);
+            validateParking(dtoParkingCSV);
 
-            return parking;
+            dtoParkingCSVList.add(dtoParkingCSV);
+        }
 
-        }).collect(Collectors.toList());
+        return dtoParkingCSVList;
     }
 
-    private static void validateParking(DtoParkingCSV parking) throws IllegalArgumentException{
-        Preconditions.checkArgument(!parking.getId().isEmpty(),"ID is required in all your parkings" );
-        Preconditions.checkArgument(!parking.getNom().isEmpty() ,"NAME is required to parking with Id "+parking.getId());
-        Preconditions.checkArgument(patternXlongYlat.matcher(parking.getXlong()).matches(),"X Longitud is not correct in the parking with" + parking.getId());
-        Preconditions.checkArgument(patternXlongYlat.matcher(parking.getYlat()).matches(),"Y Latitud is not correct in the parking with" + parking.getId());
+    private static void validateParking(DtoParkingCSV parking) throws IllegalArgumentException {
+        Preconditions.checkArgument(!parking.getId().isEmpty(), "ID is required in all your parkings");
+        Preconditions.checkArgument(!parking.getNom().isEmpty(), "NAME is required to parking with Id " + parking.getId());
+        Preconditions.checkArgument(patternXlongYlat.matcher(parking.getXlong()).matches(), "X Longitud is not correct in the parking with " + parking.getId());
+        Preconditions.checkArgument(patternXlongYlat.matcher(parking.getYlat()).matches(), "Y Latitud is not correct in the parking with " + parking.getId());
     }
 
-    public static void checkDuplicatedParkings(List<DtoParkingCSV> parkings) throws IllegalArgumentException{
-        List <String> compositeKey = parkings.stream().map(parking -> parking.getId()+parking.getNom()).collect(Collectors.toList());
+    public static void checkDuplicatedParkings(List<DtoParkingCSV> parkings) throws IllegalArgumentException {
+        List<String> compositeKey = parkings.stream().map(parking -> parking.getId() + parking.getNom()).collect(Collectors.toList());
         Set listWithoutDuplicatedValues = new HashSet(compositeKey);
-        if(compositeKey.size()>listWithoutDuplicatedValues.size()) throw new IllegalArgumentException("There are duplicated parkings in your CSV File 'With the same ID & Name'");
+        if (compositeKey.size() > listWithoutDuplicatedValues.size())
+            throw new IllegalArgumentException("There are duplicated parkings in your CSV File 'With the same ID & Name'");
     }
 
 
-    public static List<Parking> mapFromDtoToEntity(List<DtoParkingCSV> dtoParkingsCSV){
+    public static List<Parking> mapFromDtoToEntity(List<DtoParkingCSV> dtoParkingsCSV) {
         return  dtoParkingsCSV.stream().map(parkingDto -> {
 
             Parking parking = new Parking();

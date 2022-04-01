@@ -38,13 +38,9 @@ public class ImportParkingsResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public Response importParkingsCsvFile(@FormDataParam("file") InputStream inputStream) throws IOException, IllegalArgumentException {
-
-
-        String csvFile = null;
         try {
-            csvFile = new String(ByteStreams.toByteArray(inputStream));
 
-            List<DtoParkingCSV> dtoParkingCSV = ParkingsCSVHelper.parseDocument(csvFile);
+            List<DtoParkingCSV> dtoParkingCSV = ParkingsCSVHelper.parseDocument(inputStream);
 
             ParkingsCSVHelper.checkDuplicatedParkings(dtoParkingCSV);
 

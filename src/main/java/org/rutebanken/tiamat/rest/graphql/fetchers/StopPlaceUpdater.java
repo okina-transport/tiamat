@@ -168,7 +168,7 @@ class StopPlaceUpdater implements DataFetcher {
                     for (String originalId : updatedStopPlace.getOriginalIds()) {
                         List<String> stopPlacesFound = stopPlaceRepository.searchByKeyValue("imported-id", originalId);
                         List<String> quaysfound = quayRepository.searchByKeyValue("imported-id", originalId);
-                        if ((existingVersion != null && !existingVersion.getOriginalIds().contains(originalId)) && ((stopPlacesFound != null && !stopPlacesFound.isEmpty()) || (quaysfound != null && !quaysfound.isEmpty()))) {
+                        if ((existingVersion == null || (existingVersion != null && !existingVersion.getOriginalIds().contains(originalId))) && ((stopPlacesFound != null && !stopPlacesFound.isEmpty()) || (quaysfound != null && !quaysfound.isEmpty()))) {
                             throw new IllegalArgumentException("Updated stopPlace imported id already exists: " + originalId);
                         }
                     }

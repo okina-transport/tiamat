@@ -73,6 +73,34 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
         }
     }
 
+    public List<String> searchByKeyValue(String key, String value) {
+
+        Query query = entityManager.createNativeQuery("SELECT q.netex_id " +
+                "FROM quay_key_values qkv " +
+                "INNER JOIN value_items v " +
+                "ON qkv.key_values_id = v.value_id " +
+                "INNER JOIN quay q " +
+                "ON qkv.quay_id = q.id " +
+                "WHERE  qkv.key_values_key = :key " +
+                "AND v.items LIKE ( :value ) ");
+
+        query.setParameter("key", key);
+        query.setParameter("value", "%" + value + "%");
+
+
+        try {
+            @SuppressWarnings("unchecked")
+            List<String> results = query.getResultList();
+            if (results.isEmpty()) {
+                return null;
+            } else {
+                return results;
+            }
+        } catch (NoResultException noResultException) {
+            return null;
+        }
+    }
+
     @Override
     public List<IdMappingDto> findKeyValueMappingsForQuay(Instant validFrom, Instant validTo, int recordPosition, int recordsPerRoundTrip) {
         String sql = "SELECT vi.items, q.netex_id, s.stop_place_type, s.from_date sFrom, s.to_date sTo, p.from_date pFrom, p.to_date pTo " +

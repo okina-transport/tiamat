@@ -94,11 +94,7 @@ public class ParkingDeleter {
                 DataManagedObjectStructure resolved = referenceResolver.resolve(parking.getParentSiteRef());
                 if(resolved instanceof StopPlace) {
                     authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(resolved));
-                } else {
-                    throw new IllegalArgumentException("Parking does not have a parent site ref that points to a stop place. " + parking);
                 }
-            } else {
-                throw new IllegalArgumentException("Parking does not have a parent site ref. Cannot check permission. " + parking);
             }
         }
 

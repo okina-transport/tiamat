@@ -171,7 +171,6 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                                         + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME;
             if(ignoreStopPlaceId != null) {
                 queryString += "AND " + SQL_IGNORE_STOP_PLACE_ID;
-
             }
         } else {
             // If no point in time is set, use max version to only get one version per stop place
@@ -718,7 +717,10 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     @Override
     public Set<Long> addParentIds(Set<Long> stopPlaceDbIds) {
 
-
+        if (stopPlaceDbIds == null || stopPlaceDbIds.size() == 0){
+            logger.info("No results where found");
+            return stopPlaceDbIds;
+        }
 
         Set<String> stopPlaceStringDbIds = stopPlaceDbIds.stream().map(lvalue -> String.valueOf(lvalue)).collect(Collectors.toSet());
         String joinedStopPlaceDbIds = String.join(",", stopPlaceStringDbIds);

@@ -20,7 +20,7 @@
 
     <groupId>org.rutebanken</groupId>
     <artifactId>tiamat</artifactId>
-    <version>2.2.9-mobi-iti-SNAPSHOT</version>
+    <version>2.3.0-mobi-iti-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Tiamat</name>
@@ -104,6 +104,8 @@
         <groovy-all.version>2.5.4</groovy-all.version>
         <jaxb-version>2.3.0.1</jaxb-version>
         <swagger-jersey2.version>1.5.20</swagger-jersey2.version>
+        <jersey-media-multipart.version>2.35</jersey-media-multipart.version>
+
 
         <!-- NB: Concious choice of using snapshot version. This is to keep in
             sync, and fail fast if incompatibilities -->
@@ -398,6 +400,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-multipart</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-config</artifactId>
             <version>${spring.security.version}</version>
@@ -628,6 +635,11 @@
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jackson2-provider</artifactId>
             <version>3.1.4.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.9.0</version>
         </dependency>
 
     </dependencies>

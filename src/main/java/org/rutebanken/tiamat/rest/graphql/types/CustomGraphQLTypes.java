@@ -780,7 +780,7 @@ public class CustomGraphQLTypes {
             )
             .build();
 
-    public static GraphQLObjectType createParkingObjectType(GraphQLObjectType validBetweenObjectType) {
+    public static GraphQLObjectType createParkingObjectType(GraphQLObjectType validBetweenObjectType, GraphQLObjectType topographicPlaceObjectType) {
         return newObject()
                 .name(OUTPUT_TYPE_PARKING)
                 .field(netexIdFieldDefinition)
@@ -855,6 +855,12 @@ public class CustomGraphQLTypes {
                 .field(newFieldDefinition()
                         .name(PARKING_AREAS)
                         .type(new GraphQLList(parkingAreaObjectType)))
+                .field(newFieldDefinition()
+                        .name(TOPOGRAPHIC_PLACE)
+                        .type(topographicPlaceObjectType))
+                .field(newFieldDefinition()
+                        .name(VERSION_VALIDITY_ARG)
+                        .type(versionValidityEnumType))
                 .field(geometryFieldDefinition)
                 .build();
     }

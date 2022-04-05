@@ -121,6 +121,16 @@ public class StopPlaceQueryFromSearchBuilder {
                     " AND nearby.stop_place_type = s.stop_place_type " +
                     " AND ST_Distance(s.centroid, nearby.centroid) < :nearbyThreshold ";
 
+    public static final String SQL_DETECT_MULTI_MODAL_POINTS =
+            "SELECT nearby.id " +
+                    "FROM stop_place nearby " +
+                    createLeftJoinParentStopQuery("nearbyparent") +
+                    "WHERE nearby.netex_id != s.netex_id " +
+                    " AND nearby.parent_stop_place = false " +
+                    " AND nearby.stop_place_type != s.stop_place_type " +
+                    " AND ST_Distance(s.centroid, nearby.centroid) < :nearbyThreshold "+
+                    " AND s.stop_place_type like 'ONSTREET_BUS'";
+
     public static final String SQL_NEARBY_NAME_CONDITION = " AND s.name_value = nearby.name_value ";
 
 
@@ -155,6 +165,15 @@ public class StopPlaceQueryFromSearchBuilder {
     @Value("${administration.space.name}")
     protected String administrationSpaceName;
 
+    @Autowired
+    private NearbyStopPlaceQueryBuilder stopPlaceQueryFromSearchBuilder;
+
+    @Autowired
+    private MultiModalStopPlaceQueryBuilder multiModalStopPlaceQueryFromSearchBuilder;
+
+    @Autowired
+    private SearchStopPlacesWithDistantQuaysBuilder searchStopPlacesWithDistantQuaysBuilder;
+
     /**
      * Configure some common words to be skipped during stop place search by name.
      */
@@ -174,6 +193,19 @@ public class StopPlaceQueryFromSearchBuilder {
         this.exportParamsAndStopPlaceSearchValidator.validateExportParams(exportParams);
 
         StopPlaceSearch stopPlaceSearch = exportParams.getStopPlaceSearch();
+
+        if (stopPlaceSearch.isNearbyStopPlaces()){
+            return stopPlaceQueryFromSearchBuilder.buildNearbyQuery(stopPlaceSearch);
+        }
+
+        if (stopPlaceSearch.isDetectMultiModalPoints()){
+            return multiModalStopPlaceQueryFromSearchBuilder.buildQuery(stopPlaceSearch);
+        }
+
+        if(stopPlaceSearch.isWithDistantQuays()){
+            return searchStopPlacesWithDistantQuaysBuilder.buildQuery(stopPlaceSearch);
+        }
+
 
         final ExportParams.VersionValidity versionValidity;
         if(stopPlaceSearch.getPointInTime() == null
@@ -321,7 +353,11 @@ public class StopPlaceQueryFromSearchBuilder {
         }
 
         if (stopPlaceSearch.isWithNearbySimilarDuplicates() || stopPlaceSearch.isNearbyStopPlaces()) {
-            createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements);
+            createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements, SQL_NEARBY);
+        }
+
+        if (stopPlaceSearch.isDetectMultiModalPoints()){
+            createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements, SQL_DETECT_MULTI_MODAL_POINTS);
         }
 
         operators.add("and");
@@ -503,7 +539,7 @@ public class StopPlaceQueryFromSearchBuilder {
         }
 
         if (stopPlaceSearch.isWithNearbySimilarDuplicates()) {
-            createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements);
+            createAndAddNearbyCondition(stopPlaceSearch, operators, wheres, parameters, orderByStatements, SQL_NEARBY);
         }
 
         if (provider != null && provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName)){
@@ -593,13 +629,14 @@ public class StopPlaceQueryFromSearchBuilder {
                 netexComparing =  " or s.netex_id like " + netexIdContainsLowerMatchQuerySql + "or p.netex_id like " + netexIdContainsLowerMatchQuerySql;
             }
 
-
             String importedIdSearchString = "  or EXISTS(select 1 from stop_place_key_values spkv inner join " +
                     " value_items vi on vi.value_id = spkv.key_values_id " +
                     "  where  spkv.key_values_key= 'imported-id' and s.id = spkv.stop_place_id  and lower(vi.items) like " + containsLowerMatchQuerySql + " )" ;
 
 
+
             wheres.add("(lower(s.name_value) like " + comparingString + orNameMatchInParentStopSql + comparingString + netexComparing + importedIdSearchString + " )");
+
 
             if (!stopPlaceSearch.isNearbyStopPlaces()){
                 //For nearby stop place search, results must me order by distance, and not by name
@@ -640,10 +677,21 @@ public class StopPlaceQueryFromSearchBuilder {
                 + formatRepeatedValue(pointInTimeQueryTemplate, parentStopPlaceAlias, 5) + "))";
     }
 
-    private void createAndAddNearbyCondition(StopPlaceSearch stopPlaceSearch, List<String> operators, List<String> wheres, Map<String, Object> parameters, List<String> orderByStatements) {
+    private void createAndAddNearbyCondition(StopPlaceSearch stopPlaceSearch, List<String> operators, List<String> wheres, Map<String, Object> parameters, List<String> orderByStatements, String sqlQuery) {
         operators.add("and");
+        String organisationNameSearchString = "";
+        String importedIdSearchStringForNearbyStopPlaces = "";
 
-        String sqlNearby = "exists (" + SQL_NEARBY;
+        if(!stopPlaceSearch.getOrganisationName().isEmpty()){
+             organisationNameSearchString = " AND vi.items like '" +stopPlaceSearch.getOrganisationName().toUpperCase()+ ":StopPlace%'";
+
+             importedIdSearchStringForNearbyStopPlaces = " AND EXISTS(select 1 from stop_place_key_values spkv inner join " +
+                    " value_items vi on vi.value_id = spkv.key_values_id " +
+                    "  where  spkv.key_values_key= 'imported-id' and nearby.id = spkv.stop_place_id "+ organisationNameSearchString +")" ;
+
+        }
+
+        String sqlNearby = "exists (" + sqlQuery + importedIdSearchStringForNearbyStopPlaces;
 
         if( stopPlaceSearch.isWithNearbySimilarDuplicates()){
             sqlNearby = sqlNearby + SQL_NEARBY_NAME_CONDITION;

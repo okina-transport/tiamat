@@ -1755,4 +1755,30 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         assertThat(actual.getName().getValue()).isEqualTo(stopPlace.getName().getValue());
     }
 
+    @Test
+    public void findStopPlaceFromQuayOriginalIdWithSpecialCharacterUnderscore() {
+        String importedId = "TEST:Quay:_GOUV";
+        String importedIdToFind = "TEST:Quay:__OUV";
+
+        StopPlace stopPlace = new StopPlace();
+        stopPlace.setVersion(1);
+        stopPlace.setNetexId("NSR:StopPlace:1");
+        saveQuay(stopPlace, "NSR:Quay:1", 1L, ORIGINAL_ID_KEY, importedId);
+
+        Assert.assertTrue(CollectionUtils.isEmpty(stopPlaceRepository.findStopPlaceFromQuayOriginalId(importedIdToFind, Instant.now())));
+    }
+
+    @Test
+    public void findByKeyValuesStopPlaceWithSpecialCharacterUnderscore() {
+        String importedId = "TEST:StopPlace:COM_GOUV";
+        String importedIdToFind = "TEST:StopPlace:COM__OUV";
+        StopPlace stopPlace = new StopPlace();
+
+        stopPlace.getKeyValues().put(ORIGINAL_ID_KEY, new Value(importedId));
+        stopPlaceRepository.save(stopPlace);
+
+        Assert.assertTrue(CollectionUtils.isEmpty(stopPlaceRepository.findByKeyValues(ORIGINAL_ID_KEY, Sets.newHashSet(importedIdToFind), true)));
+    }
+
+
 }

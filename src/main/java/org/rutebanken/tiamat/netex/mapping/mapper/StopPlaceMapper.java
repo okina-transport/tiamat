@@ -131,11 +131,21 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
             if(netexStopPlace.getKeyList() == null) {
                 netexStopPlace.withKeyList(new KeyListStructure());
             }
+
             netexStopPlace.getKeyList()
                     .withKeyValue(new KeyValueStructure()
                             .withKey(IS_PARENT_STOP_PLACE)
                             .withValue(String.valueOf(stopPlace.isParentStopPlace())));
 
+            // TODO voir si le isParentStopPlace est false si il faut valoriser un typeOfPlaceRef de type monomodalStopPlace
+
+            if(stopPlace.isParentStopPlace()){
+                TypeOfPlaceRefs_RelStructure typeOfPlaceRefs_relStructure = new TypeOfPlaceRefs_RelStructure();
+                TypeOfPlaceRefStructure typeOfPlaceRefStructure = new TypeOfPlaceRefStructure();
+                typeOfPlaceRefStructure.setRef("multimodalStopPlace");
+                typeOfPlaceRefs_relStructure.getTypeOfPlaceRef().add(typeOfPlaceRefStructure);
+                netexStopPlace.setPlaceTypes(typeOfPlaceRefs_relStructure);
+            }
 
             if (stopPlace.getTransportMode() == null){
                 feedTransportMode(stopPlace,netexStopPlace);

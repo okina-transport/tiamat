@@ -174,6 +174,8 @@ public class GraphQLNames {
     public static final String INPUT_TYPE_GEO_JSON = OUTPUT_TYPE_GEO_JSON + INPUT_TYPE_POSTFIX;
 
     public static final String OUTPUT_TYPE_PARKING = "Parking";
+    public static final String OUTPUT_TYPE_PARKING_INTERFACE = OUTPUT_TYPE_PARKING + "Interface";
+
     public static final String INPUT_TYPE_PARKING = OUTPUT_TYPE_PARKING + INPUT_TYPE_POSTFIX;
 
     public static final String OUTPUT_TYPE_PARKING_PROPERTIES = "ParkingProperties";
@@ -327,6 +329,14 @@ public class GraphQLNames {
     public static final String NEARBY_RADIUS_DESCRIPTION = "Radius arround which neighbors must be searched";
     public static final String NEARBY_STOP_PLACES_DESCRIPTION = "Set to true to only return stop places that have nearby stop place around them";
 
+    public static final String ORGANISATION_NAME = "organisationName";
+    public static final String ORGANISATION_NAME_DESCRIPTION = "argument to filter the nearby stop places by the organisation name";
+
+    public static final String DETECT_MULTI_MODAL_POINTS = "detectMultiModalPoints";
+    public static final String DETECT_MULTI_MODAL_POINTS_DESCRIPTION = "Set to true only bus stations that have another different type of stop place arround";
+
+    public static final String WITH_DISTANT_QUAYS = "withDistantQuays";
+    public static final String WITH_DISTANT_QUAYS_DESCRIPTION = "retrieve all stop places with distant quays, at least more than 100m";
 
     public static final String HAS_PARKING = "hasParking";
     public static final String ONLY_MONOMODAL_STOPPLACES = "onlyMonomodalStopPlaces";
@@ -341,6 +351,7 @@ public class GraphQLNames {
     public static final String TYPE = "type";
     public static final String COORDINATES = "coordinates";
     public static final String IGNORE_STOPPLACE_ID = "ignoreStopPlaceId";
+    public static final String IGNORE_PARKING_ID = "ignoreParkingId";
     public static final String QUAYS = "quays";
     public static final String COMPASS_BEARING = "compassBearing";
     public static final String VALID_BETWEEN = "validBetween";
@@ -407,11 +418,12 @@ public class GraphQLNames {
 
     public static final String FIND_STOPPLACE = "stopPlace";
 
-    public static final String STOPPLACE_NAME_WITH_RECOMMENDATIONS = "stopPlaceNameRecommendations";
+    public static final String NAME_WITH_RECOMMENDATIONS = "nameRecommendations";
 
     /** Check if authorized to edit entity */
     public static final String CHECK_AUTHORIZED = "checkAuthorized";
     public static final String FIND_STOPPLACE_BY_BBOX = "stopPlaceBBox";
+    public static final String FIND_PARKING_BY_BBOX = "parkingBBox";
     public static final String FIND_TOPOGRAPHIC_PLACE = "topographicPlace";
     public static final String FIND_PATH_LINK = "pathLink";
     public static final String FIND_PARKING = "parking";

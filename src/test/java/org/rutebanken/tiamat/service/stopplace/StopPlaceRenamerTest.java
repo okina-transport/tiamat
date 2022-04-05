@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.service.Renamer;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
@@ -20,6 +21,9 @@ public class StopPlaceRenamerTest extends TiamatIntegrationTest {
 
     @Autowired
     private StopPlaceRenamer stopPlaceRenamer;
+
+    @Autowired
+    private Renamer renamer;
 
     @Test
     public void healthTest() {
@@ -110,7 +114,7 @@ public class StopPlaceRenamerTest extends TiamatIntegrationTest {
         // WHEN
         List<StopPlace> allStopPlaces = stopPlaceRepository.findAll();
         allStopPlaces.forEach(stopPlace -> {
-            stopPlace.setName(new EmbeddableMultilingualString(stopPlaceRenamer.renameIfNeeded(stopPlace.getName().getValue()), DEFAULT_LANG));
+            stopPlace.setName(new EmbeddableMultilingualString(renamer.renameIfNeeded(stopPlace.getName().getValue()), DEFAULT_LANG));
         });
 
         // THEN

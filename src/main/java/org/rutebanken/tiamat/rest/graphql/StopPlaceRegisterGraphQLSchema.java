@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.rest.graphql;
 
 import graphql.schema.*;
 import org.rutebanken.tiamat.model.GroupOfStopPlaces;
+import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.TariffZone;
@@ -88,6 +89,9 @@ public class StopPlaceRegisterGraphQLSchema {
 
     @Autowired
     private StopPlaceInterfaceCreator stopPlaceInterfaceCreator;
+
+    @Autowired
+    private ParkingInterfaceCreator parkingInterfaceCreator;
 
     @Autowired
     private ParentStopPlaceInputObjectTypeCreator parentStopPlaceInputObjectTypeCreator;
@@ -162,7 +166,7 @@ public class StopPlaceRegisterGraphQLSchema {
     TransportModeScalar transportModeScalar;
 
     @Autowired
-    DataFetcher stopPlaceNameRecommendationsFetcher;
+    DataFetcher nameRecommendationsFetcher;
 
     @PostConstruct
     public void init() {
@@ -222,9 +226,12 @@ public class StopPlaceRegisterGraphQLSchema {
         GraphQLObjectType tariffZoneObjectType = tariffZoneObjectTypeCreator.create(zoneCommandFieldList);
 
         MutableTypeResolver stopPlaceTypeResolver = new MutableTypeResolver();
+        MutableTypeResolver parkingTypeResolver = new MutableTypeResolver();
 
         List<GraphQLFieldDefinition> stopPlaceInterfaceFields = stopPlaceInterfaceCreator.createCommonInterfaceFields(tariffZoneObjectType, topographicPlaceObjectType, validBetweenObjectType);
+        List<GraphQLFieldDefinition> parkingInterfaceFields = parkingInterfaceCreator.createCommonInterfaceFields(topographicPlaceObjectType, validBetweenObjectType);
         GraphQLInterfaceType stopPlaceInterface = stopPlaceInterfaceCreator.createInterface(stopPlaceInterfaceFields, commonFieldsList, stopPlaceTypeResolver);
+        GraphQLInterfaceType parkingInterface = parkingInterfaceCreator.createInterface(parkingInterfaceFields, commonFieldsList, parkingTypeResolver);
 
         GraphQLObjectType stopPlaceObjectType = stopPlaceObjectTypeCreator.create(stopPlaceInterface, stopPlaceInterfaceFields, commonFieldsList, quayObjectType);
         GraphQLObjectType parentStopPlaceObjectType = parentStopPlaceObjectTypeCreator.create(stopPlaceInterface, stopPlaceInterfaceFields, commonFieldsList, stopPlaceObjectType);
@@ -251,7 +258,7 @@ public class StopPlaceRegisterGraphQLSchema {
 
         GraphQLObjectType pathLinkObjectType = pathLinkObjectTypeCreator.create(pathLinkEndObjectType, netexIdFieldDefinition, geometryFieldDefinition);
 
-        GraphQLObjectType parkingObjectType = createParkingObjectType(validBetweenObjectType);
+        GraphQLObjectType parkingObjectType = createParkingObjectType(validBetweenObjectType, topographicPlaceObjectType);
 
         GraphQLArgument allVersionsArgument = GraphQLArgument.newArgument()
                 .name(ALL_VERSIONS)
@@ -275,6 +282,12 @@ public class StopPlaceRegisterGraphQLSchema {
                         .description("Find StopPlaces within given BoundingBox.")
                         .argument(createBboxArguments())
                         .dataFetcher(stopPlaceFetcher))
+                .field(newFieldDefinition()
+                        .type(new GraphQLList(parkingObjectType))
+                        .name(FIND_PARKING_BY_BBOX)
+                        .description("Find Parking within given BoundingBox.")
+                        .argument(createBboxArguments())
+                        .dataFetcher(parkingFetcher))
                 .field(newFieldDefinition()
                         .name(FIND_TOPOGRAPHIC_PLACE)
                         .type(new GraphQLList(topographicPlaceObjectType))
@@ -330,13 +343,13 @@ public class StopPlaceRegisterGraphQLSchema {
                         .build())
                 .field(newFieldDefinition()
                         .type(GraphQLString)
-                        .name(STOPPLACE_NAME_WITH_RECOMMENDATIONS)
-                        .description("Get StopPlace name with Modalis recommendations.")
+                        .name(NAME_WITH_RECOMMENDATIONS)
+                        .description("Get name with Modalis recommendations.")
                         .argument(GraphQLArgument.newArgument()
                                 .name(NAME)
                                 .type(GraphQLString)
                                 .build())
-                        .dataFetcher(stopPlaceNameRecommendationsFetcher))
+                        .dataFetcher(nameRecommendationsFetcher))
                 .field(newFieldDefinition()
                         .type(new GraphQLList(stopPlaceInterface))
                         .name(FIND_STOPPLACE)
@@ -465,8 +478,17 @@ public class StopPlaceRegisterGraphQLSchema {
                 .type(GraphQLString)
                 .build());
         arguments.add(GraphQLArgument.newArgument()
+                .name(QUERY)
+                .type(GraphQLString)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
                 .name(VERSION)
                 .type(GraphQLInt)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .type(versionValidityEnumType)
+                .name(VERSION_VALIDITY_ARG)
+                .description(VERSION_ARG_DESCRIPTION)
                 .build());
         arguments.add(GraphQLArgument.newArgument()
                 .name(FIND_BY_STOP_PLACE_ID)
@@ -621,10 +643,28 @@ public class StopPlaceRegisterGraphQLSchema {
                 .description(NEARBY_STOP_PLACES_DESCRIPTION)
                 .build());
         arguments.add(GraphQLArgument.newArgument()
+                .name(DETECT_MULTI_MODAL_POINTS)
+                .type(GraphQLBoolean)
+                .defaultValue(Boolean.FALSE)
+                .description(DETECT_MULTI_MODAL_POINTS_DESCRIPTION)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
                 .name(NEARBY_RADIUS)
                 .type(GraphQLInt)
                 .defaultValue(0)
                 .description(NEARBY_RADIUS_DESCRIPTION)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(ORGANISATION_NAME)
+                .type(GraphQLString)
+                .defaultValue("")
+                .description(ORGANISATION_NAME_DESCRIPTION)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(WITH_DISTANT_QUAYS)
+                .type(GraphQLBoolean)
+                .defaultValue(Boolean.FALSE)
+                .description(WITH_DISTANT_QUAYS_DESCRIPTION)
                 .build());
         arguments.add(GraphQLArgument.newArgument()
                 .name(WITHOUT_QUAYS_ONLY)
@@ -709,6 +749,11 @@ public class StopPlaceRegisterGraphQLSchema {
                 .name(IGNORE_STOPPLACE_ID)
                 .type(GraphQLString)
                 .description("ID of StopPlace to excluded from result.")
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(IGNORE_PARKING_ID)
+                .type(GraphQLString)
+                .description("ID of Parking to excluded from result.")
                 .build());
         arguments.add(GraphQLArgument.newArgument()
                 .name(INCLUDE_EXPIRED)

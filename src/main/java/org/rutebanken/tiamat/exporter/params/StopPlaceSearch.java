@@ -99,7 +99,17 @@ public class StopPlaceSearch implements SearchObject {
     @ApiParam(value = NEARBY_RADIUS)
     private int nearbyRadius;
 
+    @QueryParam(value = "detectMultiModalPoints")
+    @ApiParam(value = DETECT_MULTI_MODAL_POINTS)
+    private boolean detectMultiModalPoints;
 
+    @QueryParam(value = "organisationName")
+    @ApiParam(value = ORGANISATION_NAME)
+    private String organisationName;
+
+    @QueryParam(value = "withDistantQuays")
+    @ApiParam(value = WITH_DISTANT_QUAYS)
+    private boolean withDistantQuays;
 
     @QueryParam(value = "hasParking")
     @ApiParam(value = HAS_PARKING)
@@ -132,7 +142,10 @@ public class StopPlaceSearch implements SearchObject {
                             boolean withDuplicatedQuayImportedIds,
                             boolean withNearbySimilarDuplicates,
                             boolean nearbyStopPlaces,
+                            boolean detectMultiModalPoints,
                             int nearbyRadius,
+                            String organisationName,
+                            boolean withDistantQuays,
                             boolean hasParking,
                             Instant pointInTime,
                             Long version,
@@ -151,6 +164,9 @@ public class StopPlaceSearch implements SearchObject {
         this.withNearbySimilarDuplicates = withNearbySimilarDuplicates;
         this.nearbyStopPlaces = nearbyStopPlaces;
         this.nearbyRadius = nearbyRadius;
+        this.detectMultiModalPoints = detectMultiModalPoints;
+        this.organisationName = organisationName;
+        this.withDistantQuays = withDistantQuays;
         this.hasParking = hasParking;
         this.pointInTime = pointInTime;
         this.version = version;
@@ -210,10 +226,15 @@ public class StopPlaceSearch implements SearchObject {
         return nearbyStopPlaces;
     }
 
+    public boolean isDetectMultiModalPoints(){return detectMultiModalPoints;}
+
     public int getNearbyRadius() {
         return nearbyRadius;
     }
 
+    public String getOrganisationName(){return organisationName;}
+
+    public boolean isWithDistantQuays(){return withDistantQuays;}
 
     public boolean isHasParking() {
         return hasParking;
@@ -222,7 +243,6 @@ public class StopPlaceSearch implements SearchObject {
     public boolean isWithTags() {
         return withTags;
     }
-
 
     public Instant getPointInTime() {
         return pointInTime;
@@ -252,6 +272,8 @@ public class StopPlaceSearch implements SearchObject {
                 .add("withDuplicatedQuayImportedIds", isWithDuplicatedQuayImportedIds())
                 .add("nearbyStopPlaces", isNearbyStopPlaces())
                 .add("nearbyRadius", getNearbyRadius())
+                .add("detectMultiModalPoints",isDetectMultiModalPoints())
+                .add("withDistantQuays", isWithDistantQuays())
                 .add("withTags", tags)
                 .add("tags", tags)
                 .add("page", page)
@@ -275,7 +297,10 @@ public class StopPlaceSearch implements SearchObject {
         private boolean withDuplicatedQuayImportedIds;
         private boolean withNearbySimilarDuplicates;
         private boolean nearbyStopPlaces;
+        private boolean detectMultiModalPoints;
         private int nearbyRadius;
+        private String organisationName;
+        private boolean withDistantQuays;
         private boolean hasParking;
         private boolean withTags;
         private Long version;
@@ -349,6 +374,14 @@ public class StopPlaceSearch implements SearchObject {
             this.nearbyRadius = nearbyRadius;
         }
 
+        public void setDetectMultiModalPoints(boolean detectMultiModalPoints){
+            this.detectMultiModalPoints = detectMultiModalPoints;
+        }
+
+        public void setOrganisationName(String organisationName){ this.organisationName = organisationName; }
+
+        public void setWithDistantQuays(boolean withDistantQuays){this.withDistantQuays = withDistantQuays;}
+
         public void setHasParking(boolean hasParking) {
             this.hasParking = hasParking;
         }
@@ -388,7 +421,10 @@ public class StopPlaceSearch implements SearchObject {
                     withDuplicatedQuayImportedIds,
                     withNearbySimilarDuplicates,
                     nearbyStopPlaces,
+                    detectMultiModalPoints,
                     nearbyRadius,
+                    organisationName,
+                    withDistantQuays,
                     hasParking,
                     pointInTime,
                     version,

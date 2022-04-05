@@ -15,14 +15,24 @@
 
 package org.rutebanken.tiamat.model;
 
+import javax.persistence.Transient;
+
 public abstract class TypeOfValue_VersionStructure
         extends DataManagedObjectStructure {
 
     protected MultilingualStringEntity name;
     protected MultilingualStringEntity shortName;
+
+    @Transient
     protected MultilingualStringEntity description;
+
+    @Transient
     protected String image;
+
+    @Transient
     protected String url;
+
+    @Transient
     protected PrivateCodeStructure privateCode;
 
     public MultilingualStringEntity getName() {

@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.config;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.rutebanken.tiamat.filter.LoggingFilter;
@@ -33,6 +34,7 @@ import org.rutebanken.tiamat.rest.health.HealthResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ImportResource;
+import org.rutebanken.tiamat.rest.parkings.ImportParkingsResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
@@ -83,6 +85,7 @@ public class JerseyConfig {
         publicResources.add(ImportResource.class);
         publicResources.add(AsyncExportResource.class);
         publicResources.add(ExportResource.class);
+        publicResources.add(ImportParkingsResource.class);
         publicResources.add(GraphQLResource.class);
 
         publicResources.add(GeneralExceptionMapper.class);
@@ -93,6 +96,7 @@ public class JerseyConfig {
         publicResources.add(SwaggerSerializers.class);
 
         ResourceConfig resourceConfig = new ResourceConfig(publicResources);
+        resourceConfig.register(MultiPartFeature.class);
         resourceConfig.register(JerseyJava8TimeConverterProvider.class);
         ServletRegistrationBean publicServicesJersey = new ServletRegistrationBean(new ServletContainer(resourceConfig));
 
@@ -112,6 +116,7 @@ public class JerseyConfig {
         publicServicesJersey.setLoadOnStartup(0);
         publicServicesJersey.getInitParameters().put("swagger.scanner.id", PUBLIC_SWAGGER_SCANNER_ID);
         publicServicesJersey.getInitParameters().put("swagger.config.id", PUBLIC_SWAGGER_CONFIG_ID);
+
         return publicServicesJersey;
     }
 

@@ -78,14 +78,21 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
         Query query = entityManager.createNativeQuery("SELECT q.netex_id " +
                 "FROM quay_key_values qkv " +
                 "INNER JOIN value_items v " +
-                "ON qkv.key_values_id = v.value_id " +
+                "   ON qkv.key_values_id = v.value_id " +
+                "INNER JOIN stop_place_quays spq " +
+                "	ON spq.quays_id = qkv.quay_id " +
                 "INNER JOIN quay q " +
-                "ON qkv.quay_id = q.id " +
+                "	ON spq.quays_id = q.id " +
+                "INNER JOIN stop_place s " +
+                "	ON s.id = spq.stop_place_id " +
+                SQL_LEFT_JOIN_PARENT_STOP +
                 "WHERE  qkv.key_values_key = :key " +
-                "AND v.items LIKE ( :value ) ");
+                "AND v.items LIKE ( :value ) " +
+                "AND " + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME);
 
         query.setParameter("key", key);
         query.setParameter("value", "%" + value + "%");
+        query.setParameter("pointInTime", Date.from(Instant.now()));
 
 
         try {
@@ -110,7 +117,7 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
                 "	INNER JOIN quay q " +
                 "		ON spq.quays_id = q.id " +
                 "	INNER JOIN stop_place s " +
-                "		ON s.id= spq.stop_place_id " +
+                "		ON s.id = spq.stop_place_id " +
                 "	INNER JOIN value_items vi " +
                 "		ON qkv.key_values_id = vi.value_id AND vi.items NOT LIKE '' AND qkv.key_values_key in (:mappingIdKeys) " +
                 SQL_LEFT_JOIN_PARENT_STOP +

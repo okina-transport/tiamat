@@ -564,6 +564,34 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         }
     }
 
+    @Override
+    public List<StopPlace> findAllFromImportedId(String importedId) {
+        String sql = "SELECT DISTINCT s.* " +
+                " FROM stop_place s " +
+                "  INNER JOIN stop_place_key_values spkv " +
+                "    ON s.id = spkv.stop_place_id AND spkv.key_values_key = 'imported-id' " +
+                "  INNER JOIN value_items vi " +
+                "    ON vi.value_id = spkv.key_values_id " +
+                " WHERE upper(vi.items)  = UPPER(:importedId) ";
+
+        Query query = entityManager.createNativeQuery(sql, StopPlace.class);
+
+
+        query.setParameter("importedId", importedId);
+
+        try {
+            @SuppressWarnings("unchecked")
+            List<StopPlace> results = query.getResultList();
+            if (results.isEmpty()) {
+                return new ArrayList<>();
+            } else {
+                return results;
+            }
+        } catch (NoResultException noResultException) {
+            return null;
+        }
+    }
+
 
 
 
@@ -812,18 +840,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         for (Quay quay : resultList) {
             Hibernate.initialize(quay.getKeyValues());
 
-
-            System.out.println("a");
             quay.getKeyValues().forEach((k,v) ->{
-                        System.out.println(v.getClass());
                         Hibernate.initialize(v.getItems());
-
-
                     }
-
-
-
-
                     );
 
         }

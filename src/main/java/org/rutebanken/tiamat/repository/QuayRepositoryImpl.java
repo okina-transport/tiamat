@@ -15,8 +15,10 @@
 
 package org.rutebanken.tiamat.repository;
 
+import org.hibernate.Hibernate;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
+import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -255,6 +258,35 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
                 .stream()
                 .findFirst()
                 .orElse(null);
+    }
+
+    @Override
+    public List<Quay> findAllByImportedId(String importedId) {
+
+        Query query = entityManager.createNativeQuery("SELECT q.* " +
+                "FROM quay q " +
+                "INNER JOIN quay_key_values qkv " +
+                "ON qkv.quay_id = q.id " +
+                "INNER JOIN value_items v " +
+                "ON qkv.key_values_id = v.value_id " +
+                "WHERE qkv.key_values_key = 'imported-id' " +
+                "AND UPPER(v.items) = UPPER(:importedId) ", Quay.class );
+
+        query.setParameter("importedId", importedId);
+
+
+        List<Quay> resultList = query.getResultList();
+
+        for (Quay quay : resultList) {
+            Hibernate.initialize(quay.getKeyValues());
+
+            quay.getKeyValues().forEach((k,v) ->{
+                        Hibernate.initialize(v.getItems());
+                    }
+            );
+        }
+
+        return resultList;
     }
 
 }

@@ -36,4 +36,8 @@ public interface QuayRepositoryCustom extends DataManagedObjectStructureReposito
 
     String findImportedIdByNetexIdQuay(Long netexId);
 
+    List<String> searchByKeyValue(String key, String value);
+
+    List<Quay> findAllByImportedId(String importedId);
+
 }

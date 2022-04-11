@@ -15,8 +15,9 @@
 
 package org.rutebanken.tiamat.netex.id;
 
+import com.hazelcast.collection.IQueue;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IQueue;
+
 import org.hibernate.Hibernate;
 import org.hibernate.SQLQuery;
 import org.hibernate.Session;

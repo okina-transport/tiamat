@@ -16,13 +16,44 @@
 package org.rutebanken.tiamat.exporter;
 
 import net.opengis.gml._3.DirectPositionType;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
-import org.rutebanken.netex.model.*;
+import org.rutebanken.netex.model.AccessibilityAssessment;
+import org.rutebanken.netex.model.AccessibilityLimitation;
+import org.rutebanken.netex.model.AccessibilityLimitations_RelStructure;
+import org.rutebanken.netex.model.CountryRef;
+import org.rutebanken.netex.model.EntityStructure;
+import org.rutebanken.netex.model.GeneralFrame;
+import org.rutebanken.netex.model.GroupsOfStopPlacesInFrame_RelStructure;
+import org.rutebanken.netex.model.KeyValueStructure;
+import org.rutebanken.netex.model.LimitationStatusEnumeration;
+import org.rutebanken.netex.model.LocationStructure;
+import org.rutebanken.netex.model.MultilingualString;
+import org.rutebanken.netex.model.ObjectFactory;
+import org.rutebanken.netex.model.Parking;
+import org.rutebanken.netex.model.ParkingsInFrame_RelStructure;
+import org.rutebanken.netex.model.PostalAddress;
+import org.rutebanken.netex.model.PrivateCodeStructure;
+import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.netex.model.Quay;
+import org.rutebanken.netex.model.QuayRefStructure;
+import org.rutebanken.netex.model.Quays_RelStructure;
+import org.rutebanken.netex.model.SiteFrame;
+import org.rutebanken.netex.model.SiteRefStructure;
+import org.rutebanken.netex.model.StopPlace;
+import org.rutebanken.netex.model.StopPlacesInFrame_RelStructure;
+import org.rutebanken.netex.model.TariffZone;
+import org.rutebanken.netex.model.TariffZonesInFrame_RelStructure;
+import org.rutebanken.netex.model.TopographicPlacesInFrame_RelStructure;
+import org.rutebanken.netex.model.TypeOfPlaceRefStructure;
+import org.rutebanken.netex.model.TypeOfPlaceRefs_RelStructure;
+import org.rutebanken.netex.model.Zone_VersionStructure;
 import org.rutebanken.netex.validation.NeTExValidator;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.async.NetexMappingIterator;
 import org.rutebanken.tiamat.exporter.async.NetexMappingIteratorList;
+import org.rutebanken.tiamat.exporter.async.NetexReferenceRemovingIterator;
 import org.rutebanken.tiamat.exporter.async.ParentStopFetchingIterator;
 import org.rutebanken.tiamat.exporter.async.ParentTreeTopographicPlaceFetchingIterator;
 import org.rutebanken.tiamat.exporter.eviction.EntitiesEvictor;
@@ -33,12 +64,17 @@ import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMappi
 import org.rutebanken.tiamat.geo.geo.Lambert;
 import org.rutebanken.tiamat.geo.geo.LambertPoint;
 import org.rutebanken.tiamat.geo.geo.LambertZone;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.GroupOfStopPlaces;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
-import org.rutebanken.tiamat.repository.*;
+import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
+import org.rutebanken.tiamat.repository.ParkingRepository;
+import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.repository.TariffZoneRepository;
+import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,13 +100,24 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -174,8 +221,8 @@ public class StreamingPublicationDelivery {
         prepareTopographicPlaces(exportParams, stopPlacePrimaryIdsWithParents, mappedTopographicPlacesCount, listMembers, entitiesEvictor);
         prepareTariffZones(exportParams, stopPlacePrimaryIds, mappedTariffZonesCount, listMembers, entitiesEvictor);
         prepareStopPlaces(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, listMembers, entitiesEvictor);
-        prepareParkings(exportParams, stopPlacePrimaryIds, mappedParkingCount,listMembers, entitiesEvictor);
-        //prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, entitiesEvictor);
+        prepareParkings(mappedParkingCount, stopPlacePrimaryIds, mappedParkingCount, listMembers, entitiesEvictor);
+        prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, listMembers, entitiesEvictor);
 
 
         //adding the members to the general Frame
@@ -495,7 +542,7 @@ public class StreamingPublicationDelivery {
         quay.setAccessibilityAssessment(accessibilityAssessment);
     }
 
-    private void prepareTariffZones(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedTariffZonesCount, List <JAXBElement<? extends EntityStructure>> listMembers,EntitiesEvictor evicter) {
+    private void prepareTariffZones(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedTariffZonesCount, SiteFrame netexSiteFrame, EntitiesEvictor evicter) {
 
 
         Iterator<org.rutebanken.tiamat.model.TariffZone> tariffZoneIterator;
@@ -530,18 +577,22 @@ public class StreamingPublicationDelivery {
 
     }
 
-    private void prepareParkings(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedParkingCount,List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter) {
+    private void prepareParkings(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedParkingCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter) {
 
         // ExportParams could be used for parkingExportMode.
 
-        int parkingsCount = parkingRepository.countResult(stopPlacePrimaryIds);
+        int parkingsCount = parkingRepository.countResult();
         if (parkingsCount > 0) {
             // Only set parkings if they will exist during marshalling.
             logger.info("Parking count is {}, will create parking in publication delivery", parkingsCount);
+            ParkingsInFrame_RelStructure parkingsInFrame_relStructure = new ParkingsInFrame_RelStructure();
+            List<Parking> parkings = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, parkingRepository.scrollParkings(),
+                    Parking.class, mappedParkingCount, evicter));
 
 
             NetexMappingIterator<org.rutebanken.tiamat.model.Parking, Parking> parkingsMappingIterator = new NetexMappingIterator<>(netexMapper, parkingRepository.scrollParkings(stopPlacePrimaryIds),
-            Parking.class, mappedParkingCount, evicter);
+                    Parking.class, mappedParkingCount, evicter);
+
 
             List<Parking> netexParkings = new ArrayList<>();
             parkingsMappingIterator.forEachRemaining(netexParkings::add);
@@ -564,6 +615,9 @@ public class StreamingPublicationDelivery {
             List<org.rutebanken.tiamat.model.StopPlace> recoveredStopPlaces = new ArrayList<>();
             stopPlaceIterator.forEachRemaining(recoveredStopPlaces::add);
             recoveredStopPlaces.forEach(this::addAdditionalInfo);
+
+
+            StopPlacesInFrame_RelStructure stopPlacesInFrame_relStructure = new StopPlacesInFrame_RelStructure();
 
             // Use Listening iterator to collect stop place IDs.
             ParentStopFetchingIterator parentStopFetchingIterator = new ParentStopFetchingIterator(recoveredStopPlaces.iterator(), stopPlaceRepository);

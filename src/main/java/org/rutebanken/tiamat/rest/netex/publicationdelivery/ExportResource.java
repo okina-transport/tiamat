@@ -22,6 +22,10 @@ import org.rutebanken.tiamat.exporter.PublicationDeliveryExporter;
 import org.rutebanken.tiamat.exporter.PublicationDeliveryStructurePage;
 import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
+import org.rutebanken.tiamat.model.Quay;
+import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.repository.QuayRepository;
+import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.repository.search.ChangedStopPlaceSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,14 +34,20 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
+import javax.transaction.Transactional;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.*;
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 @Api(tags = {"Sync export resource"}, produces = "application/xml")
@@ -52,6 +62,12 @@ public class ExportResource {
     private final PublicationDeliveryExporter publicationDeliveryExporter;
 
     private final ChangedStopPlaceSearchDisassembler changedStopPlaceSearchDisassembler;
+
+    @Autowired
+    private StopPlaceRepository stopPlaceRepository;
+
+    @Autowired
+    private QuayRepository quayRepository;
 
     @Qualifier("syncStreamingPublicationDelivery")
     @Autowired
@@ -112,6 +128,84 @@ public class ExportResource {
 
         return rsp.build();
     }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("getQuayInfo")
+    @Transactional
+    public Response getQuayInfo(@QueryParam("quayNetexId") String quayNetexId){
+
+        List<Quay> quays = stopPlaceRepository.findQuayByNetexId(quayNetexId);
+        if (quays.size() == 0){
+            return Response.noContent().build();
+        }
+
+        List<StopPlace> stopPlaces = stopPlaceRepository.findStopPlaceByQuays(quays);
+
+
+        List<StopPlaceView> stopPlaceViews = stopPlaces.stream()
+                                                    .map(StopPlaceView::new)
+                                                    .collect(Collectors.toList());
+
+        return Response.ok().entity(stopPlaceViews).build();
+
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("getStopPlaceInfo")
+    @Transactional
+    public Response getStopPlaceInfo(@QueryParam("stopPlaceNetexId") String stopPlaceNetexId){
+
+        List<StopPlace> stopPlaces = stopPlaceRepository.findAll(Arrays.asList(stopPlaceNetexId));
+
+
+        List<StopPlaceView> stopPlaceViews = stopPlaces.stream()
+                .map(StopPlaceView::new)
+                .collect(Collectors.toList());
+
+        return Response.ok().entity(stopPlaceViews).build();
+
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("getImportedIdInfo")
+    @Transactional
+    public Response getImportedIdInfo(@QueryParam("referential")String referential, @QueryParam("importedId") String importedId){
+        List<StopPlaceView> resultViews = new ArrayList<>();
+
+        try{
+            List<Quay> quays =   quayRepository.findAllByImportedId(referential + ":Quay:" + importedId);
+
+            if (quays.size() > 0){
+                List<StopPlace> stopPlaces = stopPlaceRepository.findStopPlaceByQuays(quays);
+
+                List<StopPlaceView> stopPlaceViews = stopPlaces.stream()
+                        .map(StopPlaceView::new)
+                        .collect(Collectors.toList());
+                resultViews.addAll(stopPlaceViews);
+            }
+
+        List<StopPlace> stopPlaces = stopPlaceRepository.findAllFromImportedId(referential + ":StopPlace:" +importedId);
+
+        if (stopPlaces.size() > 0 ){
+            List<StopPlaceView> stopPlaceViews = stopPlaces.stream()
+                                                            .map(StopPlaceView::new)
+                                                            .collect(Collectors.toList());
+
+            resultViews.addAll(stopPlaceViews);
+        }
+
+        }catch(Exception e){
+            logger.error("a", e);
+        }
+
+       return Response.ok().entity(resultViews).build();
+
+    }
+
+
 
     private URI createLinkToNextPage(String from, String to, int page, int perPage, ExportParams.ExportMode topographicPlaceExportMode, ExportParams.ExportMode tariffZoneExportMode, UriInfo uriInfo) {
         UriBuilder linkBuilder = uriInfo.getAbsolutePathBuilder()

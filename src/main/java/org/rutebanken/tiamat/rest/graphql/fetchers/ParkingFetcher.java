@@ -17,6 +17,8 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.locationtech.jts.geom.Envelope;
+import org.rutebanken.tiamat.dtoassembling.dto.BoundingBoxDto;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.rest.graphql.GraphQLNames;
@@ -30,6 +32,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -52,23 +56,23 @@ class ParkingFetcher implements DataFetcher {
 
         PageRequest pageable = PageRequest.of(environment.getArgument(PAGE), environment.getArgument(SIZE));
 
-        Page<Parking> allParkings;
+        Page<Parking> parkingPage;
 
         String stopPlaceId = environment.getArgument(FIND_BY_STOP_PLACE_ID);
 
         String parkingId = environment.getArgument(GraphQLNames.ID);
-        Integer version = (Integer) environment.getArgument(VERSION);
+        Integer version = environment.getArgument(VERSION);
 
         if (parkingId != null) {
             List<Parking> parkingList = new ArrayList<>();
             if(version != null && version > 0) {
                 logger.info("Finding parking by netexid {} and version {}", parkingId, version);
                 parkingList = Arrays.asList(parkingRepository.findFirstByNetexIdAndVersion(parkingId, version));
-                allParkings = new PageImpl<>(parkingList, pageable, 1L);
+                parkingPage = new PageImpl<>(parkingList, pageable, 1L);
             } else {
                 logger.info("Finding first parking by netexid {} and highest version", parkingId);
                 parkingList.add(parkingRepository.findFirstByNetexIdOrderByVersionDesc(parkingId));
-                allParkings = new PageImpl<>(parkingList, pageable, 1L);
+                parkingPage = new PageImpl<>(parkingList, pageable, 1L);
             }
         } else if (stopPlaceId != null) {
             logger.info("Finding parkings by stop place netexid {}", stopPlaceId);
@@ -76,11 +80,38 @@ class ParkingFetcher implements DataFetcher {
                     .peek(parkingNetexId -> logger.info("Finding parking by netexid {} and highest version", parkingNetexId))
                     .map(netexId -> parkingRepository.findFirstByNetexIdOrderByVersionDesc(netexId))
                     .collect(Collectors.toList());
-        } else {
+        } else if (environment.getArgument(LONGITUDE_MIN) != null) {
+            BoundingBoxDto boundingBox = new BoundingBoxDto();
+
+            try {
+                boundingBox.xMin = ((BigDecimal) environment.getArgument(LONGITUDE_MIN)).doubleValue();
+                boundingBox.yMin = ((BigDecimal) environment.getArgument(LATITUDE_MIN)).doubleValue();
+                boundingBox.xMax = ((BigDecimal) environment.getArgument(LONGITUDE_MAX)).doubleValue();
+                boundingBox.yMax = ((BigDecimal) environment.getArgument(LATITUDE_MAX)).doubleValue();
+            } catch (NullPointerException npe) {
+                RuntimeException rte = new RuntimeException(MessageFormat.format("{}, {}, {} and {} must all be set when searching within bounding box", LONGITUDE_MIN, LATITUDE_MIN, LONGITUDE_MAX, LATITUDE_MAX));
+                rte.setStackTrace(new StackTraceElement[0]);
+                throw rte;
+            }
+
+            String ignoreParkingId = null;
+            if (environment.getArgument(IGNORE_PARKING_ID) != null) {
+                ignoreParkingId = environment.getArgument(IGNORE_PARKING_ID);
+            }
+
+            Envelope envelope = new Envelope(boundingBox.xMin, boundingBox.xMax, boundingBox.yMin, boundingBox.yMax);
+
+
+            parkingPage = parkingRepository.findNearbyParking(envelope, null, null, ignoreParkingId, pageable);
+        } else if (environment.getArgument(QUERY) != null){
+            String query = environment.getArgument(QUERY);
+            parkingPage = parkingRepository.findByName(query, pageable);
+        }
+        else {
             logger.info("Finding all parkings regardless of version and validity");
-            allParkings = parkingRepository.findAll(pageable);
+            parkingPage = parkingRepository.findAll(pageable);
         }
 
-        return allParkings;
+        return parkingPage;
     }
 }

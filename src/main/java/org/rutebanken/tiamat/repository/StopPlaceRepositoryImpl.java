@@ -171,7 +171,6 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                                         + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME;
             if(ignoreStopPlaceId != null) {
                 queryString += "AND " + SQL_IGNORE_STOP_PLACE_ID;
-
             }
         } else {
             // If no point in time is set, use max version to only get one version per stop place
@@ -385,9 +384,16 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         sqlQuery.append(" AND (");
         Iterator<String> valuesIterator = values.iterator();
         for (int parameterCounter = 0; parameterCounter < values.size(); parameterCounter++) {
-            sqlQuery.append(" v.items LIKE :value").append(parameterCounter);
-            parameters.add(parameterPrefix + parameterCounter);
-            parametervalues.add((exactMatch ? "":"%") + valuesIterator.next());
+            if(exactMatch){
+                sqlQuery.append(" v.items = :value").append(parameterCounter);
+                parameters.add(parameterPrefix + parameterCounter);
+                parametervalues.add(valuesIterator.next());
+            }
+            else{
+                sqlQuery.append(" v.items LIKE :value").append(parameterCounter);
+                parameters.add(parameterPrefix + parameterCounter);
+                parametervalues.add("%" + valuesIterator.next());
+            }
             if (parameterCounter + 1 < values.size()) {
                 sqlQuery.append(" OR ");
             }
@@ -533,7 +539,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                              "  INNER JOIN quay_key_values qkv " +
                              "    ON q.id = qkv.quay_id AND qkv.key_values_key in (:originalIdKey) " +
                              "  INNER JOIN value_items vi " +
-                             "    ON vi.value_id = qkv.key_values_id AND vi.items LIKE :value " +
+                             "    ON vi.value_id = qkv.key_values_id AND vi.items = :value " +
                              SQL_LEFT_JOIN_PARENT_STOP +
                              " WHERE " +
                 SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME;
@@ -548,6 +554,34 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         try {
             @SuppressWarnings("unchecked")
             List<String> results = query.getResultList();
+            if (results.isEmpty()) {
+                return new ArrayList<>();
+            } else {
+                return results;
+            }
+        } catch (NoResultException noResultException) {
+            return null;
+        }
+    }
+
+    @Override
+    public List<StopPlace> findAllFromImportedId(String importedId) {
+        String sql = "SELECT DISTINCT s.* " +
+                " FROM stop_place s " +
+                "  INNER JOIN stop_place_key_values spkv " +
+                "    ON s.id = spkv.stop_place_id AND spkv.key_values_key = 'imported-id' " +
+                "  INNER JOIN value_items vi " +
+                "    ON vi.value_id = spkv.key_values_id " +
+                " WHERE upper(vi.items)  = UPPER(:importedId) ";
+
+        Query query = entityManager.createNativeQuery(sql, StopPlace.class);
+
+
+        query.setParameter("importedId", importedId);
+
+        try {
+            @SuppressWarnings("unchecked")
+            List<StopPlace> results = query.getResultList();
             if (results.isEmpty()) {
                 return new ArrayList<>();
             } else {
@@ -711,7 +745,10 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     @Override
     public Set<Long> addParentIds(Set<Long> stopPlaceDbIds) {
 
-
+        if (stopPlaceDbIds == null || stopPlaceDbIds.size() == 0){
+            logger.info("No results where found");
+            return stopPlaceDbIds;
+        }
 
         Set<String> stopPlaceStringDbIds = stopPlaceDbIds.stream().map(lvalue -> String.valueOf(lvalue)).collect(Collectors.toSet());
         String joinedStopPlaceDbIds = String.join(",", stopPlaceStringDbIds);
@@ -767,11 +804,50 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     }
 
     @Override
+    public List<StopPlace> findStopPlaceByQuays(List<Quay> quays) {
+
+        List<Long> quaysIdList = quays.stream()
+                                      .map(Quay::getId)
+                                      .collect(Collectors.toList());
+
+
+        final String queryString = "SELECT sp.* FROM stop_place sp JOIN stop_place_quays spq on sp.id = spq.stop_place_id  " +
+                "                            WHERE spq.quays_id IN :quaysId";
+
+        List<StopPlace> stopPlaces = entityManager.createNativeQuery(queryString, StopPlace.class)
+                                    .setParameter("quaysId",quaysIdList)
+                                    .getResultList();
+
+        return stopPlaces;
+
+    }
+
+    @Override
     public List<StopPlace> findAll(List<String> stopPlacesNetexIds) {
         final String queryString = "SELECT stopPlace FROM StopPlace stopPlace WHERE stopPlace.netexId IN :netexIds";
         final TypedQuery<StopPlace> typedQuery = entityManager.createQuery(queryString, StopPlace.class);
         typedQuery.setParameter("netexIds", stopPlacesNetexIds);
         return typedQuery.getResultList();
+    }
+
+    @Override
+    public List<Quay> findQuayByNetexId(String netexId) {
+        final String queryString = "SELECT quay FROM Quay quay WHERE quay.netexId = :netexId";
+        final TypedQuery<Quay> typedQuery = entityManager.createQuery(queryString, Quay.class);
+        typedQuery.setParameter("netexId", netexId);
+        List<Quay> resultList = typedQuery.getResultList();
+
+        for (Quay quay : resultList) {
+            Hibernate.initialize(quay.getKeyValues());
+
+            quay.getKeyValues().forEach((k,v) ->{
+                        Hibernate.initialize(v.getItems());
+                    }
+                    );
+
+        }
+
+        return resultList;
     }
 
     @Override

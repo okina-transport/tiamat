@@ -63,18 +63,22 @@ public class ParkingVersionedSaverService {
 
     public Parking saveNewVersion(Parking newVersion) {
 
-        Preconditions.checkArgument(newVersion.getParentSiteRef() != null, "Parent site ref cannot be null for parking");
+//        Preconditions.checkArgument(newVersion.getParentSiteRef() != null, "Parent site ref cannot be null for parking");
 
         Parking existing = parkingRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
 
-        resolveAndAuthorizeParkingSiteRef(newVersion);
+        if(newVersion.getParentSiteRef() != null){
+            resolveAndAuthorizeParkingSiteRef(newVersion);
+        }
 
         Parking result;
         if (existing != null) {
             logger.trace("existing: {}", existing);
             logger.trace("new: {}", newVersion);
 
-            resolveAndAuthorizeParkingSiteRef(existing);
+            if(existing.getParentSiteRef() != null) {
+                resolveAndAuthorizeParkingSiteRef(existing);
+            }
             newVersion.setCreated(existing.getCreated());
             newVersion.setChanged(Instant.now());
             newVersion.setVersion(existing.getVersion());

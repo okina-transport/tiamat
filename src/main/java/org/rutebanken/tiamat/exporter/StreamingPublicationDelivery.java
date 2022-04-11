@@ -25,6 +25,7 @@ import org.rutebanken.netex.model.AccessibilityLimitations_RelStructure;
 import org.rutebanken.netex.model.CountryRef;
 import org.rutebanken.netex.model.EntityStructure;
 import org.rutebanken.netex.model.GeneralFrame;
+import org.rutebanken.netex.model.General_VersionFrameStructure;
 import org.rutebanken.netex.model.GroupsOfStopPlacesInFrame_RelStructure;
 import org.rutebanken.netex.model.KeyValueStructure;
 import org.rutebanken.netex.model.LimitationStatusEnumeration;
@@ -221,8 +222,8 @@ public class StreamingPublicationDelivery {
         prepareTopographicPlaces(exportParams, stopPlacePrimaryIdsWithParents, mappedTopographicPlacesCount, listMembers, entitiesEvictor);
         prepareTariffZones(exportParams, stopPlacePrimaryIds, mappedTariffZonesCount, listMembers, entitiesEvictor);
         prepareStopPlaces(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, listMembers, entitiesEvictor);
-        prepareParkings(mappedParkingCount, stopPlacePrimaryIds, mappedParkingCount, listMembers, entitiesEvictor);
-        prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, listMembers, entitiesEvictor);
+        prepareParkings(mappedParkingCount, listMembers, entitiesEvictor);
+      //  prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, listMembers, entitiesEvictor);
 
 
         //adding the members to the general Frame
@@ -542,7 +543,7 @@ public class StreamingPublicationDelivery {
         quay.setAccessibilityAssessment(accessibilityAssessment);
     }
 
-    private void prepareTariffZones(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedTariffZonesCount, SiteFrame netexSiteFrame, EntitiesEvictor evicter) {
+    private void prepareTariffZones(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedTariffZonesCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter) {
 
 
         Iterator<org.rutebanken.tiamat.model.TariffZone> tariffZoneIterator;
@@ -577,7 +578,7 @@ public class StreamingPublicationDelivery {
 
     }
 
-    private void prepareParkings(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedParkingCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter) {
+    private void prepareParkings(AtomicInteger mappedParkingCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter) {
 
         // ExportParams could be used for parkingExportMode.
 
@@ -585,12 +586,8 @@ public class StreamingPublicationDelivery {
         if (parkingsCount > 0) {
             // Only set parkings if they will exist during marshalling.
             logger.info("Parking count is {}, will create parking in publication delivery", parkingsCount);
-            ParkingsInFrame_RelStructure parkingsInFrame_relStructure = new ParkingsInFrame_RelStructure();
-            List<Parking> parkings = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, parkingRepository.scrollParkings(),
-                    Parking.class, mappedParkingCount, evicter));
 
-
-            NetexMappingIterator<org.rutebanken.tiamat.model.Parking, Parking> parkingsMappingIterator = new NetexMappingIterator<>(netexMapper, parkingRepository.scrollParkings(stopPlacePrimaryIds),
+            NetexMappingIterator<org.rutebanken.tiamat.model.Parking, Parking> parkingsMappingIterator = new NetexMappingIterator<>(netexMapper, parkingRepository.scrollParkings(),
                     Parking.class, mappedParkingCount, evicter);
 
 

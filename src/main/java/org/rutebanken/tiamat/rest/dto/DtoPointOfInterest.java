@@ -1,6 +1,8 @@
 package org.rutebanken.tiamat.rest.dto;
 
 import com.google.common.base.MoreObjects;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.lang3.StringUtils;
 
 public class DtoPointOfInterest {
 
@@ -27,27 +29,27 @@ public class DtoPointOfInterest {
     public DtoPointOfInterest() {
     }
 
-    public DtoPointOfInterest(String rawString) {
+    public DtoPointOfInterest(CSVRecord csvRec) {
 
-        String[] values = rawString.split(delimeterToIgnoreCommasInQuotes1);
+    
 
-        id = removeQuotes(values[0]);
-        name = removeQuotes(values[1]);
-        houseNumber = removeQuotes(values[2]);
-        street = removeQuotes(values[3]);
-        city = removeQuotes(values[4]);
-        postCode = removeQuotes(values[5]);
-        longitude = removeQuotes(values[6].replace(",","."));
-        latitude = removeQuotes(values[7].replace(",","."));
-        amenity = removeQuotes(values[8]);
-        building = removeQuotes(values[9]);
-        historic =  removeQuotes(values[10]);
-        landuse =  removeQuotes(values[11]);
-        leisure = removeQuotes(values[12]);
-        tourism = removeQuotes(values[13]);
-        office = removeQuotes(values[14]);
-        shop = removeQuotes(values[15]);
-        lpImportId = removeQuotes(values[16].replace("\r",""));
+        id = removeQuotes(csvRec.get(0));
+        name = removeQuotes(csvRec.get(1));
+        houseNumber = removeQuotes(csvRec.get(2));
+        street = removeQuotes(csvRec.get(3));
+        city = removeQuotes(csvRec.get(4));
+        postCode = removeQuotes(csvRec.get(5));
+        longitude = removeQuotes(csvRec.get(6).replace(",","."));
+        latitude = removeQuotes(csvRec.get(7).replace(",","."));
+        amenity = removeQuotes(csvRec.get(8));
+        building = removeQuotes(csvRec.get(9));
+        historic =  removeQuotes(csvRec.get(10));
+        landuse =  removeQuotes(csvRec.get(11));
+        leisure = removeQuotes(csvRec.get(12));
+        tourism = removeQuotes(csvRec.get(13));
+        office = removeQuotes(csvRec.get(14));
+        shop = removeQuotes(csvRec.get(15));
+        lpImportId = removeQuotes(csvRec.get(16).replace("\r",""));
 
     }
 

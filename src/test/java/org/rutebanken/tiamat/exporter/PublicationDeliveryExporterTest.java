@@ -77,9 +77,9 @@ public class PublicationDeliveryExporterTest extends TiamatIntegrationTest {
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryStructurePage.publicationDeliveryStructure;
 
-        StopPlace actualParent = publicationDeliveryTestHelper.findStopPlace(publicationDeliveryStructure, parent.getNetexId());
+        StopPlace actualParent = publicationDeliveryTestHelper.findStopPlace(publicationDeliveryStructure, parent.getNetexId(), false);
         assertThat(actualParent).isNotNull();
-        StopPlace actualChild = publicationDeliveryTestHelper.findStopPlace(publicationDeliveryStructure, child.getNetexId());
+        StopPlace actualChild = publicationDeliveryTestHelper.findStopPlace(publicationDeliveryStructure, child.getNetexId(), false);
         assertThat(actualChild).as("child stop "+child.getNetexId() + " should be included").isNotNull();
     }
 
@@ -123,15 +123,15 @@ public class PublicationDeliveryExporterTest extends TiamatIntegrationTest {
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryStructurePage.publicationDeliveryStructure;
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure, false);
 
         assertThat(result)
                 .as("Expecting two stop places. The parent and the child. The monomodal stop place shall not be returned because it has been moved into the multi modal stop place")
                 .hasSize(2);
 
-        StopPlace actualParent = publicationDeliveryTestHelper.findStopPlace(publicationDeliveryStructure, parent.getNetexId());
+        StopPlace actualParent = publicationDeliveryTestHelper.findStopPlace(publicationDeliveryStructure, parent.getNetexId(), false);
         assertThat(actualParent).isNotNull();
-        StopPlace actualChild = publicationDeliveryTestHelper.findStopPlace(publicationDeliveryStructure, child.getNetexId());
+        StopPlace actualChild = publicationDeliveryTestHelper.findStopPlace(publicationDeliveryStructure, child.getNetexId(), false);
         assertThat(actualChild).as("child stop "+child.getNetexId() + " should be included").isNotNull();
         assertThat(actualChild.getParentSiteRef()).as("child stop "+child.getNetexId() + " should have parent site ref").isNotNull();
 

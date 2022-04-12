@@ -39,11 +39,7 @@ public class ImportShopResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response importShopCsvFile(@FormDataParam("file") InputStream inputStream) throws IOException, IllegalArgumentException {
 
-
-        String csvFile = null;
-
-        csvFile = new String(ByteStreams.toByteArray(inputStream));
-        List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(csvFile);
+        List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
         PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
         checkShops(dtoPointOfInterest);
 

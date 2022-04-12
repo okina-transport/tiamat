@@ -18,17 +18,14 @@ package org.rutebanken.tiamat.netex.validation;
 import org.junit.Assert;
 import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
-import org.rutebanken.netex.model.AccessibilityAssessment;
-import org.rutebanken.netex.model.AccessibilityLimitation;
 import org.rutebanken.netex.model.Common_VersionFrameStructure;
 import org.rutebanken.netex.model.EntityStructure;
 import org.rutebanken.netex.model.GeneralFrame;
-import org.rutebanken.netex.model.General_VersionFrameStructure;
 import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.netex.model.PostalAddress;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
-import org.rutebanken.netex.model.SiteFrame;
+import org.rutebanken.netex.model.QuayRefStructure;
 import org.rutebanken.netex.model.TypeOfPlaceRefs_RelStructure;
 import org.rutebanken.netex.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
@@ -41,7 +38,6 @@ import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
-import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.model.job.ExportJob;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.repository.ExportJobRepository;
@@ -60,6 +56,8 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -124,20 +122,46 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
 
     private void checkDataObjects(PublicationDeliveryStructure.DataObjects dataObjects){
         Common_VersionFrameStructure firstFrame = dataObjects.getCompositeFrameOrCommonFrame().stream().findFirst().get().getValue();
-        Assert.assertTrue(firstFrame.getId().startsWith("NSR:SiteFrame:"));
+        Assert.assertTrue(firstFrame.getId().startsWith("LRA:GeneralFrame:"));
 
         Assert.assertEquals("wrong version","1",firstFrame.getVersion());
      //   Assert.assertEquals("wrong typeOffFrame ref",firstFrame.getTypeOfFrameRef().getRef(),"FR:TypeOfFrame:NETEX_ARRET");
       //  Assert.assertEquals("wrong typeOffFrame value",firstFrame.getTypeOfFrameRef().getValue(),"version=\"1.1:FR-NETEX_ARRET-2.2\"");
-        ((SiteFrame)firstFrame).getStopPlaces().getStopPlace()
-                                               .forEach(this::checkStopPlace);
+        /*((SiteFrame)firstFrame).getStopPlaces().getStopPlace()
+                                               .forEach(this::checkStopPlace);*/
+        GeneralFrame generalFrame = (GeneralFrame) firstFrame;
+
+        checkStopPlace(generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity());
     }
 
-    private void checkStopPlace(org.rutebanken.netex.model.StopPlace stopPlace){
+    private void checkStopPlace(List<JAXBElement<? extends EntityStructure>> listMembers){
+        //create a list with all the QuayRef that we can find in the stop places
+        List<List<Object>> listQuayRef = listMembers.stream()
+                .filter(jaxbElement -> jaxbElement.getValue() instanceof org.rutebanken.netex.model.StopPlace)
+                .map(jaxStopPlace -> {
+                    org.rutebanken.netex.model.StopPlace stopPlace = (org.rutebanken.netex.model.StopPlace) jaxStopPlace.getValue();
+                    return stopPlace.getQuays().getQuayRefOrQuay();
+                })
+                .collect(Collectors.toList());
+
+        //Create a list with just the quays in the members
+        List<org.rutebanken.netex.model.Quay> listQuays= listMembers.stream()
+                .filter(jaxbElement -> jaxbElement.getValue() instanceof org.rutebanken.netex.model.Quay)
+                .map(jaxQuay -> (org.rutebanken.netex.model.Quay)jaxQuay.getValue())
+                .collect(Collectors.toList());
 
 
-        stopPlace.getQuays().getQuayRefOrQuay().forEach(quayObj -> checkQuayValues((org.rutebanken.netex.model.Quay) quayObj));
-
+        //check that the quayRef that we have in the stop_places member, have their equivalent Quay in the members also
+        listQuayRef.stream().forEach(quayRef ->{
+            quayRef.stream().forEach(reference ->{
+                QuayRefStructure quayRefStructure = (QuayRefStructure)reference;
+                listQuays.stream().forEach(quay -> {
+                    if(quay.getId().equals(quayRefStructure.getRef())){
+                        checkQuayValues(quay);
+                    }
+                });
+            });
+        });
     }
 
 

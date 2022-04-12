@@ -56,6 +56,8 @@ public class PublicationDeliveryTestHelper {
 
     private static final String defaultTimeZone = "Europe/Paris";
 
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
+
     static {
         try {
             jaxbContext = newInstance(PublicationDeliveryStructure.class);
@@ -82,6 +84,14 @@ public class PublicationDeliveryTestHelper {
                         .withCompositeFrameOrCommonFrame(new ObjectFactory().createSiteFrame(siteFrame)));
     }
 
+    public PublicationDeliveryStructure publicationDelivery(GeneralFrame generalFrame){
+        return new PublicationDeliveryStructure()
+                .withPublicationTimestamp(LocalDateTime.now())
+                .withVersion("1")
+                .withParticipantRef("test")
+                .withDataObjects(new PublicationDeliveryStructure.DataObjects()
+                        .withCompositeFrameOrCommonFrame(new ObjectFactory().createGeneralFrame(generalFrame)));
+    }
     public SiteFrame siteFrame() {
         SiteFrame siteFrame = new SiteFrame();
         siteFrame.setVersion("1");
@@ -102,7 +112,22 @@ public class PublicationDeliveryTestHelper {
         return publicationDelivery(siteFrame);
     }
 
-    public void addPathLinks(PublicationDeliveryStructure publicationDeliveryStructure, PathLink... pathLink) {
+    public PublicationDeliveryStructure createPublicationDeliveryWithStopPlaceInAGeneralFrame(StopPlace... stopPlaces) {
+
+        List <JAXBElement<? extends EntityStructure>> listMembers = new ArrayList<>();
+        Arrays.asList(stopPlaces).stream().forEach(stop -> listMembers.add(netexObjectFactory.createStopPlace(stop)));
+
+        GeneralFrame netexGeneralFrame = new GeneralFrame();
+        netexGeneralFrame.setVersion("1");
+        netexGeneralFrame.setId(UUID.randomUUID().toString());
+        General_VersionFrameStructure.Members general_VersionFrameStructure = netexObjectFactory.createGeneral_VersionFrameStructureMembers();
+        general_VersionFrameStructure.withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(listMembers);
+        netexGeneralFrame.withMembers(general_VersionFrameStructure);
+
+        return publicationDelivery(netexGeneralFrame);
+    }
+
+        public void addPathLinks(PublicationDeliveryStructure publicationDeliveryStructure, PathLink... pathLink) {
         findSiteFrame(publicationDeliveryStructure)
                 .withPathLinks(new PathLinksInFrame_RelStructure().withPathLink(pathLink));
     }
@@ -122,16 +147,21 @@ public class PublicationDeliveryTestHelper {
         assertThat(list).as("Matching original ID " + expectedId).hasSize(1);
     }
 
-    public List<StopPlace> extractStopPlaces(Response response) throws IOException, JAXBException {
-        return extractStopPlaces(fromResponse(response));
+    public List<StopPlace> extractStopPlaces(Response response, boolean isGeneralFrame) throws IOException, JAXBException {
+        return extractStopPlaces(fromResponse(response), isGeneralFrame);
     }
 
-    public List<StopPlace> extractStopPlaces(PublicationDeliveryStructure publicationDeliveryStructure) {
-        return extractStopPlaces(publicationDeliveryStructure, true);
+    public List<StopPlace> extractStopPlaces(PublicationDeliveryStructure publicationDeliveryStructure, boolean isGeneralFrame) {
+        return extractStopPlaces(publicationDeliveryStructure, isGeneralFrame, true);
     }
 
-    public List<StopPlace> extractStopPlaces(PublicationDeliveryStructure publicationDeliveryStructure, boolean verifyNotNull) {
-        return extractStopPlaces(findSiteFrame(publicationDeliveryStructure), verifyNotNull);
+    public List<StopPlace> extractStopPlaces(PublicationDeliveryStructure publicationDeliveryStructure, boolean isGeneralFrame,boolean verifyNotNull) {
+        if(isGeneralFrame){
+            GeneralFrame generalFrame = findGeneralFrame(publicationDeliveryStructure);
+            return extractStopPlacesFromGeneralFrame(generalFrame, verifyNotNull);
+        }else{
+            return extractStopPlaces(findSiteFrame(publicationDeliveryStructure), verifyNotNull);
+        }
     }
 
     public List<StopPlace> extractStopPlaces(SiteFrame siteFrame) {
@@ -148,6 +178,33 @@ public class PublicationDeliveryTestHelper {
         return siteFrame.getStopPlaces().getStopPlace();
     }
 
+    public List<StopPlace> extractStopPlacesFromGeneralFrame(GeneralFrame generalFrame, boolean verifyNotNull) {
+        if(verifyNotNull){
+            assertThat(generalFrame.getMembers()).isNotNull();
+            assertThat(generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity()).isNotNull();
+        }else{
+            return new ArrayList<>();
+        }
+        List<JAXBElement> jaxStopPlaces = generalFrame.getMembers()
+                .getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity()
+                .stream()
+                .filter(jaxbElement -> jaxbElement.getValue() instanceof org.rutebanken.netex.model.StopPlace)
+                .collect(Collectors.toList());
+
+        return jaxStopPlaces.stream().map(jaxStopPlace -> (StopPlace)jaxStopPlace.getValue()).collect(Collectors.toList());
+    }
+
+    public GroupOfStopPlaces extractGroupOfStopPlacesFromGeneralFrame(GeneralFrame generalFrame){
+
+        List<JAXBElement> jaxGroupStopPlaces = generalFrame.getMembers()
+                .getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity()
+                .stream()
+                .filter(jaxbElement -> jaxbElement.getValue() instanceof org.rutebanken.netex.model.GroupOfStopPlaces)
+                .collect(Collectors.toList());
+
+        return jaxGroupStopPlaces.stream().map(jaxGroupStopPlace -> (GroupOfStopPlaces)jaxGroupStopPlace.getValue()).collect(Collectors.toList()).get(0);
+
+    }
     public GroupOfStopPlaces extractGroupOfStopPlaces(SiteFrame siteFrame) {
         assertThat(siteFrame.getGroupsOfStopPlaces()).as("site frame groups of stop places").isNotNull();
         assertThat(siteFrame.getGroupsOfStopPlaces().getGroupOfStopPlaces())
@@ -260,7 +317,29 @@ public class PublicationDeliveryTestHelper {
 
         return importResource.importPublicationDelivery(inputStream, importParams);
     }
+    public GeneralFrame findGeneralFrame(PublicationDeliveryStructure incomingPublicationDelivery){
 
+        List<JAXBElement<? extends Common_VersionFrameStructure>> compositeFrameOrCommonFrame = incomingPublicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame();
+
+        Optional<GeneralFrame> optionalGeneralFrame = compositeFrameOrCommonFrame.stream()
+                .filter(element -> element.getValue() instanceof GeneralFrame)
+                .map(element -> (GeneralFrame)element.getValue())
+                .findFirst();
+
+        if(optionalGeneralFrame.isPresent()){
+            return optionalGeneralFrame.get();
+        }
+
+        return compositeFrameOrCommonFrame
+                .stream()
+                .filter(element -> element.getValue() instanceof CompositeFrame)
+                .map(element -> (CompositeFrame) element.getValue())
+                .map(compositeFrame -> compositeFrame.getFrames())
+                .flatMap(frames -> frames.getCommonFrame().stream())
+                .filter(jaxbElement -> jaxbElement.getValue() instanceof GeneralFrame)
+                .map(jaxbElement -> (GeneralFrame) jaxbElement.getValue())
+                .findAny().get();
+    }
     public SiteFrame findSiteFrame(PublicationDeliveryStructure publicationDelivery) {
 
         List<JAXBElement<? extends Common_VersionFrameStructure>> compositeFrameOrCommonFrame = publicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame();
@@ -287,12 +366,12 @@ public class PublicationDeliveryTestHelper {
                 .findAny().get();
     }
 
-    public StopPlace findStopPlace(PublicationDeliveryStructure publicationDeliveryStructure, String stopPlaceId) {
-        return findStopPlace(publicationDeliveryStructure, stopPlaceId, true);
+    public StopPlace findStopPlace(PublicationDeliveryStructure publicationDeliveryStructure, String stopPlaceId,  boolean isGeneralFrame) {
+        return findStopPlace(publicationDeliveryStructure, stopPlaceId, true, isGeneralFrame);
     }
 
-    public StopPlace findStopPlace(PublicationDeliveryStructure publicationDeliveryStructure, String stopPlaceId, boolean verifyNotNull) {
-        return extractStopPlaces(publicationDeliveryStructure, verifyNotNull).stream()
+    public StopPlace findStopPlace(PublicationDeliveryStructure publicationDeliveryStructure, String stopPlaceId, boolean verifyNotNull, boolean isGeneralFrame) {
+        return extractStopPlaces(publicationDeliveryStructure, isGeneralFrame, verifyNotNull).stream()
                 .filter(stopPlace -> stopPlace.getId().equals(stopPlaceId))
                 .findFirst().orElse(null);
     }

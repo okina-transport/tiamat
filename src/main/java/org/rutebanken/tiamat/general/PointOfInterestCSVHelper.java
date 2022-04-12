@@ -1,6 +1,8 @@
 package org.rutebanken.tiamat.general;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
@@ -24,6 +26,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Arrays;
@@ -35,6 +41,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 
@@ -85,13 +92,23 @@ public class PointOfInterestCSVHelper {
      * @throws IllegalArgumentException
      * exception in case of error in the data
      */
-    public List<DtoPointOfInterest> parseDocument(String csvFile) throws IllegalArgumentException{
-        String csvRows = csvFile.substring(csvFile.indexOf("\n")+1);
+    public List<DtoPointOfInterest> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
 
-        List<String> pointOfInterestRows = Arrays.asList(csvRows.split("\n"));
+        Reader reader = new InputStreamReader(csvFile);
 
-        return pointOfInterestRows.stream().map(this::convertToDTO)
-                                      .collect(Collectors.toList());
+        Iterable<CSVRecord> records = CSVFormat.DEFAULT
+                .builder()
+                .setHeader()
+                .setSkipHeaderRecord(true)
+                .setDelimiter(';')
+                .build()
+                .parse(reader);
+
+
+        return StreamSupport.stream(records.spliterator(), false)
+                        .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+
     }
 
 
@@ -102,7 +119,7 @@ public class PointOfInterestCSVHelper {
      * @return
      *  a DTO object with data from the CSV file
      */
-    private DtoPointOfInterest convertToDTO(String rawString){
+    private DtoPointOfInterest convertToDTO(CSVRecord rawString){
 
         DtoPointOfInterest poiDTO = new DtoPointOfInterest(rawString);
         validatePoi(poiDTO);

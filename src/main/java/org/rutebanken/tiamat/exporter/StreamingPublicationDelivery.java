@@ -25,6 +25,7 @@ import org.rutebanken.netex.model.AccessibilityLimitations_RelStructure;
 import org.rutebanken.netex.model.CountryRef;
 import org.rutebanken.netex.model.EntityStructure;
 import org.rutebanken.netex.model.GeneralFrame;
+import org.rutebanken.netex.model.General_VersionFrameStructure;
 import org.rutebanken.netex.model.GroupsOfStopPlacesInFrame_RelStructure;
 import org.rutebanken.netex.model.KeyValueStructure;
 import org.rutebanken.netex.model.LimitationStatusEnumeration;
@@ -39,6 +40,7 @@ import org.rutebanken.netex.model.PostalAddress;
 import org.rutebanken.netex.model.PrivateCodeStructure;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.Quay;
+import org.rutebanken.netex.model.QuayRefStructure;
 import org.rutebanken.netex.model.Quays_RelStructure;
 import org.rutebanken.netex.model.SiteFrame;
 import org.rutebanken.netex.model.SiteRefStructure;
@@ -185,14 +187,13 @@ public class StreamingPublicationDelivery {
 
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime) throws JAXBException, IOException, SAXException {
 
-        org.rutebanken.tiamat.model.SiteFrame siteFrame = tiamatSiteFrameExporter.createTiamatSiteFrame("Site frame " + exportParams);
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
         AtomicInteger mappedParkingCount = new AtomicInteger();
         AtomicInteger mappedTariffZonesCount = new AtomicInteger();
         AtomicInteger mappedTopographicPlacesCount = new AtomicInteger();
         AtomicInteger mappedGroupOfStopPlacesCount = new AtomicInteger();
-        AtomicInteger mappedPointOfInterestCount = new AtomicInteger();
 
         EntitiesEvictor entitiesEvictor = instantiateEvictor();
 
@@ -207,22 +208,28 @@ public class StreamingPublicationDelivery {
         logger.info("Got {} stop place IDs from stop place search", stopPlacePrimaryIds.size());
 
         //TODO: stream path links, handle export mode
-        tiamatSiteFrameExporter.addRelevantPathLinks(stopPlacePrimaryIds, siteFrame);
-
         logger.info("Mapping site frame to netex model");
-        org.rutebanken.netex.model.SiteFrame netexSiteFrame = netexMapper.mapToNetexModel(siteFrame);
+
+        GeneralFrame netexGeneralFrame = netexMapper.mapToNetexModel(generalFrame);
+
+        //List that will contain all the members in the General Frame
+        List <JAXBElement<? extends EntityStructure>> listMembers = new ArrayList<>();
+
 
         logger.info("Preparing scrollable iterators");
-        prepareTopographicPlaces(exportParams, stopPlacePrimaryIdsWithParents, mappedTopographicPlacesCount, netexSiteFrame, entitiesEvictor);
-        prepareTariffZones(exportParams, stopPlacePrimaryIds, mappedTariffZonesCount, netexSiteFrame, entitiesEvictor);
-        prepareStopPlaces(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, netexSiteFrame, entitiesEvictor);
-        prepareParkings(mappedPointOfInterestCount, netexSiteFrame, entitiesEvictor);
-        preparePointsOfInterest(mappedParkingCount, netexSiteFrame, entitiesEvictor);
-        prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, netexSiteFrame, entitiesEvictor);
+        prepareTopographicPlaces(exportParams, stopPlacePrimaryIdsWithParents, mappedTopographicPlacesCount, listMembers, entitiesEvictor);
+        prepareTariffZones(exportParams, stopPlacePrimaryIds, mappedTariffZonesCount, listMembers, entitiesEvictor);
+        prepareStopPlaces(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, listMembers, entitiesEvictor);
+        prepareParkings(mappedParkingCount, listMembers, entitiesEvictor);
+      //  prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, listMembers, entitiesEvictor);
 
 
+        //adding the members to the general Frame
+        General_VersionFrameStructure.Members general_VersionFrameStructure = netexObjectFactory.createGeneral_VersionFrameStructureMembers();
+        general_VersionFrameStructure.withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(listMembers);
+        netexGeneralFrame.withMembers(general_VersionFrameStructure);
 
-        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexSiteFrame);
+        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame,"idSite",LocalDateTime.now());
 
         Marshaller marshaller = createMarshaller();
 
@@ -236,10 +243,9 @@ public class StreamingPublicationDelivery {
 
         doLastModifications(outputStream, byteArrayOutputStream);
 
-        logger.info("Mapped {} stop places, {} parkings, {} points of interest, {} topographic places, {} group of stop places and {} tariff zones to netex",
+        logger.info("Mapped {} stop places, {} parkings, {} topographic places, {} group of stop places and {} tariff zones to netex",
                 mappedStopPlaceCount.get(),
                 mappedParkingCount.get(),
-                mappedPointOfInterestCount,
                 mappedTopographicPlacesCount,
                 mappedGroupOfStopPlacesCount,
                 mappedTariffZonesCount);
@@ -535,7 +541,7 @@ public class StreamingPublicationDelivery {
         quay.setAccessibilityAssessment(accessibilityAssessment);
     }
 
-    private void prepareTariffZones(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedTariffZonesCount, SiteFrame netexSiteFrame, EntitiesEvictor evicter) {
+    private void prepareTariffZones(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedTariffZonesCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter) {
 
 
         Iterator<org.rutebanken.tiamat.model.TariffZone> tariffZoneIterator;
@@ -560,24 +566,17 @@ public class StreamingPublicationDelivery {
             List<TariffZone> tariffZones = new ArrayList<>();
             tariffZoneMappingIterator.forEachRemaining(tariffZones::add);
 
-            TariffZonesInFrame_RelStructure tariffZonesInFrame_relStructure = new TariffZonesInFrame_RelStructure();
-
-            List<JAXBElement<? extends Zone_VersionStructure>> tariffZoneJaxbList = tariffZones.stream()
-                                                                                            .map(tariffZone -> (JAXBElement<? extends Zone_VersionStructure>) netexObjectFactory.createTariffZone(tariffZone))
-                                                                                            .collect(Collectors.toList());
-
-
-            tariffZonesInFrame_relStructure.withTariffZone_(tariffZoneJaxbList);
-            //setField(TariffZonesInFrame_RelStructure.class, "tariffZone_", tariffZonesInFrame_relStructure, tariffZones);
-            netexSiteFrame.setTariffZones(tariffZonesInFrame_relStructure);
+            tariffZones.stream().forEach(tariffZone -> {
+                JAXBElement<org.rutebanken.netex.model.TariffZone> jaxbElementTariffZone= netexObjectFactory.createTariffZone(tariffZone);
+                listMembers.add(jaxbElementTariffZone);
+            });
         } else {
             logger.info("No tariff zones to export");
-            netexSiteFrame.setTariffZones(null);
         }
 
     }
 
-    private void prepareParkings(AtomicInteger mappedParkingCount, SiteFrame netexSiteFrame, EntitiesEvictor evicter) {
+    private void prepareParkings(AtomicInteger mappedParkingCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter) {
 
         // ExportParams could be used for parkingExportMode.
 
@@ -585,12 +584,18 @@ public class StreamingPublicationDelivery {
         if (parkingsCount > 0) {
             // Only set parkings if they will exist during marshalling.
             logger.info("Parking count is {}, will create parking in publication delivery", parkingsCount);
-            ParkingsInFrame_RelStructure parkingsInFrame_relStructure = new ParkingsInFrame_RelStructure();
-            List<Parking> parkings = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, parkingRepository.scrollParkings(),
-                    Parking.class, mappedParkingCount, evicter));
 
-            setField(ParkingsInFrame_RelStructure.class, "parking", parkingsInFrame_relStructure, parkings);
-            netexSiteFrame.setParkings(parkingsInFrame_relStructure);
+            NetexMappingIterator<org.rutebanken.tiamat.model.Parking, Parking> parkingsMappingIterator = new NetexMappingIterator<>(netexMapper, parkingRepository.scrollParkings(),
+                    Parking.class, mappedParkingCount, evicter);
+
+
+            List<Parking> netexParkings = new ArrayList<>();
+            parkingsMappingIterator.forEachRemaining(netexParkings::add);
+
+            netexParkings.stream().forEach(parking->{
+                listMembers.add(netexObjectFactory.createParking(parking));
+            });
+
         } else {
             logger.info("No parkings to export based on stop places");
         }
@@ -629,10 +634,33 @@ public class StreamingPublicationDelivery {
             ParentStopFetchingIterator parentStopFetchingIterator = new ParentStopFetchingIterator(recoveredStopPlaces.iterator(), stopPlaceRepository);
             NetexMappingIterator<org.rutebanken.tiamat.model.StopPlace, StopPlace> netexMappingIterator = new NetexMappingIterator<>(netexMapper, parentStopFetchingIterator, StopPlace.class, mappedStopPlaceCount, evicter);
 
-            List<StopPlace> stopPlaces = new NetexMappingIteratorList<>(() -> new NetexReferenceRemovingIterator(netexMappingIterator, exportParams));
+            List<StopPlace> netexStopPlaces = new ArrayList<>();
+            netexMappingIterator.forEachRemaining(netexStopPlaces::add);
 
-            setField(StopPlacesInFrame_RelStructure.class, "stopPlace", stopPlacesInFrame_relStructure, stopPlaces);
-            netexSiteFrame.setStopPlaces(stopPlacesInFrame_relStructure);
+
+            netexStopPlaces.stream().forEach(netexStopPlace -> {
+                if (netexStopPlace.getQuays() != null && netexStopPlace.getQuays().getQuayRefOrQuay() != null){
+
+                    Quays_RelStructure quays = netexStopPlace.getQuays();
+                    Quays_RelStructure quaysReference = netexObjectFactory.createQuays_RelStructure();
+
+                    quays.getQuayRefOrQuay().stream().forEach(quay ->{
+                        //Adding the quay to the memberList
+                        Quay netexQuay = (Quay) quay;
+                        listMembers.add(netexObjectFactory.createQuay(netexQuay));
+
+                        //To isolate the reference to set Quay by the QuayRefStructure
+                        QuayRefStructure quayRefStructure = new QuayRefStructure();
+                        quayRefStructure.setRef(String.valueOf(netexQuay.getId()));
+                        quayRefStructure.setVersion(netexQuay.getVersion());
+
+                        quaysReference.getQuayRefOrQuay().add(quayRefStructure);
+                    });
+                    netexStopPlace.setQuays(quaysReference);
+                }
+                listMembers.add(netexObjectFactory.createStopPlace(netexStopPlace));
+            });
+
         } else {
             logger.info("No stop places to export");
         }
@@ -654,7 +682,7 @@ public class StreamingPublicationDelivery {
         }
     }
 
-    private void prepareTopographicPlaces(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedTopographicPlacesCount, SiteFrame netexSiteFrame, EntitiesEvictor evicter) {
+    private void prepareTopographicPlaces(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedTopographicPlacesCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter) {
 
         Iterator<TopographicPlace> relevantTopographicPlacesIterator;
 
@@ -675,13 +703,14 @@ public class StreamingPublicationDelivery {
             NetexMappingIterator<TopographicPlace, org.rutebanken.netex.model.TopographicPlace> topographicPlaceNetexMappingIterator = new NetexMappingIterator<>(
                     netexMapper, relevantTopographicPlacesIterator, org.rutebanken.netex.model.TopographicPlace.class, mappedTopographicPlacesCount, evicter);
 
-            List<org.rutebanken.netex.model.TopographicPlace> topographicPlaces = new NetexMappingIteratorList<>(() -> topographicPlaceNetexMappingIterator);
+            List<org.rutebanken.netex.model.TopographicPlace> netexTopographicPlaces = new ArrayList<>();
+            topographicPlaceNetexMappingIterator.forEachRemaining(netexTopographicPlaces::add);
 
-            TopographicPlacesInFrame_RelStructure topographicPlacesInFrame_relStructure = new TopographicPlacesInFrame_RelStructure();
-            setField(TopographicPlacesInFrame_RelStructure.class, "topographicPlace", topographicPlacesInFrame_relStructure, topographicPlaces);
-            netexSiteFrame.setTopographicPlaces(topographicPlacesInFrame_relStructure);
-        } else {
-            netexSiteFrame.setTopographicPlaces(null);
+            netexTopographicPlaces.stream().forEach(topographicPlace -> {
+                JAXBElement<org.rutebanken.netex.model.TopographicPlace> jaxbElementTopographicPlace = netexObjectFactory.createTopographicPlace(topographicPlace);
+                listMembers.add(jaxbElementTopographicPlace);
+            });
+
         }
     }
 

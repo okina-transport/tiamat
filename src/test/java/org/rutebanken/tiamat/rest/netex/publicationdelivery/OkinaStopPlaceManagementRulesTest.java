@@ -119,7 +119,7 @@ public class OkinaStopPlaceManagementRulesTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace1);
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
 
-        List<StopPlace> changedStopPlaces = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> changedStopPlaces = publicationDeliveryTestHelper.extractStopPlaces(response, false);
         Assert.assertEquals(1, changedStopPlaces.size());
         StopPlace resultSp = changedStopPlaces.get(0);
         Assert.assertEquals("created stop place should have initial name",initialStopName, resultSp.getName().getValue());
@@ -156,7 +156,7 @@ public class OkinaStopPlaceManagementRulesTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure publicationDelivery2 = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace2);
         PublicationDeliveryStructure response2 = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery2);
 
-        List<StopPlace> changedStopPlaces2 = publicationDeliveryTestHelper.extractStopPlaces(response2);
+        List<StopPlace> changedStopPlaces2 = publicationDeliveryTestHelper.extractStopPlaces(response2, false);
         Assert.assertEquals(1, changedStopPlaces2.size());
         StopPlace resultSp2 = changedStopPlaces2.get(0);
         Assert.assertEquals("created stop place should have initial name",initialStopName, resultSp2.getName().getValue());

@@ -96,9 +96,6 @@ public class ApiProxyService {
 	 * @return Geojson Object
 	 */
 	public DtoGeocode getGeocodeDataByReverseGeocoding(@NotNull BigDecimal latitude, @NotNull BigDecimal longitude) throws Exception {
-		if (latitude == null || longitude == null) {
-			throw new Exception("Latitude / Longitude ne peuvent pas être null pour demander un reverse geocoding");
-		}
 		if (latitude.compareTo(LAT_MIN_BOUND) < 0
 				|| latitude.compareTo(LAT_MAX_BOUND) > 0
 				|| longitude.compareTo(LON_MIN_BOUND) < 0

@@ -4,7 +4,7 @@ import com.google.common.io.ByteStreams;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.tiamat.general.ParkingsCSVHelper;
 import org.rutebanken.tiamat.model.Parking;
-import org.rutebanken.tiamat.rest.dto.DtoParking;
+import org.rutebanken.tiamat.rest.dto.DtoParkingCSV;
 import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,17 +38,13 @@ public class ImportParkingsResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public Response importParkingsCsvFile(@FormDataParam("file") InputStream inputStream) throws IOException, IllegalArgumentException {
-
-
-        String csvFile = null;
         try {
-            csvFile = new String(ByteStreams.toByteArray(inputStream));
 
-            List<DtoParking> dtoParking = ParkingsCSVHelper.parseDocument(csvFile);
+            List<DtoParkingCSV> dtoParkingCSV = ParkingsCSVHelper.parseDocument(inputStream);
 
-            ParkingsCSVHelper.checkDuplicatedParkings(dtoParking);
+            ParkingsCSVHelper.checkDuplicatedParkings(dtoParkingCSV);
 
-            List<Parking> parkings = ParkingsCSVHelper.mapFromDtoToEntity(dtoParking);
+            List<Parking> parkings = ParkingsCSVHelper.mapFromDtoToEntity(dtoParkingCSV);
 
             parkingsImportedService.createOrUpdateParkings(parkings);
 

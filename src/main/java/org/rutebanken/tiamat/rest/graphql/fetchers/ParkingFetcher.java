@@ -103,7 +103,11 @@ class ParkingFetcher implements DataFetcher {
 
 
             parkingPage = parkingRepository.findNearbyParking(envelope, null, null, ignoreParkingId, pageable);
-        } else {
+        } else if (environment.getArgument(QUERY) != null){
+            String query = environment.getArgument(QUERY);
+            parkingPage = parkingRepository.findByName(query, pageable);
+        }
+        else {
             logger.info("Finding all parkings regardless of version and validity");
             parkingPage = parkingRepository.findAll(pageable);
         }

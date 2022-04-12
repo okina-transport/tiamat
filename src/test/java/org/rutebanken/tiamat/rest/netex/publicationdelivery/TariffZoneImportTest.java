@@ -260,7 +260,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
         assertThat(actualZones).isNotEmpty();
         assertThat(actualZones).hasSize(2);
 
-        List<StopPlace> actualIdMatchedStopPlaces = publicationDeliveryTestHelper.extractStopPlaces(matchReponse);
+        List<StopPlace> actualIdMatchedStopPlaces = publicationDeliveryTestHelper.extractStopPlaces(matchReponse, false);
         assertThat(actualIdMatchedStopPlaces).hasSize(1);
         assertThat(actualIdMatchedStopPlaces.get(0).getTariffZones().getTariffZoneRef()).as("number of tariff zone refs").hasSize(2);
 
@@ -276,7 +276,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
         assertThat(actualZones).isNotEmpty();
         assertThat(actualZones).hasSize(2);
 
-        actualIdMatchedStopPlaces = publicationDeliveryTestHelper.extractStopPlaces(matchReponse);
+        actualIdMatchedStopPlaces = publicationDeliveryTestHelper.extractStopPlaces(matchReponse, false);
         assertThat(actualIdMatchedStopPlaces).hasSize(1);
         assertThat(actualIdMatchedStopPlaces.get(0).getTariffZones().getTariffZoneRef()).as("number of tariff zone refs").hasSize(2);
 

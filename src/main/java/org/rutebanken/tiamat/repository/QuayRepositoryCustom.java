@@ -38,4 +38,6 @@ public interface QuayRepositoryCustom extends DataManagedObjectStructureReposito
 
     List<String> searchByKeyValue(String key, String value);
 
+    List<Quay> findAllByImportedId(String importedId);
+
 }

@@ -33,6 +33,7 @@ public class TiamatGeneralFrameExporter {
         localDateTimeString = localDateTimeString.replace(":", "");
         generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_ARRET_" + localDateTimeString + ":LOC");
         generalFrame.setModification(ModificationEnumeration.REVISE);
+        generalFrame.setVersion(1L);
 
         logger.info("Adding {} generalFrame", generalFrame);
 

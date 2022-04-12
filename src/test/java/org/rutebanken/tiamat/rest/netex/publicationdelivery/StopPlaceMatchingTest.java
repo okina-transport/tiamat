@@ -124,7 +124,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         System.out.println("Got response: \n" + response);
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response,false);
 
         assertThat(result).hasSize(1);
         publicationDeliveryTestHelper.hasOriginalId(stopPlaceToBeMatched.getId(), result.get(0));
@@ -182,7 +182,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         importParams.importType = ImportType.MATCH;
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery3, importParams);
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).hasSize(1);
         publicationDeliveryTestHelper.hasOriginalId(stopPlaceToBeMatched.getId(), result.get(0));
@@ -258,7 +258,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure matchingPublicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(incomingStopPlace);
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(matchingPublicationDelivery, importParams);
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).as("two stop places matches one incoming stop place with two quays").hasSize(1);
 
@@ -320,7 +320,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         importParams.importType = ImportType.MERGE;
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery2, importParams);
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).hasSize(1);
         StopPlace actualStopPlace = result.get(0);
@@ -365,7 +365,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         System.out.println("Got response: \n" + response);
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).hasSize(1);
         publicationDeliveryTestHelper.hasOriginalId(stopPlaceToBeMatched.getId(), result.get(0));
@@ -446,7 +446,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         System.out.println("Got response: \n" + response);
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).hasSize(1);
         publicationDeliveryTestHelper.hasOriginalId("RUT:StopPlace:0111111111", result.get(0));
@@ -488,7 +488,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         System.out.println("Got response: \n" + response);
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).hasSize(1);
         publicationDeliveryTestHelper.hasOriginalId("RUT:StopPlace:111111111", result.get(0));
@@ -556,7 +556,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         importParams.importType = ImportType.ID_MATCH;
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery2, importParams);
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).hasSize(1);
         publicationDeliveryTestHelper.hasOriginalId(stopPlace1.getId(), result.get(0));
@@ -594,7 +594,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         importParams.importType = ImportType.ID_MATCH;
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery2, importParams);
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).hasSize(1);
         publicationDeliveryTestHelper.hasOriginalId(stopPlace1.getId(), result.get(0));
@@ -639,7 +639,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         importParams.importType = ImportType.ID_MATCH;
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery2, importParams);
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).hasSize(1);
         publicationDeliveryTestHelper.hasOriginalId(stopPlace1.getId(), result.get(0));
@@ -683,7 +683,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         importParams.importType = ImportType.ID_MATCH;
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery2, importParams);
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).hasSize(1);
         publicationDeliveryTestHelper.hasOriginalId(stopPlace1.getId(), result.get(0));
@@ -728,7 +728,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         importParams.importType = ImportType.ID_MATCH;
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery2, importParams);
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).hasSize(1);
         publicationDeliveryTestHelper.hasOriginalId(stopPlace1.getId(), result.get(0));
@@ -945,7 +945,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
         importParams.importType = ImportType.ID_MATCH;
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(idMatch, importParams);
 
-        List<StopPlace> stops = publicationDeliveryTestHelper.extractStopPlaces(response);
+        List<StopPlace> stops = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(stops).hasSize(2);
     }

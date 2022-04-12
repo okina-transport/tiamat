@@ -24,6 +24,7 @@ import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.repository.search.ChangedStopPlaceSearch;
 import org.slf4j.Logger;
@@ -43,6 +44,7 @@ import javax.ws.rs.core.*;
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -63,6 +65,9 @@ public class ExportResource {
 
     @Autowired
     private StopPlaceRepository stopPlaceRepository;
+
+    @Autowired
+    private QuayRepository quayRepository;
 
     @Qualifier("syncStreamingPublicationDelivery")
     @Autowired
@@ -160,6 +165,43 @@ public class ExportResource {
                 .collect(Collectors.toList());
 
         return Response.ok().entity(stopPlaceViews).build();
+
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("getImportedIdInfo")
+    @Transactional
+    public Response getImportedIdInfo(@QueryParam("referential")String referential, @QueryParam("importedId") String importedId){
+        List<StopPlaceView> resultViews = new ArrayList<>();
+
+        try{
+            List<Quay> quays =   quayRepository.findAllByImportedId(referential + ":Quay:" + importedId);
+
+            if (quays.size() > 0){
+                List<StopPlace> stopPlaces = stopPlaceRepository.findStopPlaceByQuays(quays);
+
+                List<StopPlaceView> stopPlaceViews = stopPlaces.stream()
+                        .map(StopPlaceView::new)
+                        .collect(Collectors.toList());
+                resultViews.addAll(stopPlaceViews);
+            }
+
+        List<StopPlace> stopPlaces = stopPlaceRepository.findAllFromImportedId(referential + ":StopPlace:" +importedId);
+
+        if (stopPlaces.size() > 0 ){
+            List<StopPlaceView> stopPlaceViews = stopPlaces.stream()
+                                                            .map(StopPlaceView::new)
+                                                            .collect(Collectors.toList());
+
+            resultViews.addAll(stopPlaceViews);
+        }
+
+        }catch(Exception e){
+            logger.error("a", e);
+        }
+
+       return Response.ok().entity(resultViews).build();
 
     }
 

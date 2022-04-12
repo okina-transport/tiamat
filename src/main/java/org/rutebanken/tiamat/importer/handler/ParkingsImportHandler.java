@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.importer.handler;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.lock.FencedLock;
 import org.rutebanken.netex.model.ParkingsInFrame_RelStructure;
 import org.rutebanken.netex.model.SiteFrame;
 import org.rutebanken.tiamat.importer.ImportType;
@@ -87,7 +88,7 @@ public class ParkingsImportHandler {
             Collection<org.rutebanken.netex.model.Parking> importedParkings;
 
             if (importParams.importType == null || importParams.importType.equals(ImportType.MERGE)) {
-                final Lock lock = hazelcastInstance.getLock(PARKING_IMPORT_LOCK_KEY);
+                final FencedLock lock = hazelcastInstance.getCPSubsystem().getLock(PARKING_IMPORT_LOCK_KEY);
                 lock.lock();
                 try {
                     importedParkings = transactionalMergingParkingsImporter.importParkings(tiamatParking, parkingsCreatedOrUpdated);

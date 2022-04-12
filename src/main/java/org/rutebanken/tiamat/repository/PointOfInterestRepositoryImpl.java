@@ -60,7 +60,7 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
     }
 
     private Iterator<PointOfInterest> scrollPointsOfInterest(Pair<String, Map<String, Object>> sqlWithParams) {
-        final int fetchSize = 100;
+        final int fetchSize = 800;
 
         Session session = entityManager.unwrap(Session.class);
         NativeQuery query = session.createNativeQuery(sqlWithParams.getFirst());
@@ -141,6 +141,26 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
         newFacilitySet.setTicketingServiceFacility(ticketingServiceFacility);
         entityManager.persist(newFacilitySet);
         return newFacilitySet;
+    }
+
+    @Override
+    public PointOfInterestFacilitySet getPoiFacilitySet(Integer poiFacilitySetId) {
+        Query query = entityManager.createNativeQuery("SELECT * " +
+                "FROM point_of_interest_facility_set fs " +
+                "WHERE fs.id = :poiFacilitySetId " ,PointOfInterestFacilitySet.class );
+
+        query.setParameter("poiFacilitySetId", poiFacilitySetId);
+
+        try {
+            List<PointOfInterestFacilitySet> results = query.getResultList();
+            if (!results.isEmpty()) {
+                return results.get(0);
+            } else {
+                return null;
+            }
+        } catch (NoResultException noResultException) {
+            return null;
+        }
     }
 
     public void clearAllPois(){

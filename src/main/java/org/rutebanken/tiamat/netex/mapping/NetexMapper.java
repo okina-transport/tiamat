@@ -40,7 +40,8 @@ public class NetexMapper {
     public NetexMapper(List<Converter> converters, KeyListToKeyValuesMapMapper keyListToKeyValuesMapMapper,
                        DataManagedObjectStructureMapper dataManagedObjectStructureMapper,
                        PublicationDeliveryHelper publicationDeliveryHelper,
-                       AccessibilityAssessmentMapper accessibilityAssessmentMapper) {
+                       AccessibilityAssessmentMapper accessibilityAssessmentMapper,
+                       PointOfInterestMapper pointOfInterestMapper) {
 
         logger.info("Setting up netexMapper with DI");
 
@@ -99,6 +100,17 @@ public class NetexMapper {
                 .byDefault()
                 .register();
 
+        mapperFactory.classMap(PointOfInterest.class, org.rutebanken.tiamat.model.PointOfInterest.class)
+                .fieldBToA("netexId", "id")
+                .customize(pointOfInterestMapper)
+                .byDefault()
+                .register();
+
+        mapperFactory.classMap(PointOfInterestClassification.class, org.rutebanken.tiamat.model.PointOfInterestClassification.class)
+                .fieldBToA("netexId", "id")
+                .customize(new PointOfInterestClassificationMapper())
+                .byDefault()
+                .register();
 
         mapperFactory.classMap(Parking.class, org.rutebanken.tiamat.model.Parking.class)
                 .exclude("paymentMethods")
@@ -309,6 +321,14 @@ public class NetexMapper {
         return facade.map(tiamatParking, Parking.class);
     }
 
+    public PointOfInterest mapToNetexModel(org.rutebanken.tiamat.model.PointOfInterest tiamatPointOfInterest) {
+        return facade.map(tiamatPointOfInterest, PointOfInterest.class);
+    }
+
+    public PointOfInterestClassification mapToNetexModel(org.rutebanken.tiamat.model.PointOfInterestClassification tiamatPointOfInterestClassification) {
+        return facade.map(tiamatPointOfInterestClassification, PointOfInterestClassification.class);
+    }
+
     public org.rutebanken.tiamat.model.TopographicPlace mapToTiamatModel(TopographicPlace topographicPlace) {
         return facade.map(topographicPlace, org.rutebanken.tiamat.model.TopographicPlace.class);
     }
@@ -323,6 +343,14 @@ public class NetexMapper {
 
     public List<org.rutebanken.tiamat.model.Parking> mapParkingsToTiamatModel(List<Parking> parking) {
         return facade.mapAsList(parking, org.rutebanken.tiamat.model.Parking.class);
+    }
+
+    public List<org.rutebanken.tiamat.model.PointOfInterest> mapPointsOfInterestToTiamatModel(List<PointOfInterest> pointsOfInterest) {
+        return facade.mapAsList(pointsOfInterest, org.rutebanken.tiamat.model.PointOfInterest.class);
+    }
+
+    public List<org.rutebanken.tiamat.model.PointOfInterestClassification> mapPointsOfInterestClassificationsToTiamatModel(List<PointOfInterestClassification> pointOfInterestClassifications) {
+        return facade.mapAsList(pointOfInterestClassifications, org.rutebanken.tiamat.model.PointOfInterestClassification.class);
     }
 
     public List<org.rutebanken.tiamat.model.PathLink> mapPathLinksToTiamatModel(List<PathLink> pathLinks) {
@@ -350,6 +378,14 @@ public class NetexMapper {
 
     public org.rutebanken.tiamat.model.Parking mapToTiamatModel(Parking netexParking) {
         return facade.map(netexParking, org.rutebanken.tiamat.model.Parking.class);
+    }
+
+    public org.rutebanken.tiamat.model.PointOfInterest mapToTiamatModel(PointOfInterest netexPointOfInterest) {
+        return facade.map(netexPointOfInterest, org.rutebanken.tiamat.model.PointOfInterest.class);
+    }
+
+    public org.rutebanken.tiamat.model.PointOfInterestClassification mapToTiamatModel(PointOfInterestClassification netexPointOfInterestClassification) {
+        return facade.map(netexPointOfInterestClassification, org.rutebanken.tiamat.model.PointOfInterestClassification.class);
     }
 
     public Quay mapToNetexModel(org.rutebanken.tiamat.model.Quay tiamatQuay) {

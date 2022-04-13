@@ -11,7 +11,8 @@ import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
-import org.rutebanken.tiamat.rest.dto.DtoParkingCSV;
+import org.rutebanken.tiamat.rest.dto.DtoParking;
+import org.rutebanken.tiamat.rest.dto.DtoParking;
 import org.rutebanken.tiamat.service.Preconditions;
 
 import java.io.IOException;
@@ -37,10 +38,10 @@ public class ParkingsCSVHelper {
     private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
 
-    public static List<DtoParkingCSV> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
+    public static List<DtoParking> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
 
         Reader reader = new InputStreamReader(csvFile);
-        List<DtoParkingCSV> dtoParkingCSVList = new ArrayList<>();
+        List<DtoParking> dtoParkingList = new ArrayList<>();
 
 
         Iterable<CSVRecord> records = CSVFormat.DEFAULT
@@ -52,7 +53,7 @@ public class ParkingsCSVHelper {
                 .parse(reader);
 
         for (CSVRecord csvRecord : records) {
-            DtoParkingCSV dtoParkingCSV = new DtoParkingCSV(
+            DtoParking dtoParking = new DtoParking(
                     csvRecord.get(0),
                     csvRecord.get(1),
                     csvRecord.get(2),
@@ -85,22 +86,22 @@ public class ParkingsCSVHelper {
                     csvRecord.get(29)
             );
 
-            validateParking(dtoParkingCSV);
+            validateParking(dtoParking);
 
-            dtoParkingCSVList.add(dtoParkingCSV);
+            dtoParkingList.add(dtoParking);
         }
 
-        return dtoParkingCSVList;
+        return dtoParkingList;
     }
 
-    private static void validateParking(DtoParkingCSV parking) throws IllegalArgumentException {
+    private static void validateParking(DtoParking parking) throws IllegalArgumentException {
         Preconditions.checkArgument(!parking.getId().isEmpty(), "ID is required in all your parkings");
         Preconditions.checkArgument(!parking.getNom().isEmpty(), "NAME is required to parking with Id " + parking.getId());
         Preconditions.checkArgument(patternXlongYlat.matcher(parking.getXlong()).matches(), "X Longitud is not correct in the parking with " + parking.getId());
         Preconditions.checkArgument(patternXlongYlat.matcher(parking.getYlat()).matches(), "Y Latitud is not correct in the parking with " + parking.getId());
     }
 
-    public static void checkDuplicatedParkings(List<DtoParkingCSV> parkings) throws IllegalArgumentException {
+    public static void checkDuplicatedParkings(List<DtoParking> parkings) throws IllegalArgumentException {
         List<String> compositeKey = parkings.stream().map(parking -> parking.getId() + parking.getNom()).collect(Collectors.toList());
         Set listWithoutDuplicatedValues = new HashSet(compositeKey);
         if (compositeKey.size() > listWithoutDuplicatedValues.size())
@@ -108,7 +109,7 @@ public class ParkingsCSVHelper {
     }
 
 
-    public static List<Parking> mapFromDtoToEntity(List<DtoParkingCSV> dtoParkingsCSV) {
+    public static List<Parking> mapFromDtoToEntity(List<DtoParking> dtoParkingsCSV) {
         return  dtoParkingsCSV.stream().map(parkingDto -> {
 
             Parking parking = new Parking();

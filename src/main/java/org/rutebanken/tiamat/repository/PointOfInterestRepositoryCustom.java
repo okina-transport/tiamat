@@ -8,6 +8,5 @@ import org.rutebanken.tiamat.model.TicketingServiceFacilityEnumeration;
 
 public interface PointOfInterestRepositoryCustom  extends DataManagedObjectStructureRepository<PointOfInterest>{
 
-    PointOfInterestFacilitySet getOrCreateFacilitySet(TicketingFacilityEnumeration ticketingFacility, TicketingServiceFacilityEnumeration ticketingServiceFacility);
     void clearAllPois();
 }

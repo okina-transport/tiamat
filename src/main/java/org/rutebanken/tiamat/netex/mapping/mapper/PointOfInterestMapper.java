@@ -28,11 +28,9 @@ public class PointOfInterestMapper extends CustomMapper<PointOfInterest, org.rut
             if (pointOfInterestFacilitySet != null) {
                 SiteFacilitySets_RelStructure siteFacilitySets_relStructure = new SiteFacilitySets_RelStructure();
 
-                SiteFacilitySetRefStructure siteFacilitySetRefStructure = new SiteFacilitySetRefStructure();
-
                 SiteFacilitySet siteFacilitySet = new SiteFacilitySet();
                 siteFacilitySet.setId(pointOfInterestFacilitySet.getNetexId());
-                siteFacilitySet.setVersion(pointOfInterest.getNetexId());
+                siteFacilitySet.setVersion(String.valueOf(pointOfInterestFacilitySet.getVersion()));
                 siteFacilitySet.getTicketingFacilityList().add(TicketingFacilityEnumeration.fromValue(pointOfInterestFacilitySet.getTicketingFacility().value()));
                 siteFacilitySet.getTicketingServiceFacilityList().add(TicketingServiceFacilityEnumeration.fromValue(pointOfInterestFacilitySet.getTicketingServiceFacility().value()));
 

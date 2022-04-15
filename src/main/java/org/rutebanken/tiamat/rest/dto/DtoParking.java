@@ -2,142 +2,148 @@ package org.rutebanken.tiamat.rest.dto;
 
 import com.google.common.base.MoreObjects;
 
+
+
 public class DtoParking {
 
     private String id;
-    private String nom;
+    private String name;
     private String insee;
-    private String adresse;
+    private String adress;
     private String url;
-    private String type_usagers;
-    private String gratuit;
-    private String nb_places;
-    private String nb_pr;
-    private String nb_pmr;
-    private String nb_voitures_electriques;
-    private String nb_velo;
-    private String nb_2r_el;
-    private String nb_autopartage;
-    private String nb_2_rm;
-    private String nb_covoit;
-    private String hauteur_max;
-    private String num_siret;
+    private String userType;
+    private String free;
+    private String nbOfPlaces;
+    private String nbOfPr;
+    private String disabledParkingNb;
+    private String electricVehicleNb;
+    private String bikeNb;
+    private String electricBikesNb;
+    private String carSharingNb;
+    private String motorcycleNb;
+    private String carPoolingNb;
+    private String maxHeight;
+    private String siretNumber;
     private String Xlong;
     private String Ylat;
-    private String tarif_pmr;
-    private String tarif_1h;
-    private String tarif_2h;
-    private String tarif_3h;
-    private String tarif_4h;
-    private String tarif_24h;
-    private String abo_resident;
-    private String abo_non_resident;
-    private String type_ouvrage;
+    private String disabledParkingPrice;
+    private String oneHourPrice;
+    private String twoHoursPrice;
+    private String threeHoursPrice;
+    private String fourHoursPrice;
+    private String twentyFourHoursPrice;
+    private String residentSubscription;
+    private String nonResidentSubscription;
+    private String workType;
     private String info;
+    private String hookType;
 
-    public DtoParking(String id, String nom, String insee, String adresse, String url, String type_usagers, String gratuit, String nb_places, String nb_pr, String nb_pmr, String nb_voitures_electriques, String nb_velo, String nb_2r_el, String nb_autopartage, String nb_2_rm, String nb_covoit, String hauteur_max, String num_siret, String xlong, String ylat, String tarif_pmr, String tarif_1h, String tarif_2h, String tarif_3h, String tarif_4h, String tarif_24h, String abo_resident, String abo_non_resident, String type_ouvrage, String info) {
+    public DtoParking(String id, String name, String insee, String adress, String url, String userType, String free, String nbOfPlaces, String nbOfPr, String disabledParkingNb, String electricVehicleNb, String bikeNb, String electricBikesNb, String carSharingNb, String motorcycleNb, String carPoolingNb, String maxHeight, String siretNumber, String xlong, String ylat, String disabledParkingPrice, String oneHourPrice, String twoHoursPrice, String threeHoursPrice, String fourHoursPrice, String twentyFourHoursPrice, String residentSubscription, String nonResidentSubscription, String workType, String info) {
         this.id = id;
-        this.nom = nom;
+        this.name = name;
         this.insee = insee;
-        this.adresse = adresse;
+        this.adress = adress;
         this.url = url;
-        this.type_usagers = type_usagers;
-        this.gratuit = gratuit;
-        this.nb_places = nb_places;
-        this.nb_pr = nb_pr;
-        this.nb_pmr = nb_pmr;
-        this.nb_voitures_electriques = nb_voitures_electriques;
-        this.nb_velo = nb_velo;
-        this.nb_2r_el = nb_2r_el;
-        this.nb_autopartage = nb_autopartage;
-        this.nb_2_rm = nb_2_rm;
-        this.nb_covoit = nb_covoit;
-        this.hauteur_max = hauteur_max;
-        this.num_siret = num_siret;
+        this.userType = userType;
+        this.free = free;
+        this.nbOfPlaces = nbOfPlaces;
+        this.nbOfPr = nbOfPr;
+        this.disabledParkingNb = disabledParkingNb;
+        this.electricVehicleNb = electricVehicleNb;
+        this.bikeNb = bikeNb;
+        this.electricBikesNb = electricBikesNb;
+        this.carSharingNb = carSharingNb;
+        this.motorcycleNb = motorcycleNb;
+        this.carPoolingNb = carPoolingNb;
+        this.maxHeight = maxHeight;
+        this.siretNumber = siretNumber;
         this.Xlong = xlong;
         this.Ylat = ylat;
-        this.tarif_pmr = tarif_pmr;
-        this.tarif_1h = tarif_1h;
-        this.tarif_2h = tarif_2h;
-        this.tarif_3h = tarif_3h;
-        this.tarif_4h = tarif_4h;
-        this.tarif_24h = tarif_24h;
-        this.abo_resident = abo_resident;
-        this.abo_non_resident = abo_non_resident;
-        this.type_ouvrage = type_ouvrage;
+        this.disabledParkingPrice = disabledParkingPrice;
+        this.oneHourPrice = oneHourPrice;
+        this.twoHoursPrice = twoHoursPrice;
+        this.threeHoursPrice = threeHoursPrice;
+        this.fourHoursPrice = fourHoursPrice;
+        this.twentyFourHoursPrice = twentyFourHoursPrice;
+        this.residentSubscription = residentSubscription;
+        this.nonResidentSubscription = nonResidentSubscription;
+        this.workType = workType;
         this.info = info;
+    }
+
+    public DtoParking() {
     }
 
     public String getId() {
         return id;
     }
 
-    public String getNom() {
-        return nom;
+    public String getName() {
+        return name;
     }
 
     public String getInsee() {
         return insee;
     }
 
-    public String getAdresse() {
-        return adresse;
+    public String getAdress() {
+        return adress;
     }
 
     public String getUrl() {
         return url;
     }
 
-    public String getType_usagers() {
-        return type_usagers;
+    public String getUserType() {
+        return userType;
     }
 
-    public String getGratuit() {
-        return gratuit;
+    public String getFree() {
+        return free;
     }
 
-    public String getNb_places() {
-        return nb_places;
+    public String getNbOfPlaces() {
+        return nbOfPlaces;
     }
 
-    public String getNb_pr() {
-        return nb_pr;
+    public String getNbOfPr() {
+        return nbOfPr;
     }
 
-    public String getNb_pmr() {
-        return nb_pmr;
+    public String getDisabledParkingNb() {
+        return disabledParkingNb;
     }
 
-    public String getNb_voitures_electriques() {
-        return nb_voitures_electriques;
+    public String getElectricVehicleNb() {
+        return electricVehicleNb;
     }
 
-    public String getNb_velo() {
-        return nb_velo;
+    public String getBikeNb() {
+        return bikeNb;
     }
 
-    public String getNb_2r_el() {
-        return nb_2r_el;
+    public String getElectricBikesNb() {
+        return electricBikesNb;
     }
 
-    public String getNb_autopartage() {
-        return nb_autopartage;
+    public String getCarSharingNb() {
+        return carSharingNb;
     }
 
-    public String getNb_2_rm() {
-        return nb_2_rm;
+    public String getMotorcycleNb() {
+        return motorcycleNb;
     }
 
-    public String getNb_covoit() {
-        return nb_covoit;
+    public String getCarPoolingNb() {
+        return carPoolingNb;
     }
 
-    public String getHauteur_max() {
-        return hauteur_max;
+    public String getMaxHeight() {
+        return maxHeight;
     }
 
-    public String getNum_siret() {
-        return num_siret;
+    public String getSiretNumber() {
+        return siretNumber;
     }
 
     public String getXlong() {
@@ -148,81 +154,207 @@ public class DtoParking {
         return Ylat;
     }
 
-    public String getTarif_pmr() {
-        return tarif_pmr;
+    public String getDisabledParkingPrice() {
+        return disabledParkingPrice;
     }
 
-    public String getTarif_1h() {
-        return tarif_1h;
+    public String getOneHourPrice() {
+        return oneHourPrice;
     }
 
-    public String getTarif_2h() {
-        return tarif_2h;
+    public String getTwoHoursPrice() {
+        return twoHoursPrice;
     }
 
-    public String getTarif_3h() {
-        return tarif_3h;
+    public String getThreeHoursPrice() {
+        return threeHoursPrice;
     }
 
-    public String getTarif_4h() {
-        return tarif_4h;
+    public String getFourHoursPrice() {
+        return fourHoursPrice;
     }
 
-    public String getTarif_24h() {
-        return tarif_24h;
+    public String getTwentyFourHoursPrice() {
+        return twentyFourHoursPrice;
     }
 
-    public String getAbo_resident() {
-        return abo_resident;
+    public String getResidentSubscription() {
+        return residentSubscription;
     }
 
-    public String getAbo_non_resident() {
-        return abo_non_resident;
+    public String getNonResidentSubscription() {
+        return nonResidentSubscription;
     }
 
-    public String getType_ouvrage() {
-        return type_ouvrage;
+    public String getWorkType() {
+        return workType;
     }
 
     public String getInfo() {
         return info;
     }
 
+    public void setId(String id) {
+        this.id = id;
+    }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setInsee(String insee) {
+        this.insee = insee;
+    }
+
+    public void setAdress(String adress) {
+        this.adress = adress;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public void setUserType(String userType) {
+        this.userType = userType;
+    }
+
+    public void setFree(String free) {
+        this.free = free;
+    }
+
+    public void setNbOfPlaces(String nbOfPlaces) {
+        this.nbOfPlaces = nbOfPlaces;
+    }
+
+    public void setNbOfPr(String nbOfPr) {
+        this.nbOfPr = nbOfPr;
+    }
+
+    public void setDisabledParkingNb(String disabledParkingNb) {
+        this.disabledParkingNb = disabledParkingNb;
+    }
+
+    public void setElectricVehicleNb(String electricVehicleNb) {
+        this.electricVehicleNb = electricVehicleNb;
+    }
+
+    public void setBikeNb(String bikeNb) {
+        this.bikeNb = bikeNb;
+    }
+
+    public void setElectricBikesNb(String electricBikesNb) {
+        this.electricBikesNb = electricBikesNb;
+    }
+
+    public void setCarSharingNb(String carSharingNb) {
+        this.carSharingNb = carSharingNb;
+    }
+
+    public void setMotorcycleNb(String motorcycleNb) {
+        this.motorcycleNb = motorcycleNb;
+    }
+
+    public void setCarPoolingNb(String carPoolingNb) {
+        this.carPoolingNb = carPoolingNb;
+    }
+
+    public void setMaxHeight(String maxHeight) {
+        this.maxHeight = maxHeight;
+    }
+
+    public void setSiretNumber(String siretNumber) {
+        this.siretNumber = siretNumber;
+    }
+
+    public void setXlong(String xlong) {
+        Xlong = xlong;
+    }
+
+    public void setYlat(String ylat) {
+        Ylat = ylat;
+    }
+
+    public void setDisabledParkingPrice(String disabledParkingPrice) {
+        this.disabledParkingPrice = disabledParkingPrice;
+    }
+
+    public void setOneHourPrice(String oneHourPrice) {
+        this.oneHourPrice = oneHourPrice;
+    }
+
+    public void setTwoHoursPrice(String twoHoursPrice) {
+        this.twoHoursPrice = twoHoursPrice;
+    }
+
+    public void setThreeHoursPrice(String threeHoursPrice) {
+        this.threeHoursPrice = threeHoursPrice;
+    }
+
+    public void setFourHoursPrice(String fourHoursPrice) {
+        this.fourHoursPrice = fourHoursPrice;
+    }
+
+    public void setTwentyFourHoursPrice(String twentyFourHoursPrice) {
+        this.twentyFourHoursPrice = twentyFourHoursPrice;
+    }
+
+    public void setResidentSubscription(String residentSubscription) {
+        this.residentSubscription = residentSubscription;
+    }
+
+    public void setNonResidentSubscription(String nonResidentSubscription) {
+        this.nonResidentSubscription = nonResidentSubscription;
+    }
+
+    public void setWorkType(String workType) {
+        this.workType = workType;
+    }
+
+    public void setInfo(String info) {
+        this.info = info;
+    }
+
+    public String getHookType() {
+        return hookType;
+    }
+
+    public void setHookType(String hookType) {
+        this.hookType = hookType;
+    }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .omitNullValues()
                 .add("id", id)
-                .add("nom", nom)
+                .add("nom", name)
                 .add("insee", insee)
-                .add("adresse", adresse)
+                .add("adresse", adress)
                 .add("url", url)
-                .add("type_usagers", type_usagers)
-                .add("gratuit", gratuit)
-                .add("nb_places", nb_places)
-                .add("nb_pr", nb_pr)
-                .add("nb_pmr", nb_pmr)
-                .add("nb_voitures_electriques", nb_voitures_electriques)
-                .add("nb_velo", nb_velo)
-                .add("nb_2r_el", nb_2r_el)
-                .add("nb_autopartage", nb_autopartage)
-                .add("nb_2_rm", nb_2_rm)
-                .add("nb_covoit", nb_covoit)
-                .add("hauteur_max", hauteur_max)
-                .add("num_siret", num_siret)
+                .add("type_usagers", userType)
+                .add("gratuit", free)
+                .add("nb_places", nbOfPlaces)
+                .add("nb_pr", nbOfPr)
+                .add("nb_pmr", disabledParkingNb)
+                .add("nb_voitures_electriques", electricVehicleNb)
+                .add("nb_velo", bikeNb)
+                .add("nb_2r_el", electricBikesNb)
+                .add("nb_autopartage", carSharingNb)
+                .add("nb_2_rm", motorcycleNb)
+                .add("nb_covoit", carPoolingNb)
+                .add("hauteur_max", maxHeight)
+                .add("num_siret", siretNumber)
                 .add("Xlong", Xlong)
                 .add("Ylat", Ylat)
-                .add("tarif_pmr", tarif_pmr)
-                .add("tarif_1h", tarif_1h)
-                .add("tarif_2h", tarif_2h)
-                .add("tarif_3h", tarif_3h)
-                .add("tarif_4h", tarif_4h)
-                .add("tarif_24h", tarif_24h)
-                .add("abo_resident", abo_resident)
-                .add("abo_non_resident", abo_non_resident)
-                .add("type_ouvrage", type_ouvrage)
+                .add("tarif_pmr", disabledParkingPrice)
+                .add("tarif_1h", oneHourPrice)
+                .add("tarif_2h", twoHoursPrice)
+                .add("tarif_3h", threeHoursPrice)
+                .add("tarif_4h", fourHoursPrice)
+                .add("tarif_24h", twentyFourHoursPrice)
+                .add("abo_resident", residentSubscription)
+                .add("abo_non_resident", nonResidentSubscription)
+                .add("type_ouvrage", workType)
                 .add("info", info)
                 .toString();
     }

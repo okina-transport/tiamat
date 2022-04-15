@@ -12,7 +12,6 @@ import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.rest.dto.DtoParking;
-import org.rutebanken.tiamat.rest.dto.DtoParking;
 import org.rutebanken.tiamat.service.Preconditions;
 
 import java.io.IOException;
@@ -96,16 +95,40 @@ public class ParkingsCSVHelper {
 
     private static void validateParking(DtoParking parking) throws IllegalArgumentException {
         Preconditions.checkArgument(!parking.getId().isEmpty(), "ID is required in all your parkings");
-        Preconditions.checkArgument(!parking.getNom().isEmpty(), "NAME is required to parking with Id " + parking.getId());
+        Preconditions.checkArgument(!parking.getName().isEmpty(), "NAME is required to parking with Id " + parking.getId());
         Preconditions.checkArgument(patternXlongYlat.matcher(parking.getXlong()).matches(), "X Longitud is not correct in the parking with " + parking.getId());
         Preconditions.checkArgument(patternXlongYlat.matcher(parking.getYlat()).matches(), "Y Latitud is not correct in the parking with " + parking.getId());
     }
 
     public static void checkDuplicatedParkings(List<DtoParking> parkings) throws IllegalArgumentException {
-        List<String> compositeKey = parkings.stream().map(parking -> parking.getId() + parking.getNom()).collect(Collectors.toList());
-        Set listWithoutDuplicatedValues = new HashSet(compositeKey);
-        if (compositeKey.size() > listWithoutDuplicatedValues.size())
-            throw new IllegalArgumentException("There are duplicated parkings in your CSV File 'With the same ID & Name'");
+        List<String> compositeKey = parkings.stream().map(parking -> parking.getId() + parking.getName()).collect(Collectors.toList());
+        List<String> duplicates = foundDuplicates(compositeKey);
+
+
+        
+        if (duplicates.size() > 0){
+            String duplicatesMsg = duplicates.stream()
+                    .collect(Collectors.joining(","));
+
+            throw new IllegalArgumentException("There are duplicated parkings in your CSV File 'With the same ID & Name'. Duplicates:" + duplicatesMsg);
+        }
+
+    }
+
+    private static List<String> foundDuplicates(List<String> fullList){
+        List<String> alreadyReadList = new ArrayList<>();
+        List<String> duplicateList = new ArrayList<>();
+
+        fullList.stream()
+                .forEach(id -> {
+                    if (alreadyReadList.contains(id)){
+                        duplicateList.add(id);
+                    }else{
+                        alreadyReadList.add(id);
+                    }
+                });
+
+        return duplicateList;
     }
 
 
@@ -114,10 +137,10 @@ public class ParkingsCSVHelper {
 
             Parking parking = new Parking();
 
-            parking.setName(new EmbeddableMultilingualString(parkingDto.getId() + DELIMETER_PARKING_ID_NAME + parkingDto.getNom()));
+            parking.setName(new EmbeddableMultilingualString(parkingDto.getId() + DELIMETER_PARKING_ID_NAME + parkingDto.getName()));
 
-            if(!parkingDto.getNb_places().isEmpty()){
-                parking.setTotalCapacity(new BigInteger(parkingDto.getNb_places()));
+            if(!parkingDto.getNbOfPlaces().isEmpty()){
+                parking.setTotalCapacity(new BigInteger(parkingDto.getNbOfPlaces()));
             }
 
 
@@ -125,7 +148,7 @@ public class ParkingsCSVHelper {
             parking.setBookingUrl(parkingDto.getUrl());
             parking.setVersion(1L);
 
-            if(!parkingDto.getNb_pmr().isEmpty() && parkingDto.getNb_pmr().equals(parkingDto.getNb_places())){
+            if(!parkingDto.getDisabledParkingNb().isEmpty() && parkingDto.getDisabledParkingNb().equals(parkingDto.getNbOfPlaces())){
                 parking.setAllAreasWheelchairAccessible(true);
             }else{
                 parking.setAllAreasWheelchairAccessible(false);
@@ -136,19 +159,19 @@ public class ParkingsCSVHelper {
 //            }
 
 
-            if(!parkingDto.getNb_voitures_electriques().isEmpty() && Integer.valueOf(parkingDto.getNb_voitures_electriques())>=1){
+            if(!parkingDto.getElectricVehicleNb().isEmpty() && Integer.valueOf(parkingDto.getElectricVehicleNb())>=1){
                 parking.setRechargingAvailable(true);
             }else{
                 parking.setRechargingAvailable(false);
             }
 
-            if (!parkingDto.getNb_covoit().isEmpty() && Integer.valueOf(parkingDto.getNb_covoit()) >= 1) {
+            if (!parkingDto.getCarPoolingNb().isEmpty() && Integer.valueOf(parkingDto.getCarPoolingNb()) >= 1) {
                 parking.setCarpoolingAvailable(true);
             } else {
                 parking.setCarpoolingAvailable(false);
             }
 
-            if (!parkingDto.getNb_covoit().isEmpty() && Integer.valueOf(parkingDto.getNb_autopartage()) >= 1) {
+            if (!parkingDto.getCarPoolingNb().isEmpty() && Integer.valueOf(parkingDto.getCarSharingNb()) >= 1) {
                 parking.setCarsharingAvailable(true);
             } else {
                 parking.setCarsharingAvailable(false);

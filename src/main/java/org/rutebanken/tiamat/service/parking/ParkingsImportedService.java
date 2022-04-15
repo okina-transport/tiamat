@@ -240,5 +240,9 @@ public class ParkingsImportedService {
         return isUpdated;
     }
 
+    public void clearAllRentalBikes(){
+        parkingRepository.clearAllRentalbikeParkings();
+    }
+
 
 }

@@ -33,7 +33,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -215,7 +214,7 @@ public class PointOfInterestCSVHelper {
 
 
         PointOfInterestFacilitySet facilitySet = createFacilitySetForShopImport();
-        newPointOfInterest.setPointOfInterestFacilitySetId(facilitySet.getId().intValue());
+        newPointOfInterest.setPointOfInterestFacilitySet(facilitySet);
 
 
         return newPointOfInterest;

@@ -15,9 +15,7 @@
 
 package org.rutebanken.tiamat.model;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.OneToMany;
+import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -32,7 +30,9 @@ public class PointOfInterest extends PointOfInterest_VersionStructure {
     @OneToMany(cascade = CascadeType.MERGE)
     private Set<PointOfInterestClassification> classifications = new HashSet<>();
 
-    private Integer pointOfInterestFacilitySetId;
+    @OneToOne(cascade = CascadeType.DETACH)
+    @JoinColumn(name = "point_of_interest_facility_set_id")
+    private PointOfInterestFacilitySet pointOfInterestFacilitySet;
 
     public String getZipCode() {
         return zipCode;
@@ -76,11 +76,11 @@ public class PointOfInterest extends PointOfInterest_VersionStructure {
         this.classifications = classifications;
     }
 
-    public Integer getPointOfInterestFacilitySetId() {
-        return pointOfInterestFacilitySetId;
+    public PointOfInterestFacilitySet getPointOfInterestFacilitySet() {
+        return pointOfInterestFacilitySet;
     }
 
-    public void setPointOfInterestFacilitySetId(Integer pointOfInterestFacilitySetId) {
-        this.pointOfInterestFacilitySetId = pointOfInterestFacilitySetId;
+    public void setPointOfInterestFacilitySet(PointOfInterestFacilitySet pointOfInterestFacilitySetId) {
+        this.pointOfInterestFacilitySet = pointOfInterestFacilitySetId;
     }
 }

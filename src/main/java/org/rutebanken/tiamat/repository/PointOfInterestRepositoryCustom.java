@@ -13,9 +13,5 @@ public interface PointOfInterestRepositoryCustom  extends DataManagedObjectStruc
 
     Iterator<PointOfInterest> scrollPointsOfInterest();
 
-    PointOfInterestFacilitySet getOrCreateFacilitySet(TicketingFacilityEnumeration ticketingFacility, TicketingServiceFacilityEnumeration ticketingServiceFacility);
-
-    PointOfInterestFacilitySet getPoiFacilitySet(Integer poiFacilitySetId);
-
     void clearAllPois();
 }

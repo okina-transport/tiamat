@@ -23,8 +23,8 @@ public class PointOfInterestMapper extends CustomMapper<PointOfInterest, org.rut
     public void mapBtoA(org.rutebanken.tiamat.model.PointOfInterest pointOfInterest, PointOfInterest pointOfInterest2, MappingContext context) {
         super.mapBtoA(pointOfInterest, pointOfInterest2, context);
 
-        if (pointOfInterest.getPointOfInterestFacilitySetId() != null) {
-            PointOfInterestFacilitySet pointOfInterestFacilitySet = pointOfInterestRepository.getPoiFacilitySet(pointOfInterest.getPointOfInterestFacilitySetId());
+        if (pointOfInterest.getPointOfInterestFacilitySet() != null) {
+            PointOfInterestFacilitySet pointOfInterestFacilitySet = pointOfInterest.getPointOfInterestFacilitySet();
             if (pointOfInterestFacilitySet != null) {
                 SiteFacilitySets_RelStructure siteFacilitySets_relStructure = new SiteFacilitySets_RelStructure();
 

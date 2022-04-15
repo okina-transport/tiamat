@@ -108,27 +108,6 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
         }
     }
 
-
-    @Override
-    public PointOfInterestFacilitySet getPoiFacilitySet(Integer poiFacilitySetId) {
-        Query query = entityManager.createNativeQuery("SELECT * " +
-                "FROM point_of_interest_facility_set fs " +
-                "WHERE fs.id = :poiFacilitySetId " ,PointOfInterestFacilitySet.class );
-
-        query.setParameter("poiFacilitySetId", poiFacilitySetId);
-
-        try {
-            List<PointOfInterestFacilitySet> results = query.getResultList();
-            if (!results.isEmpty()) {
-                return results.get(0);
-            } else {
-                return null;
-            }
-        } catch (NoResultException noResultException) {
-            return null;
-        }
-    }
-
     public void clearAllPois(){
         entityManager.createNativeQuery("TRUNCATE TABLE point_of_interest_facility_set CASCADE").executeUpdate();
     }

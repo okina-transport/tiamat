@@ -108,7 +108,6 @@ public class NetexMapper {
 
         mapperFactory.classMap(PointOfInterestClassification.class, org.rutebanken.tiamat.model.PointOfInterestClassification.class)
                 .fieldBToA("netexId", "id")
-                .customize(new PointOfInterestClassificationMapper())
                 .byDefault()
                 .register();
 

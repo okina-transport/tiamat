@@ -1,9 +1,8 @@
 package org.rutebanken.tiamat.repository;
 
 
-import org.rutebanken.tiamat.model.PointOfInterestFacilitySet;
-import org.rutebanken.tiamat.model.TicketingFacilityEnumeration;
-import org.rutebanken.tiamat.model.TicketingServiceFacilityEnumeration;
+import org.hibernate.Hibernate;
+import org.rutebanken.tiamat.model.PointOfInterest;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -16,7 +15,7 @@ import java.util.Set;
 
 @Repository
 @Transactional
-public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryCustom{
+public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryCustom {
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -54,7 +53,37 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
     }
 
 
-    public void clearAllPois(){
+    public void clearAllPois() {
         entityManager.createNativeQuery("TRUNCATE TABLE point_of_interest_facility_set CASCADE").executeUpdate();
+    }
+
+    @Override
+    public void clearPOIForClassification(String classificationName) {
+
+        Query query = entityManager.createNativeQuery("SELECT delete_poi_for_classification(:className)");
+        query.setParameter("className", classificationName);
+        query.getSingleResult();
+    }
+
+    @Override
+    public void clearPOIExceptClassification(String classificationName) {
+        Query query = entityManager.createNativeQuery("SELECT delete_poi_except_classification(:className)");
+        query.setParameter("className", classificationName);
+        query.getSingleResult();
+    }
+
+    @Override
+    public List<PointOfInterest> findAllAndInitialize() {
+
+        Query query = entityManager.createNativeQuery("SELECT p.* " +
+                "FROM point_of_interest p ", PointOfInterest.class );
+
+        List<PointOfInterest> resultList = query.getResultList();
+
+        for (PointOfInterest poi : resultList) {
+            Hibernate.initialize(poi.getClassifications());
+        }
+
+        return resultList;
     }
 }

@@ -1,0 +1,4 @@
+@id;name;addr:housenumber;addr:street;addr:city;addr:postcode;@lon;@lat;amenity;building;historic;landuse;leisure;tourism;office;shop;LP_IMPORT_ID
+2000001;Gare ALBIGNY NEUVILLE;;PLACE DE LA GARE;ALBIGNY SUR SAONE;69250;4,832789;45,874928;;;;;;;;;193
+2000002;Gare VALENCE TGV RHON ALP SUD;;Lieu dit La Correspondance;ALIXAN;26300;4,832789;;;;;;;;;;359
+2000003;Tabac Presse;;335 route des fonderies royales;ALLEMOND;38114;6,040608;45,13216;;;;;;;;;622

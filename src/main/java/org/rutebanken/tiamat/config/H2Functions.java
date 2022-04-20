@@ -55,11 +55,39 @@ public class H2Functions implements InitializingBean {
                 logger.info("H2. Creating alias to method generate_series");
                 jdbcTemplate.execute("CREATE ALIAS IF NOT EXISTS generate_series FOR \"org.rutebanken.tiamat.config.H2Functions.generateSeries\"");
 
+                jdbcTemplate.execute("CREATE ALIAS delete_poi_for_classification FOR  \"org.rutebanken.tiamat.config.H2Functions.deletePOIForClassification\"");
+                jdbcTemplate.execute("CREATE ALIAS delete_poi_except_classification FOR  \"org.rutebanken.tiamat.config.H2Functions.deletePOIExceptClassification\"");
+
+
+
             }
         } catch (SQLException sqlException) {
             logger.warn("Cannot create h2 aliases", sqlException);
         }
     }
+
+    /**
+     * Fake function to allow unit tests for manual imports
+     *
+     * @param classificationName
+     *  the name of the classification
+     * @return
+     */
+    public static boolean deletePOIForClassification(String classificationName) {
+        return true;
+    }
+
+    /**
+     * Fake function to allow unit tests for manual imports
+     *
+     * @param classificationName
+     *  the name of the classification
+     * @return
+     */
+    public static boolean deletePOIExceptClassification(String classificationName) {
+        return true;
+    }
+
 
     /**
      * @param value from 0 to 1

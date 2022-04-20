@@ -2,7 +2,6 @@ package org.rutebanken.tiamat.rest.poi;
 
 
 
-import com.google.common.io.ByteStreams;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.tiamat.general.PointOfInterestCSVHelper;
@@ -24,10 +23,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-@Path("/shop_import_csv")
-public class ImportShopResource {
+@Path("poi")
+public class ImportPOIResource {
 
-    private static final Logger logger = LoggerFactory.getLogger(ImportShopResource.class);
+    private static final Logger logger = LoggerFactory.getLogger(ImportPOIResource.class);
 
     @Autowired
     PointOfInterestCSVHelper poiHelper;
@@ -35,6 +34,28 @@ public class ImportShopResource {
 
 
     @POST
+    @Path("/poi_import_csv")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response importPOIFile(@FormDataParam("file") InputStream inputStream) throws IOException, IllegalArgumentException {
+
+        List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
+        PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
+        List<DtoPointOfInterest> poiWithClassification = filterPoisWithClassification(dtoPointOfInterest);
+
+        poiHelper.clearPOIExceptShop();
+
+        try {
+            poiHelper.persistPointsOfInterest(poiWithClassification);
+        }catch(Exception e){
+            logger.error(e.getMessage(),e);
+        }
+
+        return Response.status(200).build();
+    }
+
+    @POST
+    @Path("/shop_import_csv")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public Response importShopCsvFile(@FormDataParam("file") InputStream inputStream) throws IOException, IllegalArgumentException {
@@ -43,7 +64,7 @@ public class ImportShopResource {
         PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
         checkShops(dtoPointOfInterest);
 
-        poiHelper.clearAllPois();
+        poiHelper.clearPOIForShopClassification();
 
         try {
             poiHelper.persistPointsOfInterest(dtoPointOfInterest);
@@ -53,6 +74,7 @@ public class ImportShopResource {
 
         return Response.status(200).build();
     }
+
 
 
     private void checkShops( List<DtoPointOfInterest> dtoPointOfInterest){
@@ -69,6 +91,17 @@ public class ImportShopResource {
             logger.error(errorMsg);
             throw new IllegalArgumentException(errorMsg);
         }
+
+    }
+
+    private List<DtoPointOfInterest> filterPoisWithClassification(List<DtoPointOfInterest> dtoPointOfInterest){
+        return dtoPointOfInterest.stream()
+                .filter(poi -> StringUtils.isNotEmpty(poi.getAmenity()) ||  StringUtils.isNotEmpty(poi.getBuilding()) || StringUtils.isNotEmpty(poi.getHistoric())
+                                                ||  StringUtils.isNotEmpty(poi.getLanduse()) ||  StringUtils.isNotEmpty(poi.getLeisure())
+                                                ||  StringUtils.isNotEmpty(poi.getTourism()) ||StringUtils.isNotEmpty(poi.getOffice()))
+                .collect(Collectors.toList());
+
+
 
     }
 

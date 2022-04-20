@@ -17,7 +17,7 @@ package org.rutebanken.tiamat.model;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.OneToMany;
+import javax.persistence.ManyToMany;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,7 +29,7 @@ public class PointOfInterest extends PointOfInterest_VersionStructure {
     private String city;
     private String postalCode;
 
-    @OneToMany(cascade = CascadeType.MERGE)
+    @ManyToMany(cascade = CascadeType.MERGE)
     private Set<PointOfInterestClassification> classifications = new HashSet<>();
 
     private Integer pointOfInterestFacilitySetId;

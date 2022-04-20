@@ -35,7 +35,7 @@ import org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ImportResource;
 import org.rutebanken.tiamat.rest.parkings.ImportParkingsResource;
-import org.rutebanken.tiamat.rest.poi.ImportShopResource;
+import org.rutebanken.tiamat.rest.poi.ImportPOIResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
@@ -87,7 +87,7 @@ public class JerseyConfig {
         publicResources.add(AsyncExportResource.class);
         publicResources.add(ExportResource.class);
         publicResources.add(ImportParkingsResource.class);
-        publicResources.add(ImportShopResource.class);
+        publicResources.add(ImportPOIResource.class);
         publicResources.add(GraphQLResource.class);
 
         publicResources.add(GeneralExceptionMapper.class);

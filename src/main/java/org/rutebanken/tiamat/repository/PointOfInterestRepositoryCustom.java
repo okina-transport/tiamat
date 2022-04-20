@@ -2,11 +2,14 @@ package org.rutebanken.tiamat.repository;
 
 
 import org.rutebanken.tiamat.model.PointOfInterest;
-import org.rutebanken.tiamat.model.PointOfInterestFacilitySet;
-import org.rutebanken.tiamat.model.TicketingFacilityEnumeration;
-import org.rutebanken.tiamat.model.TicketingServiceFacilityEnumeration;
+
+
+import java.util.List;
 
 public interface PointOfInterestRepositoryCustom  extends DataManagedObjectStructureRepository<PointOfInterest>{
 
     void clearAllPois();
+    void clearPOIForClassification(String classificationName);
+    void clearPOIExceptClassification(String classificationName);
+    List<PointOfInterest> findAllAndInitialize() ;
 }

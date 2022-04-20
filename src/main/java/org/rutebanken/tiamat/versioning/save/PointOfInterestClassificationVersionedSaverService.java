@@ -71,7 +71,7 @@ public class PointOfInterestClassificationVersionedSaverService {
 
         result = poiClassRepository.save(newVersion);
 
-        logger.info("Saved POI {}, version {}, name {}", result.getNetexId(), result.getVersion(), result.getName());
+        logger.info("Saved POIClassification {}, version {}, name {}", result.getNetexId(), result.getVersion(), result.getName());
 
         metricsService.registerEntitySaved(newVersion.getClass());
         return result;

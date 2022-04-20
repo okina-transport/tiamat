@@ -16,6 +16,7 @@ import org.rutebanken.tiamat.model.PointOfInterestFacilitySet;
 import org.rutebanken.tiamat.model.TicketingFacilityEnumeration;
 import org.rutebanken.tiamat.model.TicketingServiceFacilityEnumeration;
 import org.rutebanken.tiamat.repository.PointOfInterestClassificationRepository;
+import org.rutebanken.tiamat.repository.PointOfInterestFacilitySetRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.rest.dto.DtoPointOfInterest;
 import org.rutebanken.tiamat.service.Preconditions;
@@ -32,7 +33,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -60,6 +60,9 @@ public class PointOfInterestCSVHelper {
 
     @Autowired
     private PointOfInterestRepository pointOfInterestRepo;
+
+    @Autowired
+    private PointOfInterestFacilitySetRepository facilitySetRepo;
 
     @Autowired
     private UsernameFetcher usernameFetcher;
@@ -207,11 +210,24 @@ public class PointOfInterestCSVHelper {
 
         PointOfInterestClassification classification = getShopChildClassificationForChild(dtoPoiCSV.getShop());
         newPointOfInterest.getClassifications().add(classification);
-        PointOfInterestFacilitySet facilitySet = pointOfInterestRepo.getOrCreateFacilitySet(TicketingFacilityEnumeration.TICKET_MACHINES, TicketingServiceFacilityEnumeration.PURCHASE);
-        newPointOfInterest.setPointOfInterestFacilitySetId(facilitySet.getId().intValue());
+
+
+
+        PointOfInterestFacilitySet facilitySet = createFacilitySetForShopImport();
+        newPointOfInterest.setPointOfInterestFacilitySet(facilitySet);
 
 
         return newPointOfInterest;
+    }
+
+
+    private PointOfInterestFacilitySet createFacilitySetForShopImport(){
+        PointOfInterestFacilitySet newFacilitySet = new PointOfInterestFacilitySet();
+        newFacilitySet.setTicketingServiceFacility( TicketingServiceFacilityEnumeration.PURCHASE);
+        newFacilitySet.setTicketingFacility(TicketingFacilityEnumeration.TICKET_MACHINES);
+        newFacilitySet.setVersion(1);
+        facilitySetRepo.save(newFacilitySet);
+        return newFacilitySet;
     }
 
 

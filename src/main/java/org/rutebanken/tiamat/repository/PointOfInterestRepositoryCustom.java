@@ -6,8 +6,12 @@ import org.rutebanken.tiamat.model.PointOfInterestFacilitySet;
 import org.rutebanken.tiamat.model.TicketingFacilityEnumeration;
 import org.rutebanken.tiamat.model.TicketingServiceFacilityEnumeration;
 
-public interface PointOfInterestRepositoryCustom  extends DataManagedObjectStructureRepository<PointOfInterest>{
+import java.util.Iterator;
 
-    PointOfInterestFacilitySet getOrCreateFacilitySet(TicketingFacilityEnumeration ticketingFacility, TicketingServiceFacilityEnumeration ticketingServiceFacility);
+public interface PointOfInterestRepositoryCustom  extends DataManagedObjectStructureRepository<PointOfInterest>{
+    int countResult();
+
+    Iterator<PointOfInterest> scrollPointsOfInterest();
+
     void clearAllPois();
 }

@@ -103,6 +103,26 @@ public class ExportResource {
 
     @GET
     @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
+    @Path("point_of_interest")
+    public Response exportPointOfInterest(@BeanParam ExportParams exportParams) throws JAXBException, IOException, SAXException {
+        logger.info("Exporting points of interest {}", exportParams);
+
+
+        StreamingOutput streamingOutput = outputStream -> {
+            try {
+                streamingPublicationDelivery.streamPOI(exportParams, outputStream, null);
+            } catch (Exception e) {
+                logger.warn("Could not stream site frame. {}", e.getMessage(), e);
+                throw new RuntimeException(e);
+            }
+        };
+
+        return Response.ok(streamingOutput).build();
+    }
+
+
+    @GET
+    @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
     @Path("changed_in_period")
     public Response exportStopPlacesWithEffectiveChangedInPeriod(@BeanParam ChangedStopPlaceSearchDto searchDTO,
                                                                  @BeanParam ExportParams exportParams,

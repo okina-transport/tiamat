@@ -5,7 +5,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 
 @Entity
-public class PointOfInterestFacilitySet extends EntityStructure{
+public class PointOfInterestFacilitySet extends EntityInVersionStructure{
 
     @Enumerated(EnumType.STRING)
     private TicketingFacilityEnumeration ticketingFacility;

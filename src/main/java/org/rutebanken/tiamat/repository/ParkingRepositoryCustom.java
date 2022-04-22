@@ -54,5 +54,7 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
      * @return list of parkings referencing to stopPlace
      */
     List<String> findByStopPlaceNetexId(String netexStopPlaceId);
+
+    void clearAllRentalbikeParkings();
 }
 

@@ -173,18 +173,13 @@ class StopPlaceUpdater implements DataFetcher {
                         }
                     }
 
-                    List<String> existingImportedIds = new ArrayList<>();
-                    if (existingVersion != null && existingVersion.getQuays() != null) {
-                        existingVersion.getQuays().stream().forEach(quay -> {
-                            existingImportedIds.addAll(quay.getOriginalIds());
-                        });
-                    }
                     for (Quay quay : updatedStopPlace.getQuays()) {
                         for (String qOriginalId : quay.getOriginalIds()) {
                             List<String> stopPlacesFound = stopPlaceRepository.searchByKeyValue("imported-id", qOriginalId);
                             List<String> quaysfound = quayRepository.searchByKeyValue("imported-id", qOriginalId);
-                            if (!existingImportedIds.contains(qOriginalId) && ((quaysfound != null && !quaysfound.isEmpty()) || (stopPlacesFound != null && !stopPlacesFound.isEmpty()))) {
-                                throw new IllegalArgumentException("Updated quay imported id already exists: " + qOriginalId);                            }
+                            if (!doesExistsInSameStoplace(qOriginalId, quay, existingVersion) && ((quaysfound != null && !quaysfound.isEmpty()) || (stopPlacesFound != null && !stopPlacesFound.isEmpty()))) {
+                                throw new IllegalArgumentException("Updated quay imported id already exists: " + qOriginalId);
+                            }
                         }
                     }
 
@@ -196,6 +191,16 @@ class StopPlaceUpdater implements DataFetcher {
         }
         return existingVersion;
     }
+
+    private boolean doesExistsInSameStoplace(String originalId, Quay currentQuay, StopPlace existingStopPlace) {
+        for (Quay q : existingStopPlace.getQuays()) {
+            if (q.getOriginalIds().contains(originalId)) {
+                return q.getNetexId().equals(currentQuay.getNetexId());
+            }
+        }
+        return false;
+    }
+
 
     private Set<String> handleChildStops(Map input, StopPlace updatedParentStopPlace) {
         Set<String> childStopsUpdated = new HashSet<>();

@@ -91,10 +91,11 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
                 SQL_LEFT_JOIN_PARENT_STOP +
                 "WHERE  qkv.key_values_key = :key " +
                 "AND v.items LIKE ( :value ) " +
-                "AND " + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME);
+                "AND " + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME +
+                "AND q.version = (SELECT max(qv.version) FROM quay qv WHERE q.netex_id = qv.netex_id)");
 
         query.setParameter("key", key);
-        query.setParameter("value", "%" + value + "%");
+        query.setParameter("value", value);
         query.setParameter("pointInTime", Date.from(Instant.now()));
 
 

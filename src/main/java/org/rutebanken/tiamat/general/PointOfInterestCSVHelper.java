@@ -1,6 +1,7 @@
 package org.rutebanken.tiamat.general;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -28,8 +29,11 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -156,7 +160,6 @@ public class PointOfInterestCSVHelper {
     }
 
 
-
     /**
      * Removes PointOfInterest from database for shop classification
      *
@@ -219,10 +222,10 @@ public class PointOfInterestCSVHelper {
         newPointOfInterest.getClassifications().add(classification);
 
 
-        if (StringUtils.isNotEmpty(dtoPoiCSV.getShop())){
-            PointOfInterestFacilitySet facilitySet = createFacilitySetForShopImport();
-            newPointOfInterest.setPointOfInterestFacilitySetId(facilitySet.getId().intValue());
-        }
+
+        PointOfInterestFacilitySet facilitySet = createFacilitySetForShopImport();
+        newPointOfInterest.setPointOfInterestFacilitySet(facilitySet);
+
 
         return newPointOfInterest;
     }
@@ -381,4 +384,13 @@ public class PointOfInterestCSVHelper {
         return parentClassification;
 
     }
+
+
+
+
+
+
+
+
+
 }

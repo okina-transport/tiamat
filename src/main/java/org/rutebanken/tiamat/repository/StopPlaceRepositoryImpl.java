@@ -426,7 +426,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                                                               "AND " + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME);
 
         query.setParameter("key", key);
-        query.setParameter("value", "%" + value + "%");
+        query.setParameter("value", value);
         query.setParameter("pointInTime", Date.from(Instant.now()));
 
         try {

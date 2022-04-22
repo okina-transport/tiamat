@@ -39,6 +39,12 @@ public class StreamingPublicationDeliveryConfig {
     private ParkingRepository parkingRepository;
 
     @Autowired
+    private PointOfInterestRepository pointOfInterestRepository;
+
+    @Autowired
+    private PointOfInterestClassificationRepository pointOfInterestClassificationRepository;
+
+    @Autowired
     private PublicationDeliveryExporter publicationDeliveryExporter;
 
     @Autowired
@@ -76,7 +82,7 @@ public class StreamingPublicationDeliveryConfig {
     }
 
     private StreamingPublicationDelivery createStreamingPublicationDelivery(boolean validate) throws IOException, SAXException {
-        return new StreamingPublicationDelivery(stopPlaceRepository, parkingRepository, publicationDeliveryExporter,
+        return new StreamingPublicationDelivery(stopPlaceRepository, parkingRepository, pointOfInterestRepository, pointOfInterestClassificationRepository, publicationDeliveryExporter,
                 tiamatSiteFrameExporter, tiamatGeneralFrameExporter, netexMapper, tariffZoneRepository, topographicPlaceRepository,
                 groupOfStopPlacesRepository, validate);
     }

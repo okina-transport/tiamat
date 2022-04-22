@@ -302,4 +302,19 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
             return null;
         }
     }
+
+    @Override
+    public void clearAllRentalbikeParkings(){
+
+        String parkingIdQuery = "SELECT id FROM parking p WHERE p.parking_type = 'CYCLE_RENTAL'";
+
+        entityManager.createNativeQuery("DELETE FROM value_items WHERE value_id in ( " +
+                "                           SELECT key_values_id FROM parking_key_values pkv JOIN parking p on p.id = pkv.parking_id WHERE p.parking_type = 'CYCLE_RENTAL') ").executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM parking_key_values WHERE parking_id  in ( " + parkingIdQuery + ")" ).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM parking_parking_payment_process WHERE parking_id  in ( " + parkingIdQuery + ")" ).executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM parking WHERE parking_type = 'CYCLE_RENTAL'").executeUpdate();
+    }
+
+
 }

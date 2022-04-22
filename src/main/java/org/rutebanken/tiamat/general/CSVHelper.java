@@ -50,12 +50,12 @@ public class CSVHelper {
         String[] lines = fileContent.split("\n");
         String firstLine = lines[0];
         long nbOfSemiColon = firstLine.chars()
-                                    .filter(ch -> ch == ';')
-                                    .count();
+                .filter(ch -> ch == ';')
+                .count();
 
         long nbOfComma = firstLine.chars()
-                                        .filter(ch -> ch == ',')
-                                        .count();
+                .filter(ch -> ch == ',')
+                .count();
 
         return nbOfSemiColon > nbOfComma ? ";" : ",";
 

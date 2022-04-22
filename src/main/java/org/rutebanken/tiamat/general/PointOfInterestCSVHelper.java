@@ -222,9 +222,10 @@ public class PointOfInterestCSVHelper {
         newPointOfInterest.getClassifications().add(classification);
 
 
-
-        PointOfInterestFacilitySet facilitySet = createFacilitySetForShopImport();
-        newPointOfInterest.setPointOfInterestFacilitySet(facilitySet);
+        if (StringUtils.isNotEmpty(dtoPoiCSV.getShop())){
+            PointOfInterestFacilitySet facilitySet = createFacilitySetForShopImport();
+            newPointOfInterest.setPointOfInterestFacilitySet(facilitySet);
+        }
 
 
         return newPointOfInterest;

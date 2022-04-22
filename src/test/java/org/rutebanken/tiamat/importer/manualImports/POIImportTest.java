@@ -130,7 +130,7 @@ public class POIImportTest extends TiamatIntegrationTest {
     private void checkPersistedPOI(PointOfInterest poi){
         Hibernate.initialize(poi.getClassifications());
         assertTrue("POI must have a classification",poi.getClassifications().size() > 0);
-        assertTrue("non-shop POI must not have a facility set",poi.getPointOfInterestFacilitySetId() == null);
+        assertTrue("non-shop POI must not have a facility set",poi.getPointOfInterestFacilitySet() == null);
     }
 
 }

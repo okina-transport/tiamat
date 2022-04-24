@@ -39,6 +39,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.security.Principal;
 import java.time.Instant;
@@ -59,6 +60,7 @@ import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDI
  * <p>
  * Testing authorization for generic use cases is done in {@link TiamatAuthorizationServiceTest}.
  */
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
 
     /**

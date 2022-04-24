@@ -20,9 +20,10 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.junit.Test;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class QuayEqualsTest {
 
     private GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();

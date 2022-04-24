@@ -22,6 +22,7 @@ import org.rutebanken.netex.model.KeyValueStructure;
 import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.tiamat.model.tag.Tag;
 import org.rutebanken.tiamat.repository.TagRepository;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -33,7 +34,7 @@ import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class TagKeyValuesMapperTest {
 
     private TagRepository tagRepository = mock(TagRepository.class);

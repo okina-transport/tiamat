@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.stereotype.Component;
+import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXException;
 
 import javax.ws.rs.core.Response;
@@ -48,6 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 
 @Component
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class PublicationDeliveryTestHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(PublicationDeliveryTestHelper.class);

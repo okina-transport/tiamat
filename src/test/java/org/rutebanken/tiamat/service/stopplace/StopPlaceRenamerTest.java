@@ -6,11 +6,12 @@ import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.service.Renamer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StopPlaceRenamerTest extends TiamatIntegrationTest {
 
     private static final String DEFAULT_LANG = "fr";

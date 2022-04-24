@@ -27,12 +27,13 @@ import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.TopographicPlaceTypeEnumeration;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class TopographicPlaceLookupServiceTest extends TiamatIntegrationTest {
 
     @Autowired

@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.rutebanken.netex.model.LocationStructure;
 import org.rutebanken.netex.model.SimplePoint_VersionStructure;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ import java.util.HashMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 
 public class SimplePointVersionStructureConverterTest {
 

@@ -26,6 +26,7 @@ import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.concurrent.ExecutionException;
@@ -37,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * See also {@link MergingStopPlaceImporterTest}
  */
 @Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
 
     @Autowired

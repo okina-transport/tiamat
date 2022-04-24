@@ -21,9 +21,11 @@ import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.SiteFrame;
 import org.rutebanken.tiamat.model.TariffZone;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class TiamatSiteFrameExporterTest extends TiamatIntegrationTest {
 
     @Autowired

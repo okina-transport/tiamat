@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +32,7 @@ import static org.rutebanken.tiamat.model.StopTypeEnumeration.AIRPORT;
 import static org.rutebanken.tiamat.model.StopTypeEnumeration.ONSTREET_BUS;
 import static org.rutebanken.tiamat.model.StopTypeEnumeration.TRAM_STATION;
 
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StopPlaceTypeFilterTest {
 
 

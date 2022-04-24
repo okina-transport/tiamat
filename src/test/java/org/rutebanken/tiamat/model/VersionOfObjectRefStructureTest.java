@@ -16,10 +16,11 @@
 package org.rutebanken.tiamat.model;
 
 import org.junit.Test;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class VersionOfObjectRefStructureTest {
     @Test
     public void equals() throws Exception {

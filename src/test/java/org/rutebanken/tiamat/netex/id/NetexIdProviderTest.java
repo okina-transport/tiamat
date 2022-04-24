@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.netex.id;
 
 import org.junit.Test;
 import org.rutebanken.tiamat.model.TopographicPlace;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,7 +28,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class NetexIdProviderTest {
 
 

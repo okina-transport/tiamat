@@ -18,13 +18,14 @@ package org.rutebanken.tiamat.rest.graphql
 import org.locationtech.jts.geom.Coordinate
 import org.junit.Test
 import org.rutebanken.tiamat.model.*
+import org.springframework.test.annotation.DirtiesContext
 
 import java.util.HashSet
 import java.util.Set
 
 import static org.assertj.core.api.Assertions.assertThat
 import static org.hamcrest.Matchers.*
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class GraphQLResourceQuayMergerTest extends AbstractGraphQLResourceIntegrationTest {
 
     @Test

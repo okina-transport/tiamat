@@ -22,12 +22,13 @@ import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class TimeoutMaxLeaseTimeLockTest extends TiamatIntegrationTest {
 
     private static final Logger logger = LoggerFactory.getLogger(TimeoutMaxLeaseTimeLockTest.class);

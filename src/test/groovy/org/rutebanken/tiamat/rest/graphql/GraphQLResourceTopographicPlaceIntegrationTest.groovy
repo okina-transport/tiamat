@@ -21,9 +21,10 @@ import org.rutebanken.tiamat.model.TopographicPlace
 import org.rutebanken.tiamat.model.TopographicPlaceTypeEnumeration
 import org.rutebanken.tiamat.repository.TopographicPlaceRepository
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.annotation.DirtiesContext
 
 import static org.hamcrest.Matchers.*
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class GraphQLResourceTopographicPlaceIntegrationTest extends AbstractGraphQLResourceIntegrationTest{
 
     @Autowired

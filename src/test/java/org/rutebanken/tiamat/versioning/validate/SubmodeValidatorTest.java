@@ -20,7 +20,9 @@ import org.rutebanken.tiamat.model.BusSubmodeEnumeration;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.TramSubmodeEnumeration;
 import org.rutebanken.tiamat.versioning.validate.SubmodeValidator;
+import org.springframework.test.annotation.DirtiesContext;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class SubmodeValidatorTest {
 
     @Test(expected = IllegalArgumentException.class)

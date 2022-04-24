@@ -20,6 +20,7 @@ import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeBuilder;
 import org.junit.Test;
 import org.rutebanken.tiamat.time.ExportTimeZone;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -30,6 +31,7 @@ import java.util.HashMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.in;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class OffsetDateTimeInstantConverterTest {
 
     private ExportTimeZone exportTimeZone = new ExportTimeZone();

@@ -18,13 +18,14 @@ package org.rutebanken.tiamat.service.merge;
 import org.junit.Test;
 import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class KeyValuesMergerTest {
 
     @Test

@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.rest.exception;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.TransactionSystemException;
 
 import javax.validation.ValidationException;
@@ -25,7 +26,7 @@ import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.core.Response;
 import java.io.FileNotFoundException;
 
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class GeneralExceptionMapperTest {
 
 

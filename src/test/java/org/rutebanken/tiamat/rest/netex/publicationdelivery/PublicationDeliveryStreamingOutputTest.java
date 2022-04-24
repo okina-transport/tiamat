@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 import org.junit.Test;
 import org.rutebanken.netex.model.*;
+import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXParseException;
 
 import javax.ws.rs.core.StreamingOutput;
@@ -30,6 +31,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class PublicationDeliveryStreamingOutputTest {
 
     /**

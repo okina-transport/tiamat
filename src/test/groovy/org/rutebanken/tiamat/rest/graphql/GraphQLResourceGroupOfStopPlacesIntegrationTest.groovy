@@ -20,10 +20,12 @@ import org.junit.Test
 import org.rutebanken.tiamat.model.*
 import org.rutebanken.tiamat.time.ExportTimeZone
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.annotation.DirtiesContext
 
 import static org.hamcrest.Matchers.*
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 def class GraphQLResourceGroupOfStopPlacesIntegrationTest extends AbstractGraphQLResourceIntegrationTest {
 
     @Autowired

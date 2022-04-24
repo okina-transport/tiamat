@@ -28,6 +28,7 @@ import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.model.ValidBetween;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.awt.geom.Point2D;
@@ -37,6 +38,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class NearbyStopsWithSameTypeFinderTest extends TiamatIntegrationTest {
 
     private static final Coordinate OSL_GARDERMOEN = new Coordinate(60.190448, 11.106292);

@@ -24,6 +24,7 @@ import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.service.stopplace.StopPlaceQuayMover;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
@@ -32,6 +33,7 @@ import java.util.Collections;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StopPlaceQuayMoverTest extends TiamatIntegrationTest {
 
     @Autowired

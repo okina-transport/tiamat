@@ -4,9 +4,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.time.ExportTimeZone;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Instant;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class IdMappingDtoCsvMapperTest {
 
     private IdMappingDtoCsvMapper mapper = new IdMappingDtoCsvMapper(new ExportTimeZone());

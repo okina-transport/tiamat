@@ -22,12 +22,13 @@ import org.junit.Test;
 import org.rutebanken.netex.model.KeyListStructure;
 import org.rutebanken.netex.model.KeyValueStructure;
 import org.rutebanken.tiamat.model.Value;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class KeyValuesToKeyListConverterTest {
     private final Type<KeyListStructure> keyListStructureType = new TypeBuilder<KeyListStructure>() {}.build();
 

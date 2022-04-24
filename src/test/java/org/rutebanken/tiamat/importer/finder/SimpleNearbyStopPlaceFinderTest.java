@@ -28,6 +28,7 @@ import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.repository.ProviderRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +43,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class SimpleNearbyStopPlaceFinderTest {
     private GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 

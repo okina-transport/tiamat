@@ -21,12 +21,14 @@ import org.rutebanken.netex.model.TariffZoneRef;
 import org.rutebanken.netex.model.TariffZoneRefs_RelStructure;
 import org.rutebanken.netex.model.TopographicPlaceRefStructure;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class NetexReferenceRemovingIteratorTest {
 
 

@@ -20,6 +20,7 @@ import graphql.schema.GraphQLEnumValueDefinition;
 import org.junit.Test;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -29,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class CustomGraphQLTypesTest {
 
     @Test

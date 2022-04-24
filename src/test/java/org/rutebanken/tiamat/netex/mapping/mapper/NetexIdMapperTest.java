@@ -24,12 +24,13 @@ import org.rutebanken.tiamat.model.SiteFrame;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.rutebanken.tiamat.netex.id.ValidPrefixList;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.HashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class NetexIdMapperTest {
 
     private ValidPrefixList validPrefixList = new ValidPrefixList("NSR", new HashMap<>());

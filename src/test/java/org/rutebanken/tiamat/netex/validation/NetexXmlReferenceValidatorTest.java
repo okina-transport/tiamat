@@ -16,11 +16,12 @@
 package org.rutebanken.tiamat.netex.validation;
 
 import org.junit.Test;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.io.ByteArrayInputStream;
 
 import static org.junit.Assert.*;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class NetexXmlReferenceValidatorTest {
     @Test
     public void validateNetexReferences() throws Exception {

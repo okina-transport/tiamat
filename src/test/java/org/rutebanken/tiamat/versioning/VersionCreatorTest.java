@@ -24,6 +24,7 @@ import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 import org.rutebanken.tiamat.netex.id.RandomizedTestNetexIdGenerator;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryTestHelper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Field;
@@ -32,6 +33,7 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class VersionCreatorTest extends TiamatIntegrationTest {
 
     @Autowired

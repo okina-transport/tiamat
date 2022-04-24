@@ -29,6 +29,7 @@ import org.rutebanken.tiamat.model.ValidBetween;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -37,6 +38,7 @@ import java.time.temporal.TemporalUnit;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StopPlaceRepositoryTest extends TiamatIntegrationTest {
 	private Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 	@Test

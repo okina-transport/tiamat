@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.exporter;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.rutebanken.netex.validation.NeTExValidator;
+import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.Source;
@@ -29,6 +30,7 @@ import java.io.IOException;
  * Test for manual execution. For XSD validation of existing files.
  * Used for checking validation time for large netex files.
  */
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class ValidationTest {
 
 

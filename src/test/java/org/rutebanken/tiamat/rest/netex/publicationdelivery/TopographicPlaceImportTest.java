@@ -25,12 +25,14 @@ import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.netex.mapping.converter.PolygonConverter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class TopographicPlaceImportTest extends TiamatIntegrationTest {
 
     private static final net.opengis.gml._3.ObjectFactory openGisObjectFactory = new ObjectFactory();

@@ -46,6 +46,7 @@ import org.rutebanken.tiamat.versioning.save.TariffZoneSaverService;
 import org.rutebanken.tiamat.versioning.save.TopographicPlaceVersionedSaverService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 import org.xml.sax.SAXException;
 
@@ -73,6 +74,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Test streaming publication delivery with h2 database
  */
 @Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrationTest {
 
     @Qualifier("syncStreamingPublicationDelivery")

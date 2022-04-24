@@ -24,6 +24,7 @@ import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -33,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_ADMIN_PATH;
 import static org.rutebanken.tiamat.config.JerseyConfig.SERVICES_STOP_PLACE_PATH;
 import static org.rutebanken.tiamat.repository.QuayRepositoryImpl.JBV_CODE;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class DtoResourceIntegrationTest extends TiamatIntegrationTest {
 
     private static final String PATH_MAPPING_STOP_PLACE = SERVICES_STOP_PLACE_PATH + "/mapping/stop_place";

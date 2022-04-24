@@ -4,11 +4,14 @@ package org.rutebanken.tiamat.externalapis;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.test.annotation.DirtiesContext;
+
 import java.math.BigDecimal;
 import java.math.MathContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class ApiProxyServiceTest {
 
     private static final Logger logger = LoggerFactory.getLogger(ApiProxyServiceTest.class);

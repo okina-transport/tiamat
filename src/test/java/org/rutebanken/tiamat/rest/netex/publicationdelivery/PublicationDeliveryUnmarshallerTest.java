@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 import org.junit.Test;
+import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;
@@ -26,7 +27,7 @@ import java.io.InputStream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class PublicationDeliveryUnmarshallerTest {
 
     @Test

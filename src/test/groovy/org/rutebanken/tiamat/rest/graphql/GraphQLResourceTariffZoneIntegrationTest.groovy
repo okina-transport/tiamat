@@ -22,10 +22,11 @@ import org.rutebanken.tiamat.model.EmbeddableMultilingualString
 import org.rutebanken.tiamat.model.TariffZone
 import org.rutebanken.tiamat.repository.TariffZoneRepository
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.annotation.DirtiesContext
 
 import static org.hamcrest.Matchers.equalTo
 import static org.hamcrest.Matchers.notNullValue
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class GraphQLResourceTariffZoneIntegrationTest extends AbstractGraphQLResourceIntegrationTest {
 
     @Autowired

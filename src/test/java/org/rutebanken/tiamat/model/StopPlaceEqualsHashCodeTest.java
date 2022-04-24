@@ -19,11 +19,12 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.junit.Test;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.HashSet;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StopPlaceEqualsHashCodeTest {
     private GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 

@@ -19,9 +19,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.ValidBetween;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Instant;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class EntityChangedEventJMSPublisherTest {
 
     private EntityChangedEventJMSPublisher jmsPublisher = new EntityChangedEventJMSPublisher();

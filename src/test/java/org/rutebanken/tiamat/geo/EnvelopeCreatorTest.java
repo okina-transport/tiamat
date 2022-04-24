@@ -25,11 +25,13 @@ import org.junit.Test;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class EnvelopeCreatorTest {
 
     private GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();

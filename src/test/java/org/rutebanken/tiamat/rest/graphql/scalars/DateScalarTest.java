@@ -18,12 +18,13 @@ package org.rutebanken.tiamat.rest.graphql.scalars;
 import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.rutebanken.tiamat.rest.graphql.scalars.DateScalar.EXAMPLE_DATE_TIME;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class DateScalarTest extends TiamatIntegrationTest {
 
     @Autowired

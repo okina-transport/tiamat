@@ -25,6 +25,7 @@ import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.test.annotation.Commit;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigInteger;
@@ -41,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Transactional
 @Commit
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StopPlaceTest extends TiamatIntegrationTest {
 
 

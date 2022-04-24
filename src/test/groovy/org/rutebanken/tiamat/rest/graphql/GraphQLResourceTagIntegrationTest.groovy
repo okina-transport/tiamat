@@ -22,11 +22,12 @@ import org.rutebanken.tiamat.model.StopPlace
 import org.rutebanken.tiamat.model.tag.Tag
 import org.rutebanken.tiamat.repository.TagRepository
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.annotation.DirtiesContext
 
 import java.time.Instant
 
 import static org.hamcrest.Matchers.*
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class GraphQLResourceTagIntegrationTest extends AbstractGraphQLResourceIntegrationTest {
 
     @Autowired

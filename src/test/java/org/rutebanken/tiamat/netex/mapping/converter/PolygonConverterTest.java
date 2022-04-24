@@ -23,6 +23,7 @@ import net.opengis.gml._3.*;
 import org.junit.Test;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.geo.DoubleValuesToCoordinateSequence;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +32,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class PolygonConverterTest {
 
     private static final net.opengis.gml._3.ObjectFactory openGisObjectFactory = new ObjectFactory();

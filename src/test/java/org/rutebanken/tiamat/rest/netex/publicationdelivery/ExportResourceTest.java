@@ -32,6 +32,7 @@ import org.rutebanken.tiamat.model.StopPlaceReference;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXException;
 
 import javax.ws.rs.core.Link;
@@ -51,6 +52,7 @@ import static org.rutebanken.tiamat.exporter.params.StopPlaceSearch.newStopPlace
 /**
  * Tests synchronous export
  */
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class ExportResourceTest extends TiamatIntegrationTest {
 
     @Autowired

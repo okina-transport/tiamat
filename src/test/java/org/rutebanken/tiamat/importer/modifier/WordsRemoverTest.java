@@ -17,9 +17,10 @@ package org.rutebanken.tiamat.importer.modifier;
 
 import org.junit.Test;
 import org.rutebanken.tiamat.importer.modifier.WordsRemover;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class WordsRemoverTest {
 
     private static final WordsRemover wordsRemover = new WordsRemover();

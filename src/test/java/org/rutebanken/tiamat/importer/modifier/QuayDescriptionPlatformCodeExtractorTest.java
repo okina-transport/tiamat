@@ -19,9 +19,10 @@ import org.junit.Test;
 import org.rutebanken.tiamat.importer.modifier.QuayDescriptionPlatformCodeExtractor;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class QuayDescriptionPlatformCodeExtractorTest {
 
     private static final QuayDescriptionPlatformCodeExtractor extractor = new QuayDescriptionPlatformCodeExtractor();

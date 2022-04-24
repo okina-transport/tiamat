@@ -16,12 +16,13 @@
 package org.rutebanken.tiamat.netex.id;
 
 import org.junit.Test;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.HashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class NetexIdHelperTest {
 
 

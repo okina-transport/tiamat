@@ -18,10 +18,11 @@ package org.rutebanken.tiamat.versioning;
 import org.junit.Test;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class VersionIncrementorTest {
     @Test
     public void stopPlaceQuayShouldAlsoHaveItsVersionIncremented() {

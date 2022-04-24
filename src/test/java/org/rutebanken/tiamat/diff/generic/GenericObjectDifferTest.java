@@ -26,6 +26,7 @@ import org.rutebanken.tiamat.diff.generic.Difference;
 import org.rutebanken.tiamat.diff.generic.GenericDiffConfig;
 import org.rutebanken.tiamat.diff.generic.GenericObjectDiffer;
 import org.rutebanken.tiamat.model.*;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
@@ -34,6 +35,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class GenericObjectDifferTest {
 
     private static final GenericObjectDiffer genericObjectDiffer = new GenericObjectDiffer();

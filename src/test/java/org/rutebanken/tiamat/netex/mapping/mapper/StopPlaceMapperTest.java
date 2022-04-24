@@ -21,12 +21,13 @@ import org.rutebanken.netex.model.KeyListStructure;
 import org.rutebanken.netex.model.KeyValueStructure;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.HashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.rutebanken.tiamat.netex.mapping.mapper.StopPlaceMapper.IS_PARENT_STOP_PLACE;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StopPlaceMapperTest {
 
     private PublicationDeliveryHelper publicationDeliveryHelper = new PublicationDeliveryHelper();

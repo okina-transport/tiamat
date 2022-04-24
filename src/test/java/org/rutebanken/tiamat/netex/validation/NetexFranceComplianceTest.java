@@ -42,6 +42,7 @@ import org.rutebanken.tiamat.model.job.ExportJob;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.repository.ExportJobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBContext;
@@ -61,7 +62,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class NetexFranceComplianceTest extends TiamatIntegrationTest {
 
     @Autowired
@@ -122,7 +123,7 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
 
     private void checkDataObjects(PublicationDeliveryStructure.DataObjects dataObjects){
         Common_VersionFrameStructure firstFrame = dataObjects.getCompositeFrameOrCommonFrame().stream().findFirst().get().getValue();
-        Assert.assertTrue(firstFrame.getId().startsWith("LRA:GeneralFrame:"));
+        Assert.assertTrue(firstFrame.getId().startsWith("MOBI-ITI:GeneralFrame:"));
 
         Assert.assertEquals("wrong version","1",firstFrame.getVersion());
      //   Assert.assertEquals("wrong typeOffFrame ref",firstFrame.getTypeOfFrameRef().getRef(),"FR:TypeOfFrame:NETEX_ARRET");

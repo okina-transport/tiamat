@@ -20,9 +20,10 @@ import org.rutebanken.tiamat.importer.modifier.QuayNameRemover;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class QuayNameRemoverTest {
 
     private QuayNameRemover quayNameRemover = new QuayNameRemover();

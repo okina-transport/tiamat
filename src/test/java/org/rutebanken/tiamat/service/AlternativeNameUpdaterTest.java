@@ -36,13 +36,14 @@ import org.rutebanken.tiamat.model.AlternativeName;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.NameTypeEnumeration;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Instant;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class AlternativeNameUpdaterTest {
 
     AlternativeNameUpdater alternativeNameUpdater = new AlternativeNameUpdater();

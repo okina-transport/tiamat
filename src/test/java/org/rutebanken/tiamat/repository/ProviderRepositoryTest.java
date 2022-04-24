@@ -6,10 +6,12 @@ import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.List;
 
 @Ignore
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class ProviderRepositoryTest extends TiamatIntegrationTest {
 
     @Autowired

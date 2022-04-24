@@ -33,6 +33,7 @@ import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.repository.ExportJobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;
@@ -45,6 +46,7 @@ import java.util.Optional;
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest {
 
     @Qualifier("syncStreamingPublicationDelivery")

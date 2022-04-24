@@ -27,6 +27,7 @@ import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper
 import org.rutebanken.tiamat.service.stopplace.MultiModalStopPlaceEditor
 import org.rutebanken.tiamat.time.ExportTimeZone
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.transaction.annotation.Transactional
 
 import java.time.Instant
@@ -38,7 +39,7 @@ import static org.hamcrest.Matchers.*
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*
 import static org.rutebanken.tiamat.rest.graphql.operations.MultiModalityOperationsBuilder.INPUT
 import static org.rutebanken.tiamat.rest.graphql.scalars.DateScalar.DATE_TIME_PATTERN
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 def class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLResourceIntegrationTest {
 
     @Autowired

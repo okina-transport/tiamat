@@ -16,9 +16,11 @@
 package org.rutebanken.tiamat.geo;
 
 import org.junit.Test;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class GeometryTransformerTest {
 
     @Test

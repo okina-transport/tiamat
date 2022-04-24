@@ -28,12 +28,14 @@ import org.rutebanken.tiamat.netex.id.RandomizedTestNetexIdGenerator;
 import org.rutebanken.tiamat.repository.TariffZoneRepository;
 import org.rutebanken.tiamat.versioning.save.TariffZoneSaverService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 @Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class TariffZoneSaverServiceTest extends TiamatIntegrationTest {
 
     @Autowired

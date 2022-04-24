@@ -23,6 +23,7 @@ import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.List;
 
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Tests related to importing Oslo Bussterminal.
  */
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class OsloBussterminalImportTest extends TiamatIntegrationTest {
 
     @Autowired

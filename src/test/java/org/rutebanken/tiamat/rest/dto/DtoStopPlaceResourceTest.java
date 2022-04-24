@@ -22,6 +22,7 @@ import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDtoCsvMapper;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.time.ExportTimeZone;
+import org.springframework.test.annotation.DirtiesContext;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -36,7 +37,7 @@ import java.util.Arrays;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.*;
 
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class DtoStopPlaceResourceTest {
 
     private StopPlaceRepository stopPlaceRepository = mock(StopPlaceRepository.class);

@@ -19,9 +19,10 @@ import org.junit.Test;
 import org.rutebanken.tiamat.importer.modifier.NameToDescriptionMover;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class NameToDescriptionMoverTest {
 
     private NameToDescriptionMover nameToDescriptionMover = new NameToDescriptionMover();

@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -28,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Import tests for different cases in Stavanger.
  */
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StavangerImportTest  extends TiamatIntegrationTest {
 
     @Autowired

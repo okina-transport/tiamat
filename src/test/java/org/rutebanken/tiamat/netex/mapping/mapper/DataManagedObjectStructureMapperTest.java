@@ -24,6 +24,7 @@ import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.rutebanken.tiamat.netex.id.ValidPrefixList;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.repository.TagRepository;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.HashMap;
 
@@ -32,7 +33,7 @@ import static org.mockito.Mockito.mock;
 import static org.rutebanken.tiamat.netex.mapping.mapper.DataManagedObjectStructureMapper.CHANGED_BY;
 import static org.rutebanken.tiamat.netex.mapping.mapper.DataManagedObjectStructureMapper.VERSION_COMMENT;
 
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class DataManagedObjectStructureMapperTest {
 
     private TagRepository tagRepository = mock(TagRepository.class);

@@ -17,11 +17,13 @@ package org.rutebanken.tiamat.model;
 
 import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 @Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class TopographicPlaceTest extends TiamatIntegrationTest {
 
     @Test

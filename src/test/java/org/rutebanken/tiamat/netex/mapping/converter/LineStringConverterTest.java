@@ -27,12 +27,14 @@ import net.opengis.gml._3.LineStringType;
 import org.junit.Test;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.geo.DoubleValuesToCoordinateSequence;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.math.BigInteger;
 import java.util.HashMap;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class LineStringConverterTest {
 
     private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();

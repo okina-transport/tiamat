@@ -20,9 +20,10 @@ import org.rutebanken.tiamat.importer.modifier.StopPlaceNameCleaner;
 import org.rutebanken.tiamat.importer.modifier.WordsRemover;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StopPlaceNameCleanerTest {
 
     private StopPlaceNameCleaner stopPlaceNameCleaner = new StopPlaceNameCleaner(new WordsRemover());

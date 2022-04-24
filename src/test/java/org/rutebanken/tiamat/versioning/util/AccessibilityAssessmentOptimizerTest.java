@@ -23,6 +23,7 @@ import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Commit;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ import static org.rutebanken.tiamat.model.LimitationStatusEnumeration.*;
 
 @Transactional
 @Commit
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class AccessibilityAssessmentOptimizerTest extends TiamatIntegrationTest {
 
     @Autowired

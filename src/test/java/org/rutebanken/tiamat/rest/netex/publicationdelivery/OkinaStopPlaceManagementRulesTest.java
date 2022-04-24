@@ -38,6 +38,7 @@ import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.netex.NetexUtils;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXException;
 
 import javax.ws.rs.core.Response;
@@ -58,7 +59,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class OkinaStopPlaceManagementRulesTest extends TiamatIntegrationTest {
 
     @Autowired

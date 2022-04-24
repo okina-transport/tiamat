@@ -29,11 +29,12 @@ import org.rutebanken.tiamat.repository.QuayRepository
 import org.rutebanken.tiamat.repository.StopPlaceRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
+import org.springframework.test.annotation.DirtiesContext
 
 import static org.hamcrest.Matchers.*
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*
 import static org.rutebanken.tiamat.versioning.VersionIncrementor.INITIAL_VERSION
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class GraphQLResourcePathLinkIntegrationTest extends AbstractGraphQLResourceIntegrationTest {
 
     @Autowired

@@ -24,11 +24,13 @@ import org.rutebanken.tiamat.model.*;
 import org.junit.Test;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 
 public class TopographicPlaceRepositoryTest extends TiamatIntegrationTest {
 

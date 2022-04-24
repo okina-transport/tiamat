@@ -19,9 +19,10 @@ import org.junit.Test;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class CompassBearingRemoverTest {
 
     private CompassBearingRemover compassBearingRemover = new CompassBearingRemover(new String[]{"airport"});

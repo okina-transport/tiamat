@@ -123,4 +123,14 @@ public class BlobStoreService {
 
         return maxNbResults == 0 ? fileListStream.collect(Collectors.toList()) : fileListStream.limit(maxNbResults).collect(Collectors.toList());
     }
+
+    public List<String> listPointsOfInterestInBlob(String siteId, int maxNbResults){
+        List<S3ObjectSummary> poiFileList = BlobStoreHelper.listAllBlobsRecursively(this.client, this.bucketName, siteId+"/exports");
+        Stream<String> fileListStream = poiFileList.stream()
+                .sorted(Comparator.comparing(S3ObjectSummary::getLastModified).reversed())
+                .map(S3ObjectSummary::getKey)
+                .filter(key -> key.contains("POI_"));
+
+        return maxNbResults == 0 ? fileListStream.collect(Collectors.toList()) : fileListStream.limit(maxNbResults).collect(Collectors.toList());
+    }
 }

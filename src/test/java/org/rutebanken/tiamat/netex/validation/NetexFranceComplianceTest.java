@@ -30,6 +30,7 @@ import org.rutebanken.netex.model.TypeOfPlaceRefs_RelStructure;
 import org.rutebanken.netex.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
+import org.rutebanken.tiamat.exporter.ExportTypeEnumeration;
 import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
 import org.rutebanken.tiamat.exporter.async.ExportJobWorker;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
@@ -104,7 +105,7 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
         LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
 
 
-       ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, testPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination);
+       ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, testPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, ExportTypeEnumeration.STOP_PLACE);
        exportJobWorker.run();
 
        if (exportJob.getStatus().equals(JobStatus.FAILED)){
@@ -126,8 +127,8 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
         Assert.assertTrue(firstFrame.getId().startsWith("MOBI-ITI:GeneralFrame:"));
 
         Assert.assertEquals("wrong version","1",firstFrame.getVersion());
-     //   Assert.assertEquals("wrong typeOffFrame ref",firstFrame.getTypeOfFrameRef().getRef(),"FR:TypeOfFrame:NETEX_ARRET");
-      //  Assert.assertEquals("wrong typeOffFrame value",firstFrame.getTypeOfFrameRef().getValue(),"version=\"1.1:FR-NETEX_ARRET-2.2\"");
+        //Assert.assertEquals("wrong typeOffFrame ref",firstFrame.getTypeOfFrameRef().getRef(),"FR:TypeOfFrame:NETEX_ARRET");
+        //Assert.assertEquals("wrong typeOffFrame value",firstFrame.getTypeOfFrameRef().getValue(),"version=\"1.1:FR-NETEX_ARRET-2.2\"");
         /*((SiteFrame)firstFrame).getStopPlaces().getStopPlace()
                                                .forEach(this::checkStopPlace);*/
         GeneralFrame generalFrame = (GeneralFrame) firstFrame;

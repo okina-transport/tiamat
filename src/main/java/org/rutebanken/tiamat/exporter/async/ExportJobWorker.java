@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.exporter.async;
 import org.apache.commons.lang3.StringUtils;
 import org.h2.util.IOUtils;
 import org.rutebanken.tiamat.domain.Provider;
+import org.rutebanken.tiamat.exporter.ExportTypeEnumeration;
 import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
 import org.rutebanken.tiamat.model.job.ExportJob;
 import org.rutebanken.tiamat.model.job.JobStatus;
@@ -59,6 +60,7 @@ public class ExportJobWorker implements Runnable {
     private final Provider provider;
     private LocalDateTime localDateTime; // ne peut pas être final. Vu qu'on ne le bouge pas, pas gênant mais dommage
     private final String tiamatExportDestination;
+    private final ExportTypeEnumeration exportType;
 
     public ExportJobWorker(ExportJob exportJob,
                            StreamingPublicationDelivery streamingPublicationDelivery,
@@ -69,7 +71,8 @@ public class ExportJobWorker implements Runnable {
                            NetexXmlReferenceValidator netexXmlReferenceValidator,
                            Provider provider,
                            LocalDateTime localDateTime,
-                           String tiamatExportDestination) {
+                           String tiamatExportDestination,
+                           ExportTypeEnumeration exportType) {
         this.exportJob = exportJob;
         this.streamingPublicationDelivery = streamingPublicationDelivery;
         this.localExportPath = localExportPath;
@@ -80,6 +83,7 @@ public class ExportJobWorker implements Runnable {
         this.provider = provider;
         this.localDateTime = localDateTime;
         this.tiamatExportDestination = tiamatExportDestination;
+        this.exportType = exportType;
     }
 
 
@@ -91,7 +95,14 @@ public class ExportJobWorker implements Runnable {
         File localExportXmlFile = new File(localExportPath + File.separator + fileNameWithoutExtention + ".xml");
         try {
 
-            exportToLocalXmlFile(localExportXmlFile, provider, localDateTime);
+            switch (this.exportType) {
+                case POI:
+                    exportPOIToLocalXmlFile(localExportXmlFile, provider, localDateTime);
+                    break;
+                default:
+                    exportToLocalXmlFile(localExportXmlFile, provider, localDateTime);
+                    break;
+            }
 
             netexXmlReferenceValidator.validateNetexReferences(localExportXmlFile);
             localExportZipFile.getParentFile().mkdirs();
@@ -129,6 +140,12 @@ public class ExportJobWorker implements Runnable {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
         streamingPublicationDelivery.stream(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING, provider, localDateTime);
+    }
+
+    private void exportPOIToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime) throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
+        logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
+        FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
+        streamingPublicationDelivery.streamPOI(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING, provider, localDateTime);
     }
 
     private void uploadToGcp(File localExportFile) throws FileNotFoundException {

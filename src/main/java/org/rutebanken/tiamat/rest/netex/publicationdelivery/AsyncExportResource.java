@@ -101,6 +101,13 @@ public class AsyncExportResource {
         return Response.ok(exportJob).build();
     }
 
+    @GET
+    @Path("poi")
+    public Response asyncPOIExport(@BeanParam ExportParams exportParams) {
+        ExportJob exportJob = asyncPublicationDeliveryExporter.startPOIExportJob(exportParams);
+        return Response.ok(exportJob).build();
+    }
+
 
     @GET
     @Path("stop-place-file-list-by-provider-name/{providerName}")
@@ -111,6 +118,21 @@ public class AsyncExportResource {
         String jsonString="";
         try {
             jsonString = objectMapper.writeValueAsString(stopPlaceFileList);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return Response.ok(jsonString).build();
+    }
+
+    @GET
+    @Path("poi-file-list-by-provider-name/{providerName}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response asyncGetPOIFileList(@PathParam(value = "providerName") String providerName, @HeaderParam("maxNbResults") Integer maxNbResults) {
+        List<String> pointsOfInterestFileList = asyncPublicationDeliveryExporter.getPointsOfInterestFileListByProviderName(providerName,maxNbResults);
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonString="";
+        try {
+            jsonString = objectMapper.writeValueAsString(pointsOfInterestFileList);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }

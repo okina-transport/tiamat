@@ -659,29 +659,29 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         Session session = entityManager.unwrap(Session.class);
 
         Pair<String, Map<String, Object>> queryWithParams = stopPlaceQueryFromSearchBuilder.buildQueryString(exportParams);
-        SQLQuery sqlQuery = session.createSQLQuery(queryWithParams.getFirst());
-        searchHelper.addParams(sqlQuery, queryWithParams.getSecond());
+        NativeQuery nativeQuery = session.createSQLQuery(queryWithParams.getFirst());
+        searchHelper.addParams(nativeQuery, queryWithParams.getSecond());
 
-        return scrollStopPlaces(sqlQuery, session);
+        return scrollStopPlaces(nativeQuery, session);
     }
 
     @Override
     public Iterator<StopPlace> scrollStopPlaces(Set<Long> stopPlacePrimaryIds) {
         Session session = entityManager.unwrap(Session.class);
 
-        SQLQuery sqlQuery = session.createSQLQuery(generateStopPlaceQueryFromStopPlaceIds(stopPlacePrimaryIds));
+        NativeQuery nativeQuery = session.createSQLQuery(generateStopPlaceQueryFromStopPlaceIds(stopPlacePrimaryIds));
 
         logger.info("Scrolling {} stop places", stopPlacePrimaryIds.size());
-       return scrollStopPlaces(sqlQuery, session);
+       return scrollStopPlaces(nativeQuery, session);
     }
 
-    public Iterator<StopPlace> scrollStopPlaces(SQLQuery sqlQuery, Session session) {
+    public Iterator<StopPlace> scrollStopPlaces(NativeQuery nativeQuery, Session session) {
 
-        sqlQuery.addEntity(StopPlace.class);
-        sqlQuery.setReadOnly(true);
-        sqlQuery.setFetchSize(SCROLL_FETCH_SIZE);
-        sqlQuery.setCacheable(false);
-        ScrollableResults results = sqlQuery.scroll(ScrollMode.FORWARD_ONLY);
+        nativeQuery.addEntity(StopPlace.class);
+        nativeQuery.setReadOnly(true);
+        nativeQuery.setFetchSize(SCROLL_FETCH_SIZE);
+        nativeQuery.setCacheable(false);
+        ScrollableResults results = nativeQuery.scroll(ScrollMode.FORWARD_ONLY);
 
         ScrollableResultIterator<StopPlace> stopPlaceEntityIterator = new ScrollableResultIterator<>(results, SCROLL_FETCH_SIZE, session);
 
@@ -702,7 +702,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     public Set<String> getNetexIds(ExportParams exportParams) {
         Pair<String, Map<String, Object>> pair = stopPlaceQueryFromSearchBuilder.buildQueryString(exportParams);
         Session session = entityManager.unwrap(Session.class);
-        SQLQuery query = session.createSQLQuery("SELECT sub.netex_id from (" + pair.getFirst() + ") sub");
+        NativeQuery query = session.createNativeQuery("SELECT sub.netex_id from (" + pair.getFirst() + ") sub");
 
         searchHelper.addParams(query, pair.getSecond());
 
@@ -715,7 +715,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     public Set<Long> getDatabaseIds(ExportParams exportParams, boolean ignorePaging, Provider provider) {
         Pair<String, Map<String, Object>> pair = stopPlaceQueryFromSearchBuilder.buildQueryStringByProvider(exportParams, provider);
         Session session = entityManager.unwrap(Session.class);
-        SQLQuery query = session.createSQLQuery("SELECT sub.id from (" + pair.getFirst() + ") sub");
+        NativeQuery query = session.createNativeQuery("SELECT sub.id from (" + pair.getFirst() + ") sub");
 
         if(!ignorePaging) {
             long firstResult = exportParams.getStopPlaceSearch().getPageable().getOffset();

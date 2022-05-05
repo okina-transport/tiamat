@@ -610,9 +610,9 @@ public class StopPlaceQueryFromSearchBuilder {
 
             parameters.put("query", handleCommonWordsInQuery(query));
 
-            final String startingWithLowerMatchQuerySql = "concat(lower(:query), '%') ";
-            final String containsLowerMatchQuerySql = "concat('%', lower(:query), '%') ";
-            final String orNameMatchInParentStopSql = "or lower(p.name_value) like ";
+            final String startingWithLowerMatchQuerySql = " unaccent(concat(lower(:query), '%')) ";
+            final String containsLowerMatchQuerySql = "unaccent(concat('%', lower(:query), '%')) ";
+            final String orNameMatchInParentStopSql = "or unaccent(lower(p.name_value)) like ";
 
             final String netexIdContainsLowerMatchQuerySql = "concat('MOBIITI:%', lower(:query), '%') ";
 
@@ -635,7 +635,7 @@ public class StopPlaceQueryFromSearchBuilder {
 
 
 
-            wheres.add("(lower(s.name_value) like " + comparingString + orNameMatchInParentStopSql + comparingString + netexComparing + importedIdSearchString + " )");
+            wheres.add("( unaccent(lower(s.name_value)) like " + comparingString + orNameMatchInParentStopSql + comparingString + netexComparing + importedIdSearchString + " )");
 
 
             if (!stopPlaceSearch.isNearbyStopPlaces()){

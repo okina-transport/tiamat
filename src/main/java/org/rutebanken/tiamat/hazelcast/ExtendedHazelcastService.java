@@ -72,8 +72,9 @@ public class ExtendedHazelcastService extends HazelCastService {
 
 
         EvictionConfig evictionConfigLFU = new EvictionConfig();
-        evictionConfig.setEvictionPolicy(EvictionPolicy.LFU);
-        evictionConfig.setMaxSizePolicy(FREE_HEAP_PERCENTAGE);
+        evictionConfigLFU.setEvictionPolicy(EvictionPolicy.LFU);
+        evictionConfigLFU.setMaxSizePolicy(FREE_HEAP_PERCENTAGE);
+        evictionConfigLFU.setSize(EVICT_WHEN_FREE_HEAP_PERCENTAGE_BELOW);
 
 
         mapConfigs.add(

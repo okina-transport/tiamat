@@ -90,7 +90,7 @@
         <rest-assured.version>3.1.0</rest-assured.version>
         <javax.el.version>3.0.0</javax.el.version>
         <com.h2database.version>1.4.197</com.h2database.version>
-        <hikariCP.version>3.2.0</hikariCP.version>
+        <hikariCP.version>4.0.0</hikariCP.version>
         <commons.lang3.version>3.7</commons.lang3.version>
         <orika-core.version>1.5.2</orika-core.version>
         <guava.version>27.0-jre</guava.version>

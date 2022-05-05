@@ -93,4 +93,16 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     List<StopPlace> findAllFromImportedId(String importedId);
 
+    void initExportJobTable(Provider provider, Long exportJobId);
+
+    void addParentStopPlacesToExportJobTable( Long exportJobId);
+
+    int countStopsInExport(Long exportJobId);
+
+    Set<Long> getNextBatchToProcess(Long exportJobId);
+
+    void deleteProcessedIds(Long exportJobId, Set<Long> processedStops);
+
+    List<StopPlace> getStopPlaceInitializedForExport(Set<Long> stopPlacePrimaryIds);
+
     }

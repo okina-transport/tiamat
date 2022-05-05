@@ -72,6 +72,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -105,6 +106,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +121,6 @@ import static javax.xml.bind.JAXBContext.newInstance;
  * Stream data objects inside already serialized publication delivery.
  * To be able to export many stop places wihtout keeping them all in memory.
  */
-@Transactional(readOnly = true)
 @Component
 public class StreamingPublicationDelivery {
 
@@ -181,11 +182,35 @@ public class StreamingPublicationDelivery {
     }
 
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider) throws JAXBException, IOException, SAXException {
-        stream(exportParams, outputStream, false, provider, LocalDateTime.now().withNano(0));
+        stream(exportParams, outputStream, false, provider, LocalDateTime.now().withNano(0), null);
     }
 
-    public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime) throws JAXBException, IOException, SAXException {
+    public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime,  Long exportJobId) throws JAXBException, IOException, SAXException {
 
+        logger.info("====== JAVA VERSION :" + System.getProperty("java.version") );
+        if (exportJobId == null){
+            //streaming launched by abzu queries, irkalla
+            streamForAPI(exportParams, outputStream, ignorePaging, provider, localDateTime);
+        }else{
+            //async export job launched by user
+            streamForAsyncExportJob(exportParams, outputStream, ignorePaging, provider, localDateTime,exportJobId);
+        }
+    }
+
+
+    /**
+     * Launch object stream for API calls (abzu queries, irkalla)
+     * @param exportParams
+     * @param outputStream
+     * @param ignorePaging
+     * @param provider
+     * @param localDateTime
+     * @throws JAXBException
+     * @throws IOException
+     * @throws SAXException
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void streamForAPI(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime ) throws JAXBException, IOException, SAXException {
         org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
@@ -217,14 +242,46 @@ public class StreamingPublicationDelivery {
 
         logger.info("Preparing scrollable iterators");
         prepareTopographicPlaces(exportParams, stopPlacePrimaryIdsWithParents, mappedTopographicPlacesCount, listMembers, entitiesEvictor);
+        logger.info("Topographic places preparation completed");
         prepareTariffZones(exportParams, stopPlacePrimaryIds, mappedTariffZonesCount, listMembers, entitiesEvictor);
+        logger.info("TariffZones preparation completed");
         prepareStopPlaces(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, listMembers, entitiesEvictor);
+        logger.info("Stop places preparation completed");
         prepareParkings(mappedParkingCount, listMembers, entitiesEvictor);
-      //  prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, listMembers, entitiesEvictor);
+        logger.info("Parking preparation completed");
+        //  prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, listMembers, entitiesEvictor);
+
+        completeStreamingProcess(outputStream, mappedStopPlaceCount, mappedParkingCount, mappedTariffZonesCount, mappedTopographicPlacesCount, mappedGroupOfStopPlacesCount, netexGeneralFrame, listMembers);
+
+    }
+
+
+    /**
+     * Do the last steps at the end of the export
+     * @param outputStream
+     * @param mappedStopPlaceCount
+     * @param mappedParkingCount
+     * @param mappedTariffZonesCount
+     * @param mappedTopographicPlacesCount
+     * @param mappedGroupOfStopPlacesCount
+     * @param netexGeneralFrame
+     * @param listMembers
+     * @throws JAXBException
+     * @throws IOException
+     * @throws SAXException
+     */
+    private void completeStreamingProcess(OutputStream outputStream, AtomicInteger mappedStopPlaceCount, AtomicInteger mappedParkingCount, AtomicInteger mappedTariffZonesCount,
+                                          AtomicInteger mappedTopographicPlacesCount, AtomicInteger mappedGroupOfStopPlacesCount,
+                                          GeneralFrame netexGeneralFrame, List<JAXBElement<? extends EntityStructure>> listMembers) throws JAXBException, IOException, SAXException {
+
+
+        List<JAXBElement<? extends EntityStructure>> filteredListMembers = filterDuplicates(listMembers);
+
+        logger.info("Duplicates filtered");
 
         //adding the members to the general Frame
         General_VersionFrameStructure.Members general_VersionFrameStructure = netexObjectFactory.createGeneral_VersionFrameStructureMembers();
-        general_VersionFrameStructure.withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(listMembers);
+        general_VersionFrameStructure.withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(filteredListMembers);
         netexGeneralFrame.withMembers(general_VersionFrameStructure);
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame,"idSite",LocalDateTime.now());
@@ -236,7 +293,7 @@ public class StreamingPublicationDelivery {
 
         logger.info("Start marshalling publication delivery");
         marshaller.marshal(publicationDelivery, byteArrayOutputStream);
-
+        logger.info("marshalling completed. starting last modifications");
         doLastModifications(outputStream, byteArrayOutputStream);
 
         logger.info("Mapped {} stop places, {} parkings, {} topographic places, {} group of stop places and {} tariff zones to netex",
@@ -245,6 +302,106 @@ public class StreamingPublicationDelivery {
                 mappedTopographicPlacesCount,
                 mappedGroupOfStopPlacesCount,
                 mappedTariffZonesCount);
+    }
+
+    /**
+     * Launch a stream of the object, for netex export launched by user
+     * @param exportParams
+     * @param outputStream
+     * @param ignorePaging
+     * @param provider
+     * @param localDateTime
+     * @param exportJobId
+     * @throws JAXBException
+     * @throws IOException
+     * @throws SAXException
+     */
+    public void streamForAsyncExportJob(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime, Long exportJobId ) throws JAXBException, IOException, SAXException {
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime);
+
+        AtomicInteger mappedStopPlaceCount = new AtomicInteger();
+        AtomicInteger mappedParkingCount = new AtomicInteger();
+        AtomicInteger mappedTariffZonesCount = new AtomicInteger();
+        AtomicInteger mappedTopographicPlacesCount = new AtomicInteger();
+        AtomicInteger mappedGroupOfStopPlacesCount = new AtomicInteger();
+
+     //   EntitiesEvictor entitiesEvictor = instantiateEvictor();
+
+        //List that will contain all the members in the General Frame
+        List <JAXBElement<? extends EntityStructure>> listMembers = new ArrayList<>();
+
+        GeneralFrame netexGeneralFrame = netexMapper.mapToNetexModel(generalFrame);
+
+        stopPlaceRepository.initExportJobTable(provider, exportJobId);
+        logger.info("Initialization completed for table export_job_id_list. jobId :" + exportJobId);
+
+        stopPlaceRepository.addParentStopPlacesToExportJobTable(exportJobId);
+        logger.info("Parent stop places has been added successfully");
+
+        int totalNbOfStops = stopPlaceRepository.countStopsInExport(exportJobId);
+        logger.info("Total nb of stops to export:" + totalNbOfStops);
+
+        boolean isDataToExport = true;
+        int totalStopsProcessed = 0;
+
+        while (isDataToExport){
+
+            Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(exportJobId);
+            if (batchIdsToExport == null || batchIdsToExport.size() == 0){
+                logger.info("no more stops to export");
+                isDataToExport = false;
+            }else{
+                launchBatchExport(batchIdsToExport, mappedStopPlaceCount, null, listMembers, false);
+                stopPlaceRepository.deleteProcessedIds(exportJobId,batchIdsToExport );
+
+                totalStopsProcessed = totalStopsProcessed + batchIdsToExport.size();
+                logger.info("total stops processed:" + totalStopsProcessed);
+            }
+
+        }
+
+
+        prepareParkings(mappedParkingCount, listMembers, null);
+        logger.info("Parking preparation completed");
+
+
+        completeStreamingProcess(outputStream, mappedStopPlaceCount, mappedParkingCount, mappedTariffZonesCount, mappedTopographicPlacesCount, mappedGroupOfStopPlacesCount, netexGeneralFrame, listMembers);
+
+    }
+
+
+
+    /**
+     * Filter duplicates objects to avoid xsd errors while marshaling the xml file
+     * @param originalList
+     *  The original list that might contain duplicates
+     * @return
+     *  The list without duplicates
+     */
+    private  List <JAXBElement<? extends EntityStructure>> filterDuplicates( List <JAXBElement<? extends EntityStructure>> originalList){
+        List <JAXBElement<? extends EntityStructure>> filteredList = new ArrayList<>();
+        Set<String> alreadyProcessedMembers = new HashSet<>();
+        for (JAXBElement<? extends EntityStructure> jaxbElement : originalList) {
+            String key;
+
+            if (jaxbElement.getValue() instanceof StopPlace){
+                StopPlace sp = (StopPlace) jaxbElement.getValue();
+                key = sp.getId() + "-" + sp.getVersion();
+            }else if(jaxbElement.getValue() instanceof Quay){
+                Quay quay = (Quay) jaxbElement.getValue();
+                key = quay.getId() + "-" + quay.getVersion();
+            }else{
+                //all other objects are not filtered
+                filteredList.add(jaxbElement);
+                continue;
+            }
+
+            if (!alreadyProcessedMembers.contains(key)){
+                alreadyProcessedMembers.add(key);
+                filteredList.add(jaxbElement);
+            }
+        }
+        return filteredList;
     }
 
     public void streamPOI(ExportParams exportParams, OutputStream outputStream, Provider provider) throws Exception {
@@ -271,10 +428,13 @@ public class StreamingPublicationDelivery {
         // On n'exporte pas les topographicPlaces
         netexSiteFrame.setTopographicPlaces(null);
 
-        logger.info("Preparing scrollable iterators");
+        logger.info("Preparing scrollable iterators for poi");
         preparePointsOfInterest(mappedPointOfInterestCount, netexSiteFrame, entitiesEvictor);
+
+        logger.info("Preparing scrollable iterators for poi class");
         preparePointsOfInterestClassification(mappedPointOfInterestClassificationCount, netexSiteFrame, entitiesEvictor);
 
+        logger.info("Publication delivery creation");
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexSiteFrame);
         Marshaller marshaller = createMarshaller();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -335,6 +495,7 @@ public class StreamingPublicationDelivery {
             outputStreamOut.write(documentToString(document).getBytes("UTF-8"));
         } catch (Exception e) {
             ; // SWALLO
+            logger.error("ERROR", e);
         }
     }
 
@@ -676,50 +837,94 @@ public class StreamingPublicationDelivery {
     private void prepareStopPlaces(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedStopPlaceCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter) {
         // Override lists with custom iterator to be able to scroll database results on the fly.
         if (!stopPlacePrimaryIds.isEmpty()) {
-            logger.info("There are stop places to export");
 
-            final Iterator<org.rutebanken.tiamat.model.StopPlace> stopPlaceIterator = stopPlaceRepository.scrollStopPlaces(stopPlacePrimaryIds);
-            List<org.rutebanken.tiamat.model.StopPlace> recoveredStopPlaces = new ArrayList<>();
-            stopPlaceIterator.forEachRemaining(recoveredStopPlaces::add);
-            recoveredStopPlaces.forEach(this::addAdditionalInfo);
+            int nbOfItemInBatch = 0;
+            int nbOfProcessedItems = 0;
+            logger.info("Total nb of items:" + stopPlacePrimaryIds.size());
 
-
-            StopPlacesInFrame_RelStructure stopPlacesInFrame_relStructure = new StopPlacesInFrame_RelStructure();
-
-            // Use Listening iterator to collect stop place IDs.
-            ParentStopFetchingIterator parentStopFetchingIterator = new ParentStopFetchingIterator(recoveredStopPlaces.iterator(), stopPlaceRepository);
-            NetexMappingIterator<org.rutebanken.tiamat.model.StopPlace, StopPlace> netexMappingIterator = new NetexMappingIterator<>(netexMapper, parentStopFetchingIterator, StopPlace.class, mappedStopPlaceCount, evicter);
-
-            List<StopPlace> netexStopPlaces = new ArrayList<>();
-            netexMappingIterator.forEachRemaining(netexStopPlaces::add);
+            Set<Long> tmpSet = new HashSet<>();
 
 
-            netexStopPlaces.stream().forEach(netexStopPlace -> {
-                if (netexStopPlace.getQuays() != null && netexStopPlace.getQuays().getQuayRefOrQuay() != null){
+            for (Long stopPlacePrimaryId : stopPlacePrimaryIds) {
 
-                    Quays_RelStructure quays = netexStopPlace.getQuays();
-                    Quays_RelStructure quaysReference = netexObjectFactory.createQuays_RelStructure();
+                tmpSet.add(stopPlacePrimaryId);
+                nbOfItemInBatch++;
+                nbOfProcessedItems++;
 
-                    quays.getQuayRefOrQuay().stream().forEach(quay ->{
-                        //Adding the quay to the memberList
-                        Quay netexQuay = (Quay) quay;
-                        listMembers.add(netexObjectFactory.createQuay(netexQuay));
-
-                        //To isolate the reference to set Quay by the QuayRefStructure
-                        QuayRefStructure quayRefStructure = new QuayRefStructure();
-                        quayRefStructure.setRef(String.valueOf(netexQuay.getId()));
-                        quayRefStructure.setVersion(netexQuay.getVersion());
-
-                        quaysReference.getQuayRefOrQuay().add(quayRefStructure);
-                    });
-                    netexStopPlace.setQuays(quaysReference);
+                if (nbOfItemInBatch == 1000){
+                    logger.info("processed items:" + nbOfProcessedItems);
+                    launchBatchExport(tmpSet, mappedStopPlaceCount, evicter, listMembers, true);
+                    tmpSet.clear();
+                    nbOfItemInBatch = 0;
                 }
-                listMembers.add(netexObjectFactory.createStopPlace(netexStopPlace));
-            });
+            }
+
+            if (tmpSet.size() > 0){
+                //last remaining items
+                logger.info("processed items:" + nbOfProcessedItems);
+                launchBatchExport(tmpSet, mappedStopPlaceCount, evicter, listMembers, true);
+            }
 
         } else {
             logger.info("No stop places to export");
         }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void launchBatchExport(Set<Long> stopPlacePrimaryIds, AtomicInteger mappedStopPlaceCount, EntitiesEvictor evicter, List <JAXBElement<? extends EntityStructure>> listMembers, boolean shouldRecoverParents){
+        logger.info("There are stop places to export");
+
+        List<org.rutebanken.tiamat.model.StopPlace> recoveredStopPlaces = stopPlaceRepository.getStopPlaceInitializedForExport(stopPlacePrimaryIds);
+
+        recoveredStopPlaces.forEach(this::addAdditionalInfo);
+
+        logger.info("Feed of addAdditionalInfo completed");
+        StopPlacesInFrame_RelStructure stopPlacesInFrame_relStructure = new StopPlacesInFrame_RelStructure();
+
+
+        NetexMappingIterator<org.rutebanken.tiamat.model.StopPlace, StopPlace> netexMappingIterator;
+        if (shouldRecoverParents){
+            // Use Listening iterator to collect stop place IDs.
+            ParentStopFetchingIterator parentStopFetchingIterator = new ParentStopFetchingIterator(recoveredStopPlaces.iterator(), stopPlaceRepository);
+            netexMappingIterator = new NetexMappingIterator<>(netexMapper, parentStopFetchingIterator, StopPlace.class, mappedStopPlaceCount, evicter);
+        }else{
+            logger.info("Pas de parent iterator");
+            netexMappingIterator = new NetexMappingIterator<>(netexMapper, recoveredStopPlaces.iterator(), StopPlace.class, mappedStopPlaceCount, evicter);
+        }
+
+
+
+        List<StopPlace> netexStopPlaces = new ArrayList<>();
+        netexMappingIterator.forEachRemaining(netexStopPlaces::add);
+
+
+        logger.info("Feed of netexStopPlaces completed");
+
+
+        netexStopPlaces.stream().forEach(netexStopPlace -> {
+            if (netexStopPlace.getQuays() != null && netexStopPlace.getQuays().getQuayRefOrQuay() != null){
+
+                Quays_RelStructure quays = netexStopPlace.getQuays();
+                Quays_RelStructure quaysReference = netexObjectFactory.createQuays_RelStructure();
+
+                quays.getQuayRefOrQuay().stream().forEach(quay ->{
+                    //Adding the quay to the memberList
+                    Quay netexQuay = (Quay) quay;
+                    listMembers.add(netexObjectFactory.createQuay(netexQuay));
+
+                    //To isolate the reference to set Quay by the QuayRefStructure
+                    QuayRefStructure quayRefStructure = new QuayRefStructure();
+                    quayRefStructure.setRef(String.valueOf(netexQuay.getId()));
+                    quayRefStructure.setVersion(netexQuay.getVersion());
+
+                    quaysReference.getQuayRefOrQuay().add(quayRefStructure);
+                });
+                netexStopPlace.setQuays(quaysReference);
+            }
+            listMembers.add(netexObjectFactory.createStopPlace(netexStopPlace));
+        });
+
+        logger.info("Feed of listmembers completed.");
     }
 
     private void addAdditionalInfo(org.rutebanken.tiamat.model.StopPlace stopPlace){
@@ -878,6 +1083,8 @@ public class StreamingPublicationDelivery {
             transformer.transform(new DOMSource(doc), new StreamResult(writer));
             output = writer.getBuffer().toString();
         } catch (Exception e) {
+            logger.error("error",e);
+
             return null;
         }
         return output;

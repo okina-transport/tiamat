@@ -50,9 +50,9 @@ public class NetexMappingIterator<T extends EntityStructure, N extends org.ruteb
         this.mappedCount = mappedCount;
         this.entitiesEvictor = entitiesEvictor;
 
-        if(entitiesEvictor == null) {
-            throw new IllegalArgumentException("entitiesEvictor cannot be null");
-        }
+//        if(entitiesEvictor == null) {
+//            throw new IllegalArgumentException("entitiesEvictor cannot be null");
+//        }
     }
 
     @Override
@@ -66,7 +66,9 @@ public class NetexMappingIterator<T extends EntityStructure, N extends org.ruteb
 
         T next = iterator.next();
         N mapped = netexMapper.getFacade().map(next, netexClass);
-        entitiesEvictor.evictKnownEntitiesFromSession(next);
+        if (entitiesEvictor != null) {
+            entitiesEvictor.evictKnownEntitiesFromSession(next);
+        }
         logStatus();
         mappedCount.incrementAndGet();
         return mapped;

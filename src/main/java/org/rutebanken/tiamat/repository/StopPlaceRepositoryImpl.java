@@ -27,6 +27,7 @@ import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.domain.Provider;
+import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -43,6 +44,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
@@ -67,6 +69,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     private static final int SCROLL_FETCH_SIZE = 1000;
 
     private static BasicFormatterImpl basicFormatter = new BasicFormatterImpl();
+
+    @Value("${administration.space.name}")
+    protected String administrationSpaceName;
 
     /**
      * Part of SQL that checks that either the stop place named as *s* or the parent named *p* is valid at the point in time.
@@ -675,6 +680,43 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
        return scrollStopPlaces(nativeQuery, session);
     }
 
+    public List<StopPlace> getStopPlaceInitializedForExport(Set<Long> stopPlacePrimaryIds) {
+
+        Set<String> stopPlacePrimaryIdStrings = stopPlacePrimaryIds.stream().map(lvalue -> String.valueOf(lvalue)).collect(Collectors.toSet());
+        String joinedStopPlaceDbIds = String.join(",", stopPlacePrimaryIdStrings);
+        StringBuilder sql = new StringBuilder("SELECT s FROM StopPlace s WHERE s.id IN(");
+        sql.append(joinedStopPlaceDbIds);
+        sql.append(")");
+
+
+        EntityGraph<?> graph = entityManager.createEntityGraph("graph.exportNetexGraph");
+        TypedQuery<StopPlace> q = entityManager.createQuery(sql.toString(), StopPlace.class);
+        q.setHint("javax.persistence.fetchgraph", graph);
+        List<StopPlace> results = q.getResultList();
+
+        results.forEach(stopPlace-> {
+
+            Hibernate.initialize(stopPlace.getKeyValues());
+            stopPlace.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+            Hibernate.initialize(stopPlace.getAccessibilityAssessment());
+            if (stopPlace.getAccessibilityAssessment() != null){
+                Hibernate.initialize(stopPlace.getAccessibilityAssessment().getLimitations());
+            }
+            Hibernate.initialize(stopPlace.getAlternativeNames());
+            Hibernate.initialize(stopPlace.getPolygon());
+            Hibernate.initialize(stopPlace.getTariffZones());
+
+            stopPlace.getQuays().forEach(quay->{
+                Hibernate.initialize(quay.getKeyValues());
+                quay.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+                Hibernate.initialize(quay.getAlternativeNames());
+                Hibernate.initialize(quay.getPolygon());
+            });
+
+        });
+        return results;
+    }
+
     public Iterator<StopPlace> scrollStopPlaces(NativeQuery nativeQuery, Session session) {
 
         nativeQuery.addEntity(StopPlace.class);
@@ -732,6 +774,112 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         }
 
         return result;
+    }
+
+
+    /**
+     * Initialize export job table with stop ids that must be exported
+     * @param provider
+     *  provider for which export is launched
+     * @param exportJobId
+     *  id of the export job
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void initExportJobTable(Provider provider, Long exportJobId){
+
+        Map<String, Object> parameters = new HashMap<>();
+
+        String queryStr = "INSERT INTO export_job_id_list \n" +
+                " SELECT :exportJobId,req1.stop_id  \n" +
+                " FROM ( \n" +
+                " SELECT max(s.id)as stop_id,MAX(s.version) as version FROM stop_place s  WHERE  (s.from_date <= :pointInTime OR  s.from_date IS NULL) \n" +
+                " AND (   s.to_date >= :pointInTime  OR s.to_date IS NULL) \n" +
+                " and s.parent_stop_place = false ";
+
+        if (provider != null && provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName)){
+            queryStr = queryStr + " AND s.provider = :providerName \n";
+            parameters.put("providerName",  provider.getChouetteInfo().getReferential());
+        }
+
+        queryStr = queryStr + "GROUP BY s.netex_id  ) req1";
+
+        parameters.put("exportJobId", exportJobId);
+        parameters.put("pointInTime", Date.from(Instant.now()));
+
+        Session session = entityManager.unwrap(Session.class);
+        NativeQuery query = session.createNativeQuery(queryStr);
+        searchHelper.addParams(query, parameters);
+
+        query.executeUpdate();
+
+    }
+
+    /**
+     * Add parent_stop_places that must be exported to table export_job_id_list
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void addParentStopPlacesToExportJobTable(Long exportJobId){
+
+
+        Map<String, Object> parameters = new HashMap<>();
+        String queryStr = "INSERT INTO export_job_id_list \n" +
+                " SELECT :exportJobId, s.id FROM stop_place s WHERE \n" +
+                " s.from_date <= :pointInTime \n" +
+                " AND (   s.to_date >= :pointInTime  or s.to_date IS NULL) \n" +
+                " AND s.netex_id in ( \n" +
+                " SELECT distinct s2.parent_site_ref FROM stop_place s2 WHERE s2.parent_site_ref IS NOT NULL \n" +
+                " AND S2.id IN (SELECT stop_place_id FROM export_job_id_list WHERE job_id = :exportJobId) ) \n";
+
+
+
+        Session session = entityManager.unwrap(Session.class);
+        parameters.put("exportJobId", exportJobId);
+        parameters.put("pointInTime",  Date.from(Instant.now()));
+
+        NativeQuery query = session.createNativeQuery(queryStr);
+        searchHelper.addParams(query, parameters);
+        query.executeUpdate();
+
+    }
+
+    /**
+     * Get a batch of stop place to process
+     * @param exportJobId
+     * @return
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Set<Long> getNextBatchToProcess(Long exportJobId){
+
+        Session session = entityManager.unwrap(Session.class);
+        NativeQuery query = session.createNativeQuery("SELECT stop_place_id FROM export_job_id_list WHERE job_id  = :exportJobId LIMIT 1000");
+
+        query.setParameter("exportJobId", exportJobId);
+
+        Set<Long> result = new HashSet<>();
+        for(Object object : query.list()) {
+            BigInteger bigInteger = (BigInteger) object;
+            result.add(bigInteger.longValue());
+
+        }
+        return result;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void deleteProcessedIds(Long exportJobId, Set<Long> processedStops){
+        Session session = entityManager.unwrap(Session.class);
+        String queryStr = "DELETE FROM export_job_id_list WHERE job_id = :exportJobId AND stop_place_id IN :stopPlaceIdList";
+        NativeQuery query = session.createNativeQuery(queryStr);
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("exportJobId", exportJobId);
+        parameters.put("stopPlaceIdList", processedStops);
+        searchHelper.addParams(query, parameters);
+        query.executeUpdate();
+    }
+
+    public int countStopsInExport(Long exportJobId) {
+        String queryString = "select count(*) FROM export_job_id_list WHERE job_id = :exportJobId";
+        return ((Number)entityManager.createNativeQuery(queryString).setParameter("exportJobId", exportJobId).getSingleResult()
+               ).intValue();
     }
 
     /**

@@ -35,6 +35,14 @@ import java.util.*;
         uniqueConstraints = {
                 @UniqueConstraint(name = "stop_place_netex_id_version_constraint", columnNames = {"netexId", "version"})}
 )
+@NamedEntityGraph(
+        name = "graph.exportNetexGraph",
+        attributeNodes = {@NamedAttributeNode(value = "quays", subgraph = "subgraph.quay") },
+        subgraphs = {
+                @NamedSubgraph(name = "subgraph.quay",
+                        attributeNodes = @NamedAttributeNode(value = "accessibilityAssessment", subgraph = "subgraph.accessibilityAssessment")),
+                @NamedSubgraph(name = "subgraph.accessibilityAssessment",
+                        attributeNodes = @NamedAttributeNode(value = "limitations"))})
 public class StopPlace
         extends Site_VersionStructure implements Serializable {
 

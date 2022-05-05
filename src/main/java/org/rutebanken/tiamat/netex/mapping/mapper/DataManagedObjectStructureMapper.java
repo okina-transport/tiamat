@@ -129,7 +129,7 @@ public class DataManagedObjectStructureMapper extends CustomMapper<DataManagedOb
             netexEntity.withKeyList(new KeyListStructure());
         }
         tiamatEntityGetFunctions.forEach((property, function) -> setKey(netexEntity, property, function.apply(tiamatEntity)));
-        tagKeyValuesMapper.mapTagsToProperties(tiamatEntity, netexEntity);
+       // tagKeyValuesMapper.mapTagsToProperties(tiamatEntity, netexEntity);
 
         if (netexEntity.getKeyList().getKeyValue() == null || netexEntity.getKeyList().getKeyValue().isEmpty()) {
             // Do not allow empty key list

@@ -78,6 +78,8 @@ public class Parking
     protected ParkingReservationEnumeration parkingReservation;
     protected String bookingUrl;
     protected Boolean freeParkingOutOfHours;
+    protected String insee;
+    protected String siret;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     protected List<ParkingProperties> parkingProperties;
@@ -320,6 +322,14 @@ public class Parking
         this.vehicleEntrances = value;
     }
 
+    public String getInsee() { return insee; }
+
+    public void setInsee(String insee) { this.insee = insee; }
+
+    public String getSiret() { return siret; }
+
+    public void setSiret(String siret) { this.siret = siret; }
+
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
@@ -331,6 +341,8 @@ public class Parking
                 .add("centroid", centroid)
                 .add("parentSiteRef", parentSiteRef)
                 .add("publicCode", publicCode)
+                .add("insee", insee)
+                .add("siret", siret)
                 .add("label", label)
                 .add("parkingPaymentProcess", parkingPaymentProcess)
                 .add("paymentMethods", paymentMethods)

@@ -56,6 +56,8 @@ import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class NetexMapperTest extends TiamatIntegrationTest {
 
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
+
     @Autowired
     private NetexMapper netexMapper;
 
@@ -98,7 +100,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
         org.rutebanken.netex.model.SiteFrame netexSiteFrame = netexMapper.mapToNetexModel(sourceSiteFrame);
 
         assertThat(netexSiteFrame).isNotNull();
-        assertThat(netexSiteFrame.getStopPlaces().getStopPlace().get(0).getName().getValue()).isEqualTo(stopPlace.getName().getValue());
+        assertThat(netexSiteFrame.getStopPlaces().getStopPlace_().get(0).getValue().getName().getValue()).isEqualTo(stopPlace.getName().getValue());
     }
 
     @Test
@@ -115,7 +117,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
         String stopPlaceId = "1337";
         stopPlace.setId("AVI:StopPlace:" + stopPlaceId);
 
-        stopPlacesInFrame_relStructure.getStopPlace().add(stopPlace);
+        stopPlacesInFrame_relStructure.getStopPlace_().add(netexObjectFactory.createStopPlace(stopPlace));
         netexSiteFrame.setStopPlaces(stopPlacesInFrame_relStructure);
 
         org.rutebanken.tiamat.model.SiteFrame actualSiteFrame = netexMapper.mapToTiamatModel(netexSiteFrame);
@@ -170,7 +172,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
                 .as("stop place ref list")
                 .isNotNull()
                 .isNotEmpty()
-                .extracting(StopPlaceRefStructure::getRef)
+                .extracting(spRef -> spRef.getValue().getRef())
                     .as("reference to stop place id")
                     .containsOnly(stopPlace.getNetexId());
 
@@ -319,8 +321,8 @@ public class NetexMapperTest extends TiamatIntegrationTest {
         org.rutebanken.netex.model.StopPlace actualStop = netexMapper.mapToNetexModel(stopPlace);
 
         org.rutebanken.netex.model.Quay actualQuay = actualStop.getQuays().getQuayRefOrQuay().stream()
-                .filter(object -> object instanceof org.rutebanken.netex.model.Quay)
-                .map(object -> ((org.rutebanken.netex.model.Quay) object))
+                .filter(object -> object.getValue() instanceof org.rutebanken.netex.model.Quay)
+                .map(object -> ((org.rutebanken.netex.model.Quay) object.getValue()))
                 .findFirst()
                 .get();
 

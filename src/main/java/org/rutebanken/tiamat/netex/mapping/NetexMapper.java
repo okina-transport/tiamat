@@ -18,12 +18,14 @@ package org.rutebanken.tiamat.netex.mapping;
 import ma.glasnost.orika.*;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.rutebanken.netex.model.*;
+import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.tiamat.netex.mapping.mapper.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.xml.bind.JAXBElement;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
 @Component
 public class NetexMapper {
     private static final Logger logger = LoggerFactory.getLogger(NetexMapper.class);
+
     private final MapperFacade facade;
 
     @Autowired
@@ -59,6 +62,7 @@ public class NetexMapper {
         mapperFactory.registerMapper(keyListToKeyValuesMapMapper);
 
         mapperFactory.classMap(SiteFrame.class, org.rutebanken.tiamat.model.SiteFrame.class)
+                .customize(new SiteFrameCustomMapper())
                 .byDefault()
                 .register();
 
@@ -118,6 +122,11 @@ public class NetexMapper {
                 .exclude("accessModes")
                 .fieldBToA("netexId", "id")
                 .customize(new ParkingMapper())
+                .byDefault()
+                .register();
+
+        mapperFactory.classMap(ParkingArea.class, org.rutebanken.tiamat.model.ParkingArea.class)
+                .customize(new ParkingAreaMapper())
                 .byDefault()
                 .register();
 
@@ -203,12 +212,12 @@ public class NetexMapper {
 
     public StopPlace mapToNetexModel(org.rutebanken.tiamat.model.StopPlace tiamatStopPlace) {
         StopPlace netexStopPlace = facade.map(tiamatStopPlace, StopPlace.class);
-        netexStopPlace.setTransportMode(VehicleModeEnumeration.BUS);
+        netexStopPlace.setTransportMode(AllVehicleModesOfTransportEnumeration.BUS);
         netexStopPlace.setWeighting(InterchangeWeightingEnumeration.INTERCHANGE_ALLOWED);
 
         initTypeOfPlace(netexStopPlace);
         if (netexStopPlace.getQuays() != null) {
-            netexStopPlace.getQuays().getQuayRefOrQuay().forEach(quay -> initQuayProperties(netexStopPlace, (Quay) quay));
+            netexStopPlace.getQuays().getQuayRefOrQuay().forEach(quay -> initQuayProperties(netexStopPlace, (Quay) quay.getValue()));
         }
 
         ValidBetween validBetween = new ValidBetween();
@@ -220,11 +229,11 @@ public class NetexMapper {
 
     private void initTypeOfPlace(StopPlace netexStopPlace){
 
-        List<VehicleModeEnumeration> tranportModeList = new ArrayList<>();
+        List<AllVehicleModesOfTransportEnumeration> tranportModeList = new ArrayList<>();
 
         if (netexStopPlace.getQuays() != null){
             tranportModeList    = netexStopPlace.getQuays().getQuayRefOrQuay().stream()
-                    .map(obj -> ((Quay) obj).getTransportMode())
+                    .map(obj -> ((Quay) obj.getValue()).getTransportMode())
                     .filter(transportMode -> transportMode != null)
                     .distinct()
                     .collect(Collectors.toList());
@@ -242,7 +251,7 @@ public class NetexMapper {
         netexStopPlace.setPlaceTypes(placeRefs);
     }
 
-    private void initQuayProperties(StopPlace stopPlace,Quay quay){
+    private void initQuayProperties(StopPlace stopPlace, Quay quay){
         MultilingualString multilingualString = new MultilingualString();
         Optional<String> importedNameOpt = getImportedName(quay);
         if (!importedNameOpt.isPresent()){
@@ -258,7 +267,7 @@ public class NetexMapper {
         typeOfPlace.withRef("monomodalStopPlace");
         placeRefs.withTypeOfPlaceRef(typeOfPlace);
         quay.setPlaceTypes(placeRefs);
-        quay.setTransportMode(VehicleModeEnumeration.BUS);
+        quay.setTransportMode(AllVehicleModesOfTransportEnumeration.BUS);
         SiteRefStructure siteRef = new SiteRefStructure();
         siteRef.withRef(stopPlace.getId());
         quay.setSiteRef(siteRef);

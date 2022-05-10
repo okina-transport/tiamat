@@ -55,6 +55,8 @@ import static org.rutebanken.tiamat.exporter.params.StopPlaceSearch.newStopPlace
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class ExportResourceTest extends TiamatIntegrationTest {
 
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
+
     @Autowired
     private ExportResource exportResource;
 
@@ -185,7 +187,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
                 .as("stop place ref list")
                 .isNotNull()
                 .isNotEmpty()
-                .extracting(StopPlaceRefStructure::getRef)
+                .extracting(spRef -> spRef.getValue().getRef())
                 .as("reference to stop place id")
                 .containsOnly(stopPlace.getNetexId(), stopPlace2.getNetexId());
 
@@ -201,20 +203,20 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         StopPlace stopPlace1 = new StopPlace()
                 .withId("XYZ:Stopplace:1")
                 .withVersion("1")
-                .withTransportMode(VehicleModeEnumeration.BUS)
+                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                 .withName(new MultilingualString().withValue("Changed stop1"))
                 .withValidBetween(new ValidBetween().withFromDate(validFrom))
                 .withStopPlaceType(StopTypeEnumeration.BUS_STATION)
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(new Quay()
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(new Quay()
                                 .withVersion("1")
                                 .withId("RUT:StopArea:87654")
-                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                                 .withSiteRef(new SiteRefStructure().withValue("RUT:StopPlace:123123").withRef("RUT:StopPlace:123123"))
                                 .withName(new MultilingualString().withValue("q1").withLang("no"))
                                 .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
                                         .withLatitude(new BigDecimal("59.914353"))
-                                        .withLongitude(new BigDecimal("10.806387"))))))
+                                        .withLongitude(new BigDecimal("10.806387")))))))
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("59.914353"))
@@ -224,7 +226,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
                 .withId("XYZ:Stopplace:2")
                 .withVersion("1")
                 .withName(new MultilingualString().withValue("Changed stop2"))
-                .withTransportMode(VehicleModeEnumeration.BUS)
+                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                 .withStopPlaceType(StopTypeEnumeration.BUS_STATION)
                 .withValidBetween(new ValidBetween().withFromDate(validFrom.plusDays(1)))
                 .withCentroid(new SimplePoint_VersionStructure()
@@ -232,15 +234,15 @@ public class ExportResourceTest extends TiamatIntegrationTest {
                                 .withLatitude(new BigDecimal("22.914353"))
                                 .withLongitude(new BigDecimal("11.806387"))))
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(new Quay()
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(new Quay()
                                 .withVersion("1")
                                 .withId("RUT:StopArea:87655")
-                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                                 .withSiteRef(new SiteRefStructure().withValue("RUT:StopPlace:123123").withRef("RUT:StopPlace:123123"))
                                 .withName(new MultilingualString().withValue("q1").withLang("no"))
                                 .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
                                         .withLatitude(new BigDecimal("22.914353"))
-                                        .withLongitude(new BigDecimal("11.806387"))))));
+                                        .withLongitude(new BigDecimal("11.806387")))))));
 
 
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace1, stopPlace2);
@@ -281,7 +283,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         StopPlace stopPlace = new StopPlace()
                 .withId("XYZ:Stopplace:1")
                 .withVersion("1")
-                .withTransportMode(VehicleModeEnumeration.BUS)
+                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                 .withName(new MultilingualString().withValue("Østre gravlund"))
                 .withStopPlaceType(StopTypeEnumeration.BUS_STATION)
                 .withCentroid(new SimplePoint_VersionStructure()
@@ -289,15 +291,15 @@ public class ExportResourceTest extends TiamatIntegrationTest {
                                 .withLatitude(new BigDecimal("59.914353"))
                                 .withLongitude(new BigDecimal("10.806387"))))
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(new Quay()
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(new Quay()
                                 .withVersion("1")
                                 .withId("RUT:Quay:87655")
-                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                                 .withSiteRef(new SiteRefStructure().withValue("XYZ:Stopplace:1").withRef("XYZ:Stopplace:1"))
                                 .withName(new MultilingualString().withValue("q1").withLang("no"))
                                 .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
                                         .withLatitude(new BigDecimal("58.966910"))
-                                        .withLongitude(new BigDecimal("5.732949"))))));
+                                        .withLongitude(new BigDecimal("5.732949")))))));
 
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace);
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);

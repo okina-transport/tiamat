@@ -19,19 +19,7 @@ import com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.rutebanken.netex.model.KeyValueStructure;
-import org.rutebanken.netex.model.LocationStructure;
-import org.rutebanken.netex.model.MultilingualString;
-import org.rutebanken.netex.model.PrivateCodeStructure;
-import org.rutebanken.netex.model.PublicationDeliveryStructure;
-import org.rutebanken.netex.model.Quay;
-import org.rutebanken.netex.model.Quays_RelStructure;
-import org.rutebanken.netex.model.SimplePoint_VersionStructure;
-import org.rutebanken.netex.model.SiteRefStructure;
-import org.rutebanken.netex.model.StopPlace;
-import org.rutebanken.netex.model.StopTypeEnumeration;
-import org.rutebanken.netex.model.ValidBetween;
-import org.rutebanken.netex.model.VehicleModeEnumeration;
+import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
@@ -61,6 +49,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class OkinaStopPlaceManagementRulesTest extends TiamatIntegrationTest {
+
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
 
     @Autowired
     private ImportResource importResource;
@@ -100,22 +90,22 @@ public class OkinaStopPlaceManagementRulesTest extends TiamatIntegrationTest {
                 .withId(stopPlaceId1)
                 .withVersion("1")
                 .withName(new MultilingualString().withValue(initialStopName))
-                .withTransportMode(VehicleModeEnumeration.BUS)
+                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                 .withStopPlaceType(StopTypeEnumeration.BUS_STATION)
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("59.914353"))
                                 .withLongitude(new BigDecimal("10.806387"))))
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(new Quay()
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(new Quay()
                                 .withVersion("1")
                                 .withId("XYZ:Quay:87654")
-                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                                 .withSiteRef(new SiteRefStructure().withValue(stopPlaceId1).withRef(stopPlaceId1))
                                 .withName(new MultilingualString().withValue(initialQuayName).withLang("fr"))
                                 .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
                                         .withLatitude(new BigDecimal("58.966910"))
-                                        .withLongitude(new BigDecimal("5.732949"))))));
+                                        .withLongitude(new BigDecimal("5.732949")))))));
 
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace1);
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
@@ -137,22 +127,22 @@ public class OkinaStopPlaceManagementRulesTest extends TiamatIntegrationTest {
                 .withId(stopPlaceId1)
                 .withVersion("1")
                 .withName(new MultilingualString().withValue("new name for SP"))
-                .withTransportMode(VehicleModeEnumeration.BUS)
+                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                 .withStopPlaceType(StopTypeEnumeration.BUS_STATION)
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("59.914353"))
                                 .withLongitude(new BigDecimal("10.806387"))))
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(new Quay()
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(new Quay()
                                 .withVersion("1")
                                 .withId("XYZ:Quay:87654")
-                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                                 .withSiteRef(new SiteRefStructure().withValue(stopPlaceId1).withRef(stopPlaceId1))
                                 .withName(new MultilingualString().withValue("new name for quay").withLang("fr"))
                                 .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
                                         .withLatitude(new BigDecimal("58.966910"))
-                                        .withLongitude(new BigDecimal("5.732949"))))));
+                                        .withLongitude(new BigDecimal("5.732949")))))));
 
         PublicationDeliveryStructure publicationDelivery2 = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace2);
         PublicationDeliveryStructure response2 = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery2);

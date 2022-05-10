@@ -32,6 +32,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StavangerImportTest  extends TiamatIntegrationTest {
 
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
+
     @Autowired
     private PublicationDeliveryTestHelper publicationDeliveryTestHelper;
 
@@ -49,17 +51,17 @@ public class StavangerImportTest  extends TiamatIntegrationTest {
                 .withVersion("1")
                 .withName(new MultilingualString().withValue("Stavanger hpl. 12").withLang("no"))
                 .withStopPlaceType(StopTypeEnumeration.ONSTREET_BUS)
-                .withTransportMode(VehicleModeEnumeration.BUS)
+                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(new Quay()
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(new Quay()
                                         .withVersion("1")
                                         .withId("KOL:StopArea:87654")
-                                        .withTransportMode(VehicleModeEnumeration.BUS)
+                                        .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                                         .withName(new MultilingualString().withValue("Stavanger hpl. 12").withLang("no"))
                                         .withSiteRef(new SiteRefStructure().withValue("KOL:StopArea:987654").withRef("KOL:StopArea:987654"))
                                         .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
                                                 .withLatitude(new BigDecimal("58.966910"))
-                                                .withLongitude(new BigDecimal("5.732949"))))));
+                                                .withLongitude(new BigDecimal("5.732949")))))));
 
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace);
 
@@ -89,17 +91,17 @@ public class StavangerImportTest  extends TiamatIntegrationTest {
                 .withVersion("1")
                 .withName(new MultilingualString().withValue(originalStopPlaceName).withLang("no"))
                 .withStopPlaceType(StopTypeEnumeration.ONSTREET_BUS)
-                .withTransportMode(VehicleModeEnumeration.BUS)
+                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(new Quay()
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(new Quay()
                                 .withVersion("1")
                                 .withId("KOL:StopArea:1103265001")
                                 .withName(new MultilingualString().withValue(originalStopPlaceName).withLang("no"))
                                 .withSiteRef(new SiteRefStructure().withValue("KOL:StopArea:11032650").withRef("KOL:StopArea:11032650"))
-                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                                 .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
                                         .withLatitude(new BigDecimal("58.966910"))
-                                        .withLongitude(new BigDecimal("5.732949"))))));
+                                        .withLongitude(new BigDecimal("5.732949")))))));
 
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace);
 

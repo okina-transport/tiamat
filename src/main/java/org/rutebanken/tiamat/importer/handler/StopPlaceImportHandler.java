@@ -18,11 +18,7 @@ package org.rutebanken.tiamat.importer.handler;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
 import org.apache.commons.lang3.NotImplementedException;
-import org.rutebanken.netex.model.Quay;
-import org.rutebanken.netex.model.SiteFrame;
-import org.rutebanken.netex.model.StopPlacesInFrame_RelStructure;
-import org.rutebanken.netex.model.TopographicPlace;
-import org.rutebanken.netex.model.TopographicPlacesInFrame_RelStructure;
+import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.exporter.TariffZonesFromStopsExporter;
 import org.rutebanken.tiamat.exporter.TopographicPlacesExporter;
 import org.rutebanken.tiamat.externalapis.ApiProxyService;
@@ -61,6 +57,7 @@ import java.util.stream.Collectors;
 public class StopPlaceImportHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceImportHandler.class);
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
 
     /**
      * Hazelcast lock key for stop place import.
@@ -118,7 +115,9 @@ public class StopPlaceImportHandler {
 
     public void handleStops(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger stopPlacesCreatedMatchedOrUpdated, SiteFrame responseSiteframe) throws TiamatBusinessException {
         if (publicationDeliveryHelper.hasStops(netexSiteFrame)) {
-            List<StopPlace> tiamatStops = netexMapper.mapStopsToTiamatModel(netexSiteFrame.getStopPlaces().getStopPlace());
+            List<StopPlace> tiamatStops = netexMapper.mapStopsToTiamatModel(netexSiteFrame.getStopPlaces().getStopPlace_().stream()
+                    .map(sp -> (org.rutebanken.netex.model.StopPlace) sp.getValue())
+                    .collect(Collectors.toList()));
 
             // Get the postal codes of the quays from two French public apis
             tiamatStops
@@ -237,7 +236,9 @@ public class StopPlaceImportHandler {
                 logger.info("Add {} stops to response site frame", importedOrMatchedNetexStopPlaces.size());
                 responseSiteframe.withStopPlaces(
                         new StopPlacesInFrame_RelStructure()
-                                .withStopPlace(importedOrMatchedNetexStopPlaces));
+                                .withStopPlace_(importedOrMatchedNetexStopPlaces.stream()
+                                        .map(sp -> netexObjectFactory.createStopPlace(sp))
+                                        .collect(Collectors.toList())));
             } else {
                 logger.info("No stops in response");
             }

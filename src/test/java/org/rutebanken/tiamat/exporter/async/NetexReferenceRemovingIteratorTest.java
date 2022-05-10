@@ -16,10 +16,7 @@
 package org.rutebanken.tiamat.exporter.async;
 
 import org.junit.Test;
-import org.rutebanken.netex.model.StopPlace;
-import org.rutebanken.netex.model.TariffZoneRef;
-import org.rutebanken.netex.model.TariffZoneRefs_RelStructure;
-import org.rutebanken.netex.model.TopographicPlaceRefStructure;
+import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.springframework.test.annotation.DirtiesContext;
 
@@ -31,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class NetexReferenceRemovingIteratorTest {
 
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
 
     @Test
     public void testReferenceRemoval() {
@@ -39,10 +37,10 @@ public class NetexReferenceRemovingIteratorTest {
         StopPlace stopPlace = new StopPlace()
                 .withTariffZones(
                         new TariffZoneRefs_RelStructure()
-                                .withTariffZoneRef(
-                                        new TariffZoneRef()
+                                .withTariffZoneRef_(
+                                        netexObjectFactory.createTariffZoneRef(new TariffZoneRef()
                                                 .withRef("ref")
-                                                .withVersion("version")))
+                                                .withVersion("version"))))
                 .withTopographicPlaceRef(
                         new TopographicPlaceRefStructure()
                             .withValue("KVE:TopographicPlace:XXX")
@@ -62,7 +60,7 @@ public class NetexReferenceRemovingIteratorTest {
 
         StopPlace actual = netexReferenceRemovingIterator.next();
 
-        assertThat(actual.getTariffZones().getTariffZoneRef().get(0).getVersion()).as("TariffZoneref version").isNull();
+        assertThat(actual.getTariffZones().getTariffZoneRef_().get(0).getValue().getVersion()).as("TariffZoneref version").isNull();
         assertThat(actual.getTopographicPlaceRef().getVersion()).as("topographic place ref version").isNull();
     }
 
@@ -73,10 +71,10 @@ public class NetexReferenceRemovingIteratorTest {
         StopPlace stopPlace = new StopPlace()
                 .withTariffZones(
                         new TariffZoneRefs_RelStructure()
-                                .withTariffZoneRef(
-                                        new TariffZoneRef()
+                                .withTariffZoneRef_(
+                                        netexObjectFactory.createTariffZoneRef(new TariffZoneRef()
                                                 .withRef("ref")
-                                                .withVersion("version")))
+                                                .withVersion("version"))))
                 .withTopographicPlaceRef(
                         new TopographicPlaceRefStructure()
                                 .withValue("KVE:TopographicPlace:XXX")
@@ -95,7 +93,7 @@ public class NetexReferenceRemovingIteratorTest {
 
         StopPlace actual = netexReferenceRemovingIterator.next();
 
-        assertThat(actual.getTariffZones().getTariffZoneRef().get(0).getVersion()).as("TariffZoneref version").isEqualTo("version");
+        assertThat(actual.getTariffZones().getTariffZoneRef_().get(0).getValue().getVersion()).as("TariffZoneref version").isEqualTo("version");
         assertThat(actual.getTopographicPlaceRef().getVersion()).as("topographic place ref version").isEqualTo("version");
     }
 

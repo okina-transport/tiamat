@@ -73,8 +73,8 @@ public class TariffZonesFromStopsExporter {
 
         importedNetexStopPlaces.stream()
                 .filter(stopPlace -> stopPlace.getTariffZones() != null)
-                .flatMap(stopPlace -> stopPlace.getTariffZones().getTariffZoneRef().stream())
-                .filter(tariffZoneRef -> !tariffZoneMap.containsKey(key(tariffZoneRef.getRef(), tariffZoneRef.getVersion())))
+                .flatMap(stopPlace -> stopPlace.getTariffZones().getTariffZoneRef_().stream())
+                .filter(tariffZoneRef -> !tariffZoneMap.containsKey(key(tariffZoneRef.getValue().getRef(), tariffZoneRef.getValue().getVersion())))
                 .map(tariffZoneRef -> netexMapper.getFacade().map(tariffZoneRef, TariffZoneRef.class))
                 .peek(mappedTariffZoneRef -> logger.debug("Resolving ref: {}", mappedTariffZoneRef))
                 .map(mappedTariffZoneRef -> {

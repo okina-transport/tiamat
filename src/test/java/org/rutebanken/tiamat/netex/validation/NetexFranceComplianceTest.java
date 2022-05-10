@@ -142,7 +142,7 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
                 .filter(jaxbElement -> jaxbElement.getValue() instanceof org.rutebanken.netex.model.StopPlace)
                 .map(jaxStopPlace -> {
                     org.rutebanken.netex.model.StopPlace stopPlace = (org.rutebanken.netex.model.StopPlace) jaxStopPlace.getValue();
-                    return stopPlace.getQuays().getQuayRefOrQuay();
+                    return stopPlace.getQuays().getQuayRefOrQuay().stream().map(q -> (Object) q.getValue()).collect(Collectors.toList());
                 })
                 .collect(Collectors.toList());
 

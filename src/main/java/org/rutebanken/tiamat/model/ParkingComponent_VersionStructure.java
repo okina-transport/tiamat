@@ -15,17 +15,26 @@
 
 package org.rutebanken.tiamat.model;
 
+import javax.persistence.MappedSuperclass;
+import javax.persistence.Transient;
 import java.math.BigDecimal;
 
-
+@MappedSuperclass
 public class ParkingComponent_VersionStructure
         extends SiteComponent_VersionStructure {
 
+    @Transient
     protected String parkingPaymentCode;
+    @Transient
     protected EmbeddableMultilingualString label;
+    @Transient
     protected BigDecimal maximumLength;
+    @Transient
     protected BigDecimal maximumWidth;
+
     protected BigDecimal maximumHeight;
+
+    @Transient
     protected BigDecimal maximumWeight;
 
     public String getParkingPaymentCode() {

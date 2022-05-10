@@ -78,7 +78,7 @@ public class MatchingAppendingImporterSharedModeTest extends TiamatIntegrationTe
 
         //Quay checks
         assertTrue(importedStopPlace.getQuays().getQuayRefOrQuay().size() == 1);
-        org.rutebanken.netex.model.Quay quay1 = (org.rutebanken.netex.model.Quay) importedStopPlace.getQuays().getQuayRefOrQuay().get(0);
+        org.rutebanken.netex.model.Quay quay1 = (org.rutebanken.netex.model.Quay) importedStopPlace.getQuays().getQuayRefOrQuay().get(0).getValue();
         assertEquals(name,quay1.getName().getValue());
         assertEquals("Wrong longitude",quay1.getCentroid().getLocation().getLongitude().doubleValue(),longitude,0.0d);
         assertEquals("Wrong latitude",quay1.getCentroid().getLocation().getLatitude().doubleValue(),latitude,0.0d);
@@ -125,7 +125,7 @@ public class MatchingAppendingImporterSharedModeTest extends TiamatIntegrationTe
         assertEquals(importedId+","+importedIdPt2,stop2Opt.get());
 
         assertTrue(importedStopPlaceOnProv2.getQuays().getQuayRefOrQuay().size() == 1);
-        org.rutebanken.netex.model.Quay newQuay = (org.rutebanken.netex.model.Quay) importedStopPlaceOnProv2.getQuays().getQuayRefOrQuay().get(0);
+        org.rutebanken.netex.model.Quay newQuay = (org.rutebanken.netex.model.Quay) importedStopPlaceOnProv2.getQuays().getQuayRefOrQuay().get(0).getValue();
         assertEquals("Wrong longitude",newQuay.getCentroid().getLocation().getLongitude().doubleValue(),longitude,0.0d);
         assertEquals("Wrong latitude",newQuay.getCentroid().getLocation().getLatitude().doubleValue(),latitude,0.0d);
         Optional<String> newQuayImportedIdOpt = NetexMapper.getImportedId(newQuay);

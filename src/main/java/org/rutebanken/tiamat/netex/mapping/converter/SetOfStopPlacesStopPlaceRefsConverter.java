@@ -3,6 +3,7 @@ package org.rutebanken.tiamat.netex.mapping.converter;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
+import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.netex.model.StopPlaceRefStructure;
 import org.rutebanken.netex.model.StopPlaceRefs_RelStructure;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -22,6 +23,7 @@ import static java.util.stream.Collectors.toSet;
 public class SetOfStopPlacesStopPlaceRefsConverter extends BidirectionalConverter<Set<StopPlace>, StopPlaceRefs_RelStructure> {
 
     private static final Logger logger = LoggerFactory.getLogger(SetOfStopPlacesStopPlaceRefsConverter.class);
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
 
     @Autowired
     private ReferenceResolver referenceResolver;
@@ -37,7 +39,7 @@ public class SetOfStopPlacesStopPlaceRefsConverter extends BidirectionalConverte
                             StopPlaceRefStructure stopPlaceRefStructure = new StopPlaceRefStructure();
                             stopPlaceRefStructure.withVersion(String.valueOf(stopPlace.getVersion()));
                             stopPlaceRefStructure.withRef(stopPlace.getNetexId());
-                            return stopPlaceRefStructure;
+                            return netexObjectFactory.createStopPlaceRef(stopPlaceRefStructure);
                         })
                         .collect(toList()));
         }
@@ -50,7 +52,7 @@ public class SetOfStopPlacesStopPlaceRefsConverter extends BidirectionalConverte
             logger.debug("Mapping set stopPlaceRefs_relStructure from netex. stops {}", stopPlaceRefs_relStructure.getStopPlaceRef().size());
             return stopPlaceRefs_relStructure.getStopPlaceRef()
                     .stream()
-                    .map(stopPlaceRefStructure -> (StopPlace) referenceResolver.resolve(new VersionOfObjectRefStructure(stopPlaceRefStructure.getRef(), stopPlaceRefStructure.getVersion())))
+                    .map(stopPlaceRefStructure -> (StopPlace) referenceResolver.resolve(new VersionOfObjectRefStructure(stopPlaceRefStructure.getValue().getRef(), stopPlaceRefStructure.getValue().getVersion())))
                     .collect(toSet());
         }
 

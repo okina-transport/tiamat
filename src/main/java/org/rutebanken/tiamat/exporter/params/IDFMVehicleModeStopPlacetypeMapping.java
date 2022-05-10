@@ -8,19 +8,19 @@ import java.util.Map;
 
 public class IDFMVehicleModeStopPlacetypeMapping {
 
-    private Map<org.rutebanken.netex.model.StopTypeEnumeration, org.rutebanken.netex.model.VehicleModeEnumeration> stopPlaceTypeVehicleMode = new HashMap<>();
+    private Map<org.rutebanken.netex.model.StopTypeEnumeration, org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration> stopPlaceTypeVehicleMode = new HashMap<>();
 
     public IDFMVehicleModeStopPlacetypeMapping() {
-        stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.ONSTREET_BUS, org.rutebanken.netex.model.VehicleModeEnumeration.BUS);
-        stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.ONSTREET_TRAM, org.rutebanken.netex.model.VehicleModeEnumeration.BUS);
-        stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.AIRPORT, org.rutebanken.netex.model.VehicleModeEnumeration.AIR);
-        stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.RAIL_STATION, org.rutebanken.netex.model.VehicleModeEnumeration.RAIL);
-        stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.METRO_STATION, org.rutebanken.netex.model.VehicleModeEnumeration.TRAM);
-        stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.BUS_STATION, org.rutebanken.netex.model.VehicleModeEnumeration.BUS);
-        stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.COACH_STATION, org.rutebanken.netex.model.VehicleModeEnumeration.COACH);
+        stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.ONSTREET_BUS, org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration.BUS);
+        stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.ONSTREET_TRAM, org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration.BUS);
+        stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.AIRPORT, org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration.AIR);
+        stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.RAIL_STATION, org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration.RAIL);
+        stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.METRO_STATION, org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration.TRAM);
+        stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.BUS_STATION, org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration.BUS);
+        stopPlaceTypeVehicleMode.put(org.rutebanken.netex.model.StopTypeEnumeration.COACH_STATION, org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration.COACH);
     }
 
-    public org.rutebanken.netex.model.VehicleModeEnumeration getVehicleModeEnumeration(org.rutebanken.netex.model.StopTypeEnumeration stopTypeEnumeration){
+    public org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration getVehicleModeEnumeration(org.rutebanken.netex.model.StopTypeEnumeration stopTypeEnumeration){
         return stopPlaceTypeVehicleMode.get(stopTypeEnumeration);
     }
 

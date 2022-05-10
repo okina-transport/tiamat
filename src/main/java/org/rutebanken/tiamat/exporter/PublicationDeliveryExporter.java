@@ -40,6 +40,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static java.util.stream.Collectors.toSet;
@@ -216,11 +217,13 @@ public class PublicationDeliveryExporter {
 
         if (convertedSiteFrame.getStopPlaces() != null) {
             if (relevantTariffZones) {
-                tariffZonesFromStopsExporter.resolveTariffZones(convertedSiteFrame.getStopPlaces().getStopPlace(), convertedSiteFrame);
+                tariffZonesFromStopsExporter.resolveTariffZones(convertedSiteFrame.getStopPlaces().getStopPlace_().stream()
+                        .map(sp -> (org.rutebanken.netex.model.StopPlace) sp.getValue())
+                        .collect(Collectors.toList()), convertedSiteFrame);
             } else if (ExportParams.ExportMode.NONE.equals(exportParams.getTariffZoneExportMode())) {
-                logger.info("TariffZone export mode is NONE. Removing references from {} converted stop places", convertedSiteFrame.getStopPlaces().getStopPlace().size());
-                convertedSiteFrame.getStopPlaces().getStopPlace().stream()
-                        .forEach(convertedStop -> convertedStop.setTariffZones(null));
+                logger.info("TariffZone export mode is NONE. Removing references from {} converted stop places", convertedSiteFrame.getStopPlaces().getStopPlace_().size());
+                convertedSiteFrame.getStopPlaces().getStopPlace_()
+                        .forEach(convertedStop -> ((org.rutebanken.netex.model.StopPlace) convertedStop.getValue()).setTariffZones(null));
             }
         }
 
@@ -233,10 +236,10 @@ public class PublicationDeliveryExporter {
 
     private void removeVersionFromTopographicPlaceReferences(org.rutebanken.netex.model.SiteFrame convertedSiteFrame) {
         if (convertedSiteFrame.getStopPlaces() != null) {
-            convertedSiteFrame.getStopPlaces().getStopPlace()
+            convertedSiteFrame.getStopPlaces().getStopPlace_()
                     .stream()
-                    .filter(sp -> sp.getTopographicPlaceRef() != null)
-                    .forEach(sp -> sp.getTopographicPlaceRef().setVersion(null));
+                    .filter(sp -> sp.getValue().getTopographicPlaceRef() != null)
+                    .forEach(sp -> sp.getValue().getTopographicPlaceRef().setVersion(null));
         }
     }
 

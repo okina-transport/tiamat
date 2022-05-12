@@ -111,7 +111,7 @@ public class TariffZonesFromStopsExporterTest extends TiamatIntegrationTest {
         netexStopPlace.withTariffZones(new TariffZoneRefs_RelStructure().withTariffZoneRef_(netexObjectFactory.createTariffZoneRef(new TariffZoneRef().withRef(tariffZone.getNetexId()).withVersion("1"))));
 
         SiteFrame siteFrame = new SiteFrame();
-        siteFrame.withTariffZones(new TariffZonesInFrame_RelStructure().withTariffZone_(new JAXBElement<org.rutebanken.netex.model.TariffZone>(qname,org.rutebanken.netex.model.TariffZone.class,alreadyAddedTariffZone)));
+        siteFrame.withTariffZones(new TariffZonesInFrame_RelStructure().withTariffZone_(netexObjectFactory.createTariffZone(alreadyAddedTariffZone)));
         tariffZonesFromStopsExporter.resolveTariffZones(Arrays.asList(netexStopPlace), siteFrame);
 
 

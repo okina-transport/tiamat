@@ -1438,7 +1438,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                  <WaitingRoomEquipment id=\"NSB:WaitingRoomEquipment:3\" version=\"1\"/>\n" +
                 "                  <SanitaryEquipment id=\"NSB:SanitaryEquipment:3\" version=\"1\">\n" +
                 "                     <Gender>both</Gender>\n" +
-                "                     <SanitaryFacilityList>toilet wheelChairAccessToilet</SanitaryFacilityList>\n" +
+                "                     <SanitaryFacilityList>toilet wheelchairAccessToilet</SanitaryFacilityList>\n" +
                 "                  </SanitaryEquipment>\n" +
                 "                  <TicketingEquipment id=\"NSB:TicketingEquipment:3\" version=\"1\">\n" +
                 "                     <NumberOfMachines>1</NumberOfMachines>\n" +

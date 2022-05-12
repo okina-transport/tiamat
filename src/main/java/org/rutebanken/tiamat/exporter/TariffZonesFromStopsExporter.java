@@ -75,7 +75,7 @@ public class TariffZonesFromStopsExporter {
                 .filter(stopPlace -> stopPlace.getTariffZones() != null)
                 .flatMap(stopPlace -> stopPlace.getTariffZones().getTariffZoneRef_().stream())
                 .filter(tariffZoneRef -> !tariffZoneMap.containsKey(key(tariffZoneRef.getValue().getRef(), tariffZoneRef.getValue().getVersion())))
-                .map(tariffZoneRef -> netexMapper.getFacade().map(tariffZoneRef, TariffZoneRef.class))
+                .map(tariffZoneRef -> netexMapper.getFacade().map(tariffZoneRef.getValue(), TariffZoneRef.class))
                 .peek(mappedTariffZoneRef -> logger.debug("Resolving ref: {}", mappedTariffZoneRef))
                 .map(mappedTariffZoneRef -> {
                     org.rutebanken.tiamat.model.TariffZone tiamatTariffZone = referenceResolver.resolve(mappedTariffZoneRef);

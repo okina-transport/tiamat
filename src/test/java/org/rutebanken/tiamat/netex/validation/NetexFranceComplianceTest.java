@@ -18,16 +18,7 @@ package org.rutebanken.tiamat.netex.validation;
 import org.junit.Assert;
 import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
-import org.rutebanken.netex.model.Common_VersionFrameStructure;
-import org.rutebanken.netex.model.EntityStructure;
-import org.rutebanken.netex.model.GeneralFrame;
-import org.rutebanken.netex.model.MultilingualString;
-import org.rutebanken.netex.model.ObjectFactory;
-import org.rutebanken.netex.model.PostalAddress;
-import org.rutebanken.netex.model.PublicationDeliveryStructure;
-import org.rutebanken.netex.model.QuayRefStructure;
-import org.rutebanken.netex.model.TypeOfPlaceRefs_RelStructure;
-import org.rutebanken.netex.model.VehicleModeEnumeration;
+import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.ExportTypeEnumeration;
@@ -196,7 +187,7 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
 
         int stopPlaceNumber = Integer.valueOf(quayNb) + 1;
         Assert.assertEquals("wrong site ref","NSR:StopPlace:"+stopPlaceNumber,quay.getSiteRef().getRef());
-        Assert.assertEquals("wrong transport mode", VehicleModeEnumeration.BUS,quay.getTransportMode());
+        Assert.assertEquals("wrong transport mode", AllVehicleModesOfTransportEnumeration.BUS,quay.getTransportMode());
 
 
 

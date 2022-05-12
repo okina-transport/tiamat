@@ -92,9 +92,12 @@ public class ParkingVersionedSaverService {
 
         newVersion.setValidBetween(null);
         versionIncrementor.initiateOrIncrement(newVersion);
-        for (ParkingArea pa : newVersion.getParkingAreas()) {
-            versionIncrementor.initiateOrIncrement(pa);
+        if (newVersion.getParkingAreas() != null) {
+            for (ParkingArea pa : newVersion.getParkingAreas()) {
+                versionIncrementor.initiateOrIncrement(pa);
+            }
         }
+
         newVersion.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
         result = parkingRepository.save(newVersion);
 

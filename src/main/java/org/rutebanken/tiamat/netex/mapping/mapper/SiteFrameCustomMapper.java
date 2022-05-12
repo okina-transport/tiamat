@@ -17,8 +17,10 @@ public class SiteFrameCustomMapper extends CustomMapper<SiteFrame, org.rutebanke
     @Override
     public void mapAtoB(SiteFrame netexSiteFrame, org.rutebanken.tiamat.model.SiteFrame tiamatSiteFrame, MappingContext context) {
         super.mapAtoB(netexSiteFrame, tiamatSiteFrame, context);
-        List<StopPlace> netexStopPlaces = netexSiteFrame.getStopPlaces().getStopPlace_().stream().map(sp -> (StopPlace) sp.getValue()).collect(Collectors.toList());
-        tiamatSiteFrame.getStopPlaces().getStopPlace().addAll(mapperFacade.mapAsList(netexStopPlaces, org.rutebanken.tiamat.model.StopPlace.class));
+        if (netexSiteFrame.getStopPlaces() != null && netexSiteFrame.getStopPlaces().getStopPlace_() != null) {
+            List<StopPlace> netexStopPlaces = netexSiteFrame.getStopPlaces().getStopPlace_().stream().map(sp -> (StopPlace) sp.getValue()).collect(Collectors.toList());
+            tiamatSiteFrame.getStopPlaces().getStopPlace().addAll(mapperFacade.mapAsList(netexStopPlaces, org.rutebanken.tiamat.model.StopPlace.class));
+        }
     }
 
     @Override

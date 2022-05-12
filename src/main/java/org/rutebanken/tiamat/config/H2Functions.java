@@ -57,7 +57,7 @@ public class H2Functions implements InitializingBean {
 
                 jdbcTemplate.execute("CREATE ALIAS delete_poi_for_classification FOR  \"org.rutebanken.tiamat.config.H2Functions.deletePOIForClassification\"");
                 jdbcTemplate.execute("CREATE ALIAS delete_poi_except_classification FOR  \"org.rutebanken.tiamat.config.H2Functions.deletePOIExceptClassification\"");
-
+                jdbcTemplate.execute("CREATE ALIAS UNACCENT FOR  \"org.rutebanken.tiamat.config.H2Functions.unAccent\"");
 
 
             }
@@ -86,6 +86,12 @@ public class H2Functions implements InitializingBean {
      */
     public static boolean deletePOIExceptClassification(String classificationName) {
         return true;
+    }
+
+
+    public static String unAccent(String inputString) {
+        return StringUtils.stripAccents(inputString);
+
     }
 
 

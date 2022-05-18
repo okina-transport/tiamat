@@ -707,6 +707,8 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
             Hibernate.initialize(stopPlace.getTariffZones());
             Hibernate.initialize(stopPlace.getPlaceEquipments());
 
+            Hibernate.initialize(stopPlace.getTopographicPlace());
+
             if (stopPlace.getPlaceEquipments() != null){
                 Hibernate.initialize(stopPlace.getPlaceEquipments().getInstalledEquipment());
             }

@@ -719,6 +719,10 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                 quay.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
                 Hibernate.initialize(quay.getAlternativeNames());
                 Hibernate.initialize(quay.getPolygon());
+                Hibernate.initialize(quay.getPlaceEquipments());
+                if (quay.getPlaceEquipments() != null){
+                    Hibernate.initialize(quay.getPlaceEquipments().getInstalledEquipment());
+                }
             });
 
         });

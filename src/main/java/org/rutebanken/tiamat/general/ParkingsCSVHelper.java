@@ -2,15 +2,11 @@ package org.rutebanken.tiamat.general;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.lang3.EnumUtils;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
-import org.rutebanken.tiamat.model.AccessibilityAssessment;
-import org.rutebanken.tiamat.model.AccessibilityLimitation;
-import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
-import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
-import org.rutebanken.tiamat.model.Parking;
-import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.rest.dto.DtoParking;
 import org.rutebanken.tiamat.service.Preconditions;
 
@@ -18,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -103,8 +100,6 @@ public class ParkingsCSVHelper {
     public static void checkDuplicatedParkings(List<DtoParking> parkings) throws IllegalArgumentException {
         List<String> compositeKey = parkings.stream().map(parking -> parking.getId() + parking.getName()).collect(Collectors.toList());
         List<String> duplicates = foundDuplicates(compositeKey);
-
-
         
         if (duplicates.size() > 0){
             String duplicatesMsg = duplicates.stream()
@@ -136,48 +131,126 @@ public class ParkingsCSVHelper {
         return  dtoParkingsCSV.stream().map(parkingDto -> {
 
             Parking parking = new Parking();
+            parking.setParkingAreas(new ArrayList<>());
+            parking.setParkingProperties(new ArrayList<>());
+
+            ParkingArea parkingArea = new ParkingArea();
+
+
+            ParkingProperties parkingProperties = new ParkingProperties();
+            parkingProperties.setSpaces(new ArrayList<>());
 
             parking.setName(new EmbeddableMultilingualString(parkingDto.getId() + DELIMETER_PARKING_ID_NAME + parkingDto.getName()));
 
-            if(!parkingDto.getNbOfPlaces().isEmpty()){
-                parking.setTotalCapacity(new BigInteger(parkingDto.getNbOfPlaces()));
+            //Type d'usagers du parking
+            if (EnumUtils.isValidEnum(ParkingUserEnumeration.class, parkingDto.getUserType())) {
+                parkingProperties.getParkingUserTypes().add(ParkingUserEnumeration.fromValue(parkingDto.getUserType()));
+            } else if (parkingDto.getUserType().equals("abonnés")) {
+                parkingProperties.getParkingUserTypes().add(ParkingUserEnumeration.REGISTERED);
+            } else if (parkingDto.getUserType().equals("tous")) {
+                parkingProperties.getParkingUserTypes().add(ParkingUserEnumeration.ALL);
             }
-
 
             parking.setParkingType(ParkingTypeEnumeration.PARKING_ZONE);
             parking.setBookingUrl(parkingDto.getUrl());
             parking.setVersion(1L);
+            parkingArea.setVersion(1L);
+            parking.setInsee(parkingDto.getInsee());
+            parking.setSiret(parkingDto.getSiretNumber());
 
-            if(!parkingDto.getDisabledParkingNb().isEmpty() && parkingDto.getDisabledParkingNb().equals(parkingDto.getNbOfPlaces())){
-                parking.setAllAreasWheelchairAccessible(true);
+            //Gratuité du parking ou non
+            if (Boolean.parseBoolean(parkingDto.getFree())) {
+                parking.setFreeParkingOutOfHours(true);
+                parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.FREE);
+            } else {
+                parking.setFreeParkingOutOfHours(false);
+            }
+
+            //Hauteur maximum
+            parkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+
+            //Gestion de la capacité max du parking
+            BigInteger nonPmrCapacity = parkingDto.getNbOfPlaces().isEmpty() ? BigInteger.ZERO : new BigInteger(parkingDto.getNbOfPlaces());
+            ParkingCapacity pmrCapacity = new ParkingCapacity();
+            pmrCapacity.setParkingUserType(ParkingUserEnumeration.REGISTERED_DISABLED);
+
+            //Nombre de places destinées aux personnes handicapées (à soustraire du nombre total de places)
+            if(nonPmrCapacity != BigInteger.ZERO && !parkingDto.getDisabledParkingNb().isEmpty()) {
+                if (parkingDto.getDisabledParkingNb().equals(parkingDto.getNbOfPlaces())) {
+                    parking.setAllAreasWheelchairAccessible(true);
+                } else {
+                    parking.setAllAreasWheelchairAccessible(false);
+                }
+                pmrCapacity.setNumberOfSpaces(new BigInteger(parkingDto.getDisabledParkingNb()));
+                nonPmrCapacity = nonPmrCapacity.subtract(new BigInteger(parkingDto.getDisabledParkingNb()));
+
+                ParkingArea pmrParkingArea = new ParkingArea();
+                pmrParkingArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.DISABLED);
+                pmrParkingArea.setPublicUse(PublicUseEnumeration.DISABLED_PUBLIC_ONLY);
+                pmrParkingArea.setVersion(1L);
+                pmrParkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+                pmrParkingArea.setName(new EmbeddableMultilingualString("Zone PMR", "FR"));
+                pmrParkingArea.setTotalCapacity(new BigInteger(parkingDto.getDisabledParkingNb()));
+                parking.getParkingAreas().add(pmrParkingArea);
             }else{
                 parking.setAllAreasWheelchairAccessible(false);
             }
+            parkingProperties.getSpaces().add(pmrCapacity);
 
-//            if(!parkingDto.getNb_pmr().isEmpty() && Integer.valueOf(parkingDto.getNb_pmr())>1){
-//                addAccessibilityAssessment(parking);
-//            }
+            //Capacité totale du parking
+            ParkingCapacity totalCapacity = new ParkingCapacity();
+            totalCapacity.setParkingUserType(ParkingUserEnumeration.ALL_USERS);
+            totalCapacity.setNumberOfSpaces(nonPmrCapacity);
+            parking.setTotalCapacity(nonPmrCapacity);
+            parkingArea.setTotalCapacity(nonPmrCapacity);
 
-
-            if(!parkingDto.getElectricVehicleNb().isEmpty() && Integer.valueOf(parkingDto.getElectricVehicleNb())>=1){
+            //Nombre de places pour véhicules électriques
+            if(!parkingDto.getElectricVehicleNb().isEmpty() && Integer.parseInt(parkingDto.getElectricVehicleNb())>=1){
                 parking.setRechargingAvailable(true);
+                totalCapacity.setNumberOfSpacesWithRechargePoint(BigInteger.valueOf(Long.parseLong(parkingDto.getElectricVehicleNb())));
             }else{
                 parking.setRechargingAvailable(false);
             }
 
-            if (!parkingDto.getCarPoolingNb().isEmpty() && Integer.valueOf(parkingDto.getCarPoolingNb()) >= 1) {
+            //Nombre de places pour le covoiturage
+            if (!parkingDto.getCarPoolingNb().isEmpty() && Integer.parseInt(parkingDto.getCarPoolingNb()) >= 1) {
                 parking.setCarpoolingAvailable(true);
+
+                ParkingArea carPoolParkingArea = new ParkingArea();
+                carPoolParkingArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.CARPOOL);
+                carPoolParkingArea.setPublicUse(PublicUseEnumeration.ALL);
+                carPoolParkingArea.setVersion(1L);
+                carPoolParkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+                carPoolParkingArea.setName(new EmbeddableMultilingualString("Zone réservée aux covoitureurs", "FR"));
+                carPoolParkingArea.setTotalCapacity(BigInteger.valueOf(Long.parseLong(parkingDto.getCarPoolingNb())));
+                parking.getParkingAreas().add(carPoolParkingArea);
             } else {
                 parking.setCarpoolingAvailable(false);
             }
 
-            if (!parkingDto.getCarPoolingNb().isEmpty() && Integer.valueOf(parkingDto.getCarSharingNb()) >= 1) {
+            //Nombre de places pour l'autopartage
+            if (!parkingDto.getCarSharingNb().isEmpty() && Integer.parseInt(parkingDto.getCarSharingNb()) >= 1) {
                 parking.setCarsharingAvailable(true);
+                totalCapacity.setNumberOfCarsharingSpaces(BigInteger.valueOf(Long.parseLong(parkingDto.getCarSharingNb())));
+
+                ParkingArea carSharingArea = new ParkingArea();
+                carSharingArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.CARSHARE);
+                carSharingArea.setPublicUse(PublicUseEnumeration.ALL);
+                carSharingArea.setVersion(1L);
+                carSharingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+                carSharingArea.setName(new EmbeddableMultilingualString("Zone Autopartage", "FR"));
+                carSharingArea.setTotalCapacity(BigInteger.valueOf(Long.parseLong(parkingDto.getCarSharingNb())));
+                parking.getParkingAreas().add(carSharingArea);
             } else {
                 parking.setCarsharingAvailable(false);
             }
+            parkingProperties.getSpaces().add(totalCapacity);
 
-            parking.setCentroid(geometryFactory.createPoint(new Coordinate(Double.valueOf(parkingDto.getXlong()), Double.valueOf(parkingDto.getYlat()))));
+            //Emplacement du parking
+            parking.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(parkingDto.getXlong()), Double.parseDouble(parkingDto.getYlat()))));
+
+            parking.getParkingAreas().add(parkingArea);
+            parking.getParkingProperties().add(parkingProperties);
 
             return parking;
         }).collect(Collectors.toList());
@@ -190,6 +263,7 @@ public class ParkingsCSVHelper {
         accessibilityAssessment.setVersion(1);
         accessibilityAssessment.setCreated(Instant.now());
         accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.PARTIAL);
+        accessibilityAssessment.setLimitations(new ArrayList<>());
 
         AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
         accessibilityLimitation.setCreated(Instant.now());
@@ -200,8 +274,7 @@ public class ParkingsCSVHelper {
         accessibilityLimitation.setStepFreeAccess(LimitationStatusEnumeration.UNKNOWN);
         accessibilityLimitation.setVisualSignsAvailable(LimitationStatusEnumeration.UNKNOWN);
 
-        accessibilityAssessment.setLimitations(Arrays.asList(accessibilityLimitation));
-
+        accessibilityAssessment.getLimitations().add(accessibilityLimitation);
         parking.setAccessibilityAssessment(accessibilityAssessment);
 
     }

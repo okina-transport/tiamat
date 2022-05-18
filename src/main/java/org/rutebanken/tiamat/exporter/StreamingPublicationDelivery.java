@@ -72,7 +72,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -106,7 +105,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -495,7 +493,6 @@ public class StreamingPublicationDelivery {
             outputStreamOut.write(documentToString(document).getBytes("UTF-8"));
         } catch (Exception e) {
             ; // SWALLO
-            logger.error("ERROR", e);
         }
     }
 
@@ -557,7 +554,7 @@ public class StreamingPublicationDelivery {
         netexStopPlaces.forEach(netexStopPlace -> {
             if (netexStopPlace.getQuays() != null && netexStopPlace.getQuays().getQuayRefOrQuay() != null)
                 netexStopPlace.getQuays().getQuayRefOrQuay().forEach(quay -> {
-                    Quay netexQuay = (Quay) quay;
+                    Quay netexQuay = (Quay) quay.getValue();
                     feedQuayWithParentInfo(netexQuay,netexStopPlace);
                     netexQuays.add(netexQuay);
                 }
@@ -793,6 +790,38 @@ public class StreamingPublicationDelivery {
             parkingsMappingIterator.forEachRemaining(netexParkings::add);
 
             netexParkings.stream().forEach(parking->{
+                org.rutebanken.tiamat.model.Parking tiamatParking = parkingRepository.findFirstByNetexIdOrderByVersionDesc(parking.getId());
+                if (tiamatParking.getSiret() != null) {
+                    String organisationId = "MOBIITI:Organisation:" + UUID.randomUUID().toString();
+                    String responsabilitySetId = "MOBIITI:ResponsibilitySet:" + UUID.randomUUID().toString();
+                    String responsibilityRoleAssignmentId = "MOBIITI:ResponsibilityRoleAssignment:" + UUID.randomUUID().toString();
+                    GeneralOrganisation generalOrganisation = new GeneralOrganisation();
+                    generalOrganisation.setId(organisationId);
+                    generalOrganisation.setVersion("any");
+                    generalOrganisation.getOrganisationType().add(OrganisationTypeEnumeration.OTHER);
+                    generalOrganisation.setCompanyNumber(tiamatParking.getSiret());
+                    listMembers.add(netexObjectFactory.createGeneralOrganisation(generalOrganisation));
+
+                    OrganisationRefStructure organisationRefStructure = new OrganisationRefStructure();
+                    organisationRefStructure.setRef(organisationId);
+
+                    ResponsibilityRoleAssignment_VersionedChildStructure responsibilityRoleAssignment = new ResponsibilityRoleAssignment_VersionedChildStructure();
+                    responsibilityRoleAssignment.setId(responsibilityRoleAssignmentId);
+                    responsibilityRoleAssignment.setVersion("any");
+                    responsibilityRoleAssignment.setResponsibleOrganisationRef(organisationRefStructure);
+                    responsibilityRoleAssignment.getStakeholderRoleType().add(StakeholderRoleTypeEnumeration.ENTITY_LEGAL_OWNERSHIP);
+
+                    ResponsibilityRoleAssignments_RelStructure responsibilityRoleAssignmentsRelStructure = new ResponsibilityRoleAssignments_RelStructure();
+                    responsibilityRoleAssignmentsRelStructure.getResponsibilityRoleAssignment().add(responsibilityRoleAssignment);
+
+                    ResponsibilitySet responsibilitySet = new ResponsibilitySet();
+                    responsibilitySet.setId(responsabilitySetId);
+                    responsibilitySet.setVersion("any");
+                    responsibilitySet.setRoles(responsibilityRoleAssignmentsRelStructure);
+                    listMembers.add(netexObjectFactory.createResponsibilitySet(responsibilitySet));
+
+                    parking.setResponsibilitySetRef(responsibilitySet.getId());
+                }
                 listMembers.add(netexObjectFactory.createParking(parking));
             });
 
@@ -909,7 +938,7 @@ public class StreamingPublicationDelivery {
 
                 quays.getQuayRefOrQuay().stream().forEach(quay ->{
                     //Adding the quay to the memberList
-                    Quay netexQuay = (Quay) quay;
+                    Quay netexQuay = (Quay) quay.getValue();
                     listMembers.add(netexObjectFactory.createQuay(netexQuay));
 
                     //To isolate the reference to set Quay by the QuayRefStructure
@@ -917,7 +946,7 @@ public class StreamingPublicationDelivery {
                     quayRefStructure.setRef(String.valueOf(netexQuay.getId()));
                     quayRefStructure.setVersion(netexQuay.getVersion());
 
-                    quaysReference.getQuayRefOrQuay().add(quayRefStructure);
+                    quaysReference.getQuayRefOrQuay().add(netexObjectFactory.createQuayRef(quayRefStructure));
                 });
                 netexStopPlace.setQuays(quaysReference);
             }

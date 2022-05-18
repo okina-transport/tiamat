@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.netex.mapping.converter;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
+import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.netex.model.ParkingAreas_RelStructure;
 import org.rutebanken.tiamat.model.ParkingArea;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ import java.util.List;
 public class ParkingAreaListConverter extends BidirectionalConverter<List<ParkingArea>, ParkingAreas_RelStructure> {
 
     private static final Logger logger = LoggerFactory.getLogger(ParkingAreaListConverter.class);
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
 
     @Override
     public ParkingAreas_RelStructure convertTo(List<ParkingArea> parkingAreas, Type<ParkingAreas_RelStructure> destinationType, MappingContext mappingContext) {
@@ -45,19 +47,19 @@ public class ParkingAreaListConverter extends BidirectionalConverter<List<Parkin
 
         parkingAreas.forEach(parkingArea -> {
             org.rutebanken.netex.model.ParkingArea netexParkingArea = mapperFacade.map(parkingArea, org.rutebanken.netex.model.ParkingArea.class);
-            parkingAreas_relStructure.getParkingAreaRefOrParkingArea().add(netexParkingArea);
+            parkingAreas_relStructure.getParkingAreaRefOrParkingArea_().add(netexObjectFactory.createParkingArea(netexParkingArea));
         });
         return parkingAreas_relStructure;
     }
 
     @Override
     public List<ParkingArea> convertFrom(ParkingAreas_RelStructure parkingAreas_relStructure, Type<List<ParkingArea>> destinationType, MappingContext mappingContext) {
-        logger.debug("Mapping {} quays to internal model", parkingAreas_relStructure != null ? parkingAreas_relStructure.getParkingAreaRefOrParkingArea().size() : 0);
+        logger.debug("Mapping {} quays to internal model", parkingAreas_relStructure != null ? parkingAreas_relStructure.getParkingAreaRefOrParkingArea_().size() : 0);
         List<ParkingArea> parkingAreas = new ArrayList<>();
-        if(parkingAreas_relStructure.getParkingAreaRefOrParkingArea() != null) {
-            parkingAreas_relStructure.getParkingAreaRefOrParkingArea().stream()
-                    .filter(object -> object instanceof org.rutebanken.netex.model.ParkingArea)
-                    .map(object -> ((org.rutebanken.netex.model.ParkingArea) object))
+        if(parkingAreas_relStructure.getParkingAreaRefOrParkingArea_() != null) {
+            parkingAreas_relStructure.getParkingAreaRefOrParkingArea_().stream()
+                    .filter(object -> object.getValue() instanceof org.rutebanken.netex.model.ParkingArea)
+                    .map(object -> ((org.rutebanken.netex.model.ParkingArea) object.getValue()))
                     .map(netexParkingArea -> {
                         ParkingArea tiamatQuay = mapperFacade.map(netexParkingArea, ParkingArea.class);
                         return tiamatQuay;

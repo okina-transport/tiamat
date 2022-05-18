@@ -111,7 +111,7 @@ class ParkingUpdater implements DataFetcher {
         boolean isUpdated = false;
         if (input.get(NAME) != null) {
             EmbeddableMultilingualString name = getEmbeddableString((Map) input.get(NAME));
-            isUpdated = isUpdated || (!name.equals(updatedParking.getName()));
+            isUpdated = isUpdated || (updatedParking.getName() != null && (!name.getValue().equals(updatedParking.getName().getValue())));
             updatedParking.setName(name);
         }
 
@@ -212,7 +212,6 @@ class ParkingUpdater implements DataFetcher {
         }
 
         if (input.get(PARKING_PAYMENT_PROCESS) != null) {
-
             List<ParkingPaymentProcessEnumeration> parkingPaymentProcessTypes = (List<ParkingPaymentProcessEnumeration>) input.get(PARKING_PAYMENT_PROCESS);
             isUpdated = isUpdated || !(updatedParking.getParkingPaymentProcess().containsAll(parkingPaymentProcessTypes) &&
                     parkingPaymentProcessTypes.containsAll(updatedParking.getParkingPaymentProcess()));
@@ -240,10 +239,56 @@ class ParkingUpdater implements DataFetcher {
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream)
                     .filter(space -> space.getNumberOfSpaces() != null)
+                    .filter(space -> space.getParkingUserType() != ParkingUserEnumeration.REGISTERED_DISABLED)
                     .mapToInt(space -> space.getNumberOfSpaces().intValue())
                     .sum();
+
+            int newCarsharingCapacity = parkingPropertiesList.stream()
+                    .map(ParkingProperties::getSpaces)
+                    .filter(Objects::nonNull)
+                    .flatMap(Collection::stream)
+                    .filter(space -> space.getNumberOfSpaces() != null)
+                    .filter(space -> space.getParkingUserType() != ParkingUserEnumeration.REGISTERED_DISABLED)
+                    .mapToInt(space -> space.getNumberOfCarsharingSpaces() != null ? space.getNumberOfCarsharingSpaces().intValue() : 0)
+                    .sum();
+
+            int newPmrCapacity = parkingPropertiesList.stream()
+                    .map(ParkingProperties::getSpaces)
+                    .filter(Objects::nonNull)
+                    .flatMap(Collection::stream)
+                    .filter(space -> space.getNumberOfSpaces() != null)
+                    .filter(space -> space.getParkingUserType() != null && space.getParkingUserType().equals(ParkingUserEnumeration.REGISTERED_DISABLED))
+                    .mapToInt(space -> space.getNumberOfSpaces().intValue())
+                    .sum();
+
+            if (updatedParking.getParkingAreas() != null) {
+                List<ParkingArea> parkingAreaList = new ArrayList<>();
+                for (ParkingArea pa : updatedParking.getParkingAreas()) {
+                    boolean toKeep = true;
+                    if (pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARSHARE)) {
+                        if (updatedParking.isCarsharingAvailable()) {
+                            pa.setTotalCapacity(BigInteger.valueOf(newCarsharingCapacity));
+                        } else {
+                            toKeep = false;
+                        }
+                    } else if (pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.DISABLED)) {
+                        pa.setTotalCapacity(BigInteger.valueOf(newPmrCapacity));
+                    } else if (pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL) && !updatedParking.isCarpoolingAvailable()) {
+                        toKeep = false;
+                    } else {
+                        pa.setTotalCapacity(BigInteger.valueOf(total_capacity));
+                    }
+
+                    if (toKeep) {
+                        parkingAreaList.add(versionCreator.createCopy(pa, ParkingArea.class));
+                    }
+                }
+                updatedParking.setParkingAreas(parkingAreaList);
+            }
+
             isUpdated = true;
             updatedParking.setParkingProperties(parkingPropertiesList);
+
             if (total_capacity > 0) {
                 updatedParking.setTotalCapacity(BigInteger.valueOf(total_capacity));
             }
@@ -252,7 +297,7 @@ class ParkingUpdater implements DataFetcher {
         if (input.get(PARKING_AREAS) != null) {
             List<ParkingArea> parkingAreasList = resolveParkingAreasList((List) input.get(PARKING_AREAS));
             isUpdated = true;
-            updatedParking.setParkingAreas(parkingAreasList);
+            updatedParking.setParkingAreas(parkingAreasList.stream().map(pa -> versionCreator.createCopy(pa, ParkingArea.class)).collect(Collectors.toList()));
         }
         return isUpdated;
     }

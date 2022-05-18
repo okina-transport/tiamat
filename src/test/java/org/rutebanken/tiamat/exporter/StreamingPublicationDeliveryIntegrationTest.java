@@ -343,9 +343,9 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         //Make sure that we have just the quay Reference in the Stop Place 1
         org.rutebanken.netex.model.StopPlace actualStopPlace1 = stopPlaces.stream().filter(sp -> sp.getId().equals(stopPlace1NetexId)).findFirst().get();
 
-        Optional<Object> optionalQuayRef = actualStopPlace1.getQuays().getQuayRefOrQuay().stream().findFirst();
+        Optional<JAXBElement<?>> optionalQuayRef = actualStopPlace1.getQuays().getQuayRefOrQuay().stream().findFirst();
         if(optionalQuayRef.isPresent()){
-            QuayRefStructure quayRef = (QuayRefStructure)optionalQuayRef.get();
+            QuayRefStructure quayRef = (QuayRefStructure) optionalQuayRef.get().getValue();
             assertThat(quayRef.getRef()).isEqualTo(quayNetexId);
         }
 
@@ -367,7 +367,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
                 .as("actual stop place 1 tariff zones")
                 .isNotNull();
 
-        org.rutebanken.netex.model.TariffZoneRef actualTariffZoneRefStopPlace1 = actualStopPlace1.getTariffZones().getTariffZoneRef().get(0);
+        org.rutebanken.netex.model.TariffZoneRef actualTariffZoneRefStopPlace1 = (org.rutebanken.netex.model.TariffZoneRef) actualStopPlace1.getTariffZones().getTariffZoneRef_().get(0).getValue();
 
         // Stop place 1 refers to tariff zone v2 implicity beacuse the reference does not contain version value.
         assertThat(actualTariffZoneRefStopPlace1.getRef())
@@ -377,7 +377,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         // Check stop place 2
 
         org.rutebanken.netex.model.StopPlace actualStopPlace2 = stopPlaces.stream().filter(sp -> sp.getId().equals(stopPlace2NetexId)).findFirst().get();
-        org.rutebanken.netex.model.TariffZoneRef actualTariffZoneRefStopPlace2 = actualStopPlace2.getTariffZones().getTariffZoneRef().get(0);
+        org.rutebanken.netex.model.TariffZoneRef actualTariffZoneRefStopPlace2 = (org.rutebanken.netex.model.TariffZoneRef) actualStopPlace2.getTariffZones().getTariffZoneRef_().get(0).getValue();
 
         assertThat(actualTariffZoneRefStopPlace2.getRef())
                 .as("actual stop place 2 tariff zone ref")

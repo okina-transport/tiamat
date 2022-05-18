@@ -163,10 +163,10 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
             if (transportMode == null ){
                 logger.error("Unable to find transportMode for stopPlaceType:" + stopPlace.getStopPlaceType() + ", on stopPlace:" + stopPlace.getNetexId());
             }
-            netexStopPlace.setTransportMode(VehicleModeEnumeration.fromValue(transportMode.value()));
+            netexStopPlace.setTransportMode(AllVehicleModesOfTransportEnumeration.fromValue(transportMode.value()));
         }else{
             //Neither transportMode or stop place type is filled. Filling transport mode with "other" type
-            netexStopPlace.setTransportMode(VehicleModeEnumeration.OTHER);
+            netexStopPlace.setTransportMode(AllVehicleModesOfTransportEnumeration.OTHER);
         }
 
     }

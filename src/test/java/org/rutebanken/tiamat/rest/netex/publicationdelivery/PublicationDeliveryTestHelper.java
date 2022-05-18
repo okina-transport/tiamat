@@ -109,7 +109,7 @@ public class PublicationDeliveryTestHelper {
     public PublicationDeliveryStructure createPublicationDeliveryWithStopPlace(StopPlace... stopPlace) {
         SiteFrame siteFrame = siteFrame();
         siteFrame.withStopPlaces(new StopPlacesInFrame_RelStructure()
-                .withStopPlace(stopPlace));
+                .withStopPlace_(Arrays.stream(stopPlace).map(netexObjectFactory::createStopPlace).collect(Collectors.toSet())));
 
         return publicationDelivery(siteFrame);
     }
@@ -173,11 +173,13 @@ public class PublicationDeliveryTestHelper {
     public List<StopPlace> extractStopPlaces(SiteFrame siteFrame, boolean verifyNotNull) {
         if (verifyNotNull) {
             assertThat(siteFrame.getStopPlaces()).as("Site frame stop places").isNotNull();
-            assertThat(siteFrame.getStopPlaces().getStopPlace()).as("Site frame stop places getStopPlace").isNotNull();
-        } else if (siteFrame.getStopPlaces() == null || siteFrame.getStopPlaces().getStopPlace() == null) {
+            assertThat(siteFrame.getStopPlaces().getStopPlace_()).as("Site frame stop places getStopPlace").isNotNull();
+        } else if (siteFrame.getStopPlaces() == null || siteFrame.getStopPlaces().getStopPlace_() == null) {
             return new ArrayList<>();
         }
-        return siteFrame.getStopPlaces().getStopPlace();
+        return siteFrame.getStopPlaces().getStopPlace_().stream()
+                .map(sp -> (StopPlace) sp.getValue())
+                .collect(Collectors.toList());
     }
 
     public List<StopPlace> extractStopPlacesFromGeneralFrame(GeneralFrame generalFrame, boolean verifyNotNull) {
@@ -241,19 +243,19 @@ public class PublicationDeliveryTestHelper {
                 .getQuays()
                 .getQuayRefOrQuay()
                 .stream()
-                .filter(object -> object instanceof Quay)
-                .map(object -> ((Quay) object))
+                .filter(object -> object.getValue() instanceof Quay)
+                .map(object -> ((Quay) object.getValue()))
                 .collect(toList());
     }
 
     public StopPlace findFirstStopPlace(PublicationDeliveryStructure publicationDeliveryStructure) {
-        return publicationDeliveryStructure.getDataObjects()
+        return (StopPlace) publicationDeliveryStructure.getDataObjects()
                 .getCompositeFrameOrCommonFrame()
                 .stream()
                 .map(JAXBElement::getValue)
                 .filter(commonVersionFrameStructure -> commonVersionFrameStructure instanceof SiteFrame)
-                .flatMap(commonVersionFrameStructure -> ((SiteFrame) commonVersionFrameStructure).getStopPlaces().getStopPlace().stream())
-                .findFirst().get();
+                .flatMap(commonVersionFrameStructure -> ((SiteFrame) commonVersionFrameStructure).getStopPlaces().getStopPlace_().stream())
+                .findFirst().get().getValue();
     }
 
     public PublicationDeliveryStructure postAndReturnPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure) throws JAXBException, IOException, SAXException, TiamatBusinessException {

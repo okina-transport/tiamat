@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.netex.mapping.converter;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
+import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.netex.model.Quays_RelStructure;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.repository.QuayRepository;
@@ -33,6 +34,7 @@ import java.util.Set;
 public class QuayListConverter extends BidirectionalConverter<Set<Quay>, Quays_RelStructure> {
 
     private static final Logger logger = LoggerFactory.getLogger(QuayListConverter.class);
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
 
     @Autowired
     private QuayRepository quayRepository;
@@ -49,7 +51,7 @@ public class QuayListConverter extends BidirectionalConverter<Set<Quay>, Quays_R
 
         quays.forEach(quay -> {
             org.rutebanken.netex.model.Quay netexQuay = mapperFacade.map(quay, org.rutebanken.netex.model.Quay.class);
-            quays_relStructure.getQuayRefOrQuay().add(netexQuay);
+            quays_relStructure.getQuayRefOrQuay().add(netexObjectFactory.createQuay(netexQuay));
         });
         return quays_relStructure;
     }
@@ -60,8 +62,8 @@ public class QuayListConverter extends BidirectionalConverter<Set<Quay>, Quays_R
         Set<Quay> quays = new HashSet<>();
         if(quays_relStructure.getQuayRefOrQuay() != null) {
             quays_relStructure.getQuayRefOrQuay().stream()
-                    .filter(object -> object instanceof org.rutebanken.netex.model.Quay)
-                    .map(object -> ((org.rutebanken.netex.model.Quay) object))
+                    .filter(object -> object.getValue() instanceof org.rutebanken.netex.model.Quay)
+                    .map(object -> ((org.rutebanken.netex.model.Quay) object.getValue()))
                     .map(netexQuay -> {
                         Quay tiamatQuay = mapperFacade.map(netexQuay, Quay.class);
                         addOriginalId(tiamatQuay);

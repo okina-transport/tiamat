@@ -31,6 +31,8 @@ public class ParkingArea
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     protected ParkingProperties parkingProperties;
 
+    protected SpecificParkingAreaUsageEnumeration specificParkingAreaUsage = SpecificParkingAreaUsageEnumeration.NONE;
+
     @Transient
     protected ParkingBays_RelStructure bays;
 
@@ -69,4 +71,11 @@ public class ParkingArea
         this.entrances = value;
     }
 
+    public SpecificParkingAreaUsageEnumeration getSpecificParkingAreaUsage() {
+        return specificParkingAreaUsage;
+    }
+
+    public void setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration specificParkingAreaUsage) {
+        this.specificParkingAreaUsage = specificParkingAreaUsage;
+    }
 }

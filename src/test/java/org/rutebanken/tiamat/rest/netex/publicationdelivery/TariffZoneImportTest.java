@@ -36,6 +36,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class TariffZoneImportTest extends TiamatIntegrationTest {
 
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
+
     @Autowired
     private PublicationDeliveryTestHelper publicationDeliveryTestHelper;
 
@@ -81,14 +83,14 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
         stopPlace.withId("XYZ:StopPlace:32111");
         stopPlace.setVersion("1");
         stopPlace.setTariffZones(new TariffZoneRefs_RelStructure()
-                    .withTariffZoneRef(new TariffZoneRef()
+                    .withTariffZoneRef_(netexObjectFactory.createTariffZoneRef(new TariffZoneRef()
                             .withVersion(tariffZone.getVersion())
-                            .withRef(tariffZone.getId())));
+                            .withRef(tariffZone.getId()))));
 
         SiteFrame siteFrame = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
                         .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone)))
-                .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace(stopPlace));
+                .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace_(netexObjectFactory.createStopPlace(stopPlace)));
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.publicationDelivery(siteFrame);
 
@@ -134,14 +136,14 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
                 .withVersion("1")
                 .withStopPlaceType(StopTypeEnumeration.ONSTREET_BUS)
                 .withTariffZones(new TariffZoneRefs_RelStructure()
-                    .withTariffZoneRef(new TariffZoneRef()
+                    .withTariffZoneRef_(netexObjectFactory.createTariffZoneRef(new TariffZoneRef()
                         .withVersion(tariffZone1.getVersion())
-                        .withRef(tariffZone1.getId())));
+                        .withRef(tariffZone1.getId()))));
 
         SiteFrame siteFrame = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
                         .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone1)))
-                .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace(stopPlace));
+                .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace_(netexObjectFactory.createStopPlace(stopPlace)));
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.publicationDelivery(siteFrame);
 
@@ -159,15 +161,15 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
         stopPlace
                 .withId("BRA:Stopplace:3")
                 .withTariffZones(new TariffZoneRefs_RelStructure()
-                    .withTariffZoneRef(new TariffZoneRef()
+                    .withTariffZoneRef_(netexObjectFactory.createTariffZoneRef(new TariffZoneRef()
                         .withVersion(tariffZone2.getVersion())
-                        .withRef(tariffZone2.getId())));
+                        .withRef(tariffZone2.getId()))));
 
 
         SiteFrame siteFrame2 = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
                         .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone2)))
-                .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace(stopPlace));
+                .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace_(netexObjectFactory.createStopPlace(stopPlace)));
 
         PublicationDeliveryStructure publicationDeliveryStructure2 = publicationDeliveryTestHelper.publicationDelivery(siteFrame2);
 
@@ -209,14 +211,14 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
                 .withVersion("1")
                 .withStopPlaceType(StopTypeEnumeration.ONSTREET_BUS)
                 .withTariffZones(new TariffZoneRefs_RelStructure()
-                        .withTariffZoneRef(new TariffZoneRef()
+                        .withTariffZoneRef_(netexObjectFactory.createTariffZoneRef(new TariffZoneRef()
                                 .withVersion(tariffZone1.getVersion())
-                                .withRef(tariffZone1.getId())));
+                                .withRef(tariffZone1.getId()))));
 
         SiteFrame siteFrame = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
                         .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone1)))
-                .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace(stopPlace));
+                .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace_(netexObjectFactory.createStopPlace(stopPlace)));
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.publicationDelivery(siteFrame);
 
@@ -236,15 +238,15 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
                 .withVersion("2")
                 .withStopPlaceType(StopTypeEnumeration.ONSTREET_BUS)
                 .withTariffZones(new TariffZoneRefs_RelStructure()
-                        .withTariffZoneRef(new TariffZoneRef()
+                        .withTariffZoneRef_(netexObjectFactory.createTariffZoneRef(new TariffZoneRef()
                                 .withVersion(tariffZone2.getVersion())
-                                .withRef(tariffZone2.getId())));
+                                .withRef(tariffZone2.getId()))));
 
 
         SiteFrame siteFrame2 = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
                         .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone2)))
-                .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace(stopPlace2));
+                .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace_(netexObjectFactory.createStopPlace(stopPlace2)));
 
         PublicationDeliveryStructure publicationDeliveryStructure2 = publicationDeliveryTestHelper.publicationDelivery(siteFrame2);
 
@@ -264,7 +266,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
         List<StopPlace> actualIdMatchedStopPlaces = publicationDeliveryTestHelper.extractStopPlaces(matchReponse, false);
         assertThat(actualIdMatchedStopPlaces).hasSize(1);
-        assertThat(actualIdMatchedStopPlaces.get(0).getTariffZones().getTariffZoneRef()).as("number of tariff zone refs").hasSize(2);
+        assertThat(actualIdMatchedStopPlaces.get(0).getTariffZones().getTariffZoneRef_()).as("number of tariff zone refs").hasSize(2);
 
         importParams.importType = ImportType.ID_MATCH;
 
@@ -280,7 +282,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
         actualIdMatchedStopPlaces = publicationDeliveryTestHelper.extractStopPlaces(matchReponse, false);
         assertThat(actualIdMatchedStopPlaces).hasSize(1);
-        assertThat(actualIdMatchedStopPlaces.get(0).getTariffZones().getTariffZoneRef()).as("number of tariff zone refs").hasSize(2);
+        assertThat(actualIdMatchedStopPlaces.get(0).getTariffZones().getTariffZoneRef_()).as("number of tariff zone refs").hasSize(2);
 
     }
 }

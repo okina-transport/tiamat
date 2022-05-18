@@ -37,6 +37,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class PathLinkImportTest extends TiamatIntegrationTest {
 
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
+
     @Autowired
     private PublicationDeliveryTestHelper publicationDeliveryTestHelper;
 
@@ -47,41 +49,41 @@ public class PathLinkImportTest extends TiamatIntegrationTest {
                 .withId("RUT:StopPlace:123123")
                 .withVersion("1")
                 .withName(new MultilingualString().withValue("fromStopPlace").withLang("no"))
-                .withTransportMode(VehicleModeEnumeration.BUS)
+                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("9"))
                                 .withLongitude(new BigDecimal("71"))))
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(new Quay()
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(new Quay()
                                 .withVersion("1")
                                 .withId("RUT:StopArea:87654")
-                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                                 .withSiteRef(new SiteRefStructure().withValue("RUT:StopPlace:123123").withRef("RUT:StopPlace:123123"))
                                 .withName(new MultilingualString().withValue("q1").withLang("no"))
                                 .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
                                         .withLatitude(new BigDecimal("58.966910"))
-                                        .withLongitude(new BigDecimal("5.732949"))))));
+                                        .withLongitude(new BigDecimal("5.732949")))))));
 
         StopPlace toStopPlace = new StopPlace()
                 .withId("RUT:StopPlace:321654")
                 .withVersion("1")
                 .withName(new MultilingualString().withValue("toStopPlace").withLang("no"))
-                .withTransportMode(VehicleModeEnumeration.BUS)
+                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("9.6"))
                                 .withLongitude(new BigDecimal("76"))))
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(new Quay()
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(new Quay()
                                 .withVersion("1")
                                 .withId("RUT:StopArea:87655")
-                                .withTransportMode(VehicleModeEnumeration.BUS)
+                                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                                 .withSiteRef(new SiteRefStructure().withValue("RUT:StopPlace:321654").withRef("RUT:StopPlace:321654"))
                                 .withName(new MultilingualString().withValue("q2").withLang("no"))
                                 .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
                                         .withLatitude(new BigDecimal("58.966910"))
-                                        .withLongitude(new BigDecimal("5.732949"))))));
+                                        .withLongitude(new BigDecimal("5.732949")))))));
 
         LineStringType lineStringType = new LineStringType()
                 .withId("LineString")

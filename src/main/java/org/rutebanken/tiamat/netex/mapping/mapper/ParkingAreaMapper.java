@@ -17,18 +17,24 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
-import org.rutebanken.netex.model.ParkingAreas_RelStructure;
+import org.rutebanken.netex.model.ObjectFactory;
+import org.rutebanken.netex.model.PublicUseEnumeration;
 import org.rutebanken.tiamat.model.ParkingArea;
 
-public class ParkingAreaMapper extends CustomMapper<ParkingAreas_RelStructure, org.rutebanken.tiamat.model.ParkingArea> {
+public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.ParkingArea, ParkingArea> {
+
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
 
     @Override
-    public void mapAtoB(ParkingAreas_RelStructure parkingAreas_relStructure, ParkingArea parkingArea, MappingContext context) {
-        super.mapAtoB(parkingAreas_relStructure, parkingArea, context);
+    public void mapAtoB(org.rutebanken.netex.model.ParkingArea netexParkingArea, ParkingArea tiamatParkingArea, MappingContext context) {
+        super.mapAtoB(netexParkingArea, tiamatParkingArea, context);
     }
 
     @Override
-    public void mapBtoA(ParkingArea parkingArea, ParkingAreas_RelStructure parkingAreas_relStructure, MappingContext context) {
-        super.mapBtoA(parkingArea, parkingAreas_relStructure, context);
+    public void mapBtoA(ParkingArea tiamatParkingArea, org.rutebanken.netex.model.ParkingArea netexParkingArea, MappingContext context) {
+        super.mapBtoA(tiamatParkingArea, netexParkingArea, context);
+
+        netexParkingArea.setPublicUse(tiamatParkingArea.getPublicUse() != null ? PublicUseEnumeration.fromValue(tiamatParkingArea.getPublicUse().value()) : PublicUseEnumeration.ALL);
+        netexParkingArea.withRest(netexObjectFactory.createParkingArea_VersionStructureTotalCapacity(tiamatParkingArea.getTotalCapacity()));
     }
 }

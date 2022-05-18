@@ -776,7 +776,8 @@ public class StreamingPublicationDelivery {
 
     }
 
-    private void prepareParkings(AtomicInteger mappedParkingCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void prepareParkings(AtomicInteger mappedParkingCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter) {
 
         // ExportParams could be used for parkingExportMode.
 

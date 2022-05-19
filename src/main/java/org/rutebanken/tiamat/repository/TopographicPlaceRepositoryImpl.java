@@ -252,6 +252,7 @@ public class TopographicPlaceRepositoryImpl implements TopographicPlaceRepositor
 		results.forEach(topoPlace-> {
 			Hibernate.initialize(topoPlace.getKeyValues());
 			topoPlace.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+			Hibernate.initialize(topoPlace.getPolygon());
 
 		});
 

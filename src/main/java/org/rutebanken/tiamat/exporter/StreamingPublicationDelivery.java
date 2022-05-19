@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.exporter;
 
 import net.opengis.gml._3.DirectPositionType;
+import org.apache.commons.lang3.NotImplementedException;
 import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
 import org.rutebanken.netex.model.*;
@@ -248,7 +249,7 @@ public class StreamingPublicationDelivery {
         logger.info("TariffZones preparation completed");
         prepareStopPlaces(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, listMembers, entitiesEvictor);
         logger.info("Stop places preparation completed");
-        prepareParkings(mappedParkingCount, listMembers, entitiesEvictor);
+        prepareParkings(mappedParkingCount, listMembers, entitiesEvictor,null);
         logger.info("Parking preparation completed");
         //  prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, listMembers, entitiesEvictor);
 
@@ -362,7 +363,7 @@ public class StreamingPublicationDelivery {
         }
 
 
-        prepareParkings(mappedParkingCount, listMembers, null);
+        prepareParkings(mappedParkingCount, listMembers, null,exportJobId);
         logger.info("Parking preparation completed");
 
 
@@ -777,7 +778,19 @@ public class StreamingPublicationDelivery {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void prepareParkings(AtomicInteger mappedParkingCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter) {
+    public void prepareParkings(AtomicInteger mappedParkingCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter, Long exportJobId) {
+
+
+        Iterator<org.rutebanken.tiamat.model.Parking> parkingResultsIterator;
+
+        if (exportJobId == null){
+            parkingResultsIterator = parkingRepository.scrollParkings();
+        }else{
+            parkingResultsIterator =  getIteratorForManualExport(exportJobId);
+        }
+
+
+
 
         // ExportParams could be used for parkingExportMode.
 
@@ -786,7 +799,7 @@ public class StreamingPublicationDelivery {
             // Only set parkings if they will exist during marshalling.
             logger.info("Parking count is {}, will create parking in publication delivery", parkingsCount);
 
-            NetexMappingIterator<org.rutebanken.tiamat.model.Parking, Parking> parkingsMappingIterator = new NetexMappingIterator<>(netexMapper, parkingRepository.scrollParkings(),
+            NetexMappingIterator<org.rutebanken.tiamat.model.Parking, Parking> parkingsMappingIterator = new NetexMappingIterator<>(netexMapper, parkingResultsIterator,
                     Parking.class, mappedParkingCount, evicter);
 
 
@@ -832,6 +845,36 @@ public class StreamingPublicationDelivery {
         } else {
             logger.info("No parkings to export based on stop places");
         }
+    }
+
+    private Iterator<org.rutebanken.tiamat.model.Parking> getIteratorForManualExport(Long exportJobId){
+        parkingRepository.initExportJobTable(exportJobId);
+        int totalNbOfParkings = stopPlaceRepository.countStopsInExport(exportJobId);
+        logger.info("Total nb of parkings to export:" + totalNbOfParkings);
+
+
+        boolean isDataToExport = true;
+        int totalparkingProcessed = 0;
+
+        List<org.rutebanken.tiamat.model.Parking> completeParkingList = new ArrayList<>();
+
+        while (isDataToExport){
+
+            Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(exportJobId);
+            if (batchIdsToExport == null || batchIdsToExport.size() == 0){
+                logger.info("no more parkings to export");
+                isDataToExport = false;
+            }else{
+
+                List<org.rutebanken.tiamat.model.Parking> initializedParkings = parkingRepository.getParkingsInitializedForExport(batchIdsToExport);
+                completeParkingList.addAll(initializedParkings);
+                stopPlaceRepository.deleteProcessedIds(exportJobId,batchIdsToExport );
+                totalparkingProcessed = totalparkingProcessed + batchIdsToExport.size();
+                logger.info("total parking processed:" + totalparkingProcessed);
+            }
+        }
+
+        return completeParkingList.iterator();
     }
 
     private void preparePointsOfInterest(AtomicInteger mappedPointOfInterestCount, SiteFrame netexSiteFrame, EntitiesEvictor evicter) {

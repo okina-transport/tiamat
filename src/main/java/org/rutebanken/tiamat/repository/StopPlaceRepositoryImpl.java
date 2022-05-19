@@ -840,7 +840,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                 " AND (   s.to_date >= :pointInTime  or s.to_date IS NULL) \n" +
                 " AND s.netex_id in ( \n" +
                 " SELECT distinct s2.parent_site_ref FROM stop_place s2 WHERE s2.parent_site_ref IS NOT NULL \n" +
-                " AND S2.id IN (SELECT stop_place_id FROM export_job_id_list WHERE job_id = :exportJobId) ) \n";
+                " AND S2.id IN (SELECT exported_object_id FROM export_job_id_list WHERE job_id = :exportJobId) ) \n";
 
 
 
@@ -855,7 +855,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     }
 
     /**
-     * Get a batch of stop place to process
+     * Get a batch of object to process
      * @param exportJobId
      * @return
      */
@@ -863,7 +863,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     public Set<Long> getNextBatchToProcess(Long exportJobId){
 
         Session session = entityManager.unwrap(Session.class);
-        NativeQuery query = session.createNativeQuery("SELECT stop_place_id FROM export_job_id_list WHERE job_id  = :exportJobId LIMIT 1000");
+        NativeQuery query = session.createNativeQuery("SELECT exported_object_id FROM export_job_id_list WHERE job_id  = :exportJobId LIMIT 1000");
 
         query.setParameter("exportJobId", exportJobId);
 
@@ -879,7 +879,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void deleteProcessedIds(Long exportJobId, Set<Long> processedStops){
         Session session = entityManager.unwrap(Session.class);
-        String queryStr = "DELETE FROM export_job_id_list WHERE job_id = :exportJobId AND stop_place_id IN :stopPlaceIdList";
+        String queryStr = "DELETE FROM export_job_id_list WHERE job_id = :exportJobId AND exported_object_id IN :stopPlaceIdList";
         NativeQuery query = session.createNativeQuery(queryStr);
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("exportJobId", exportJobId);

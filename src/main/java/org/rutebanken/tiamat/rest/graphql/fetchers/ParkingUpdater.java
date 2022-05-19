@@ -295,7 +295,7 @@ class ParkingUpdater implements DataFetcher {
         }
 
         if (input.get(PARKING_AREAS) != null) {
-            List<ParkingArea> parkingAreasList = resolveParkingAreasList((List) input.get(PARKING_AREAS));
+            List<ParkingArea> parkingAreasList = resolveParkingAreasList((List) input.get(PARKING_AREAS), updatedParking.getParkingAreas());
             isUpdated = true;
             updatedParking.setParkingAreas(parkingAreasList.stream().map(pa -> versionCreator.createCopy(pa, ParkingArea.class)).collect(Collectors.toList()));
         }
@@ -337,20 +337,30 @@ class ParkingUpdater implements DataFetcher {
         return capacity;
     }
 
-    private List<ParkingArea> resolveParkingAreasList(List list) {
+    private List<ParkingArea> resolveParkingAreasList(List list, List<ParkingArea> existingParkingAreas) {
         List<ParkingArea> result = new ArrayList<>();
         for (Object property : list) {
-            result.add(resolveSingleParkingArea((Map) property));
+            result.add(resolveSingleParkingArea((Map) property, existingParkingAreas));
         }
+
+        result.addAll(existingParkingAreas.stream().filter(pa -> !pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)).collect(Collectors.toList()));
 
         return result;
     }
 
-    private ParkingArea resolveSingleParkingArea(Map input) {
-        ParkingArea area = new ParkingArea();
-        area.setLabel(getEmbeddableString((Map) input.get(LABEL)));
-        area.setTotalCapacity((BigInteger) input.get(TOTAL_CAPACITY));
-        area.setParkingProperties(resolveSingleParkingProperties((Map) input.get(PARKING_PROPERTIES)));
-        return area;
+    private ParkingArea resolveSingleParkingArea(Map input, List<ParkingArea> existingParkingArea) {
+        ParkingArea parkingArea = null;
+        for (ParkingArea pa : existingParkingArea) {
+            if (pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)){
+                parkingArea = pa;
+                break;
+            }
+        }
+        if (parkingArea == null) {
+            parkingArea = new ParkingArea();
+            parkingArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.CARPOOL);
+        }
+        parkingArea.setTotalCapacity((BigInteger) input.get(TOTAL_CAPACITY));
+        return parkingArea;
     }
 }

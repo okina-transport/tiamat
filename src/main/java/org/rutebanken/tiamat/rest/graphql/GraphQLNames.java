@@ -208,6 +208,7 @@ public class GraphQLNames {
     public static final String PARKING_PAYMENT_PROCESS_ENUM = "ParkingPaymentProcessType";
     public static final String PARKING_USER_ENUM = "ParkingUserType";
     public static final String PARKING_STAY_TYPE_ENUM = "ParkingStayType";
+    public static final String SPECIFIC_PARKING_AREA_USAGE_ENUM = "SpecificParkingAreaUsage";
 
     public static final String ID = "id";
     public static final String ID_ARG_DESCRIPTION = "IDs used to lookup StopPlace(s). When used - all other searchparameters are ignored.";
@@ -263,6 +264,8 @@ public class GraphQLNames {
     public static final String NUMBER_OF_SPACES_WITH_RECHARGE_POINT = "numberOfSpacesWithRechargePoint";
 
     public static final String NUMBER_OF_CARSHARING_SPACES = "numberOfCarsharingSpaces";
+
+    public static final String NUMBER_OF_CARPOOLING_SPACES = "numberOfCarpoolingSpaces";
 
     public static final String OUTPUT_TYPE_PRIVATE_CODE = "PrivateCode";
     public static final String PRIVATE_CODE = "privateCode";
@@ -370,6 +373,7 @@ public class GraphQLNames {
     public static final String LANG = "lang";
 
     public static final String TOTAL_CAPACITY = "totalCapacity";
+    public static final String SPECIFIC_PARKING_AREA_USAGE = "specificParkingAreaUsage";
 
     public static final String VERSION_VALIDITY_ARG = "versionValidity";
     public static final String VERSION_VALIDITY_ARG_DESCRIPTION = "Controls returned stop places based on time. " +

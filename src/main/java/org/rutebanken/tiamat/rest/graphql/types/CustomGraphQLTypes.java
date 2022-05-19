@@ -60,6 +60,7 @@ public class CustomGraphQLTypes {
     public static GraphQLEnumType parkingUserEnum = createCustomEnumType(PARKING_USER_ENUM, ParkingUserEnumeration.class);
     public static GraphQLEnumType parkingStayEnum = createCustomEnumType(PARKING_STAY_TYPE_ENUM, ParkingStayEnumeration.class);
     public static GraphQLEnumType parkingReservationEnum = createCustomEnumType(PARKING_RESERVATION_ENUM, ParkingReservationEnumeration.class);
+    public static GraphQLEnumType specificParkingAreaUsageEnum = createCustomEnumType(SPECIFIC_PARKING_AREA_USAGE_ENUM, SpecificParkingAreaUsageEnumeration.class);
     public static GraphQLEnumType parkingPaymentProcessEnum = createCustomEnumType(PARKING_PAYMENT_PROCESS_ENUM, ParkingPaymentProcessEnumeration.class);
     public static GraphQLEnumType parkingTypeEnum = createCustomEnumType(PARKING_TYPE_ENUM, ParkingTypeEnumeration.class);
     public static GraphQLEnumType topographicPlaceTypeEnum = createCustomEnumType(TOPOGRAPHIC_PLACE_TYPE_ENUM, TopographicPlaceTypeEnumeration.class);
@@ -742,6 +743,7 @@ public class CustomGraphQLTypes {
 
     public static GraphQLObjectType parkingAreaObjectType = newObject()
             .name(OUTPUT_TYPE_PARKING_AREA)
+            .field(netexIdFieldDefinition)
             .field(newFieldDefinition()
                     .name(LABEL)
                     .type(embeddableMultilingualStringObjectType))
@@ -751,10 +753,16 @@ public class CustomGraphQLTypes {
             .field(newFieldDefinition()
                     .name(PARKING_PROPERTIES)
                     .type(parkingPropertiesObjectType))
+            .field(newFieldDefinition()
+                    .name(SPECIFIC_PARKING_AREA_USAGE)
+                    .type(specificParkingAreaUsageEnum))
             .build();
 
     public static GraphQLInputObjectType parkingAreaInputObjectType = GraphQLInputObjectType.newInputObject()
             .name(INPUT_TYPE_PARKING_AREA)
+            .field(newInputObjectField()
+                    .name(ID)
+                    .type(GraphQLString))
             .field(newInputObjectField()
                     .name(LABEL)
                     .type(embeddableMultiLingualStringInputObjectType))
@@ -764,6 +772,9 @@ public class CustomGraphQLTypes {
             .field(newInputObjectField()
                     .name(PARKING_PROPERTIES)
                     .type(parkingPropertiesInputObjectType))
+            .field(newInputObjectField()
+                    .name(SPECIFIC_PARKING_AREA_USAGE)
+                    .type(specificParkingAreaUsageEnum))
             .build();
 
     public static GraphQLObjectType transportModeSubmodeObjectType = newObject()

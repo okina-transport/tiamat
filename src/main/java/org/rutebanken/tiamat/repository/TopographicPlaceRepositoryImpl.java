@@ -215,12 +215,9 @@ public class TopographicPlaceRepositoryImpl implements TopographicPlaceRepositor
 
 		Map<String, Object> parameters = new HashMap<>();
 		String queryStr = "INSERT INTO export_job_id_list \n" +
-				" SELECT :exportJobId, tp.id FROM topographic_place tp WHERE \n" +
-				" tp.from_date <= :pointInTime \n" +
-				" AND (   tp.to_date >= :pointInTime  or tp.to_date IS NULL) \n" +
-				" AND tp.netex_id in ( \n" +
-				" SELECT distinct tp2.parent_ref FROM topographic_place tp2 WHERE tp2.parent_ref IS NOT NULL \n" +
-				" AND tp2.id IN (SELECT exported_object_id FROM export_job_id_list WHERE job_id = :exportJobId) ) \n";
+				" SELECT :exportJobId,id from topographic_place tp, (SELECT distinct tp2.parent_ref, tp2.parent_ref_version FROM topographic_place tp2 WHERE tp2.parent_ref IS NOT NULL \n" +
+				" AND tp2.id IN (SELECT exported_object_id FROM export_job_id_list WHERE job_id = :exportJobId))parent_list \n" +
+				" WHERE tp.netex_id  = parent_list.parent_ref and  cast(tp.version as text) = parent_list.parent_ref_version \n";
 
 
 

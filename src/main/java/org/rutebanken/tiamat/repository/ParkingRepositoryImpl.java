@@ -373,6 +373,8 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
             Hibernate.initialize(parking.getAlternativeNames());
             Hibernate.initialize(parking.getParkingAreas());
             Hibernate.initialize(parking.getParkingProperties());
+            Hibernate.initialize(parking.getPolygon());
+
 
             if (parking.getParkingAreas() != null){
                 for (ParkingArea parkingArea : parking.getParkingAreas()) {

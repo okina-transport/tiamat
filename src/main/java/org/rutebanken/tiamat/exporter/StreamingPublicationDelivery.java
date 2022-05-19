@@ -243,7 +243,7 @@ public class StreamingPublicationDelivery {
 
 
         logger.info("Preparing scrollable iterators");
-        prepareTopographicPlaces(exportParams, stopPlacePrimaryIdsWithParents, mappedTopographicPlacesCount, listMembers, entitiesEvictor);
+        prepareTopographicPlaces(exportParams, stopPlacePrimaryIdsWithParents, mappedTopographicPlacesCount, listMembers, entitiesEvictor,null);
         logger.info("Topographic places preparation completed");
         prepareTariffZones(exportParams, stopPlacePrimaryIds, mappedTariffZonesCount, listMembers, entitiesEvictor);
         logger.info("TariffZones preparation completed");
@@ -346,6 +346,8 @@ public class StreamingPublicationDelivery {
         boolean isDataToExport = true;
         int totalStopsProcessed = 0;
 
+        Set<Long> completeStopPlaceList = new HashSet<>();
+
         while (isDataToExport){
 
             Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(exportJobId);
@@ -353,6 +355,7 @@ public class StreamingPublicationDelivery {
                 logger.info("no more stops to export");
                 isDataToExport = false;
             }else{
+                completeStopPlaceList.addAll(batchIdsToExport);
                 launchBatchExport(batchIdsToExport, mappedStopPlaceCount, null, listMembers, false);
                 stopPlaceRepository.deleteProcessedIds(exportJobId,batchIdsToExport );
 
@@ -361,6 +364,9 @@ public class StreamingPublicationDelivery {
             }
 
         }
+
+        logger.info("Preparing scrollable iterators");
+        prepareTopographicPlaces(exportParams, completeStopPlaceList, mappedTopographicPlacesCount, listMembers, null, exportJobId);
 
 
         prepareParkings(mappedParkingCount, listMembers, null,exportJobId);
@@ -1019,21 +1025,18 @@ public class StreamingPublicationDelivery {
         }
     }
 
-    private void prepareTopographicPlaces(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedTopographicPlacesCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter) {
+    private void prepareTopographicPlaces(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedTopographicPlacesCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter, Long jobid) {
 
         Iterator<TopographicPlace> relevantTopographicPlacesIterator;
 
-        if (exportParams.getTopographicPlaceExportMode() == null || exportParams.getTopographicPlaceExportMode().equals(ExportParams.ExportMode.ALL)) {
-            logger.info("Prepare scrolling for all topographic places");
-            relevantTopographicPlacesIterator = topographicPlaceRepository.scrollTopographicPlaces();
 
-        } else if (exportParams.getTopographicPlaceExportMode().equals(ExportParams.ExportMode.RELEVANT)) {
-            logger.info("Prepare scrolling relevant topographic places");
-            relevantTopographicPlacesIterator = new ParentTreeTopographicPlaceFetchingIterator(topographicPlaceRepository.scrollTopographicPlaces(stopPlacePrimaryIds), topographicPlaceRepository);
-        } else {
-            logger.info("Topographic export mode is {}. Will not export topographic places", exportParams.getTopographicPlaceExportMode());
-            relevantTopographicPlacesIterator = Collections.emptyIterator();
+        if (jobid == null){
+            relevantTopographicPlacesIterator = prepareTopographicPlacesIteratorForAPI(exportParams,stopPlacePrimaryIds);
+        }else{
+            relevantTopographicPlacesIterator = prepareTopographicPlacesIteratorForExportJob(jobid);
         }
+
+
 
         if (relevantTopographicPlacesIterator.hasNext()) {
 
@@ -1048,6 +1051,55 @@ public class StreamingPublicationDelivery {
                 listMembers.add(jaxbElementTopographicPlace);
             });
 
+        }
+    }
+
+    private Iterator<TopographicPlace> prepareTopographicPlacesIteratorForExportJob(Long jobid) {
+
+        topographicPlaceRepository.initExportJobTable(jobid);
+        topographicPlaceRepository.addParentTopographicPlacesToExportJobTable(jobid);
+
+        int totalNbOfTopographicPlaces = stopPlaceRepository.countStopsInExport(jobid);
+        logger.info("Total nb of topographicPlaces to export:" + totalNbOfTopographicPlaces);
+
+
+        boolean isDataToExport = true;
+        int totalTopographicPlacesProcessed = 0;
+
+        List<org.rutebanken.tiamat.model.TopographicPlace> completeTopographicPlacesList = new ArrayList<>();
+
+        while (isDataToExport){
+
+            Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(jobid);
+            if (batchIdsToExport == null || batchIdsToExport.size() == 0){
+                logger.info("no more topographic places to export");
+                isDataToExport = false;
+            }else{
+
+                List<org.rutebanken.tiamat.model.TopographicPlace> initializedTopos = topographicPlaceRepository.getTopoPlacesInitializedForExport(batchIdsToExport);
+                completeTopographicPlacesList.addAll(initializedTopos);
+                stopPlaceRepository.deleteProcessedIds(jobid,batchIdsToExport );
+                totalTopographicPlacesProcessed = totalTopographicPlacesProcessed + batchIdsToExport.size();
+                logger.info("total parking processed:" + totalTopographicPlacesProcessed);
+            }
+        }
+
+        return completeTopographicPlacesList.iterator();
+
+    }
+
+    private Iterator<TopographicPlace> prepareTopographicPlacesIteratorForAPI(ExportParams exportParams, Set<Long> stopPlacePrimaryIds) {
+
+        if (exportParams.getTopographicPlaceExportMode() == null || exportParams.getTopographicPlaceExportMode().equals(ExportParams.ExportMode.ALL)) {
+            logger.info("Prepare scrolling for all topographic places");
+            return topographicPlaceRepository.scrollTopographicPlaces();
+
+        } else if (exportParams.getTopographicPlaceExportMode().equals(ExportParams.ExportMode.RELEVANT)) {
+            logger.info("Prepare scrolling relevant topographic places");
+            return new ParentTreeTopographicPlaceFetchingIterator(topographicPlaceRepository.scrollTopographicPlaces(stopPlacePrimaryIds), topographicPlaceRepository);
+        } else {
+            logger.info("Topographic export mode is {}. Will not export topographic places", exportParams.getTopographicPlaceExportMode());
+            return Collections.emptyIterator();
         }
     }
 

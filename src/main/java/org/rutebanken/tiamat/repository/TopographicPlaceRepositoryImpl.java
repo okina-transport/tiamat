@@ -18,26 +18,33 @@ package org.rutebanken.tiamat.repository;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.Hibernate;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.query.NativeQuery;
 import org.rutebanken.tiamat.exporter.params.TopographicPlaceSearch;
+import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.ParkingArea;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.TopographicPlaceTypeEnumeration;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
+import org.rutebanken.tiamat.repository.search.SearchHelper;
 import org.rutebanken.tiamat.repository.search.TopographicPlaceQueryFromSearchBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -51,6 +58,9 @@ public class TopographicPlaceRepositoryImpl implements TopographicPlaceRepositor
 
 	@PersistenceContext
 	private EntityManager entityManager;
+
+	@Autowired
+	private SearchHelper searchHelper;
 
 
 	@Autowired
@@ -166,5 +176,85 @@ public class TopographicPlaceRepositoryImpl implements TopographicPlaceRepositor
 				") tp1 " +
 				"JOIN topographic_place tp ON tp.id = tp1.id");
 		return sql.toString();
+	}
+
+	/**
+	 * Initialize export job table with stop ids that must be exported
+	 * @param exportJobId
+	 *  id of the export job
+	 */
+	@org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void initExportJobTable( Long exportJobId){
+
+		Map<String, Object> parameters = new HashMap<>();
+
+		String queryStr = "INSERT INTO export_job_id_list \n" +
+				" SELECT :exportJobId,req1.topo_id     \n" +
+				" FROM ( \n" +
+				" SELECT max(tp.id)as topo_id,MAX(tp.version) as version FROM topographic_place tp  WHERE  (tp.from_date <= :pointInTime OR  tp.from_date IS NULL) \n" +
+				" AND (   tp.to_date >= :pointInTime  OR tp.to_date IS NULL) GROUP BY tp.netex_id  ) req1";
+
+
+		parameters.put("exportJobId", exportJobId);
+		parameters.put("pointInTime", Date.from(Instant.now()));
+
+		Session session = entityManager.unwrap(Session.class);
+		NativeQuery query = session.createNativeQuery(queryStr);
+		searchHelper.addParams(query, parameters);
+
+		query.executeUpdate();
+
+	}
+
+	/**
+	 * Add parent_ topographic places that must be exported to table export_job_id_list
+	 */
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void addParentTopographicPlacesToExportJobTable(Long exportJobId){
+
+
+		Map<String, Object> parameters = new HashMap<>();
+		String queryStr = "INSERT INTO export_job_id_list \n" +
+				" SELECT :exportJobId, tp.id FROM topographic_place tp WHERE \n" +
+				" tp.from_date <= :pointInTime \n" +
+				" AND (   tp.to_date >= :pointInTime  or tp.to_date IS NULL) \n" +
+				" AND tp.netex_id in ( \n" +
+				" SELECT distinct tp2.parent_ref FROM topographic_place tp2 WHERE tp2.parent_ref IS NOT NULL \n" +
+				" AND tp2.id IN (SELECT exported_object_id FROM export_job_id_list WHERE job_id = :exportJobId) ) \n";
+
+
+
+		Session session = entityManager.unwrap(Session.class);
+		parameters.put("exportJobId", exportJobId);
+		parameters.put("pointInTime",  Date.from(Instant.now()));
+
+		NativeQuery query = session.createNativeQuery(queryStr);
+		searchHelper.addParams(query, parameters);
+		query.executeUpdate();
+
+	}
+
+	public List<TopographicPlace> getTopoPlacesInitializedForExport(Set<Long> topoIds) {
+
+		Set<String> topoIdsString = topoIds.stream().map(lvalue -> String.valueOf(lvalue)).collect(Collectors.toSet());
+
+		String joinedTopoIds = String.join(",", topoIdsString);
+		StringBuilder sql = new StringBuilder("SELECT tp FROM TopographicPlace tp WHERE tp.id IN(");
+		sql.append(joinedTopoIds);
+		sql.append(")");
+
+
+		TypedQuery<TopographicPlace> q = entityManager.createQuery(sql.toString(), TopographicPlace.class);
+
+		List<TopographicPlace> results = q.getResultList();
+
+
+		results.forEach(topoPlace-> {
+			Hibernate.initialize(topoPlace.getKeyValues());
+			topoPlace.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+
+		});
+
+		return results;
 	}
 }

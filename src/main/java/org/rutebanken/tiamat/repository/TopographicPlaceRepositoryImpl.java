@@ -223,7 +223,7 @@ public class TopographicPlaceRepositoryImpl implements TopographicPlaceRepositor
 
 		Session session = entityManager.unwrap(Session.class);
 		parameters.put("exportJobId", exportJobId);
-		parameters.put("pointInTime",  Date.from(Instant.now()));
+
 
 		NativeQuery query = session.createNativeQuery(queryStr);
 		searchHelper.addParams(query, parameters);

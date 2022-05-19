@@ -30,8 +30,6 @@ public class InstalledEquipmentMapper extends CustomMapper<InstalledEquipment_Ve
     public void mapAtoB(InstalledEquipment_VersionStructure netexInstalledEquipment, org.rutebanken.tiamat.model.InstalledEquipment_VersionStructure tiamatInstalledEquipment, MappingContext context) {
         try{
             super.mapAtoB(netexInstalledEquipment, tiamatInstalledEquipment, context);
-            logger.info("INstalled - mapAtoB, new id:" + netexInstalledEquipment.getId());
-            logger.info("INstalled - mapAtoB, netex id:" + tiamatInstalledEquipment.getNetexId());
         }catch(Exception e){
             logger.error("Can't map to tiamat stopPlace for object:" + netexInstalledEquipment.getId());
         }
@@ -41,9 +39,6 @@ public class InstalledEquipmentMapper extends CustomMapper<InstalledEquipment_Ve
     public void mapBtoA(org.rutebanken.tiamat.model.InstalledEquipment_VersionStructure tiamatInstalledEquipment, InstalledEquipment_VersionStructure netexInstalledEquipment, MappingContext context) {
         try {
             super.mapBtoA(tiamatInstalledEquipment, netexInstalledEquipment, context);
-            logger.info("INstalled - mapBtoA, new id:" + netexInstalledEquipment.getId());
-            logger.info("INstalled - mapBtoA, netex id:" + tiamatInstalledEquipment.getNetexId());
-
         }catch(Exception e){
             logger.error("Can't map to netex InstalledEquipment for object:" + tiamatInstalledEquipment.getNetexId());
             logger.error(e.getStackTrace().toString());

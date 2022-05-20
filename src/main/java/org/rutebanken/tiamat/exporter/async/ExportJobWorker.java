@@ -104,10 +104,13 @@ public class ExportJobWorker implements Runnable {
                     break;
             }
 
+            logger.info("starting file validation");
             netexXmlReferenceValidator.validateNetexReferences(localExportXmlFile);
+            logger.info("validation completed");
             localExportZipFile.getParentFile().mkdirs();
             localExportZipFile.createNewFile();
 
+            logger.info("destination:" + tiamatExportDestination);
             if(StringUtils.equals(tiamatExportDestination, "local") || StringUtils.equals(tiamatExportDestination, "both")){
                 exportToLocalZipFile(localExportZipFile, localExportXmlFile);
             }
@@ -139,7 +142,8 @@ public class ExportJobWorker implements Runnable {
     private void exportToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime) throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.stream(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING, provider, localDateTime);
+        streamingPublicationDelivery.stream(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING, provider, localDateTime,exportJob.getId());
+        logger.info("export to local file completed");
     }
 
     private void exportPOIToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime) throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {

@@ -56,5 +56,9 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
     List<String> findByStopPlaceNetexId(String netexStopPlaceId);
 
     void clearAllRentalbikeParkings();
+
+    void initExportJobTable( Long exportJobId);
+
+    List<Parking> getParkingsInitializedForExport(Set<Long> parkingIds) ;
 }
 

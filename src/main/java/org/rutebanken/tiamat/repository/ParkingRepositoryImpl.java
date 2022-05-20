@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.repository;
 
+import org.hibernate.Hibernate;
 import org.hibernate.query.NativeQuery;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
@@ -23,9 +24,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.params.ParkingSearch;
 import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.ParkingArea;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
+import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.ParkingQueryFromSearchBuilder;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
@@ -37,11 +41,14 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 
 import javax.persistence.*;
 import javax.transaction.Transactional;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 @Transactional
@@ -314,6 +321,84 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         entityManager.createNativeQuery("DELETE FROM parking_parking_payment_process WHERE parking_id  in ( " + parkingIdQuery + ")" ).executeUpdate();
 
         entityManager.createNativeQuery("DELETE FROM parking WHERE parking_type = 'CYCLE_RENTAL'").executeUpdate();
+    }
+
+    /**
+     * Initialize export job table with stop ids that must be exported
+     * @param exportJobId
+     *  id of the export job
+     */
+    @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void initExportJobTable( Long exportJobId){
+
+        Map<String, Object> parameters = new HashMap<>();
+
+        String queryStr = "INSERT INTO export_job_id_list \n" +
+                " SELECT :exportJobId,req1.parking_id     \n" +
+                " FROM ( \n" +
+                " SELECT max(p.id)as parking_id,MAX(p.version) as version FROM parking p  WHERE  (p.from_date <= :pointInTime OR  p.from_date IS NULL) \n" +
+                " AND (   p.to_date >= :pointInTime  OR p.to_date IS NULL) GROUP BY p.netex_id  ) req1";
+
+
+        parameters.put("exportJobId", exportJobId);
+        parameters.put("pointInTime", Date.from(Instant.now()));
+
+        Session session = entityManager.unwrap(Session.class);
+        NativeQuery query = session.createNativeQuery(queryStr);
+        searchHelper.addParams(query, parameters);
+
+        query.executeUpdate();
+
+    }
+
+    public List<Parking> getParkingsInitializedForExport(Set<Long> parkingIds) {
+
+        Set<String> parkingIdStrings = parkingIds.stream().map(lvalue -> String.valueOf(lvalue)).collect(Collectors.toSet());
+
+        String joinedParkingIds = String.join(",", parkingIdStrings);
+        StringBuilder sql = new StringBuilder("SELECT p FROM Parking p WHERE p.id IN(");
+        sql.append(joinedParkingIds);
+        sql.append(")");
+
+
+        TypedQuery<Parking> q = entityManager.createQuery(sql.toString(), Parking.class);
+
+        List<Parking> results = q.getResultList();
+
+        results.forEach(parking-> {
+
+            Hibernate.initialize(parking.getParkingPaymentProcess());
+            Hibernate.initialize(parking.getParkingVehicleTypes());
+            Hibernate.initialize(parking.getAccessibilityAssessment());
+            Hibernate.initialize(parking.getAlternativeNames());
+            Hibernate.initialize(parking.getParkingAreas());
+            Hibernate.initialize(parking.getParkingProperties());
+            Hibernate.initialize(parking.getPolygon());
+
+
+            if (parking.getParkingAreas() != null){
+                for (ParkingArea parkingArea : parking.getParkingAreas()) {
+                    Hibernate.initialize(parkingArea.getAlternativeNames());
+                    Hibernate.initialize(parkingArea.getAccessibilityAssessment());
+
+                    if (parkingArea.getAccessibilityAssessment() != null){
+                        Hibernate.initialize(parkingArea.getAccessibilityAssessment().getLimitations());
+                    }
+                }
+
+            }
+
+
+            Hibernate.initialize(parking.getKeyValues());
+            parking.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+
+            if (parking.getAccessibilityAssessment() != null){
+                Hibernate.initialize(parking.getAccessibilityAssessment().getLimitations());
+            }
+
+
+        });
+        return results;
     }
 
 

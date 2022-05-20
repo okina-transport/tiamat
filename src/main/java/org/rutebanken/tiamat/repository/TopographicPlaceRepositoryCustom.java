@@ -39,4 +39,10 @@ public interface TopographicPlaceRepositoryCustom extends DataManagedObjectStruc
     Iterator<TopographicPlace> scrollTopographicPlaces();
 
     List<TopographicPlace> getTopographicPlacesFromStopPlaceIds(Set<Long> stopPlaceDbIds);
+
+    void initExportJobTable( Long exportJobId);
+
+    void addParentTopographicPlacesToExportJobTable(Long exportJobId);
+
+    List<TopographicPlace> getTopoPlacesInitializedForExport(Set<Long> topoIds);
 }

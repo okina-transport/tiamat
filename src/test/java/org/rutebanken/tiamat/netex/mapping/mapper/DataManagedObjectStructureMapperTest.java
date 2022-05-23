@@ -57,7 +57,7 @@ public class DataManagedObjectStructureMapperTest {
         org.rutebanken.netex.model.StopPlace netexStopPlace = new org.rutebanken.netex.model.StopPlace();
         dataManagedObjectStructureMapper.mapBtoA(tiamatStopPlace, netexStopPlace, mappingContext);
 
-        assertThat(publicationDeliveryHelper.getValueByKey(netexStopPlace, CHANGED_BY)).isEqualTo(tiamatStopPlace.getChangedBy());
+        assertThat(publicationDeliveryHelper.getValueByKey(netexStopPlace, CHANGED_BY)).isEqualTo(null);
     }
 
     @Test
@@ -87,7 +87,7 @@ public class DataManagedObjectStructureMapperTest {
         org.rutebanken.netex.model.StopPlace netexStopPlace = new org.rutebanken.netex.model.StopPlace();
         dataManagedObjectStructureMapper.mapBtoA(tiamatStopPlace, netexStopPlace, mappingContext);
 
-        assertThat(publicationDeliveryHelper.getValueByKey(netexStopPlace, VERSION_COMMENT)).isEqualTo(tiamatStopPlace.getVersionComment());
+        assertThat(publicationDeliveryHelper.getValueByKey(netexStopPlace, VERSION_COMMENT)).isEqualTo(null);
     }
 
     @Test

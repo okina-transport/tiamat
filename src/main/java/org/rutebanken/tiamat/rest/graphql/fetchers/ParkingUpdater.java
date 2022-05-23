@@ -350,10 +350,12 @@ class ParkingUpdater implements DataFetcher {
 
     private ParkingArea resolveSingleParkingArea(Map input, List<ParkingArea> existingParkingArea) {
         ParkingArea parkingArea = null;
-        for (ParkingArea pa : existingParkingArea) {
-            if (pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)){
-                parkingArea = pa;
-                break;
+        if(existingParkingArea != null){
+            for (ParkingArea pa : existingParkingArea) {
+                if (pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)){
+                    parkingArea = pa;
+                    break;
+                }
             }
         }
         if (parkingArea == null) {

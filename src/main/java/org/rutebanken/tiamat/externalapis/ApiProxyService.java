@@ -146,6 +146,6 @@ public class ApiProxyService {
 
 	private String getCitycode(URL apiUrl) throws Exception {
 		DtoGeocode geocode = getGeocodeData(apiUrl);
-		return geocode.getCityCode();
+		return geocode != null ? geocode.getCityCode() : null;
 	}
 }

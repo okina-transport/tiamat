@@ -343,6 +343,7 @@ class ParkingUpdater implements DataFetcher {
             result.add(resolveSingleParkingArea((Map) property, existingParkingAreas));
         }
 
+        if(existingParkingAreas != null)
         result.addAll(existingParkingAreas.stream().filter(pa -> !pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)).collect(Collectors.toList()));
 
         return result;

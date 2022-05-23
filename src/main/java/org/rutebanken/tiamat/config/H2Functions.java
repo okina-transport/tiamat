@@ -59,6 +59,8 @@ public class H2Functions implements InitializingBean {
                 jdbcTemplate.execute("CREATE ALIAS delete_poi_except_classification FOR  \"org.rutebanken.tiamat.config.H2Functions.deletePOIExceptClassification\"");
                 jdbcTemplate.execute("CREATE ALIAS UNACCENT FOR  \"org.rutebanken.tiamat.config.H2Functions.unAccent\"");
 
+                jdbcTemplate.execute("CREATE TABLE export_job_id_list (job_id bigint NOT NULL, exported_object_id bigint NOT NULL);");
+
 
             }
         } catch (SQLException sqlException) {

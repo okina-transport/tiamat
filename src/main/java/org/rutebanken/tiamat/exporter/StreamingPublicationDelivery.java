@@ -178,15 +178,17 @@ public class StreamingPublicationDelivery {
         this.groupOfStopPlacesRepository = groupOfStopPlacesRepository;
         this.validateAgainstSchema = validateAgainstSchema;
     }
-
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void stream(ExportParams exportParams, OutputStream outputStream, Provider provider) throws Exception {
         stream(exportParams, outputStream, false, provider);
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider) throws JAXBException, IOException, SAXException {
         stream(exportParams, outputStream, false, provider, LocalDateTime.now().withNano(0), null);
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime,  Long exportJobId) throws JAXBException, IOException, SAXException {
 
         logger.info("====== JAVA VERSION :" + System.getProperty("java.version") );
@@ -211,7 +213,6 @@ public class StreamingPublicationDelivery {
      * @throws IOException
      * @throws SAXException
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void streamForAPI(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime ) throws JAXBException, IOException, SAXException {
         org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime);
 
@@ -1141,7 +1142,8 @@ public class StreamingPublicationDelivery {
         return bd.doubleValue();
     }
 
-    private EntitiesEvictor instantiateEvictor() {
+    @Transactional
+    public EntitiesEvictor instantiateEvictor() {
         if (entityManager != null) {
             Session currentSession = entityManager.unwrap(Session.class);
             return new SessionEntitiesEvictor((SessionImpl) currentSession);

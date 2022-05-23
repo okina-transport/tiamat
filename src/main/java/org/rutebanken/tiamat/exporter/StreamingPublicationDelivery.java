@@ -178,17 +178,17 @@ public class StreamingPublicationDelivery {
         this.groupOfStopPlacesRepository = groupOfStopPlacesRepository;
         this.validateAgainstSchema = validateAgainstSchema;
     }
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void stream(ExportParams exportParams, OutputStream outputStream, Provider provider) throws Exception {
         stream(exportParams, outputStream, false, provider);
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider) throws JAXBException, IOException, SAXException {
         stream(exportParams, outputStream, false, provider, LocalDateTime.now().withNano(0), null);
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime,  Long exportJobId) throws JAXBException, IOException, SAXException {
 
         logger.info("====== JAVA VERSION :" + System.getProperty("java.version") );

@@ -80,6 +80,7 @@ public class Parking
     protected Boolean freeParkingOutOfHours;
     protected String insee;
     protected String siret;
+    protected String typeOfParkingRef;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     protected List<ParkingProperties> parkingProperties;
@@ -329,6 +330,14 @@ public class Parking
     public String getSiret() { return siret; }
 
     public void setSiret(String siret) { this.siret = siret; }
+
+    public void setTypeOfParkingRef(String typeOfParkingRef) {
+        this.typeOfParkingRef = typeOfParkingRef;
+    }
+
+    public String getParkingTypeRef() {
+        return typeOfParkingRef;
+    }
 
     @Override
     public String toString() {

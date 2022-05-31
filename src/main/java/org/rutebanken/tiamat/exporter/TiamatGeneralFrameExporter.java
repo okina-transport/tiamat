@@ -3,18 +3,13 @@ package org.rutebanken.tiamat.exporter;
 import org.rutebanken.tiamat.model.GeneralFrame;
 import org.rutebanken.tiamat.model.Members;
 import org.rutebanken.tiamat.model.ModificationEnumeration;
-import org.rutebanken.tiamat.model.Quays_RelStructure;
-import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.TypeOfFrameRefStructure;
-import org.rutebanken.tiamat.netex.id.NetexIdHelper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 public class TiamatGeneralFrameExporter {

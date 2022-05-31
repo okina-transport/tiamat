@@ -34,6 +34,7 @@ import org.rutebanken.tiamat.rest.health.HealthResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ImportResource;
+import org.rutebanken.tiamat.rest.parkings.ImportBikeParkingsResource;
 import org.rutebanken.tiamat.rest.parkings.ImportParkingsResource;
 import org.rutebanken.tiamat.rest.poi.ImportPOIResource;
 import org.rutebanken.tiamat.rest.parkings.ImportRentalBikeResource;
@@ -88,6 +89,7 @@ public class JerseyConfig {
         publicResources.add(AsyncExportResource.class);
         publicResources.add(ExportResource.class);
         publicResources.add(ImportParkingsResource.class);
+        publicResources.add(ImportBikeParkingsResource.class);
         publicResources.add(ImportPOIResource.class);
         publicResources.add(ImportRentalBikeResource.class);
         publicResources.add(GraphQLResource.class);

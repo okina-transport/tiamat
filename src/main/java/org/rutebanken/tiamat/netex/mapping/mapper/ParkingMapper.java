@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
 
@@ -45,6 +46,13 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
     @Override
     public void mapBtoA(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking, MappingContext context) {
         super.mapBtoA(tiamatParking, netexParking, context);
+
+        if (StringUtils.isNotEmpty(tiamatParking.getParkingTypeRef())){
+            TypeOfParkingRefStructure typeOfParkingRefStructure = new TypeOfParkingRefStructure();
+            typeOfParkingRefStructure.withRef(tiamatParking.getParkingTypeRef());
+            typeOfParkingRefStructure.withVersion("any");
+            netexParking.setTypeOfParkingRef(typeOfParkingRefStructure);
+        }
 
         if (tiamatParking.getInsee() != null) {
             PostalAddress postalAddress = new PostalAddress();

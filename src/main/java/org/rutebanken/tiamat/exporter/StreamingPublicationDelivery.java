@@ -16,42 +16,51 @@
 package org.rutebanken.tiamat.exporter;
 
 import net.opengis.gml._3.DirectPositionType;
-import org.apache.commons.lang3.NotImplementedException;
 import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
-import org.rutebanken.netex.model.*;
 import org.rutebanken.netex.model.AccessibilityAssessment;
 import org.rutebanken.netex.model.AccessibilityLimitation;
+import org.rutebanken.netex.model.AccessibilityLimitations_RelStructure;
 import org.rutebanken.netex.model.CountryRef;
 import org.rutebanken.netex.model.EntityStructure;
 import org.rutebanken.netex.model.GeneralFrame;
+import org.rutebanken.netex.model.GeneralOrganisation;
 import org.rutebanken.netex.model.General_VersionFrameStructure;
 import org.rutebanken.netex.model.GroupsOfStopPlacesInFrame_RelStructure;
 import org.rutebanken.netex.model.KeyValueStructure;
 import org.rutebanken.netex.model.LimitationStatusEnumeration;
+import org.rutebanken.netex.model.LocationStructure;
 import org.rutebanken.netex.model.MultilingualString;
+import org.rutebanken.netex.model.ObjectFactory;
+import org.rutebanken.netex.model.OrganisationRefStructure;
+import org.rutebanken.netex.model.OrganisationTypeEnumeration;
 import org.rutebanken.netex.model.Parking;
-import org.rutebanken.netex.model.ParkingsInFrame_RelStructure;
 import org.rutebanken.netex.model.PointOfInterest;
+import org.rutebanken.netex.model.PointOfInterestClassificationsInFrame_RelStructure;
 import org.rutebanken.netex.model.PointsOfInterestInFrame_RelStructure;
+import org.rutebanken.netex.model.PostalAddress;
 import org.rutebanken.netex.model.PrivateCodeStructure;
+import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.Quay;
 import org.rutebanken.netex.model.QuayRefStructure;
 import org.rutebanken.netex.model.Quays_RelStructure;
+import org.rutebanken.netex.model.ResponsibilityRoleAssignment_VersionedChildStructure;
+import org.rutebanken.netex.model.ResponsibilityRoleAssignments_RelStructure;
+import org.rutebanken.netex.model.ResponsibilitySet;
 import org.rutebanken.netex.model.SiteFrame;
 import org.rutebanken.netex.model.SiteRefStructure;
+import org.rutebanken.netex.model.Site_VersionFrameStructure;
+import org.rutebanken.netex.model.StakeholderRoleTypeEnumeration;
 import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.netex.model.StopPlacesInFrame_RelStructure;
 import org.rutebanken.netex.model.TariffZone;
-import org.rutebanken.netex.model.TariffZonesInFrame_RelStructure;
+import org.rutebanken.netex.model.TypeOfParking;
 import org.rutebanken.netex.model.TypeOfPlaceRefStructure;
 import org.rutebanken.netex.model.TypeOfPlaceRefs_RelStructure;
-import org.rutebanken.netex.model.Zone_VersionStructure;
 import org.rutebanken.netex.validation.NeTExValidator;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.async.NetexMappingIterator;
 import org.rutebanken.tiamat.exporter.async.NetexMappingIteratorList;
-import org.rutebanken.tiamat.exporter.async.NetexReferenceRemovingIterator;
 import org.rutebanken.tiamat.exporter.async.ParentStopFetchingIterator;
 import org.rutebanken.tiamat.exporter.async.ParentTreeTopographicPlaceFetchingIterator;
 import org.rutebanken.tiamat.exporter.eviction.EntitiesEvictor;
@@ -67,7 +76,13 @@ import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
-import org.rutebanken.tiamat.repository.*;
+import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
+import org.rutebanken.tiamat.repository.ParkingRepository;
+import org.rutebanken.tiamat.repository.PointOfInterestClassificationRepository;
+import org.rutebanken.tiamat.repository.PointOfInterestRepository;
+import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.repository.TariffZoneRepository;
+import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -785,7 +800,7 @@ public class StreamingPublicationDelivery {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void prepareParkings(AtomicInteger mappedParkingCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter, Long exportJobId) {
+    public void prepareParkings(AtomicInteger mappedParkingCount, List<JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter, Long exportJobId) {
 
 
         Iterator<org.rutebanken.tiamat.model.Parking> parkingResultsIterator;
@@ -813,7 +828,7 @@ public class StreamingPublicationDelivery {
             List<Parking> netexParkings = new ArrayList<>();
             parkingsMappingIterator.forEachRemaining(netexParkings::add);
 
-            netexParkings.stream().forEach(parking->{
+            netexParkings.forEach(parking->{
                 org.rutebanken.tiamat.model.Parking tiamatParking = parkingRepository.findFirstByNetexIdOrderByVersionDesc(parking.getId());
                 if (tiamatParking.getSiret() != null) {
                     String organisationId = "MOBIITI:Organisation:" + UUID.randomUUID().toString();
@@ -848,6 +863,21 @@ public class StreamingPublicationDelivery {
                 }
                 listMembers.add(netexObjectFactory.createParking(parking));
             });
+
+            TypeOfParking typeOfParkingSecureBikeParking = new TypeOfParking();
+            typeOfParkingSecureBikeParking.withVersion("any");
+            typeOfParkingSecureBikeParking.withId("SecureBikeParking");
+            typeOfParkingSecureBikeParking.withName(new MultilingualString().withValue("Secure Bike Parking"));
+
+            TypeOfParking typeOfParkingIndividualBox = new TypeOfParking();
+            typeOfParkingIndividualBox.withVersion("any");
+            typeOfParkingIndividualBox.withId("IndividualBox");
+            typeOfParkingIndividualBox.withName(new MultilingualString().withValue("Individual Box"));
+
+
+            listMembers.add(netexObjectFactory.createTypeOfParking(typeOfParkingSecureBikeParking));
+            listMembers.add(netexObjectFactory.createTypeOfParking(typeOfParkingIndividualBox));
+            logger.info("Adding {} typesOfParking in generalFrame");
 
         } else {
             logger.info("No parkings to export based on stop places");

@@ -16,30 +16,54 @@
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 
-import org.rutebanken.netex.model.*;
+import org.rutebanken.netex.model.Common_VersionFrameStructure;
+import org.rutebanken.netex.model.CompositeFrame;
+import org.rutebanken.netex.model.DataManagedObjectStructure;
+import org.rutebanken.netex.model.EntityStructure;
+import org.rutebanken.netex.model.GeneralFrame;
+import org.rutebanken.netex.model.General_VersionFrameStructure;
+import org.rutebanken.netex.model.GroupOfStopPlaces;
+import org.rutebanken.netex.model.LocaleStructure;
+import org.rutebanken.netex.model.ObjectFactory;
+import org.rutebanken.netex.model.Parking;
+import org.rutebanken.netex.model.PathLink;
+import org.rutebanken.netex.model.PathLinksInFrame_RelStructure;
+import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.netex.model.Quay;
+import org.rutebanken.netex.model.SiteFrame;
+import org.rutebanken.netex.model.StopPlace;
+import org.rutebanken.netex.model.StopPlacesInFrame_RelStructure;
+import org.rutebanken.netex.model.TopographicPlace;
+import org.rutebanken.netex.model.TopographicPlacesInFrame_RelStructure;
+import org.rutebanken.netex.model.VersionFrameDefaultsStructure;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
-import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
-import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXException;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-import javax.xml.bind.*;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -157,13 +181,25 @@ public class PublicationDeliveryTestHelper {
         return extractStopPlaces(publicationDeliveryStructure, isGeneralFrame, true);
     }
 
-    public List<StopPlace> extractStopPlaces(PublicationDeliveryStructure publicationDeliveryStructure, boolean isGeneralFrame,boolean verifyNotNull) {
-        if(isGeneralFrame){
+    public List<Parking> extractParkings(PublicationDeliveryStructure publicationDeliveryStructure, boolean isGeneralFrame) {
+        return extractParkings(publicationDeliveryStructure, isGeneralFrame, true);
+    }
+
+    public List<StopPlace> extractStopPlaces(PublicationDeliveryStructure publicationDeliveryStructure, boolean isGeneralFrame, boolean verifyNotNull) {
+        if (isGeneralFrame) {
             GeneralFrame generalFrame = findGeneralFrame(publicationDeliveryStructure);
             return extractStopPlacesFromGeneralFrame(generalFrame, verifyNotNull);
-        }else{
+        } else {
             return extractStopPlaces(findSiteFrame(publicationDeliveryStructure), verifyNotNull);
         }
+    }
+
+    public List<Parking> extractParkings(PublicationDeliveryStructure publicationDeliveryStructure, boolean isGeneralFrame, boolean verifyNotNull) {
+        if (isGeneralFrame) {
+            GeneralFrame generalFrame = findGeneralFrame(publicationDeliveryStructure);
+            return extractParkingsFromGeneralFrame(generalFrame, verifyNotNull);
+        }
+        return null;
     }
 
     public List<StopPlace> extractStopPlaces(SiteFrame siteFrame) {
@@ -195,10 +231,26 @@ public class PublicationDeliveryTestHelper {
                 .filter(jaxbElement -> jaxbElement.getValue() instanceof org.rutebanken.netex.model.StopPlace)
                 .collect(Collectors.toList());
 
-        return jaxStopPlaces.stream().map(jaxStopPlace -> (StopPlace)jaxStopPlace.getValue()).collect(Collectors.toList());
+        return jaxStopPlaces.stream().map(jaxStopPlace -> (StopPlace) jaxStopPlace.getValue()).collect(Collectors.toList());
     }
 
-    public GroupOfStopPlaces extractGroupOfStopPlacesFromGeneralFrame(GeneralFrame generalFrame){
+    public List<Parking> extractParkingsFromGeneralFrame(GeneralFrame generalFrame, boolean verifyNotNull) {
+        if (verifyNotNull) {
+            assertThat(generalFrame.getMembers()).isNotNull();
+            assertThat(generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity()).isNotNull();
+        } else {
+            return new ArrayList<>();
+        }
+        List<JAXBElement> jaxParkings = generalFrame.getMembers()
+                .getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity()
+                .stream()
+                .filter(jaxbElement -> jaxbElement.getValue() instanceof org.rutebanken.netex.model.Parking)
+                .collect(Collectors.toList());
+
+        return jaxParkings.stream().map(jaxParking -> (Parking) jaxParking.getValue()).collect(Collectors.toList());
+    }
+
+    public GroupOfStopPlaces extractGroupOfStopPlacesFromGeneralFrame(GeneralFrame generalFrame) {
 
         List<JAXBElement> jaxGroupStopPlaces = generalFrame.getMembers()
                 .getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity()
@@ -206,7 +258,7 @@ public class PublicationDeliveryTestHelper {
                 .filter(jaxbElement -> jaxbElement.getValue() instanceof org.rutebanken.netex.model.GroupOfStopPlaces)
                 .collect(Collectors.toList());
 
-        return jaxGroupStopPlaces.stream().map(jaxGroupStopPlace -> (GroupOfStopPlaces)jaxGroupStopPlace.getValue()).collect(Collectors.toList()).get(0);
+        return jaxGroupStopPlaces.stream().map(jaxGroupStopPlace -> (GroupOfStopPlaces) jaxGroupStopPlace.getValue()).collect(Collectors.toList()).get(0);
 
     }
     public GroupOfStopPlaces extractGroupOfStopPlaces(SiteFrame siteFrame) {

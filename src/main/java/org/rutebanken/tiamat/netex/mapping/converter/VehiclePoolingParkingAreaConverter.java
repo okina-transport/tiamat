@@ -19,7 +19,9 @@ public class VehiclePoolingParkingAreaConverter extends BidirectionalConverter<P
         }
         VehiclePoolingParkingArea vehiclePoolingParkingArea = new VehiclePoolingParkingArea();
         vehiclePoolingParkingArea.setId(parkingArea.getNetexId());
-        vehiclePoolingParkingArea.setName(new MultilingualString().withValue(parkingArea.getName().getValue()).withLang(parkingArea.getName().getLang()));
+        if (parkingArea.getName() != null ){
+            vehiclePoolingParkingArea.setName(new MultilingualString().withValue(parkingArea.getName().getValue()).withLang(parkingArea.getName().getLang()));
+        }
         vehiclePoolingParkingArea.setMaximumHeight(parkingArea.getMaximumHeight());
         vehiclePoolingParkingArea.setPublicUse(parkingArea.getPublicUse() != null ? PublicUseEnumeration.fromValue(parkingArea.getPublicUse().value()) : PublicUseEnumeration.ALL);
         vehiclePoolingParkingArea.setVersion(String.valueOf(parkingArea.getVersion()));

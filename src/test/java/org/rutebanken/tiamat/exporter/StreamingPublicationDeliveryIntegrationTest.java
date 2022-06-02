@@ -129,6 +129,13 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
         }
         stopPlaceRepository.flush();
 
+        org.rutebanken.tiamat.model.Parking parking = new org.rutebanken.tiamat.model.Parking();
+        parking.setVersion(1L);
+        parking.setName(new EmbeddableMultilingualString("parking numbber " + 1));
+        parking.setTypeOfParkingRef("SecureBikeParking");
+        parkingRepository.save(parking);
+        parkingRepository.flush();
+
 
         ExportParams exportParams = ExportParams.newExportParamsBuilder()
                 .setStopPlaceSearch(
@@ -140,7 +147,9 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.fromString(byteArrayOutputStream.toString());
         List<org.rutebanken.netex.model.StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure,true);
+        List<org.rutebanken.netex.model.Parking> parkings = publicationDeliveryTestHelper.extractParkings(publicationDeliveryStructure,true);
         assertThat(stopPlaces).hasSize(StopPlaceSearch.DEFAULT_PAGE_SIZE);
+        assertThat(parkings).hasSize(1);
     }
 
     @Test

@@ -95,6 +95,10 @@ public class StopPlaceSearch implements SearchObject {
     @ApiParam(value = NEARBY_STOP_PLACES)
     private boolean nearbyStopPlaces;
 
+    @QueryParam(value = "stopPlacesWithoutQuay")
+    @ApiParam(value = STOP_PLACES_WITHOUT_QUAY)
+    private boolean stopPlacesWithoutQuay;
+
     @QueryParam(value = "nearbyRadius")
     @ApiParam(value = NEARBY_RADIUS)
     private int nearbyRadius;
@@ -141,6 +145,7 @@ public class StopPlaceSearch implements SearchObject {
                             boolean withoutQuaysOnly,
                             boolean withDuplicatedQuayImportedIds,
                             boolean withNearbySimilarDuplicates,
+                            boolean stopPlacesWithoutQuay,
                             boolean nearbyStopPlaces,
                             boolean detectMultiModalPoints,
                             int nearbyRadius,
@@ -162,6 +167,7 @@ public class StopPlaceSearch implements SearchObject {
         this.withoutQuaysOnly = withoutQuaysOnly;
         this.withDuplicatedQuayImportedIds = withDuplicatedQuayImportedIds;
         this.withNearbySimilarDuplicates = withNearbySimilarDuplicates;
+        this.stopPlacesWithoutQuay = stopPlacesWithoutQuay;
         this.nearbyStopPlaces = nearbyStopPlaces;
         this.nearbyRadius = nearbyRadius;
         this.detectMultiModalPoints = detectMultiModalPoints;
@@ -226,6 +232,10 @@ public class StopPlaceSearch implements SearchObject {
         return nearbyStopPlaces;
     }
 
+    public boolean isStopPlacesWithoutQuay() {
+        return stopPlacesWithoutQuay;
+    }
+
     public boolean isDetectMultiModalPoints(){return detectMultiModalPoints;}
 
     public int getNearbyRadius() {
@@ -270,6 +280,7 @@ public class StopPlaceSearch implements SearchObject {
                 .add("withoutLocationOnly", isWithoutLocationOnly())
                 .add("withoutQuaysOnly", isWithoutQuaysOnly())
                 .add("withDuplicatedQuayImportedIds", isWithDuplicatedQuayImportedIds())
+                .add("stopPlacesWithoutQuay", isStopPlacesWithoutQuay())
                 .add("nearbyStopPlaces", isNearbyStopPlaces())
                 .add("nearbyRadius", getNearbyRadius())
                 .add("detectMultiModalPoints",isDetectMultiModalPoints())
@@ -296,6 +307,7 @@ public class StopPlaceSearch implements SearchObject {
         private boolean withoutQuaysOnly;
         private boolean withDuplicatedQuayImportedIds;
         private boolean withNearbySimilarDuplicates;
+        private boolean stopPlacesWithoutQuay;
         private boolean nearbyStopPlaces;
         private boolean detectMultiModalPoints;
         private int nearbyRadius;
@@ -370,6 +382,10 @@ public class StopPlaceSearch implements SearchObject {
             this.nearbyStopPlaces = nearbyStopPlaces;
         }
 
+        public void setStopPlacesWithoutQuay(boolean stopPlacesWithoutQuay) {
+            this.stopPlacesWithoutQuay = stopPlacesWithoutQuay;
+        }
+
         public void setNearbyRadius(int nearbyRadius) {
             this.nearbyRadius = nearbyRadius;
         }
@@ -420,6 +436,7 @@ public class StopPlaceSearch implements SearchObject {
                     withoutQuaysOnly,
                     withDuplicatedQuayImportedIds,
                     withNearbySimilarDuplicates,
+                    stopPlacesWithoutQuay,
                     nearbyStopPlaces,
                     detectMultiModalPoints,
                     nearbyRadius,

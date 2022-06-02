@@ -583,6 +583,12 @@ public class StopPlaceRegisterGraphQLSchema {
                 .description(NEARBY_STOP_PLACES_DESCRIPTION)
                 .build());
         arguments.add(GraphQLArgument.newArgument()
+                .name(STOP_PLACES_WITHOUT_QUAY)
+                .type(GraphQLBoolean)
+                .defaultValue(Boolean.FALSE)
+                .description(STOP_PLACES_WITHOUT_QUAY_DESCRIPTION)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
                 .name(DETECT_MULTI_MODAL_POINTS)
                 .type(GraphQLBoolean)
                 .defaultValue(Boolean.FALSE)

@@ -169,6 +169,9 @@ public class StopPlaceQueryFromSearchBuilder {
     private NearbyStopPlaceQueryBuilder stopPlaceQueryFromSearchBuilder;
 
     @Autowired
+    private StopPlaceWithoutQuayQueryBuilder stopPlaceWithoutQuayQueryBuilder;
+
+    @Autowired
     private MultiModalStopPlaceQueryBuilder multiModalStopPlaceQueryFromSearchBuilder;
 
     @Autowired
@@ -204,6 +207,10 @@ public class StopPlaceQueryFromSearchBuilder {
 
         if(stopPlaceSearch.isWithDistantQuays()){
             return searchStopPlacesWithDistantQuaysBuilder.buildQuery(stopPlaceSearch);
+        }
+
+        if(stopPlaceSearch.isStopPlacesWithoutQuay()){
+            return stopPlaceWithoutQuayQueryBuilder.buildQuery(stopPlaceSearch);
         }
 
 

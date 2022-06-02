@@ -109,6 +109,7 @@ class StopPlaceFetcher implements DataFetcher {
         setIfNonNull(environment, WITHOUT_QUAYS_ONLY, stopPlaceSearchBuilder::setWithoutQuaysOnly);
         setIfNonNull(environment, WITH_DUPLICATED_QUAY_IMPORTED_IDS, stopPlaceSearchBuilder::setWithDuplicatedQuayImportedIds);
         setIfNonNull(environment, WITH_NEARBY_SIMILAR_DUPLICATES, stopPlaceSearchBuilder::setWithNearbySimilarDuplicates);
+        setIfNonNull(environment, STOP_PLACES_WITHOUT_QUAY, stopPlaceSearchBuilder::setStopPlacesWithoutQuay);
         setIfNonNull(environment, NEARBY_STOP_PLACES, stopPlaceSearchBuilder::setNearbyStopPlaces);
         setIfNonNull(environment, NEARBY_RADIUS, stopPlaceSearchBuilder::setNearbyRadius);
         setIfNonNull(environment, ORGANISATION_NAME, stopPlaceSearchBuilder::setOrganisationName);
@@ -264,9 +265,14 @@ class StopPlaceFetcher implements DataFetcher {
             nearbyStopPlaceSearch = environment.getArgument(NEARBY_STOP_PLACES);
         }
 
+        boolean stopPlacesWithoutQuaySearch = false;
+        if (environment.getArgument(STOP_PLACES_WITHOUT_QUAY) != null) {
+            stopPlacesWithoutQuaySearch = environment.getArgument(STOP_PLACES_WITHOUT_QUAY);
+        }
+
 
         //By default stop should resolve parent stops
-        if (nearbyStopPlaceSearch || onlyMonomodalStopplaces) {
+        if (nearbyStopPlaceSearch || onlyMonomodalStopplaces || stopPlacesWithoutQuaySearch) {
             return getStopPlaces(environment, stopPlaces, stopPlaces.size());
         } else {
             List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(stopPlaces, KEEP_CHILDREN);

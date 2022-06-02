@@ -324,6 +324,8 @@ public class GraphQLNames {
     public static final String WITH_NEARBY_SIMILAR_DUPLICATES = "withNearbySimilarDuplicates";
     public static final String WITH_NEARBY_SIMILAR_DUPLICATES_ARG_DESCRIPTION = "withNearbySimilarDuplicates";
     public static final String NEARBY_STOP_PLACES = "nearbyStopPlaces";
+    public static final String STOP_PLACES_WITHOUT_QUAY = "stopPlacesWithoutQuay";
+    public static final String STOP_PLACES_WITHOUT_QUAY_DESCRIPTION = "Set to true to only return stop places that have no quay in them";
     public static final String NEARBY_RADIUS = "nearbyRadius";
     public static final String NEARBY_RADIUS_DESCRIPTION = "Radius arround which neighbors must be searched";
     public static final String NEARBY_STOP_PLACES_DESCRIPTION = "Set to true to only return stop places that have nearby stop place around them";

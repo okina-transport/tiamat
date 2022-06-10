@@ -27,6 +27,7 @@ import org.rutebanken.netex.model.GeneralFrame;
 import org.rutebanken.netex.model.GeneralOrganisation;
 import org.rutebanken.netex.model.General_VersionFrameStructure;
 import org.rutebanken.netex.model.GroupsOfStopPlacesInFrame_RelStructure;
+import org.rutebanken.netex.model.KeyListStructure;
 import org.rutebanken.netex.model.KeyValueStructure;
 import org.rutebanken.netex.model.LimitationStatusEnumeration;
 import org.rutebanken.netex.model.LocationStructure;
@@ -57,6 +58,7 @@ import org.rutebanken.netex.model.TariffZone;
 import org.rutebanken.netex.model.TypeOfParking;
 import org.rutebanken.netex.model.TypeOfPlaceRefStructure;
 import org.rutebanken.netex.model.TypeOfPlaceRefs_RelStructure;
+import org.rutebanken.netex.model.Zone_VersionStructure;
 import org.rutebanken.netex.validation.NeTExValidator;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.async.NetexMappingIterator;
@@ -74,6 +76,7 @@ import org.rutebanken.tiamat.geo.geo.LambertZone;
 import org.rutebanken.tiamat.model.GroupOfStopPlaces;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.VehicleModeEnumeration;
+
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
@@ -206,7 +209,6 @@ public class StreamingPublicationDelivery {
     @Transactional
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime,  Long exportJobId) throws JAXBException, IOException, SAXException {
 
-        logger.info("====== JAVA VERSION :" + System.getProperty("java.version") );
         if (exportJobId == null){
             //streaming launched by abzu queries, irkalla
             streamForAPI(exportParams, outputStream, ignorePaging, provider, localDateTime);
@@ -381,6 +383,8 @@ public class StreamingPublicationDelivery {
 
         }
 
+        desanitizeImportedIds(listMembers);
+
         logger.info("Preparing scrollable iterators");
         prepareTopographicPlaces(exportParams, completeStopPlaceList, mappedTopographicPlacesCount, listMembers, null, exportJobId);
 
@@ -391,6 +395,30 @@ public class StreamingPublicationDelivery {
 
         completeStreamingProcess(outputStream, mappedStopPlaceCount, mappedParkingCount, mappedTariffZonesCount, mappedTopographicPlacesCount, mappedGroupOfStopPlacesCount, netexGeneralFrame, listMembers);
 
+    }
+
+    /**
+     * Read objects and replace sanitized code for : (##3A) by : character
+     * @param listMembers
+     */
+    private void desanitizeImportedIds( List <JAXBElement<? extends EntityStructure>> listMembers){
+
+        for (JAXBElement<? extends EntityStructure> listMember : listMembers) {
+            EntityStructure entity = listMember.getValue();
+            if (entity instanceof Zone_VersionStructure){
+                Zone_VersionStructure zone = (Zone_VersionStructure) entity;
+
+                KeyListStructure keyList = zone.getKeyList();
+                if (keyList != null && keyList.getKeyValue() != null) {
+                    List<KeyValueStructure> keyValue = keyList.getKeyValue();
+                    for (KeyValueStructure structure : keyValue) {
+                        if (structure != null && "imported-id".equals(structure.getKey())) {
+                            structure.setValue(structure.getValue().replace("##3A##",":"));
+                        }
+                    }
+                }
+            }
+        }
     }
 
 

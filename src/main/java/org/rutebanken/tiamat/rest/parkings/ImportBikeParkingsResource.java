@@ -1,16 +1,15 @@
 package org.rutebanken.tiamat.rest.parkings;
 
 import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.rutebanken.tiamat.general.BikeParkingsCSVHelper;
-import org.rutebanken.tiamat.general.ParkingsCSVHelper;
+import org.rutebanken.tiamat.general.BikesCSVHelper;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
-import org.rutebanken.tiamat.rest.dto.DtoParking;
 import org.rutebanken.tiamat.service.parking.BikeParkingsImportedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -41,11 +40,11 @@ public class ImportBikeParkingsResource {
     public Response importBikeParkingsCsvFile(@FormDataParam("file") InputStream inputStream) throws IOException, IllegalArgumentException {
         try {
 
-            List<DtoBikeParking> dtoBikeParkingsCSV = BikeParkingsCSVHelper.parseDocument(inputStream);
+            List<DtoBikeParking> dtoBikeParkingsCSV = BikesCSVHelper.parseDocument(inputStream);
 
-            BikeParkingsCSVHelper.checkDuplicatedBikeParkings(dtoBikeParkingsCSV);
+            BikesCSVHelper.checkDuplicatedBikeParkings(dtoBikeParkingsCSV);
 
-            List<Parking> bikeParkings = BikeParkingsCSVHelper.mapFromDtoToEntityBikeParking(dtoBikeParkingsCSV);
+            List<Parking> bikeParkings = BikesCSVHelper.mapFromDtoToEntityParking(dtoBikeParkingsCSV, false);
 
             bikeParkingsImportedService.createOrUpdateBikeParkings(bikeParkings);
 

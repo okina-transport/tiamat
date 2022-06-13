@@ -16,6 +16,7 @@ import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.model.ParkingUserEnumeration;
 import org.rutebanken.tiamat.model.ParkingVehicleEnumeration;
 import org.rutebanken.tiamat.model.PlaceEquipment;
+import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
 import org.rutebanken.tiamat.service.Preconditions;
 
@@ -30,9 +31,10 @@ import java.util.stream.Collectors;
 
 import static org.rutebanken.tiamat.general.ParkingsCSVHelper.DELIMETER_PARKING_ID_NAME;
 
-public class BikeParkingsCSVHelper {
-
+public class BikesCSVHelper {
     private static final Pattern patternXlongYlat = Pattern.compile("^-?([1-8]?[1-9]|[1-9]0)\\.{1}\\d{1,20}");
+    private static final String HOOK_TYPE_KEY = "hook-type";
+    private static final String ID_LOCAL = "id-local";
 
     private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
@@ -90,7 +92,7 @@ public class BikeParkingsCSVHelper {
         Preconditions.checkArgument(patternXlongYlat.matcher(bikeParking.getXlong()).matches(), "X Longitud is not correct in the parking with " + bikeParking.getIdLocal());
         Preconditions.checkArgument(patternXlongYlat.matcher(bikeParking.getYlat()).matches(), "Y Latitud is not correct in the parking with " + bikeParking.getIdLocal());
         Preconditions.checkArgument(!bikeParking.getCapacite().isEmpty(), "Capacity is required in all your bike parkings");
-        Preconditions.checkArgument(!bikeParking.getTypeAccroche().isEmpty(), "Type of attachment is required in all your bike parkings");
+        Preconditions.checkArgument(!bikeParking.getTypeAccroche().isEmpty(), "Hook type is required in all your bike parkings");
     }
 
     public static void checkDuplicatedBikeParkings(List<DtoBikeParking> bikeParkings) throws IllegalArgumentException {
@@ -119,7 +121,7 @@ public class BikeParkingsCSVHelper {
     }
 
 
-    public static List<Parking> mapFromDtoToEntityBikeParking(List<DtoBikeParking> dtoParkingsCSV) {
+    public static List<Parking> mapFromDtoToEntityParking(List<DtoBikeParking> dtoParkingsCSV, boolean isRentalBike) {
         return dtoParkingsCSV.stream().map(bikeParkingDto -> {
 
             Parking parking = new Parking();
@@ -143,11 +145,17 @@ public class BikeParkingsCSVHelper {
             }
 
             // Parking type
-            if ("CONSIGNE COLLECTIVE FERMEE".equals(bikeParkingDto.getProtection()) || "BOX INDIVIDUEL FERME".equals(bikeParkingDto.getProtection())) {
-                parking.setParkingType(ParkingTypeEnumeration.OTHER);
-            } else {
-                parking.setParkingType(ParkingTypeEnumeration.PARKING_ZONE);
+            if(isRentalBike){
+                parking.setParkingType(ParkingTypeEnumeration.CYCLE_RENTAL);
             }
+            else{
+                if ("CONSIGNE COLLECTIVE FERMEE".equals(bikeParkingDto.getProtection()) || "BOX INDIVIDUEL FERME".equals(bikeParkingDto.getProtection())) {
+                    parking.setParkingType(ParkingTypeEnumeration.OTHER);
+                } else {
+                    parking.setParkingType(ParkingTypeEnumeration.PARKING_ZONE);
+                }
+            }
+
 
             // Parking type ref
             if ("CONSIGNE COLLECTIVE FERMEE".equals(bikeParkingDto.getProtection())) {
@@ -220,8 +228,7 @@ public class BikeParkingsCSVHelper {
 
 
             // Parking key values
-            Set<String> existingIdLocal = parking.getOrCreateValues("id_local");
-            existingIdLocal.add(bikeParkingDto.getIdLocal());
+            setIdLocal(parking, bikeParkingDto.getIdLocal());
 
             Set<String> existingIdOsm = parking.getOrCreateValues("id_osm");
             existingIdOsm.add(bikeParkingDto.getIdOsm());
@@ -241,10 +248,19 @@ public class BikeParkingsCSVHelper {
             Set<String> existingDateMaj = parking.getOrCreateValues("date_maj");
             existingDateMaj.add(bikeParkingDto.getDateMaj());
 
-            Set<String> existingTypeAccroche = parking.getOrCreateValues("type_accroche");
-            existingTypeAccroche.add(bikeParkingDto.getTypeAccroche());
+            setHookType(parking, bikeParkingDto.getTypeAccroche());
 
             return parking;
         }).collect(Collectors.toList());
+    }
+
+    private static void setIdLocal(Parking parking, String idLocal){
+        Value value = new Value(idLocal);
+        parking.getKeyValues().put(ID_LOCAL, value);
+    }
+
+    private static void setHookType(Parking parking, String hookType){
+        Value value = new Value(hookType);
+        parking.getKeyValues().put(HOOK_TYPE_KEY, value);
     }
 }

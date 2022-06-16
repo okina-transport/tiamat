@@ -3,6 +3,7 @@ package org.rutebanken.tiamat.importer.manualImports;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
@@ -48,7 +49,7 @@ public class BikeParkingImportTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void testDuplicateDetection() throws IOException {
+    public void testDuplicateDetection() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_with_duplicates.csv"));
         String expectedMessage = "There are duplicated bike parkings in your CSV File 'With the same ID'. Duplicates:";
         String actualMessage = exception.getMessage();
@@ -56,7 +57,7 @@ public class BikeParkingImportTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void testPOIWithoutID() throws IOException {
+    public void testPOIWithoutID() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_without_id.csv"));
         String expectedMessage = "ID is required in all your parkings";
         String actualMessage = exception.getMessage();
@@ -64,7 +65,7 @@ public class BikeParkingImportTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void testPOIWithoutLongitude() throws IOException {
+    public void testPOIWithoutLongitude() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_without_longitude.csv"));
         String expectedMessage = "X Longitud is not correct in the parking with";
         String actualMessage = exception.getMessage();
@@ -72,12 +73,12 @@ public class BikeParkingImportTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void testPOIWithoutLatitude() throws IOException {
+    public void testPOIWithoutLatitude() {
         Exception exception = assertThrows(ArrayIndexOutOfBoundsException.class, () -> launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_without_latitude.csv"));
     }
 
     @Test
-    public void testPOIWithoutCapacity() throws IOException {
+    public void testPOIWithoutCapacity() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_without_capacity.csv"));
         String expectedMessage = "Capacity is required in all your bike parkings";
         String actualMessage = exception.getMessage();
@@ -85,11 +86,60 @@ public class BikeParkingImportTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void testPOIWithoutTypeOfAttachment() throws IOException {
+    public void testPOIWithoutTypeOfAttachment() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_without_type_accroche.csv"));
-        String expectedMessage = "Type of attachment is required in all your bike parkings";
+        String expectedMessage = "Hook type is required in all your bike parkings";
         String actualMessage = exception.getMessage();
         assertTrue(actualMessage.contains(expectedMessage));
+    }
+
+
+    @Test
+    public void testParkingWithIdLocalAndIdOsmInDB() throws IOException {
+        createParkingWithIdLocalAndIdOsm();
+        launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_with_id_local_and_id_osm.csv");
+        List<Parking> parkings = parkingRepository.findAll();
+        Assertions.assertEquals(parkings.size(), 1);
+    }
+
+    @Test
+    public void testParkingWithIdLocalAndIdOsmNotInDB() throws IOException {
+        launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_with_id_local_and_id_osm.csv");
+        List<Parking> parkings = parkingRepository.findAll();
+        Assertions.assertEquals(parkings.size(), 1);
+    }
+
+    @Test
+    public void testParkingWithIdLocalInImport() throws IOException {
+        createParkingWithIdLocalAndIdOsm();
+        launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_with_id_local.csv");
+        List<Parking> parkings = parkingRepository.findAll();
+        Assertions.assertEquals(parkings.size(), 2);
+    }
+
+    @Test
+    public void testParkingWithIdLocalAndNotIdOsmInImportAndInDB() throws IOException {
+        createParkingWithIdLocal();
+        launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_with_id_local.csv");
+        List<Parking> parkings = parkingRepository.findAll();
+        Assertions.assertEquals(parkings.size(), 1);
+    }
+
+    public void createParkingWithIdLocalAndIdOsm() {
+        Parking parking = new Parking();
+        parking.setNetexId("Test:Parking:1");
+        parking.getOrCreateValues("id_local").add("1");
+        parking.getOrCreateValues("id_osm").add("2");
+        parking.setVersion(1);
+        parkingRepository.save(parking);
+    }
+
+    public void createParkingWithIdLocal() {
+        Parking parking = new Parking();
+        parking.setNetexId("Test:Parking:1");
+        parking.getOrCreateValues("id_local").add("1");
+        parking.setVersion(1);
+        parkingRepository.save(parking);
     }
 
 

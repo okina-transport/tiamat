@@ -46,7 +46,7 @@ public class ImportBikeParkingsResource {
 
             List<Parking> bikeParkings = BikesCSVHelper.mapFromDtoToEntityParking(dtoBikeParkingsCSV, false);
 
-            bikeParkingsImportedService.createOrUpdateBikeParkings(bikeParkings);
+            bikeParkingsImportedService.createBikeParkings(bikeParkings);
 
             return Response.status(200).build();
 

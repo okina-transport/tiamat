@@ -75,11 +75,11 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
 
 
     /**
-     * Find stop place's netex ID by key value
+     * Find parking's netex ID by key value
      *
-     * @param key    key in key values for stop
+     * @param key    key in key values for parking
      * @param values list of values to check for
-     * @return stop place's netex ID
+     * @return parking's netex ID
      */
     @Override
     public String findFirstByKeyValues(String key, Set<String> values) {

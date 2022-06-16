@@ -49,15 +49,15 @@ public class RentalBikeImportTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void testDuplicateDetection() throws IOException {
+    public void testDuplicateDetection() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/rentalBikes/rental_bikes_with_duplicates.csv") );
-        String expectedMessage = "There are duplicated parkings in your CSV File 'With the same ID & Name'. Duplicates:";
+        String expectedMessage = "There are duplicated bike parkings in your CSV File 'With the same ID'. Duplicates:";
         String actualMessage = exception.getMessage();
         assertTrue(actualMessage.contains(expectedMessage));
     }
 
     @Test
-    public void testPOIWithoutID() throws IOException {
+    public void testPOIWithoutID() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/rentalBikes/rental_bikes_without_id.csv") );
         String expectedMessage = "ID is required in all your parkings";
         String actualMessage = exception.getMessage();
@@ -65,7 +65,7 @@ public class RentalBikeImportTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void testPOIWithoutLongitude() throws IOException {
+    public void testPOIWithoutLongitude() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/rentalBikes/rental_bikes_without_longitude.csv") );
         String expectedMessage = "X Longitud is not correct in the parking with";
         String actualMessage = exception.getMessage();
@@ -73,9 +73,8 @@ public class RentalBikeImportTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void testPOIWithoutLatitude() throws IOException {
+    public void testPOIWithoutLatitude() {
         Exception exception = assertThrows(ArrayIndexOutOfBoundsException.class, () -> launchImportForFile("src/test/resources/manualImports/rentalBikes/rental_bikes_without_latitude.csv") );
-
     }
 
 

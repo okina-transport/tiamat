@@ -33,8 +33,6 @@ import static org.rutebanken.tiamat.general.ParkingsCSVHelper.DELIMETER_PARKING_
 
 public class BikesCSVHelper {
     private static final Pattern patternXlongYlat = Pattern.compile("^-?([1-8]?[1-9]|[1-9]0)\\.{1}\\d{1,20}");
-    private static final String HOOK_TYPE_KEY = "hook-type";
-    private static final String ID_LOCAL = "id-local";
 
     private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
@@ -131,11 +129,6 @@ public class BikesCSVHelper {
             parking.setDescription(new EmbeddableMultilingualString(bikeParkingDto.getCommentaires()));
             parking.setName(new EmbeddableMultilingualString(bikeParkingDto.getIdLocal()));
 
-            if(StringUtils.isNotEmpty(bikeParkingDto.getIdOsm())){
-                parking.setName(new EmbeddableMultilingualString(parking.getName().getValue() +  DELIMETER_PARKING_ID_NAME + bikeParkingDto.getIdOsm()));
-            }
-
-
             //Emplacement du parking
             parking.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(bikeParkingDto.getXlong()), Double.parseDouble(bikeParkingDto.getYlat()))));
 
@@ -228,10 +221,13 @@ public class BikesCSVHelper {
 
 
             // Parking key values
-            setIdLocal(parking, bikeParkingDto.getIdLocal());
+            Set<String> existingIdLocal = parking.getOrCreateValues("id_local");
+            existingIdLocal.add(bikeParkingDto.getIdLocal());
 
-            Set<String> existingIdOsm = parking.getOrCreateValues("id_osm");
-            existingIdOsm.add(bikeParkingDto.getIdOsm());
+            if(StringUtils.isNotEmpty(bikeParkingDto.getIdOsm())){
+                Set<String> existingIdOsm = parking.getOrCreateValues("id_osm");
+                existingIdOsm.add(bikeParkingDto.getIdOsm());
+            }
 
             Set<String> existingDService = parking.getOrCreateValues("d_service");
             existingDService.add(bikeParkingDto.getdService());
@@ -248,19 +244,10 @@ public class BikesCSVHelper {
             Set<String> existingDateMaj = parking.getOrCreateValues("date_maj");
             existingDateMaj.add(bikeParkingDto.getDateMaj());
 
-            setHookType(parking, bikeParkingDto.getTypeAccroche());
+            Set<String> hookType = parking.getOrCreateValues("hook_type");
+            hookType.add(bikeParkingDto.getTypeAccroche());
 
             return parking;
         }).collect(Collectors.toList());
-    }
-
-    private static void setIdLocal(Parking parking, String idLocal){
-        Value value = new Value(idLocal);
-        parking.getKeyValues().put(ID_LOCAL, value);
-    }
-
-    private static void setHookType(Parking parking, String hookType){
-        Value value = new Value(hookType);
-        parking.getKeyValues().put(HOOK_TYPE_KEY, value);
     }
 }

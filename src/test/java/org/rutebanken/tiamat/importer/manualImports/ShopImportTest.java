@@ -112,7 +112,7 @@ public class ShopImportTest extends TiamatIntegrationTest {
 
         File file = new File(fileName);
         InputStream in = new FileInputStream(file);
-        importResource.importShopCsvFile(in);
+        importResource.importShopCsvFile(in, "test_file_name", "test_user");
     }
 
 

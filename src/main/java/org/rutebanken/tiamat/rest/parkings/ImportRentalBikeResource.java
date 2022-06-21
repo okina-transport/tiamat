@@ -38,9 +38,11 @@ public class ImportRentalBikeResource {
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response importRentalBikesFile(@FormDataParam("file") InputStream inputStream) throws IOException, IllegalArgumentException {
+    public Response importRentalBikesFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
 
-            parkingsImportedService.clearAllRentalBikes();
+        logger.info("Import VLS par " + user + " du fichier " + fileName);
+
+        parkingsImportedService.clearAllRentalBikes();
 
             List<DtoParking> dtoParkingCSV = RentalBikesHelper.parseDocument(inputStream);
             ParkingsCSVHelper.checkDuplicatedParkings(dtoParkingCSV);

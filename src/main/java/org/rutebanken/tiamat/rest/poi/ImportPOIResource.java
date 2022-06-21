@@ -37,7 +37,9 @@ public class ImportPOIResource {
     @Path("/poi_import_csv")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response importPOIFile(@FormDataParam("file") InputStream inputStream) throws IOException, IllegalArgumentException {
+    public Response importPOIFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
+
+        logger.info("Import POI par " + user + " du fichier " + fileName);
 
         List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
         PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
@@ -58,7 +60,9 @@ public class ImportPOIResource {
     @Path("/shop_import_csv")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response importShopCsvFile(@FormDataParam("file") InputStream inputStream) throws IOException, IllegalArgumentException {
+    public Response importShopCsvFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
+
+        logger.info("Import points de vente par " + user + " du fichier " + fileName);
 
         List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
         PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);

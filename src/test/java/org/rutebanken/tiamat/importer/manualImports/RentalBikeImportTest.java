@@ -89,7 +89,7 @@ public class RentalBikeImportTest extends TiamatIntegrationTest {
 
         File file = new File(fileName);
         InputStream in = new FileInputStream(file);
-        importResource.importRentalBikesFile(in);
+        importResource.importRentalBikesFile(in, "test_name_file", "test_user");
     }
 
 

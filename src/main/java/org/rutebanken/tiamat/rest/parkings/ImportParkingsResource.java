@@ -37,8 +37,10 @@ public class ImportParkingsResource {
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response importParkingsCsvFile(@FormDataParam("file") InputStream inputStream) throws IOException, IllegalArgumentException {
+    public Response importParkingsCsvFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
         try {
+
+            logger.info("Import Parkings par " + user + " du fichier " + fileName);
 
             List<DtoParking> dtoParkingCSV = ParkingsCSVHelper.parseDocument(inputStream);
 

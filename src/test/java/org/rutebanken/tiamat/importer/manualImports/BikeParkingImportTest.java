@@ -152,7 +152,7 @@ public class BikeParkingImportTest extends TiamatIntegrationTest {
     private void launchImportForFile(String fileName) throws IOException {
         File file = new File(fileName);
         InputStream in = new FileInputStream(file);
-        importBikeParkingsResource.importBikeParkingsCsvFile(in);
+        importBikeParkingsResource.importBikeParkingsCsvFile(in, "test_name_file", "test_user");
     }
 
 

@@ -104,7 +104,7 @@ public class POIImportTest extends TiamatIntegrationTest {
 
         File file = new File(fileName);
         InputStream in = new FileInputStream(file);
-        importResource.importPOIFile(in);
+        importResource.importPOIFile(in, "test_file_name", "test_user");
     }
 
 

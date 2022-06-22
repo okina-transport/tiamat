@@ -16,8 +16,10 @@
 package org.rutebanken.tiamat.rest.dto;
 
 import io.swagger.annotations.Api;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDtoCsvMapper;
+import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.repository.QuayRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +34,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @Api(tags = {"Quay resource"}, produces = "text/plain")
@@ -100,5 +103,18 @@ public class DtoQuayResource {
         Instant validFrom = Instant.now();
         Instant validTo = includeFuture ? null : validFrom;
         return String.join("\n", quayRepository.findUniqueQuayIds(validFrom, validTo));
+    }
+
+    @GET
+    @Path("/id/getNetexIdForQuay")
+    @Produces("text/plain")
+    public String getNetexIdForQuay(@QueryParam("importedId") String importedId) {
+
+        Optional<Quay> quayOpt = quayRepository.findActiveQuayForImportedId(importedId);
+        if (quayOpt.isPresent()){
+            return quayOpt.get().getNetexId();
+        }
+
+        throw new IllegalArgumentException("Unknown imported id :" + importedId);
     }
 }

@@ -26,7 +26,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -288,6 +287,38 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
         }
 
         return resultList;
+    }
+
+
+    @Override
+    public Optional<Quay> findActiveQuayForImportedId(String importedId) {
+
+        String searchString = "'%:Quay:" + importedId + "'";
+
+
+        Query query = entityManager.createNativeQuery("SELECT q.* " +
+                "FROM quay q " +
+                "INNER JOIN quay_key_values qkv ON qkv.quay_id = q.id " +
+                "INNER JOIN value_items v  ON qkv.key_values_id = v.value_id " +
+                "INNER JOIN stop_place_quays spq ON spq.quays_id = qkv.quay_id " +
+                "INNER JOIN stop_place s ON s.id = spq.stop_place_id  " +
+
+                "WHERE qkv.key_values_key = 'imported-id' " +
+                " AND  (s.from_date IS NULL OR s.from_date <= :pointInTime) " +
+                " AND (s.to_date IS NULL OR s.to_date >= :pointInTime) " +
+                "AND UPPER(v.items) like UPPER(" + searchString + ")", Quay.class );
+
+        query.setParameter("pointInTime", Date.from(Instant.now()));
+
+
+        List<Quay> resultList = query.getResultList();
+
+         if (resultList.isEmpty()){
+             return Optional.empty();
+         }
+
+        return Optional.of(resultList.get(0));
+
     }
 
 }

@@ -24,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public interface QuayRepositoryCustom extends DataManagedObjectStructureRepository<Quay> {
@@ -39,5 +40,9 @@ public interface QuayRepositoryCustom extends DataManagedObjectStructureReposito
     List<String> searchByKeyValue(String key, String value);
 
     List<Quay> findAllByImportedId(String importedId);
+
+    Optional<Quay> findActiveQuayForImportedId(String importedId);
+
+
 
 }

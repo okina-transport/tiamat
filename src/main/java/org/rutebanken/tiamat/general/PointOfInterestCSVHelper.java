@@ -227,6 +227,12 @@ public class PointOfInterestCSVHelper {
             newPointOfInterest.setPointOfInterestFacilitySet(facilitySet);
         }
 
+        if (dtoPoiCSV.getTags().size() > 0){
+            for (Map.Entry<String, String> tagEntry : dtoPoiCSV.getTags().entrySet()) {
+                newPointOfInterest.getOrCreateValues(tagEntry.getKey()).add(tagEntry.getValue());
+            }
+        }
+
 
         return newPointOfInterest;
     }

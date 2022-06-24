@@ -4,6 +4,9 @@ import com.google.common.base.MoreObjects;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class DtoPointOfInterest {
 
     private final static String delimeterToIgnoreCommasInQuotes1 = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
@@ -25,6 +28,7 @@ public class DtoPointOfInterest {
     private String historic;
     private String landuse;
     private String tourism;
+    private Map<String, String> tags = new HashMap<>();
 
     public DtoPointOfInterest() {
     }
@@ -51,6 +55,26 @@ public class DtoPointOfInterest {
         shop = removeQuotes(csvRec.get(15));
         lpImportId = removeQuotes(csvRec.get(16).replace("\r",""));
 
+        if (csvRec.size() > 17){
+            addTag(csvRec.get(17));
+        }
+
+        if (csvRec.size() > 18){
+            addTag(csvRec.get(18));
+        }
+
+    }
+
+    private void addTag(String rawCell){
+
+        if (StringUtils.isEmpty(rawCell) || !rawCell.contains("=")){
+            return;
+        }
+
+        String[] cellArray = rawCell.split("=");
+        String key = cellArray[0].trim();
+        String value = cellArray[1].trim();
+        tags.put(key, value);
     }
 
     private String removeQuotes(String rawInput){
@@ -133,6 +157,10 @@ public class DtoPointOfInterest {
 
     public String getTourism() {
         return tourism;
+    }
+
+    public Map<String, String> getTags(){
+        return tags;
     }
 
     @Override

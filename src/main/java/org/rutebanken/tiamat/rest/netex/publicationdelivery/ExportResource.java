@@ -40,7 +40,12 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.net.URI;
@@ -85,7 +90,7 @@ public class ExportResource {
 
     @GET
     @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
-    public Response exportStopPlaces(@BeanParam ExportParams exportParams) throws JAXBException, IOException, SAXException {
+    public Response exportStopPlaces(@BeanParam ExportParams exportParams) {
         logger.info("Exporting publication delivery. {}", exportParams);
 
 
@@ -100,26 +105,6 @@ public class ExportResource {
 
         return Response.ok(streamingOutput).build();
     }
-
-    @GET
-    @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
-    @Path("point_of_interest")
-    public Response exportPointOfInterest(@BeanParam ExportParams exportParams) throws JAXBException, IOException, SAXException {
-        logger.info("Exporting points of interest {}", exportParams);
-
-
-        StreamingOutput streamingOutput = outputStream -> {
-            try {
-                streamingPublicationDelivery.streamPOI(exportParams, outputStream, null);
-            } catch (Exception e) {
-                logger.warn("Could not stream site frame. {}", e.getMessage(), e);
-                throw new RuntimeException(e);
-            }
-        };
-
-        return Response.ok(streamingOutput).build();
-    }
-
 
     @GET
     @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")

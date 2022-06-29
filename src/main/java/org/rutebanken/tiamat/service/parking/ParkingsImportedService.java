@@ -69,7 +69,7 @@ public class ParkingsImportedService {
 
         String parkingId = getIdAvailableInCSV(parking.getName().getValue());
 
-        Set values= new HashSet(Arrays.asList(parkingId));
+        Set values = new HashSet(Arrays.asList(parkingId));
 
         String parkingNetexId = parkingRepository.findFirstByKeyValues(NetexIdMapper.ORIGINAL_ID_KEY, values);
 

@@ -5,7 +5,7 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.tiamat.general.BikesCSVHelper;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
-import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
+import org.rutebanken.tiamat.service.parking.RentalBikeParkingsImportedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,7 @@ import java.util.List;
 public class ImportRentalBikeResource {
 
     @Autowired
-    private ParkingsImportedService parkingsImportedService;
+    private RentalBikeParkingsImportedService rentalBikeparkingsImportedService;
 
     private static final Logger logger = LoggerFactory.getLogger(ImportRentalBikeResource.class);
 
@@ -37,14 +37,13 @@ public class ImportRentalBikeResource {
 
         logger.info("Import VLS par " + user + " du fichier " + fileName);
 
-        parkingsImportedService.clearAllRentalBikes();
 
         List<DtoBikeParking> dtoParkingCSV = BikesCSVHelper.parseDocument(inputStream);
         BikesCSVHelper.checkDuplicatedBikeParkings(dtoParkingCSV);
 
 
         List<Parking> parkings = BikesCSVHelper.mapFromDtoToEntityParking(dtoParkingCSV, true);
-        parkingsImportedService.createOrUpdateParkings(parkings);
+        rentalBikeparkingsImportedService.createOrUpdateParkings(parkings);
 
 
         return Response.status(200).build();

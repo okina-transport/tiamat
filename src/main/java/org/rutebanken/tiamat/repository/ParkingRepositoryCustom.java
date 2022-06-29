@@ -24,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepository<Parking>  {
@@ -60,5 +61,7 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
     void initExportJobTable( Long exportJobId);
 
     List<Parking> getParkingsInitializedForExport(Set<Long> parkingIds) ;
+
+    Optional<Parking> findByIdLocAndOsm(String idLoc, String idOsm);
 }
 

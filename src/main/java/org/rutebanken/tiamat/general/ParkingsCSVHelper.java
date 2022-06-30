@@ -36,17 +36,10 @@ public class ParkingsCSVHelper {
 
     public static List<DtoParking> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
 
-        Reader reader = new InputStreamReader(csvFile);
         List<DtoParking> dtoParkingList = new ArrayList<>();
 
+        Iterable<CSVRecord> records = CSVHelper.getRecords(csvFile);
 
-        Iterable<CSVRecord> records = CSVFormat.DEFAULT
-                .builder()
-                .setHeader()
-                .setSkipHeaderRecord(true)
-                .setDelimiter(';')
-                .build()
-                .parse(reader);
 
         for (CSVRecord csvRecord : records) {
             DtoParking dtoParking = new DtoParking(
@@ -167,7 +160,10 @@ public class ParkingsCSVHelper {
             }
 
             //Hauteur maximum
-            parkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+            if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")){
+                parkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+            }
+
 
             //Gestion de la capacité max du parking
             BigInteger nonPmrCapacity = parkingDto.getNbOfPlaces().isEmpty() ? BigInteger.ZERO : new BigInteger(parkingDto.getNbOfPlaces());

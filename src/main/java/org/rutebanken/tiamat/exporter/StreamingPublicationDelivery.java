@@ -53,7 +53,6 @@ import org.rutebanken.netex.model.SiteRefStructure;
 import org.rutebanken.netex.model.Site_VersionFrameStructure;
 import org.rutebanken.netex.model.StakeholderRoleTypeEnumeration;
 import org.rutebanken.netex.model.StopPlace;
-import org.rutebanken.netex.model.StopPlacesInFrame_RelStructure;
 import org.rutebanken.netex.model.TariffZone;
 import org.rutebanken.netex.model.TypeOfParking;
 import org.rutebanken.netex.model.TypeOfPlaceRefStructure;
@@ -76,7 +75,6 @@ import org.rutebanken.tiamat.geo.geo.LambertZone;
 import org.rutebanken.tiamat.model.GroupOfStopPlaces;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.VehicleModeEnumeration;
-
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
@@ -207,14 +205,13 @@ public class StreamingPublicationDelivery {
     }
 
     @Transactional
-    public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime,  Long exportJobId) throws JAXBException, IOException, SAXException {
-
-        if (exportJobId == null){
+    public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime, Long exportJobId) throws JAXBException, IOException, SAXException {
+        if (exportJobId == null) {
             //streaming launched by abzu queries, irkalla
             streamForAPI(exportParams, outputStream, ignorePaging, provider, localDateTime);
-        }else{
+        } else {
             //async export job launched by user
-            streamForAsyncExportJob(exportParams, outputStream, ignorePaging, provider, localDateTime,exportJobId);
+            streamForAsyncExportJob(exportParams, outputStream, ignorePaging, provider, localDateTime, exportJobId);
         }
     }
 
@@ -336,7 +333,7 @@ public class StreamingPublicationDelivery {
      * @throws IOException
      * @throws SAXException
      */
-    public void streamForAsyncExportJob(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime, Long exportJobId ) throws JAXBException, IOException, SAXException {
+    public void streamForAsyncExportJob(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime, Long exportJobId) throws JAXBException, IOException, SAXException {
         org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
@@ -345,7 +342,7 @@ public class StreamingPublicationDelivery {
         AtomicInteger mappedTopographicPlacesCount = new AtomicInteger();
         AtomicInteger mappedGroupOfStopPlacesCount = new AtomicInteger();
 
-     //   EntitiesEvictor entitiesEvictor = instantiateEvictor();
+        //   EntitiesEvictor entitiesEvictor = instantiateEvictor();
 
         //List that will contain all the members in the General Frame
         List <JAXBElement<? extends EntityStructure>> listMembers = new ArrayList<>();
@@ -375,7 +372,7 @@ public class StreamingPublicationDelivery {
             }else{
                 completeStopPlaceList.addAll(batchIdsToExport);
                 launchBatchExport(batchIdsToExport, mappedStopPlaceCount, null, listMembers, false);
-                stopPlaceRepository.deleteProcessedIds(exportJobId,batchIdsToExport );
+                stopPlaceRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
 
                 totalStopsProcessed = totalStopsProcessed + batchIdsToExport.size();
                 logger.info("total stops processed:" + totalStopsProcessed);
@@ -456,35 +453,47 @@ public class StreamingPublicationDelivery {
         return filteredList;
     }
 
-    public void streamPOI(ExportParams exportParams, OutputStream outputStream, Provider provider) throws Exception {
-        streamPOI(exportParams, outputStream, false, provider);
-    }
-
-    public void streamPOI(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider) throws JAXBException, IOException, SAXException {
-        streamPOI(exportParams, outputStream, false, provider, LocalDateTime.now().withNano(0));
-    }
-
-    public void streamPOI(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime) throws JAXBException, IOException, SAXException {
+    public void streamPOI(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime, Long exportJobId) throws JAXBException, IOException, SAXException {
 
         org.rutebanken.tiamat.model.SiteFrame siteFrame = tiamatSiteFrameExporter.createTiamatSiteFrame("Site frame " + exportParams);
 
         AtomicInteger mappedPointOfInterestCount = new AtomicInteger();
         AtomicInteger mappedPointOfInterestClassificationCount = new AtomicInteger();
 
-        EntitiesEvictor entitiesEvictor = instantiateEvictor();
+        pointOfInterestRepository.initExportJobTable(exportJobId);
+        logger.info("Initialization completed for table export_job_id_list. jobId :" + exportJobId);
+
+        int totalNbOfPoi = pointOfInterestRepository.countPOIInExport(exportJobId);
+        logger.info("Total nb of POI to export:" + totalNbOfPoi);
 
         logger.info("Streaming POI export initiated. Export params: {}", exportParams);
         logger.info("Mapping site frame to netex model");
         org.rutebanken.netex.model.SiteFrame netexSiteFrame = netexMapper.mapToNetexModel(siteFrame);
-
         // On n'exporte pas les topographicPlaces
         netexSiteFrame.setTopographicPlaces(null);
 
-        logger.info("Preparing scrollable iterators for poi");
-        preparePointsOfInterest(mappedPointOfInterestCount, netexSiteFrame, entitiesEvictor);
+        boolean isDataToExport = true;
+        int totalPoiProcessed = 0;
 
-        logger.info("Preparing scrollable iterators for poi class");
-        preparePointsOfInterestClassification(mappedPointOfInterestClassificationCount, netexSiteFrame, entitiesEvictor);
+        while (isDataToExport) {
+            Set<Long> batchIdsToExport = pointOfInterestRepository.getNextBatchToProcess(exportJobId);
+            if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
+                logger.info("no more POI to export");
+                isDataToExport = false;
+            } else {
+                List<org.rutebanken.tiamat.model.PointOfInterest> initializedPoi = pointOfInterestRepository.getPOIInitializedForExport(batchIdsToExport);
+                pointOfInterestRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
+                totalPoiProcessed = totalPoiProcessed + batchIdsToExport.size();
+                logger.info("total poi processed:" + totalPoiProcessed);
+
+                logger.info("Preparing scrollable iterators for poi");
+                preparePointsOfInterest(mappedPointOfInterestCount, netexSiteFrame, initializedPoi.iterator());
+
+                logger.info("Preparing scrollable iterators for poi class");
+                preparePointsOfInterestClassification(mappedPointOfInterestClassificationCount, netexSiteFrame, initializedPoi.iterator());
+            }
+
+        }
 
         logger.info("Publication delivery creation");
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexSiteFrame);
@@ -493,13 +502,13 @@ public class StreamingPublicationDelivery {
 
         JAXBElement<PublicationDeliveryStructure> publicationDelivery = netexObjectFactory.createPublicationDelivery(publicationDeliveryStructure);
 
-        logger.info("Start marshalling publication delivery"  );
+        logger.info("Start marshalling publication delivery");
         marshaller.marshal(publicationDelivery, byteArrayOutputStream);
 
         doLastModifications(outputStream, byteArrayOutputStream);
 
-        logger.info("Mapped {} points of interest to netex",
-                mappedPointOfInterestCount);
+
+        logger.info("Mapped {} points of interest to netex", mappedPointOfInterestCount);
     }
 
 
@@ -926,14 +935,13 @@ public class StreamingPublicationDelivery {
         while (isDataToExport){
 
             Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(exportJobId);
-            if (batchIdsToExport == null || batchIdsToExport.size() == 0){
+            if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
                 logger.info("no more parkings to export");
                 isDataToExport = false;
-            }else{
-
+            } else {
                 List<org.rutebanken.tiamat.model.Parking> initializedParkings = parkingRepository.getParkingsInitializedForExport(batchIdsToExport);
                 completeParkingList.addAll(initializedParkings);
-                stopPlaceRepository.deleteProcessedIds(exportJobId,batchIdsToExport );
+                stopPlaceRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
                 totalparkingProcessed = totalparkingProcessed + batchIdsToExport.size();
                 logger.info("total parking processed:" + totalparkingProcessed);
             }
@@ -942,14 +950,14 @@ public class StreamingPublicationDelivery {
         return completeParkingList.iterator();
     }
 
-    private void preparePointsOfInterest(AtomicInteger mappedPointOfInterestCount, SiteFrame netexSiteFrame, EntitiesEvictor evicter) {
+    private void preparePointsOfInterest(AtomicInteger mappedPointOfInterestCount, SiteFrame netexSiteFrame, Iterator<org.rutebanken.tiamat.model.PointOfInterest> pointOfInterestIterator) {
 
         int poiCount = pointOfInterestRepository.countResult();
         if (poiCount > 0) {
             logger.info("POI count is {}, will create poi in publication delivery", poiCount);
             PointsOfInterestInFrame_RelStructure pointsOfInterestInFrame_relStructure = new PointsOfInterestInFrame_RelStructure();
-            List<PointOfInterest> pointsOfInterest = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, pointOfInterestRepository.scrollPointsOfInterest(),
-                    PointOfInterest.class, mappedPointOfInterestCount, evicter));
+            List<PointOfInterest> pointsOfInterest = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, pointOfInterestIterator,
+                    PointOfInterest.class, mappedPointOfInterestCount));
 
             setField(PointsOfInterestInFrame_RelStructure.class, "pointOfInterest", pointsOfInterestInFrame_relStructure, pointsOfInterest);
             netexSiteFrame.setPointsOfInterest(pointsOfInterestInFrame_relStructure);
@@ -958,15 +966,15 @@ public class StreamingPublicationDelivery {
         }
     }
 
-    private void preparePointsOfInterestClassification(AtomicInteger mappedPointOfInterestClassificationCount, SiteFrame netexSiteFrame, EntitiesEvictor evicter) {
+    private void preparePointsOfInterestClassification(AtomicInteger mappedPointOfInterestClassificationCount, SiteFrame netexSiteFrame, Iterator<org.rutebanken.tiamat.model.PointOfInterest> pointOfInterestIterator) {
 
         int poiClassificationCount = pointOfInterestClassificationRepository.countResult();
         if (poiClassificationCount > 0) {
             logger.info("POI count is {}, will create poi classifications in publication delivery", poiClassificationCount);
 
             Site_VersionFrameStructure.PointOfInterestClassifications pointOfInterestClassificationsInFrame_relStructure = new Site_VersionFrameStructure.PointOfInterestClassifications();
-            List<org.rutebanken.netex.model.PointOfInterestClassification> pointOfInterestClassifications = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, pointOfInterestClassificationRepository.scrollPointOfInterestClassifications(),
-                    org.rutebanken.netex.model.PointOfInterestClassification.class, mappedPointOfInterestClassificationCount, evicter));
+            List<org.rutebanken.netex.model.PointOfInterestClassification> pointOfInterestClassifications = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, pointOfInterestIterator,
+                    org.rutebanken.netex.model.PointOfInterestClassification.class, mappedPointOfInterestClassificationCount));
 
             setField(PointOfInterestClassificationsInFrame_RelStructure.class, "pointOfInterestClassification", pointOfInterestClassificationsInFrame_relStructure, pointOfInterestClassifications);
             netexSiteFrame.setPointOfInterestClassifications(pointOfInterestClassificationsInFrame_relStructure);
@@ -1018,37 +1026,30 @@ public class StreamingPublicationDelivery {
         List<org.rutebanken.tiamat.model.StopPlace> recoveredStopPlaces = stopPlaceRepository.getStopPlaceInitializedForExport(stopPlacePrimaryIds);
 
         recoveredStopPlaces.forEach(this::addAdditionalInfo);
-
         logger.info("Feed of addAdditionalInfo completed");
-        StopPlacesInFrame_RelStructure stopPlacesInFrame_relStructure = new StopPlacesInFrame_RelStructure();
-
 
         NetexMappingIterator<org.rutebanken.tiamat.model.StopPlace, StopPlace> netexMappingIterator;
+
         if (shouldRecoverParents){
             // Use Listening iterator to collect stop place IDs.
             ParentStopFetchingIterator parentStopFetchingIterator = new ParentStopFetchingIterator(recoveredStopPlaces.iterator(), stopPlaceRepository);
             netexMappingIterator = new NetexMappingIterator<>(netexMapper, parentStopFetchingIterator, StopPlace.class, mappedStopPlaceCount, evicter);
         }else{
-            logger.info("Pas de parent iterator");
+            logger.info("Not parent iterator");
             netexMappingIterator = new NetexMappingIterator<>(netexMapper, recoveredStopPlaces.iterator(), StopPlace.class, mappedStopPlaceCount, evicter);
         }
 
-
-
         List<StopPlace> netexStopPlaces = new ArrayList<>();
         netexMappingIterator.forEachRemaining(netexStopPlaces::add);
-
-
         logger.info("Feed of netexStopPlaces completed");
 
-
-        netexStopPlaces.stream().forEach(netexStopPlace -> {
-            if (netexStopPlace.getQuays() != null && netexStopPlace.getQuays().getQuayRefOrQuay() != null){
+        netexStopPlaces.forEach(netexStopPlace -> {
+            if (netexStopPlace.getQuays() != null && netexStopPlace.getQuays().getQuayRefOrQuay() != null) {
 
                 Quays_RelStructure quays = netexStopPlace.getQuays();
                 Quays_RelStructure quaysReference = netexObjectFactory.createQuays_RelStructure();
 
-                quays.getQuayRefOrQuay().stream().forEach(quay ->{
+                quays.getQuayRefOrQuay().forEach(quay -> {
                     //Adding the quay to the memberList
                     Quay netexQuay = (Quay) quay.getValue();
                     listMembers.add(netexObjectFactory.createQuay(netexQuay));
@@ -1090,7 +1091,7 @@ public class StreamingPublicationDelivery {
 
 
         if (jobid == null){
-            relevantTopographicPlacesIterator = prepareTopographicPlacesIteratorForAPI(exportParams,stopPlacePrimaryIds);
+            relevantTopographicPlacesIterator = prepareTopographicPlacesIteratorForAPI(exportParams, stopPlacePrimaryIds);
         }else{
             relevantTopographicPlacesIterator = prepareTopographicPlacesIteratorForExportJob(jobid);
         }
@@ -1105,7 +1106,7 @@ public class StreamingPublicationDelivery {
             List<org.rutebanken.netex.model.TopographicPlace> netexTopographicPlaces = new ArrayList<>();
             topographicPlaceNetexMappingIterator.forEachRemaining(netexTopographicPlaces::add);
 
-            netexTopographicPlaces.stream().forEach(topographicPlace -> {
+            netexTopographicPlaces.forEach(topographicPlace -> {
                 JAXBElement<org.rutebanken.netex.model.TopographicPlace> jaxbElementTopographicPlace = netexObjectFactory.createTopographicPlace(topographicPlace);
                 listMembers.add(jaxbElementTopographicPlace);
             });
@@ -1128,18 +1129,16 @@ public class StreamingPublicationDelivery {
         List<org.rutebanken.tiamat.model.TopographicPlace> completeTopographicPlacesList = new ArrayList<>();
 
         while (isDataToExport){
-
             Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(jobid);
-            if (batchIdsToExport == null || batchIdsToExport.size() == 0){
+            if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
                 logger.info("no more topographic places to export");
                 isDataToExport = false;
-            }else{
-
+            } else {
                 List<org.rutebanken.tiamat.model.TopographicPlace> initializedTopos = topographicPlaceRepository.getTopoPlacesInitializedForExport(batchIdsToExport);
                 completeTopographicPlacesList.addAll(initializedTopos);
-                stopPlaceRepository.deleteProcessedIds(jobid,batchIdsToExport );
+                stopPlaceRepository.deleteProcessedIds(jobid, batchIdsToExport);
                 totalTopographicPlacesProcessed = totalTopographicPlacesProcessed + batchIdsToExport.size();
-                logger.info("total parking processed:" + totalTopographicPlacesProcessed);
+                logger.info("total topographic places processed:" + totalTopographicPlacesProcessed);
             }
         }
 

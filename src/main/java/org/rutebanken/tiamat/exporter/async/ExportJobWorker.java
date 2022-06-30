@@ -30,10 +30,8 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;
-import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -133,31 +131,30 @@ public class ExportJobWorker implements Runnable {
             }
         } finally {
             exportJobRepository.save(exportJob);
-            logger.info("Removing local file: {},{}", localExportXmlFile);
-//            localExportZipFile.delete();
+            logger.info("Removing local file: {}", localExportXmlFile);
             localExportXmlFile.delete();
         }
     }
 
-    private void exportToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime) throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
+    private void exportToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime) throws IOException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.stream(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING, provider, localDateTime,exportJob.getId());
+        streamingPublicationDelivery.stream(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING, provider, localDateTime, exportJob.getId());
         logger.info("export to local file completed");
     }
 
-    private void exportPOIToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime) throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
+    private void exportPOIToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime) throws IOException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.streamPOI(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING, provider, localDateTime);
+        streamingPublicationDelivery.streamPOI(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING, provider, localDateTime, exportJob.getId());
     }
 
-    private void uploadToGcp(File localExportFile) throws FileNotFoundException {
+    private void uploadToGcp(File localExportFile) {
         logger.info("Uploading to gcp: {} in folder: {}", exportJob.getFileName(), exportJob.getSubFolder());
         blobStoreService.upload(exportJob.getSubFolder() + "/" + exportJob.getFileName(), localExportFile);
     }
 
-    private void exportToLocalZipFile(File localZipFile, File localExportZipFile) throws IOException, InterruptedException, JAXBException, XMLStreamException, SAXException {
+    private void exportToLocalZipFile(File localZipFile, File localExportZipFile) throws IOException {
         logger.info("Adding {} to zip file: {}", localExportZipFile, localZipFile);
 
         final FileOutputStream fileOutputStream = new FileOutputStream(localZipFile);

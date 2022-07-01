@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.repository.ParkingRepository;
@@ -128,6 +129,7 @@ public class BikeParkingImportTest extends TiamatIntegrationTest {
     public void createParkingWithIdLocalAndIdOsm() {
         Parking parking = new Parking();
         parking.setNetexId("Test:Parking:1");
+        parking.setName(new EmbeddableMultilingualString("1"));
         parking.getOrCreateValues("id_local").add("1");
         parking.getOrCreateValues("id_osm").add("2");
         parking.setVersion(1);
@@ -138,6 +140,7 @@ public class BikeParkingImportTest extends TiamatIntegrationTest {
         Parking parking = new Parking();
         parking.setNetexId("Test:Parking:1");
         parking.getOrCreateValues("id_local").add("1");
+        parking.setName(new EmbeddableMultilingualString("1"));
         parking.setVersion(1);
         parkingRepository.save(parking);
     }

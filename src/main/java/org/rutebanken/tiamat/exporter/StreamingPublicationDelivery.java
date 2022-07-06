@@ -483,7 +483,7 @@ public class StreamingPublicationDelivery {
                 logger.info("no more POI to export");
                 isDataToExport = false;
             } else {
-                initializedPoi = pointOfInterestRepository.getPOIInitializedForExport(batchIdsToExport);
+                initializedPoi.addAll(pointOfInterestRepository.getPOIInitializedForExport(batchIdsToExport));
                 pointOfInterestRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
                 totalPoiProcessed = totalPoiProcessed + batchIdsToExport.size();
                 logger.info("total poi processed:" + totalPoiProcessed);

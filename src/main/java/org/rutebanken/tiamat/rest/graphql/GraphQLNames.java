@@ -404,6 +404,7 @@ public class GraphQLNames {
     public static final String CARPOOLING_AVAILABLE = "carpoolingAvailable";
     public static final String CARSHARING_AVAILABLE = "carsharingAvailable";
     public static final String SECURE = "secure";
+    public static final String TYPE_OF_PARKING_REF = "typeOfParkingRef";
     public static final String REAL_TIME_OCCUPANCY_AVAILABLE = "realTimeOccupancyAvailable";
     public static final String PARKING_RESERVATION = "parkingReservation";
     public static final String BOOKING_URL = "bookingUrl";

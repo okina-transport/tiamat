@@ -11,9 +11,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class PointOfInterestMapper extends CustomMapper<PointOfInterest, org.rutebanken.tiamat.model.PointOfInterest> {
 
-    @Autowired
-    private PointOfInterestRepository pointOfInterestRepository;
-
     @Override
     public void mapAtoB(PointOfInterest pointOfInterest, org.rutebanken.tiamat.model.PointOfInterest pointOfInterest2, MappingContext context) {
         super.mapAtoB(pointOfInterest, pointOfInterest2, context);

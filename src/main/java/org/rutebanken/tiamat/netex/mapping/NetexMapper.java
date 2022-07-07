@@ -112,7 +112,13 @@ public class NetexMapper {
 
         mapperFactory.classMap(PointOfInterestClassification.class, org.rutebanken.tiamat.model.PointOfInterestClassification.class)
                 .fieldBToA("netexId", "id")
-                .byDefault()
+                .customize(new CustomMapper<PointOfInterestClassification, org.rutebanken.tiamat.model.PointOfInterestClassification>() {
+                    @Override
+                    public void mapBtoA(org.rutebanken.tiamat.model.PointOfInterestClassification pointOfInterestClassification, PointOfInterestClassification pointOfInterestClassification2, MappingContext context) {
+                        super.mapBtoA(pointOfInterestClassification, pointOfInterestClassification2, context);
+                        pointOfInterestClassification2.setVersion("any");
+                    }
+                })
                 .register();
 
         mapperFactory.classMap(Parking.class, org.rutebanken.tiamat.model.Parking.class)

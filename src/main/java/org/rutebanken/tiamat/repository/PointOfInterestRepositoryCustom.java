@@ -2,6 +2,7 @@ package org.rutebanken.tiamat.repository;
 
 
 import org.rutebanken.tiamat.model.PointOfInterest;
+import org.rutebanken.tiamat.model.PointOfInterestClassification;
 
 import java.util.Iterator;
 import java.util.List;
@@ -27,6 +28,8 @@ public interface PointOfInterestRepositoryCustom extends DataManagedObjectStruct
     void deleteProcessedIds(Long exportJobId, Set<Long> processedPoi);
 
     List<PointOfInterest> getPOIInitializedForExport(Set<Long> poiIds);
+
+    List<PointOfInterestClassification> getPOIClassificationInitializedForExport(Set<Long> poiIds);
 
     Set<Long> getNextBatchToProcess(Long exportJobId);
 }

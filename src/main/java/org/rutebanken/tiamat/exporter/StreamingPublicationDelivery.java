@@ -73,6 +73,7 @@ import org.rutebanken.tiamat.geo.geo.Lambert;
 import org.rutebanken.tiamat.geo.geo.LambertPoint;
 import org.rutebanken.tiamat.geo.geo.LambertZone;
 import org.rutebanken.tiamat.model.GroupOfStopPlaces;
+import org.rutebanken.tiamat.model.PointOfInterestClassification;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
@@ -476,6 +477,7 @@ public class StreamingPublicationDelivery {
         int totalPoiProcessed = 0;
 
         List<org.rutebanken.tiamat.model.PointOfInterest> initializedPoi = new ArrayList<>();
+        List<org.rutebanken.tiamat.model.PointOfInterestClassification> initializedPoiClassification = new ArrayList<>();
 
         while (isDataToExport) {
             Set<Long> batchIdsToExport = pointOfInterestRepository.getNextBatchToProcess(exportJobId);
@@ -484,6 +486,7 @@ public class StreamingPublicationDelivery {
                 isDataToExport = false;
             } else {
                 initializedPoi.addAll(pointOfInterestRepository.getPOIInitializedForExport(batchIdsToExport));
+                initializedPoiClassification.addAll(pointOfInterestRepository.getPOIClassificationInitializedForExport(batchIdsToExport));
                 pointOfInterestRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
                 totalPoiProcessed = totalPoiProcessed + batchIdsToExport.size();
                 logger.info("total poi processed:" + totalPoiProcessed);
@@ -494,7 +497,10 @@ public class StreamingPublicationDelivery {
         preparePointsOfInterest(mappedPointOfInterestCount, netexSiteFrame, initializedPoi.iterator());
 
         logger.info("Preparing scrollable iterators for poi class");
-        preparePointsOfInterestClassification(mappedPointOfInterestClassificationCount, netexSiteFrame, initializedPoi.iterator());
+        preparePointsOfInterestClassification(mappedPointOfInterestClassificationCount, netexSiteFrame, initializedPoiClassification.iterator());
+
+        logger.info("Preparing scrollable iterators for poi classification hierarchies");
+        preparePointsOfInterestClassificationHierarchies(netexSiteFrame, initializedPoiClassification);
 
         logger.info("Publication delivery creation");
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexSiteFrame);
@@ -511,7 +517,6 @@ public class StreamingPublicationDelivery {
 
         logger.info("Mapped {} points of interest to netex", mappedPointOfInterestCount);
     }
-
 
     /**
      * Moche Workaround : les ns sont générés bizarrement
@@ -967,14 +972,13 @@ public class StreamingPublicationDelivery {
         }
     }
 
-    private void preparePointsOfInterestClassification(AtomicInteger mappedPointOfInterestClassificationCount, SiteFrame netexSiteFrame, Iterator<org.rutebanken.tiamat.model.PointOfInterest> pointOfInterestIterator) {
-
+    private void preparePointsOfInterestClassification(AtomicInteger mappedPointOfInterestClassificationCount, SiteFrame netexSiteFrame, Iterator<org.rutebanken.tiamat.model.PointOfInterestClassification> pointOfInterestClassificationIterator) {
         int poiClassificationCount = pointOfInterestClassificationRepository.countResult();
         if (poiClassificationCount > 0) {
             logger.info("POI count is {}, will create poi classifications in publication delivery", poiClassificationCount);
 
             Site_VersionFrameStructure.PointOfInterestClassifications pointOfInterestClassificationsInFrame_relStructure = new Site_VersionFrameStructure.PointOfInterestClassifications();
-            List<org.rutebanken.netex.model.PointOfInterestClassification> pointOfInterestClassifications = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, pointOfInterestIterator,
+            List<org.rutebanken.netex.model.PointOfInterestClassification> pointOfInterestClassifications = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, pointOfInterestClassificationIterator,
                     org.rutebanken.netex.model.PointOfInterestClassification.class, mappedPointOfInterestClassificationCount));
 
             setField(PointOfInterestClassificationsInFrame_RelStructure.class, "pointOfInterestClassification", pointOfInterestClassificationsInFrame_relStructure, pointOfInterestClassifications);
@@ -982,6 +986,40 @@ public class StreamingPublicationDelivery {
         } else {
             logger.info("No poi classifications to export");
         }
+    }
+
+    private void preparePointsOfInterestClassificationHierarchies(SiteFrame netexSiteFrame, List<PointOfInterestClassification> pointOfInterestClassificationList) {
+        org.rutebanken.netex.model.PointOfInterestClassificationHierarchiesInFrame_RelStructure pointOfInterestClassificationHierarchiesInFrame_RelStructure = new org.rutebanken.netex.model.PointOfInterestClassificationHierarchiesInFrame_RelStructure();
+
+        org.rutebanken.netex.model.PointOfInterestClassificationHierarchy pointOfInterestClassificationHierarchy = new org.rutebanken.netex.model.PointOfInterestClassificationHierarchy();
+        MultilingualString name = new MultilingualString();
+        name.setValue("Main Hierarchy");
+        pointOfInterestClassificationHierarchy.setName(name);
+        pointOfInterestClassificationHierarchy.setVersion("any");
+        pointOfInterestClassificationHierarchy.setId("1");
+
+        org.rutebanken.netex.model.PointOfInterestClassificationHierarchyMembers_RelStructure pointOfInterestClassificationHierarchyMembers_relStructure = new org.rutebanken.netex.model.PointOfInterestClassificationHierarchyMembers_RelStructure();
+
+        pointOfInterestClassificationList.forEach(pointOfInterestClassification -> {
+            if(pointOfInterestClassification.getParent() != null && pointOfInterestClassification.getParent().getNetexId() != null){
+                org.rutebanken.netex.model.PointOfInterestClassificationHierarchyMemberStructure pointOfInterestClassificationHierarchyMemberStructure = new org.rutebanken.netex.model.PointOfInterestClassificationHierarchyMemberStructure();
+                org.rutebanken.netex.model.PointOfInterestClassificationRefStructure parentClassificationRef = new org.rutebanken.netex.model.PointOfInterestClassificationRefStructure();
+                parentClassificationRef.setVersion("any");
+                parentClassificationRef.setRef(pointOfInterestClassification.getParent().getNetexId());
+
+                org.rutebanken.netex.model.PointOfInterestClassificationRefStructure pointOfInterestClassificationRef = new org.rutebanken.netex.model.PointOfInterestClassificationRefStructure();
+                pointOfInterestClassificationRef.setVersion("any");
+                pointOfInterestClassificationRef.setRef(pointOfInterestClassification.getNetexId());
+
+                pointOfInterestClassificationHierarchyMemberStructure.setParentClassificationRef(parentClassificationRef);
+                pointOfInterestClassificationHierarchyMemberStructure.setPointOfInterestClassificationRef(pointOfInterestClassificationRef);
+                pointOfInterestClassificationHierarchyMembers_relStructure.getClassificationHierarchyMember().add(pointOfInterestClassificationHierarchyMemberStructure);
+            }
+        });
+
+        pointOfInterestClassificationHierarchy.setMembers(pointOfInterestClassificationHierarchyMembers_relStructure);
+        pointOfInterestClassificationHierarchiesInFrame_RelStructure.withPointOfInterestClassificationHierarchy(pointOfInterestClassificationHierarchy);
+        netexSiteFrame.setPointOfInterestClassificationHierarchies(pointOfInterestClassificationHierarchiesInFrame_RelStructure);
     }
 
     private void prepareStopPlaces(ExportParams exportParams, Set<Long> stopPlacePrimaryIds, AtomicInteger mappedStopPlaceCount, List <JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter) {

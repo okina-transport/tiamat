@@ -475,25 +475,26 @@ public class StreamingPublicationDelivery {
         boolean isDataToExport = true;
         int totalPoiProcessed = 0;
 
+        List<org.rutebanken.tiamat.model.PointOfInterest> initializedPoi = new ArrayList<>();
+
         while (isDataToExport) {
             Set<Long> batchIdsToExport = pointOfInterestRepository.getNextBatchToProcess(exportJobId);
             if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
                 logger.info("no more POI to export");
                 isDataToExport = false;
             } else {
-                List<org.rutebanken.tiamat.model.PointOfInterest> initializedPoi = pointOfInterestRepository.getPOIInitializedForExport(batchIdsToExport);
+                initializedPoi.addAll(pointOfInterestRepository.getPOIInitializedForExport(batchIdsToExport));
                 pointOfInterestRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
                 totalPoiProcessed = totalPoiProcessed + batchIdsToExport.size();
                 logger.info("total poi processed:" + totalPoiProcessed);
-
-                logger.info("Preparing scrollable iterators for poi");
-                preparePointsOfInterest(mappedPointOfInterestCount, netexSiteFrame, initializedPoi.iterator());
-
-                logger.info("Preparing scrollable iterators for poi class");
-                preparePointsOfInterestClassification(mappedPointOfInterestClassificationCount, netexSiteFrame, initializedPoi.iterator());
             }
-
         }
+
+        logger.info("Preparing scrollable iterators for poi");
+        preparePointsOfInterest(mappedPointOfInterestCount, netexSiteFrame, initializedPoi.iterator());
+
+        logger.info("Preparing scrollable iterators for poi class");
+        preparePointsOfInterestClassification(mappedPointOfInterestClassificationCount, netexSiteFrame, initializedPoi.iterator());
 
         logger.info("Publication delivery creation");
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexSiteFrame);
@@ -956,8 +957,8 @@ public class StreamingPublicationDelivery {
         if (poiCount > 0) {
             logger.info("POI count is {}, will create poi in publication delivery", poiCount);
             PointsOfInterestInFrame_RelStructure pointsOfInterestInFrame_relStructure = new PointsOfInterestInFrame_RelStructure();
-            List<PointOfInterest> pointsOfInterest = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, pointOfInterestIterator,
-                    PointOfInterest.class, mappedPointOfInterestCount));
+            List<PointOfInterest> pointsOfInterest = new NetexMappingIteratorList<>(() ->
+                    new NetexMappingIterator<>(netexMapper, pointOfInterestIterator, PointOfInterest.class, mappedPointOfInterestCount));
 
             setField(PointsOfInterestInFrame_RelStructure.class, "pointOfInterest", pointsOfInterestInFrame_relStructure, pointsOfInterest);
             netexSiteFrame.setPointsOfInterest(pointsOfInterestInFrame_relStructure);

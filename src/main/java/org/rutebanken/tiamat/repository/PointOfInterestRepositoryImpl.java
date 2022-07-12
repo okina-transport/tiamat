@@ -7,6 +7,8 @@ import org.hibernate.Session;
 import org.hibernate.query.NativeQuery;
 import org.rutebanken.tiamat.model.ParkingArea;
 import org.rutebanken.tiamat.model.PointOfInterest;
+import org.rutebanken.tiamat.model.PointOfInterestClassification;
+import org.rutebanken.tiamat.model.PointOfInterestClassificationHierarchy;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -218,6 +220,26 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
         return results;
     }
 
+    public List<PointOfInterestClassification> getPOIClassificationInitializedForExport(Set<Long> poiIds) {
+
+        Set<String> poiIdStrings = poiIds.stream().map(String::valueOf).collect(Collectors.toSet());
+
+        String joinedPoiIds = String.join(",", poiIdStrings);
+        String sql = "SELECT poiclassification FROM PointOfInterestClassification poiclassification WHERE poiclassification.id IN(" + joinedPoiIds + ")";
+
+        TypedQuery<PointOfInterestClassification> pointOfInterestClassificationTypedQuery = entityManager.createQuery(sql, PointOfInterestClassification.class);
+
+        List<PointOfInterestClassification> results = pointOfInterestClassificationTypedQuery.getResultList();
+
+        results.forEach(pointOfInterestClassification -> {
+            Hibernate.initialize(pointOfInterestClassification.getParent());
+            Hibernate.initialize(pointOfInterestClassification.getKeyValues());
+            pointOfInterestClassification.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+        });
+
+        return results;
+    }
+
     /**
      * Get a batch of object to process
      * @param exportJobId
@@ -225,7 +247,6 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Set<Long> getNextBatchToProcess(Long exportJobId){
-
         Session session = entityManager.unwrap(Session.class);
         NativeQuery query = session.createNativeQuery("SELECT exported_object_id FROM export_job_id_list WHERE job_id  = :exportJobId LIMIT 1000");
 
@@ -235,7 +256,6 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
         for(Object object : query.list()) {
             BigInteger bigInteger = (BigInteger) object;
             result.add(bigInteger.longValue());
-
         }
         return result;
     }

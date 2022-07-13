@@ -21,6 +21,7 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.transaction.Transactional;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -191,5 +192,32 @@ public class PointOfInterestClassificationRepositoryImpl implements PointOfInter
         });
 
         return results;
+    }
+
+    /**
+     * Initialize export job table with points of interest classification ids that must be exported
+     *
+     * @param exportJobId id of the export job
+     */
+    @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void initExportJobTable(Long exportJobId) {
+
+        Map<String, Object> parameters = new HashMap<>();
+
+        String queryStr = "INSERT INTO export_job_id_list \n" +
+                " SELECT :exportJobId, req1.poic_id     \n" +
+                " FROM ( \n" +
+                " SELECT MAX(poic.id) AS poic_id, MAX(poic.version) AS version FROM point_of_interest_classification poic WHERE (poic.from_date <= :pointInTime OR poic.from_date IS NULL) \n" +
+                " AND (poic.to_date >= :pointInTime OR poic.to_date IS NULL) GROUP BY poic.netex_id) req1";
+
+
+        parameters.put("exportJobId", exportJobId);
+        parameters.put("pointInTime", Date.from(Instant.now()));
+
+        Session session = entityManager.unwrap(Session.class);
+        NativeQuery query = session.createNativeQuery(queryStr);
+        searchHelper.addParams(query, parameters);
+
+        query.executeUpdate();
     }
 }

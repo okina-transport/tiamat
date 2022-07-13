@@ -462,6 +462,7 @@ public class StreamingPublicationDelivery {
         AtomicInteger mappedPointOfInterestClassificationCount = new AtomicInteger();
 
         pointOfInterestRepository.initExportJobTable(exportJobId);
+
         logger.info("Initialization completed for table export_job_id_list. jobId :" + exportJobId);
 
         int totalNbOfPoi = pointOfInterestRepository.countPOIInExport(exportJobId);
@@ -491,6 +492,8 @@ public class StreamingPublicationDelivery {
                 logger.info("total poi processed:" + totalPoiProcessed);
             }
         }
+
+        pointOfInterestClassificationRepository.initExportJobTable(exportJobId);
 
         isDataToExport = true;
         int totalPoiClassificationProcessed = 0;

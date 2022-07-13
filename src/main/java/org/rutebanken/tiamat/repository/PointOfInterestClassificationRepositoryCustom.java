@@ -15,6 +15,8 @@ public interface PointOfInterestClassificationRepositoryCustom extends DataManag
 
     List<PointOfInterestClassification> getPOIClassificationInitializedForExport(Set<Long> poiIds);
 
+    void initExportJobTable(Long exportJobId);
+
     Set<Long> getNextBatchToProcess(Long exportJobId);
 
     void deleteProcessedIds(Long exportJobId, Set<Long> processedPoi);

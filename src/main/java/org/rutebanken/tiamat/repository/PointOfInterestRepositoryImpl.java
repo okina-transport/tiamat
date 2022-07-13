@@ -220,26 +220,6 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
         return results;
     }
 
-    public List<PointOfInterestClassification> getPOIClassificationInitializedForExport(Set<Long> poiIds) {
-
-        Set<String> poiIdStrings = poiIds.stream().map(String::valueOf).collect(Collectors.toSet());
-
-        String joinedPoiIds = String.join(",", poiIdStrings);
-        String sql = "SELECT poiclassification FROM PointOfInterestClassification poiclassification WHERE poiclassification.id IN(" + joinedPoiIds + ")";
-
-        TypedQuery<PointOfInterestClassification> pointOfInterestClassificationTypedQuery = entityManager.createQuery(sql, PointOfInterestClassification.class);
-
-        List<PointOfInterestClassification> results = pointOfInterestClassificationTypedQuery.getResultList();
-
-        results.forEach(pointOfInterestClassification -> {
-            Hibernate.initialize(pointOfInterestClassification.getParent());
-            Hibernate.initialize(pointOfInterestClassification.getKeyValues());
-            pointOfInterestClassification.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
-        });
-
-        return results;
-    }
-
     /**
      * Get a batch of object to process
      * @param exportJobId

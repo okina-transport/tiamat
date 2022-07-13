@@ -486,10 +486,25 @@ public class StreamingPublicationDelivery {
                 isDataToExport = false;
             } else {
                 initializedPoi.addAll(pointOfInterestRepository.getPOIInitializedForExport(batchIdsToExport));
-                initializedPoiClassification.addAll(pointOfInterestRepository.getPOIClassificationInitializedForExport(batchIdsToExport));
                 pointOfInterestRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
                 totalPoiProcessed = totalPoiProcessed + batchIdsToExport.size();
                 logger.info("total poi processed:" + totalPoiProcessed);
+            }
+        }
+
+        isDataToExport = true;
+        int totalPoiClassificationProcessed = 0;
+
+        while (isDataToExport) {
+            Set<Long> batchIdsToExport = pointOfInterestClassificationRepository.getNextBatchToProcess(exportJobId);
+            if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
+                logger.info("no more POI classification to export");
+                isDataToExport = false;
+            } else {
+                initializedPoiClassification.addAll(pointOfInterestClassificationRepository.getPOIClassificationInitializedForExport(batchIdsToExport));
+                pointOfInterestClassificationRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
+                totalPoiClassificationProcessed = totalPoiClassificationProcessed + batchIdsToExport.size();
+                logger.info("total poi classification processed:" + totalPoiClassificationProcessed);
             }
         }
 

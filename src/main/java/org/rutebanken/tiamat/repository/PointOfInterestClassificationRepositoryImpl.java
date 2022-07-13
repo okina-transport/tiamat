@@ -1,6 +1,7 @@
 package org.rutebanken.tiamat.repository;
 
 
+import org.hibernate.Hibernate;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
@@ -11,14 +12,17 @@ import org.rutebanken.tiamat.repository.search.SearchHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import javax.transaction.Transactional;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Repository
@@ -135,5 +139,57 @@ public class PointOfInterestClassificationRepositoryImpl implements PointOfInter
         ScrollableResultIterator<PointOfInterestClassification> pointOfInterestClassificationEntityIterator = new ScrollableResultIterator<>(results, fetchSize, session);
 
         return pointOfInterestClassificationEntityIterator;
+    }
+
+    /**
+     * Get a batch of object to process
+     * @param exportJobId
+     * @return
+     */
+    @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Set<Long> getNextBatchToProcess(Long exportJobId){
+        Session session = entityManager.unwrap(Session.class);
+        NativeQuery query = session.createNativeQuery("SELECT exported_object_id FROM export_job_id_list WHERE job_id  = :exportJobId LIMIT 1000");
+
+        query.setParameter("exportJobId", exportJobId);
+
+        Set<Long> result = new HashSet<>();
+        for(Object object : query.list()) {
+            BigInteger bigInteger = (BigInteger) object;
+            result.add(bigInteger.longValue());
+        }
+        return result;
+    }
+
+    @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void deleteProcessedIds(Long exportJobId, Set<Long> processedPoiClassification) {
+        Session session = entityManager.unwrap(Session.class);
+        String queryStr = "DELETE FROM export_job_id_list WHERE job_id = :exportJobId AND exported_object_id IN :poiClassificationIdList";
+        NativeQuery query = session.createNativeQuery(queryStr);
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("exportJobId", exportJobId);
+        parameters.put("poiClassificationIdList", processedPoiClassification);
+        searchHelper.addParams(query, parameters);
+        query.executeUpdate();
+    }
+
+    public List<PointOfInterestClassification> getPOIClassificationInitializedForExport(Set<Long> poiIds) {
+
+        Set<String> poiIdStrings = poiIds.stream().map(String::valueOf).collect(Collectors.toSet());
+
+        String joinedPoiIds = String.join(",", poiIdStrings);
+        String sql = "SELECT poiclassification FROM PointOfInterestClassification poiclassification WHERE poiclassification.id IN(" + joinedPoiIds + ")";
+
+        TypedQuery<PointOfInterestClassification> pointOfInterestClassificationTypedQuery = entityManager.createQuery(sql, PointOfInterestClassification.class);
+
+        List<PointOfInterestClassification> results = pointOfInterestClassificationTypedQuery.getResultList();
+
+        results.forEach(pointOfInterestClassification -> {
+            Hibernate.initialize(pointOfInterestClassification.getParent());
+            Hibernate.initialize(pointOfInterestClassification.getKeyValues());
+            pointOfInterestClassification.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+        });
+
+        return results;
     }
 }

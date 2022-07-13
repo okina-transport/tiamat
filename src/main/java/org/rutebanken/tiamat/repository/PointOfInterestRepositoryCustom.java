@@ -25,11 +25,10 @@ public interface PointOfInterestRepositoryCustom extends DataManagedObjectStruct
 
     int countPOIInExport(Long exportJobId);
 
-    void deleteProcessedIds(Long exportJobId, Set<Long> processedPoi);
-
     List<PointOfInterest> getPOIInitializedForExport(Set<Long> poiIds);
 
-    List<PointOfInterestClassification> getPOIClassificationInitializedForExport(Set<Long> poiIds);
-
     Set<Long> getNextBatchToProcess(Long exportJobId);
+
+    void deleteProcessedIds(Long exportJobId, Set<Long> processedPoi);
+
 }

@@ -66,7 +66,6 @@ public class StopPlaceInterfaceCreator {
         stopPlaceInterfaceFields.add(newFieldDefinition()
                 .name(VALID_BETWEEN)
                 .type(validBetweenObjectType).build());
-
         stopPlaceInterfaceFields.add(newFieldDefinition()
                 .name(ALTERNATIVE_NAMES)
                 .type(new GraphQLList(alternativeNameObjectType))

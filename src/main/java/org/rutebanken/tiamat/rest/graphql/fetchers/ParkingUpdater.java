@@ -23,6 +23,7 @@ import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.rest.graphql.mappers.GeometryMapper;
+import org.rutebanken.tiamat.rest.graphql.mappers.GroupOfEntitiesMapper;
 import org.rutebanken.tiamat.rest.graphql.mappers.ValidBetweenMapper;
 import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
 import org.rutebanken.tiamat.versioning.VersionCreator;
@@ -63,6 +64,9 @@ class ParkingUpdater implements DataFetcher {
 
     @Autowired
     private VersionCreator versionCreator;
+
+    @Autowired
+    private GroupOfEntitiesMapper groupOfEntitiesMapper;
 
 
     @Override
@@ -109,12 +113,6 @@ class ParkingUpdater implements DataFetcher {
 
     private boolean populateParking(Map input, Parking updatedParking) {
         boolean isUpdated = false;
-        if (input.get(NAME) != null) {
-            EmbeddableMultilingualString name = getEmbeddableString((Map) input.get(NAME));
-            isUpdated = isUpdated || (updatedParking.getName() != null && (!name.getValue().equals(updatedParking.getName().getValue())));
-            updatedParking.setName(name);
-        }
-
         if (input.get(VALID_BETWEEN) != null) {
             updatedParking.setValidBetween(validBetweenMapper.map((Map) input.get(VALID_BETWEEN)));
             isUpdated = true;
@@ -154,6 +152,7 @@ class ParkingUpdater implements DataFetcher {
             isUpdated = isUpdated || (!parkingType.equals(updatedParking.getParkingType()));
             updatedParking.setParkingType(parkingType);
         }
+
         if (input.get(PARKING_VEHICLE_TYPES) != null) {
             List<ParkingVehicleEnumeration> vehicleTypes = (List<ParkingVehicleEnumeration>) input.get(PARKING_VEHICLE_TYPES);
             isUpdated = isUpdated || !(updatedParking.getParkingVehicleTypes().containsAll(vehicleTypes) &&
@@ -299,6 +298,21 @@ class ParkingUpdater implements DataFetcher {
             isUpdated = true;
             updatedParking.setParkingAreas(parkingAreasList.stream().map(pa -> versionCreator.createCopy(pa, ParkingArea.class)).collect(Collectors.toList()));
         }
+
+        if (input.get(COVERED) != null) {
+            CoveredEnumeration parkingCovered = (CoveredEnumeration) input.get(COVERED);
+            isUpdated = isUpdated || (!parkingCovered.equals(updatedParking.getCovered()));
+            updatedParking.setCovered(parkingCovered);
+        }
+
+        if (input.get(TYPE_OF_PARKING_REF) != null) {
+            TypeOfParkingRefEnumeration parkingTypeOfParkingRef = (TypeOfParkingRefEnumeration) input.get(TYPE_OF_PARKING_REF);
+            isUpdated = isUpdated || (!parkingTypeOfParkingRef.value().equals(updatedParking.getParkingTypeRef()));
+            updatedParking.setTypeOfParkingRef(parkingTypeOfParkingRef.value());
+        }
+
+        isUpdated = isUpdated | groupOfEntitiesMapper.populate(input, updatedParking);
+
         return isUpdated;
     }
 

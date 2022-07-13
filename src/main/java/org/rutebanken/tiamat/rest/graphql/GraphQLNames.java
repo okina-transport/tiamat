@@ -388,6 +388,7 @@ public class GraphQLNames {
             " Date format: "+ DateScalar.DATE_TIME_PATTERN;
 
     public static final String PARKING_TYPE = "parkingType";
+    public static final String PARKING_TYPE_ARG_DESCRIPTION = "Only return Parkings with given ParkingType(s).";
     public static final String PARKING_VEHICLE_TYPES = "parkingVehicleTypes";
     public static final String PARKING_VEHICLE_TYPE = "parkingVehicleType";
     public static final String PARKING_USER_TYPES = "parkingUserTypes";
@@ -405,6 +406,7 @@ public class GraphQLNames {
     public static final String CARSHARING_AVAILABLE = "carsharingAvailable";
     public static final String SECURE = "secure";
     public static final String TYPE_OF_PARKING_REF = "typeOfParkingRef";
+    public static final String COVERED = "covered";
     public static final String REAL_TIME_OCCUPANCY_AVAILABLE = "realTimeOccupancyAvailable";
     public static final String PARKING_RESERVATION = "parkingReservation";
     public static final String BOOKING_URL = "bookingUrl";

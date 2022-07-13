@@ -15,7 +15,16 @@
 
 package org.rutebanken.tiamat.rest.graphql;
 
-import graphql.schema.*;
+import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
 import org.rutebanken.tiamat.model.GroupOfStopPlaces;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.Quay;
@@ -30,7 +39,20 @@ import org.rutebanken.tiamat.rest.graphql.operations.TagOperationsBuilder;
 import org.rutebanken.tiamat.rest.graphql.resolvers.MutableTypeResolver;
 import org.rutebanken.tiamat.rest.graphql.scalars.DateScalar;
 import org.rutebanken.tiamat.rest.graphql.scalars.TransportModeScalar;
-import org.rutebanken.tiamat.rest.graphql.types.*;
+import org.rutebanken.tiamat.rest.graphql.types.EntityRefObjectTypeCreator;
+import org.rutebanken.tiamat.rest.graphql.types.GroupOfStopPlacesObjectTypeCreator;
+import org.rutebanken.tiamat.rest.graphql.types.ParentStopPlaceInputObjectTypeCreator;
+import org.rutebanken.tiamat.rest.graphql.types.ParentStopPlaceObjectTypeCreator;
+import org.rutebanken.tiamat.rest.graphql.types.ParkingInterfaceCreator;
+import org.rutebanken.tiamat.rest.graphql.types.ParkingObjectTypeCreator;
+import org.rutebanken.tiamat.rest.graphql.types.PathLinkEndObjectTypeCreator;
+import org.rutebanken.tiamat.rest.graphql.types.PathLinkObjectTypeCreator;
+import org.rutebanken.tiamat.rest.graphql.types.StopPlaceInterfaceCreator;
+import org.rutebanken.tiamat.rest.graphql.types.StopPlaceObjectTypeCreator;
+import org.rutebanken.tiamat.rest.graphql.types.TagObjectTypeCreator;
+import org.rutebanken.tiamat.rest.graphql.types.TariffZoneObjectTypeCreator;
+import org.rutebanken.tiamat.rest.graphql.types.TopographicPlaceObjectTypeCreator;
+import org.rutebanken.tiamat.rest.graphql.types.ZoneCommonFieldListCreator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -39,7 +61,10 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 
-import static graphql.Scalars.*;
+import static graphql.Scalars.GraphQLBigDecimal;
+import static graphql.Scalars.GraphQLBoolean;
+import static graphql.Scalars.GraphQLInt;
+import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
 import static graphql.schema.GraphQLInputObjectType.newInputObject;
@@ -47,7 +72,30 @@ import static graphql.schema.GraphQLObjectType.newObject;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
 import static org.rutebanken.tiamat.rest.graphql.types.AuthorizationCheckCreator.createAuthorizationCheckArguments;
 import static org.rutebanken.tiamat.rest.graphql.types.AuthorizationCheckCreator.createAuthorizationCheckOutputType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.*;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.accessibilityAssessmentInputObjectType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.accessibilityAssessmentObjectType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.alternativeNameInputObjectType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.alternativeNameObjectType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.createParkingInputObjectType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.embeddableMultiLingualStringInputObjectType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.equipmentInputType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.equipmentType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.geoJsonInputType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.geometryFieldDefinition;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.interchangeWeightingEnum;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.keyValuesObjectInputType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.modificationEnumerationType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.netexIdFieldDefinition;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.parkingTypeEnum;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.pathLinkObjectInputType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.privateCodeFieldDefinition;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.privateCodeInputType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.stopPlaceTypeEnum;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.topographicPlaceInputObjectType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.topographicPlaceTypeEnum;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.transportModeSubmodeObjectType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.versionLessRefInputObjectType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.versionValidityEnumType;
 
 @Component
 public class StopPlaceRegisterGraphQLSchema {
@@ -80,6 +128,9 @@ public class StopPlaceRegisterGraphQLSchema {
 
     @Autowired
     private StopPlaceObjectTypeCreator stopPlaceObjectTypeCreator;
+
+    @Autowired
+    private ParkingObjectTypeCreator parkingObjectTypeCreator;
 
     @Autowired
     private GroupOfStopPlacesObjectTypeCreator groupOfStopPlaceObjectTypeCreator;
@@ -160,7 +211,7 @@ public class StopPlaceRegisterGraphQLSchema {
     public void init() {
 
         /**
-         * Common field list for quays, stop places and addressable place.
+         * Common field list for quays, stop places, addressable place and parkings.
          */
         List<GraphQLFieldDefinition> commonFieldsList = new ArrayList<>();
         commonFieldsList.add(newFieldDefinition()
@@ -171,13 +222,15 @@ public class StopPlaceRegisterGraphQLSchema {
                         return ((StopPlace) env.getSource()).getPlaceEquipments();
                     } else if (env.getSource() instanceof Quay) {
                         return ((Quay) env.getSource()).getPlaceEquipments();
+                    } else if (env.getSource() instanceof Parking) {
+                        return ((Parking) env.getSource()).getPlaceEquipments();
                     }
                     return null;
                 })
                 .build());
         commonFieldsList.add(newFieldDefinition()
                 .name(ACCESSIBILITY_ASSESSMENT)
-                .description("This field is set either on StopPlace (i.e. all Quays are equal), or on every Quay.")
+                .description("This field is set either on StopPlace (i.e. all Quays are equal), or on every Quay or on Parking")
                 .type(accessibilityAssessmentObjectType)
                 .build()
         );
@@ -238,7 +291,14 @@ public class StopPlaceRegisterGraphQLSchema {
 
         GraphQLObjectType pathLinkObjectType = pathLinkObjectTypeCreator.create(pathLinkEndObjectType, netexIdFieldDefinition, geometryFieldDefinition);
 
-        GraphQLObjectType parkingObjectType = createParkingObjectType(validBetweenObjectType, topographicPlaceObjectType);
+        GraphQLObjectType parkingObjectType = parkingObjectTypeCreator.create(parkingInterface, parkingInterfaceFields, commonFieldsList);
+
+        parkingTypeResolver.setResolveFunction(object -> {
+            if (object instanceof Parking) {
+                return parkingObjectType;
+            }
+            throw new IllegalArgumentException("ParkingTypeResolver cannot resolve type of Object " + object + ". Was expecting Parking");
+        });
 
         GraphQLArgument allVersionsArgument = GraphQLArgument.newArgument()
                 .name(ALL_VERSIONS)
@@ -263,7 +323,13 @@ public class StopPlaceRegisterGraphQLSchema {
                         .argument(createBboxArguments())
                         .dataFetcher(stopPlaceFetcher))
                 .field(newFieldDefinition()
-                        .type(new GraphQLList(parkingObjectType))
+                        .name(FIND_PARKING)
+                        .type(new GraphQLList(parkingInterface))
+                        .description("Find parking")
+                        .argument(createFindParkingArguments(allVersionsArgument))
+                        .dataFetcher(parkingFetcher))
+                .field(newFieldDefinition()
+                        .type(new GraphQLList(parkingInterface))
                         .name(FIND_PARKING_BY_BBOX)
                         .description("Find Parking within given BoundingBox.")
                         .argument(createBboxArguments())
@@ -280,12 +346,6 @@ public class StopPlaceRegisterGraphQLSchema {
                         .description("Find path links")
                         .argument(createFindPathLinkArguments(allVersionsArgument))
                         .dataFetcher(pathLinkFetcher))
-                .field(newFieldDefinition()
-                        .name(FIND_PARKING)
-                        .type(new GraphQLList(parkingObjectType))
-                        .description("Find parking")
-                        .argument(createFindParkingArguments(allVersionsArgument))
-                        .dataFetcher(parkingFetcher))
                 .field(newFieldDefinition()
                         .name(VALID_TRANSPORT_MODES)
                         .type(new GraphQLList(transportModeSubmodeObjectType))
@@ -344,7 +404,7 @@ public class StopPlaceRegisterGraphQLSchema {
 
         GraphQLInputObjectType parentStopPlaceInputObjectType = parentStopPlaceInputObjectTypeCreator.create(commonInputFieldList, validBetweenInputObjectType, stopPlaceInputObjectType);
 
-        GraphQLInputObjectType parkingInputObjectType = createParkingInputObjectType(validBetweenInputObjectType);
+        GraphQLInputObjectType parkingInputObjectType = createParkingInputObjectType(commonInputFieldList, validBetweenInputObjectType);
 
         GraphQLInputObjectType groupOfStopPlacesInputObjectType = createGroupOfStopPlacesInputObjectType();
 
@@ -453,8 +513,9 @@ public class StopPlaceRegisterGraphQLSchema {
                 .description(VERSION_ARG_DESCRIPTION)
                 .build());
         arguments.add(GraphQLArgument.newArgument()
-                .name(FIND_BY_STOP_PLACE_ID)
-                .type(GraphQLString)
+                .name(PARKING_TYPE)
+                .type(new GraphQLList(parkingTypeEnum))
+                .description(PARKING_TYPE_ARG_DESCRIPTION)
                 .build());
         arguments.add(allVersionsArgument);
         return arguments;
@@ -846,7 +907,7 @@ public class StopPlaceRegisterGraphQLSchema {
         commonInputFieldsList.add(
                 newInputObjectField()
                         .name(ACCESSIBILITY_ASSESSMENT)
-                        .description("This field is set either on StopPlace (i.e. all Quays are equal), or on every Quay.")
+                        .description("This field is set either on StopPlace (i.e. all Quays are equal), or on every Quay or on Parking")
                         .type(accessibilityAssessmentInputObjectType)
                         .build()
         );

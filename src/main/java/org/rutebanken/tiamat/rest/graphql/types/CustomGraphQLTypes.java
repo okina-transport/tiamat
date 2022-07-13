@@ -81,6 +81,8 @@ public class CustomGraphQLTypes {
     public static GraphQLEnumType funicularSubmodeType = createCustomEnumType("FunicularSubmodeType", FunicularSubmodeEnumeration.class);
     public static GraphQLEnumType versionValidityEnumType = createCustomEnumType(ExportParams.VersionValidity.class.getSimpleName(), ExportParams.VersionValidity.class);
     public static GraphQLEnumType modificationEnumerationType = createCustomEnumType("ModificationEnumerationType", ModificationEnumeration.class);
+    public static GraphQLEnumType parkingCoveredEnum = createCustomEnumType("CoveredEnumeration", CoveredEnumeration.class);
+    public static GraphQLEnumType typeOfParkingRefEnumeration = createCustomEnumType("TypeOfParkingRefEnumeration", TypeOfParkingRefEnumeration.class);
 
 
     public static GraphQLEnumType createCustomEnumType(String name, Class c) {
@@ -791,97 +793,10 @@ public class CustomGraphQLTypes {
             )
             .build();
 
-    public static GraphQLObjectType createParkingObjectType(GraphQLObjectType validBetweenObjectType, GraphQLObjectType topographicPlaceObjectType) {
-        return newObject()
-                .name(OUTPUT_TYPE_PARKING)
-                .field(netexIdFieldDefinition)
-                .field(newFieldDefinition()
-                        .name(VERSION)
-                        .type(GraphQLString))
-                .field(newFieldDefinition()
-                        .name(NAME)
-                        .type(embeddableMultilingualStringObjectType))
-                .field(newFieldDefinition()
-                        .name(VALID_BETWEEN)
-                        .type(validBetweenObjectType))
-                .field(newFieldDefinition()
-                        .name(PARENT_SITE_REF)
-                        .type(GraphQLString)
-                        .dataFetcher(env -> {
-                            SiteRefStructure parentSiteRef = ((Parking) env.getSource()).getParentSiteRef();
-                            if (parentSiteRef != null) {
-                                return parentSiteRef.getRef();
-                            }
-                            return null;
-                        })
-                )
-                .field(newFieldDefinition()
-                        .name(TOTAL_CAPACITY)
-                        .type(GraphQLBigInteger))
-                .field(newFieldDefinition()
-                        .name(PARKING_TYPE)
-                        .type(parkingTypeEnum))
-                .field(newFieldDefinition()
-                        .name(PARKING_VEHICLE_TYPES)
-                        .type(new GraphQLList(parkingVehicleEnum)))
-                .field(newFieldDefinition()
-                        .name(PARKING_LAYOUT)
-                        .type(parkingLayoutEnum))
-                .field(newFieldDefinition()
-                        .name(PRINCIPAL_CAPACITY)
-                        .type(GraphQLBigInteger))
-                .field(newFieldDefinition()
-                        .name(OVERNIGHT_PARKING_PERMITTED)
-                        .type(GraphQLBoolean))
-                .field(newFieldDefinition()
-                        .name(RECHARGING_AVAILABLE)
-                        .type(GraphQLBoolean))
-                .field(newFieldDefinition()
-                        .name(CARPOOLING_AVAILABLE)
-                        .type(GraphQLBoolean))
-                .field(newFieldDefinition()
-                        .name(CARSHARING_AVAILABLE)
-                        .type(GraphQLBoolean))
-                .field(newFieldDefinition()
-                        .name(SECURE)
-                        .type(GraphQLBoolean))
-                .field(newFieldDefinition()
-                        .name(TYPE_OF_PARKING_REF)
-                        .type(GraphQLString))
-                .field(newFieldDefinition()
-                        .name(REAL_TIME_OCCUPANCY_AVAILABLE)
-                        .type(GraphQLBoolean))
-                .field(newFieldDefinition()
-                        .name(PARKING_RESERVATION)
-                        .type(parkingReservationEnum))
-                .field(newFieldDefinition()
-                        .name(BOOKING_URL)
-                        .type(GraphQLString))
-                .field(newFieldDefinition()
-                        .name(FREE_PARKING_OUT_OF_HOURS)
-                        .type(GraphQLBoolean))
-                .field(newFieldDefinition()
-                        .name(PARKING_PAYMENT_PROCESS)
-                        .type(new GraphQLList(parkingPaymentProcessEnum)))
-                .field(newFieldDefinition()
-                        .name(PARKING_PROPERTIES)
-                        .type(new GraphQLList(parkingPropertiesObjectType)))
-                .field(newFieldDefinition()
-                        .name(PARKING_AREAS)
-                        .type(new GraphQLList(parkingAreaObjectType)))
-                .field(newFieldDefinition()
-                        .name(TOPOGRAPHIC_PLACE)
-                        .type(topographicPlaceObjectType))
-                .field(newFieldDefinition()
-                        .name(VERSION_VALIDITY_ARG)
-                        .type(versionValidityEnumType))
-                .field(geometryFieldDefinition)
-                .build();
-    }
-
-    public static GraphQLInputObjectType createParkingInputObjectType(GraphQLInputObjectType validBetweenInputObjectType) {
+    public static GraphQLInputObjectType createParkingInputObjectType(List<GraphQLInputObjectField> commonInputFieldsList, GraphQLInputObjectType validBetweenInputObjectType) {
         return GraphQLInputObjectType.newInputObject()
                 .name(INPUT_TYPE_PARKING)
+                .fields(commonInputFieldsList)
                 .field(newInputObjectField()
                         .name(ID)
                         .type(GraphQLString))
@@ -923,7 +838,7 @@ public class CustomGraphQLTypes {
                         .type(GraphQLBoolean))
                 .field(newInputObjectField()
                         .name(TYPE_OF_PARKING_REF)
-                        .type(GraphQLString))
+                        .type(typeOfParkingRefEnumeration))
                 .field(newInputObjectField()
                         .name(REAL_TIME_OCCUPANCY_AVAILABLE)
                         .type(GraphQLBoolean))
@@ -951,6 +866,9 @@ public class CustomGraphQLTypes {
                 .field(newInputObjectField()
                         .name(VALID_BETWEEN)
                         .type(validBetweenInputObjectType))
+                .field(newInputObjectField()
+                        .name(COVERED)
+                        .type(parkingCoveredEnum))
                 .build();
     }
 }

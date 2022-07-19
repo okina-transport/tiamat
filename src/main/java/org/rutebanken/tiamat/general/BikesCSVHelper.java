@@ -16,7 +16,6 @@ import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.model.ParkingUserEnumeration;
 import org.rutebanken.tiamat.model.ParkingVehicleEnumeration;
 import org.rutebanken.tiamat.model.PlaceEquipment;
-import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
 import org.rutebanken.tiamat.service.Preconditions;
 
@@ -29,10 +28,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.rutebanken.tiamat.general.ParkingsCSVHelper.DELIMETER_PARKING_ID_NAME;
-
 public class BikesCSVHelper {
-    private static final Pattern patternXlongYlat = Pattern.compile("^-?([1-8]?[1-9]|[1-9]0)\\.{1}\\d{1,20}");
+    private static final Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
 
     private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 

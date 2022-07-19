@@ -1,27 +1,33 @@
 package org.rutebanken.tiamat.general;
 
-import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.EnumUtils;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.AccessibilityAssessment;
+import org.rutebanken.tiamat.model.AccessibilityLimitation;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
+import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.ParkingArea;
+import org.rutebanken.tiamat.model.ParkingCapacity;
+import org.rutebanken.tiamat.model.ParkingPaymentProcessEnumeration;
+import org.rutebanken.tiamat.model.ParkingProperties;
+import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
+import org.rutebanken.tiamat.model.ParkingUserEnumeration;
+import org.rutebanken.tiamat.model.PublicUseEnumeration;
+import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
 import org.rutebanken.tiamat.rest.dto.DtoParking;
 import org.rutebanken.tiamat.service.Preconditions;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -29,7 +35,7 @@ public class ParkingsCSVHelper {
 
     public final static String DELIMETER_PARKING_ID_NAME = " : ";
 
-    private final static Pattern patternXlongYlat = Pattern.compile("^-?([1-8]?[1-9]|[1-9]0)\\.{1}\\d{1,20}");
+    private final static Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
 
     private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 

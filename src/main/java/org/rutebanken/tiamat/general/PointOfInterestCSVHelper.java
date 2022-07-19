@@ -1,8 +1,7 @@
 package org.rutebanken.tiamat.general;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.lang3.StringUtils;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
@@ -29,11 +28,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -59,7 +55,7 @@ public class PointOfInterestCSVHelper {
     public final static String TOURISM_CLASSIFICATION_NAME = "tourism";
     public final static String OFFICE_CLASSIFICATION_NAME = "office";
 
-    private final static Pattern patternXlongYlat = Pattern.compile("^-?([1-8]?[1-9]|[1-9]0)\\.{1}\\d{1,20}");
+    private final static Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
 
     private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 

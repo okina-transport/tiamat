@@ -190,7 +190,9 @@ public class ParkingsCSVHelper {
                 pmrParkingArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.DISABLED);
                 pmrParkingArea.setPublicUse(PublicUseEnumeration.DISABLED_PUBLIC_ONLY);
                 pmrParkingArea.setVersion(1L);
-                pmrParkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+                if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")){
+                    pmrParkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+                }
                 pmrParkingArea.setName(new EmbeddableMultilingualString("Zone PMR", "FR"));
                 pmrParkingArea.setTotalCapacity(new BigInteger(parkingDto.getDisabledParkingNb()));
                 parking.getParkingAreas().add(pmrParkingArea);
@@ -222,7 +224,9 @@ public class ParkingsCSVHelper {
                 carPoolParkingArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.CARPOOL);
                 carPoolParkingArea.setPublicUse(PublicUseEnumeration.ALL);
                 carPoolParkingArea.setVersion(1L);
-                carPoolParkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+                if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")){
+                    carPoolParkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+                }
                 carPoolParkingArea.setName(new EmbeddableMultilingualString("Zone réservée aux covoitureurs", "FR"));
                 carPoolParkingArea.setTotalCapacity(BigInteger.valueOf(Long.parseLong(parkingDto.getCarPoolingNb())));
                 parking.getParkingAreas().add(carPoolParkingArea);
@@ -239,7 +243,9 @@ public class ParkingsCSVHelper {
                 carSharingArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.CARSHARE);
                 carSharingArea.setPublicUse(PublicUseEnumeration.ALL);
                 carSharingArea.setVersion(1L);
-                carSharingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+                if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")){
+                    carSharingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+                }
                 carSharingArea.setName(new EmbeddableMultilingualString("Zone Autopartage", "FR"));
                 carSharingArea.setTotalCapacity(BigInteger.valueOf(Long.parseLong(parkingDto.getCarSharingNb())));
                 parking.getParkingAreas().add(carSharingArea);

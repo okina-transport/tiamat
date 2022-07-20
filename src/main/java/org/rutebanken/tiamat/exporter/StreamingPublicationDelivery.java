@@ -863,7 +863,6 @@ public class StreamingPublicationDelivery {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void prepareParkings(AtomicInteger mappedParkingCount, List<JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter, Long exportJobId) {
 
-
         Iterator<org.rutebanken.tiamat.model.Parking> parkingResultsIterator;
 
         if (exportJobId == null){
@@ -872,9 +871,6 @@ public class StreamingPublicationDelivery {
             parkingResultsIterator =  getIteratorForManualExport(exportJobId);
         }
 
-
-
-
         // ExportParams could be used for parkingExportMode.
 
         int parkingsCount = parkingRepository.countResult();
@@ -882,16 +878,9 @@ public class StreamingPublicationDelivery {
             // Only set parkings if they will exist during marshalling.
             logger.info("Parking count is {}, will create parking in publication delivery", parkingsCount);
 
-            NetexMappingIterator<org.rutebanken.tiamat.model.Parking, Parking> parkingsMappingIterator = new NetexMappingIterator<>(netexMapper, parkingResultsIterator,
-                    Parking.class, mappedParkingCount, evicter);
-
-
-            List<Parking> netexParkings = new ArrayList<>();
-            parkingsMappingIterator.forEachRemaining(netexParkings::add);
-
-            netexParkings.forEach(parking->{
-                org.rutebanken.tiamat.model.Parking tiamatParking = parkingRepository.findFirstByNetexIdOrderByVersionDesc(parking.getId());
-                if (tiamatParking.getSiret() != null) {
+            parkingResultsIterator.forEachRemaining(tp -> {
+                Parking np = netexMapper.getFacade().map(tp, Parking.class);
+                if (tp.getSiret() != null && !tp.getSiret().isEmpty()) {
                     String organisationId = "MOBIITI:Organisation:" + UUID.randomUUID().toString();
                     String responsabilitySetId = "MOBIITI:ResponsibilitySet:" + UUID.randomUUID().toString();
                     String responsibilityRoleAssignmentId = "MOBIITI:ResponsibilityRoleAssignment:" + UUID.randomUUID().toString();
@@ -899,7 +888,7 @@ public class StreamingPublicationDelivery {
                     generalOrganisation.setId(organisationId);
                     generalOrganisation.setVersion("any");
                     generalOrganisation.getOrganisationType().add(OrganisationTypeEnumeration.OTHER);
-                    generalOrganisation.setCompanyNumber(tiamatParking.getSiret());
+                    generalOrganisation.setCompanyNumber(tp.getSiret());
                     listMembers.add(netexObjectFactory.createGeneralOrganisation(generalOrganisation));
 
                     OrganisationRefStructure organisationRefStructure = new OrganisationRefStructure();
@@ -920,10 +909,11 @@ public class StreamingPublicationDelivery {
                     responsibilitySet.setRoles(responsibilityRoleAssignmentsRelStructure);
                     listMembers.add(netexObjectFactory.createResponsibilitySet(responsibilitySet));
 
-                    parking.setResponsibilitySetRef(responsibilitySet.getId());
+                    np.setResponsibilitySetRef(responsibilitySet.getId());
                 }
-                listMembers.add(netexObjectFactory.createParking(parking));
+                listMembers.add(netexObjectFactory.createParking(np));
             });
+
 
             TypeOfParking typeOfParkingSecureBikeParking = new TypeOfParking();
             typeOfParkingSecureBikeParking.withVersion("any");
@@ -935,11 +925,9 @@ public class StreamingPublicationDelivery {
             typeOfParkingIndividualBox.withId("IndividualBox");
             typeOfParkingIndividualBox.withName(new MultilingualString().withValue("Individual Box"));
 
-
             listMembers.add(netexObjectFactory.createTypeOfParking(typeOfParkingSecureBikeParking));
             listMembers.add(netexObjectFactory.createTypeOfParking(typeOfParkingIndividualBox));
             logger.info("Adding {} typesOfParking in generalFrame");
-
         } else {
             logger.info("No parkings to export based on stop places");
         }

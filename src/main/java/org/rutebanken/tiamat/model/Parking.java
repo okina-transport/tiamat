@@ -82,6 +82,9 @@ public class Parking
     protected String siret;
     protected String typeOfParkingRef;
 
+    @Transient
+    protected String originalId;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     protected List<ParkingProperties> parkingProperties;
 
@@ -339,6 +342,10 @@ public class Parking
         return typeOfParkingRef;
     }
 
+    public void setOriginalId(String originalId) { this.originalId = originalId; }
+
+    public String getOriginalId() { return originalId; }
+
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
@@ -381,6 +388,7 @@ public class Parking
                 .add("freeParkingOutOfHours", freeParkingOutOfHours)
                 .add("parkingProperties", parkingProperties)
                 .add("parkingAreas", parkingAreas)
+                .add("originalId", originalId)
                 .toString();
     }
 }

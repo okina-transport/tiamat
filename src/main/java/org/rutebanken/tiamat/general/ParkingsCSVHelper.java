@@ -139,7 +139,8 @@ public class ParkingsCSVHelper {
             ParkingProperties parkingProperties = new ParkingProperties();
             parkingProperties.setSpaces(new ArrayList<>());
 
-            parking.setName(new EmbeddableMultilingualString(parkingDto.getId() + DELIMETER_PARKING_ID_NAME + parkingDto.getName()));
+            parking.setOriginalId(parkingDto.getId());
+            parking.setName(new EmbeddableMultilingualString(parkingDto.getName()));
 
             //Type d'usagers du parking
             if (EnumUtils.isValidEnum(ParkingUserEnumeration.class, parkingDto.getUserType())) {

@@ -20,19 +20,24 @@ public class TiamatGeneralFrameExporter {
     public TiamatGeneralFrameExporter(){
     }
 
-    public org.rutebanken.tiamat.model.GeneralFrame createTiamatGeneralFrame(String siteName, LocalDateTime localDateTime) {
+    public org.rutebanken.tiamat.model.GeneralFrame createTiamatGeneralFrame(String siteName, LocalDateTime localDateTime, ExportTypeEnumeration exportType) {
         // Frame <GeneralFrame>
         org.rutebanken.tiamat.model.GeneralFrame generalFrame = new org.rutebanken.tiamat.model.GeneralFrame();
         String localDateTimeString = localDateTime + "Z";
         localDateTimeString = localDateTimeString.replace("-", "");
         localDateTimeString = localDateTimeString.replace(":", "");
-        generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_ARRET_" + localDateTimeString + ":LOC");
         generalFrame.setModification(ModificationEnumeration.REVISE);
         generalFrame.setVersion(1L);
 
-        logger.info("Adding {} generalFrame", generalFrame);
 
-        setFramesDefault(generalFrame);
+        if (ExportTypeEnumeration.PARKING.equals(exportType)) {
+            generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_PARKING_" + localDateTimeString + ":LOC");
+            setFramesParking(generalFrame);
+        } else {
+            generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_ARRET_" + localDateTimeString + ":LOC");
+            setFramesDefault(generalFrame);
+        }
+        logger.info("Adding {} generalFrame", generalFrame);
         return generalFrame;
     }
 
@@ -41,6 +46,22 @@ public class TiamatGeneralFrameExporter {
         TypeOfFrameRefStructure typeOfFrameRefStructure = new TypeOfFrameRefStructure();
         typeOfFrameRefStructure.setRef("FR:TypeOfFrame:NETEX_ARRET");
         typeOfFrameRefStructure.setValue("version=\"1.1:FR-NETEX_ARRET-2.2\"");
+        generalFrame.setTypeOfFrameRef(typeOfFrameRefStructure);
+
+        logger.info("Adding {} typeOfFrameRefStructure in generalFrame", typeOfFrameRefStructure);
+
+        // Frame <members>
+        Members members = new Members();
+        generalFrame.setMembers(members);
+
+        logger.info("Adding {} members in generalFrame", members);
+    }
+
+    public void setFramesParking(GeneralFrame generalFrame) {
+        // Frame <TypeOfFrameRef>
+        TypeOfFrameRefStructure typeOfFrameRefStructure = new TypeOfFrameRefStructure();
+        typeOfFrameRefStructure.setRef("FR:TypeOfFrame:NETEX_PARKING");
+        typeOfFrameRefStructure.setValue("version=\"1.1:FR-NETEX_PARKING-2.2\"");
         generalFrame.setTypeOfFrameRef(typeOfFrameRefStructure);
 
         logger.info("Adding {} typeOfFrameRefStructure in generalFrame", typeOfFrameRefStructure);

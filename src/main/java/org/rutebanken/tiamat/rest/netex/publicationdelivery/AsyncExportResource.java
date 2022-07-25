@@ -108,6 +108,13 @@ public class AsyncExportResource {
         return Response.ok(exportJob).build();
     }
 
+    @GET
+    @Path("parkings")
+    public Response asyncParkingsExport(@BeanParam ExportParams exportParams) {
+        ExportJob exportJob = asyncPublicationDeliveryExporter.startParkingsExportJob(exportParams);
+        return Response.ok(exportJob).build();
+    }
+
 
     @GET
     @Path("stop-place-file-list-by-provider-name/{providerName}")
@@ -133,6 +140,21 @@ public class AsyncExportResource {
         String jsonString="";
         try {
             jsonString = objectMapper.writeValueAsString(pointsOfInterestFileList);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return Response.ok(jsonString).build();
+    }
+
+    @GET
+    @Path("parkings-file-list-by-provider-name/{providerName}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response asyncGetParkingsFileList(@PathParam(value = "providerName") String providerName, @HeaderParam("maxNbResults") Integer maxNbResults) {
+        List<String> parkingsOfInterestFileList = asyncPublicationDeliveryExporter.getParkingsFileListByProviderName(providerName,maxNbResults);
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonString="";
+        try {
+            jsonString = objectMapper.writeValueAsString(parkingsOfInterestFileList);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }

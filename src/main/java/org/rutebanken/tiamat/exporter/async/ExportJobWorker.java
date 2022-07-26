@@ -97,6 +97,9 @@ public class ExportJobWorker implements Runnable {
                 case POI:
                     exportPOIToLocalXmlFile(localExportXmlFile, provider, localDateTime);
                     break;
+                case PARKING:
+                    exportParkingsToLocalXmlFile(localExportXmlFile, provider, localDateTime);
+                    break;
                 default:
                     exportToLocalXmlFile(localExportXmlFile, provider, localDateTime);
                     break;
@@ -147,6 +150,12 @@ public class ExportJobWorker implements Runnable {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
         streamingPublicationDelivery.streamPOI(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING, provider, localDateTime, exportJob.getId());
+    }
+
+    private void exportParkingsToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime) throws IOException, SAXException, JAXBException {
+        logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
+        FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
+        streamingPublicationDelivery.streamParkings(fileOutputStream, localDateTime, exportJob.getId());
     }
 
     private void uploadToGcp(File localExportFile) {

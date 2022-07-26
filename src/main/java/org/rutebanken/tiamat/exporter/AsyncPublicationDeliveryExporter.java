@@ -157,6 +157,54 @@ public class AsyncPublicationDeliveryExporter {
     }
 
     /**
+     * Start Parkings export job
+     *
+     * @param exportParams search params for parkings
+     * @return export job with information about the started process
+     */
+    public ExportJob startParkingsExportJob(ExportParams exportParams) {
+        Iterable<Provider> providers;
+        providers = Collections.singletonList(providerRepository.getProvider(exportParams.getProviderId()));
+
+        ExportJob exportJob = new ExportJob(JobStatus.PROCESSING);
+
+        providers.forEach(provider -> {
+            if(provider != null) {
+                logger.info("Starting parkings export {} for provider {}", exportJob.getId(), provider.id + "/" + provider.chouetteInfo.codeIdfm);
+                exportJob.setStarted(Instant.now());
+                exportJob.setExportParams(exportParams);
+                exportJob.setSubFolder(provider.name);
+
+                LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
+                exportJobRepository.save(exportJob);
+                String idSite = provider.getChouetteInfo().getCodeIdfm();
+
+                String nameSite = provider.name;
+                if(StringUtils.isNotBlank(provider.getChouetteInfo().getNameNetexStopIdfm())) {
+                    nameSite = provider.getChouetteInfo().getNameNetexStopIdfm();
+                }
+
+                String fileNameWithoutExtention = createParkingsFileNameWithoutExtension(idSite, nameSite, localDateTime);
+
+                String nameFileZip = null;
+                try {
+                    nameFileZip = URLEncoder.encode(fileNameWithoutExtention, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+                exportJob.setFileName(nameFileZip + ".zip");
+
+                ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, ExportTypeEnumeration.PARKING);
+                exportService.submit(exportJobWorker);
+                logger.info("Returning started parkings export job {}", exportJob);
+                setJobUrl(exportJob);
+            }
+        });
+
+        return exportJob;
+    }
+
+    /**
      * Start POI export job with upload to google cloud storage
      *
      * @param exportParams search params for points of interest
@@ -209,8 +257,12 @@ public class AsyncPublicationDeliveryExporter {
         return "ARRET_" + idSite + "_" + nameSite + "_T_" + localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "T" + localDateTime.format(DateTimeFormatter.ofPattern("HHmmss")) + "Z";
     }
 
-    public String createPOIFileNameWithoutExtension(String idSite, String nameSite, LocalDateTime localDateTime) {
-        return "POI_" + idSite + "_" + nameSite + "_T_" + localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "T" + localDateTime.format(DateTimeFormatter.ofPattern("HHmmss")) + "Z";
+        public String createPOIFileNameWithoutExtension(String idSite, String nameSite, LocalDateTime localDateTime) {
+            return "POI_" + idSite + "_" + nameSite + "_T_" + localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "T" + localDateTime.format(DateTimeFormatter.ofPattern("HHmmss")) + "Z";
+        }
+
+    public String createParkingsFileNameWithoutExtension(String idSite, String nameSite, LocalDateTime localDateTime) {
+        return "PARKING_" + idSite + "_" + nameSite + "_T_" + localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "T" + localDateTime.format(DateTimeFormatter.ofPattern("HHmmss")) + "Z";
     }
 
     public ExportJob getExportJob(long exportJobId) {
@@ -285,6 +337,20 @@ public class AsyncPublicationDeliveryExporter {
         return poiFileList;
     }
 
+    public List<String> getParkingsFileListByProviderName(String providerName, int maxNbResults){
+        List<String> parkingsFileList = new ArrayList<>();
+
+        if (StringUtils.equals(tiamatExportDestination, "local") || StringUtils.equals(tiamatExportDestination, "both")){
+            parkingsFileList.addAll(getParkingsFileListFromLocalStorage(providerName));
+        }
+
+        if (StringUtils.equals(tiamatExportDestination, "gcs") || StringUtils.equals(tiamatExportDestination, "both")){
+            parkingsFileList.addAll(blobStoreService.listParkingsInBlob(providerName,maxNbResults));
+        }
+        Collections.sort(parkingsFileList, Collections.reverseOrder());
+        return parkingsFileList;
+    }
+
     private List<String> getStopPlaceFileListFromLocalStorage(String providerName){
         File providerDir = new File(localExportPath + File.separator +providerName);
 
@@ -318,6 +384,27 @@ public class AsyncPublicationDeliveryExporter {
                     .map(path -> path.getFileName().toString())
                     .filter(filename->filename.contains(".zip"))
                     .filter(filename->filename.contains("POI_"))
+                    .collect(toList());
+
+        }
+        catch (IOException e) {
+            logger.error("Error while reading local FileStore repository");
+            logger.error(e.getMessage());
+        }
+        return new ArrayList<>();
+    }
+
+    private List<String> getParkingsFileListFromLocalStorage(String providerName){
+        File providerDir = new File(localExportPath + File.separator +providerName);
+
+        if (!providerDir.exists())
+            return new ArrayList<>();
+
+        try {
+            return Files.walk(providerDir.toPath())
+                    .map(path -> path.getFileName().toString())
+                    .filter(filename->filename.contains(".zip"))
+                    .filter(filename->filename.contains("PARKING_"))
                     .collect(toList());
 
         }

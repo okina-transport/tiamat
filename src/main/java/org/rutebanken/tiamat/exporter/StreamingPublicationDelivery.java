@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.exporter;
 
 import net.opengis.gml._3.DirectPositionType;
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
 import org.rutebanken.netex.model.AccessibilityAssessment;
@@ -229,7 +230,7 @@ public class StreamingPublicationDelivery {
      * @throws SAXException
      */
     public void streamForAPI(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime ) throws JAXBException, IOException, SAXException {
-        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime);
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime, ExportTypeEnumeration.STOP_PLACE);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
         AtomicInteger mappedParkingCount = new AtomicInteger();
@@ -265,8 +266,6 @@ public class StreamingPublicationDelivery {
         logger.info("TariffZones preparation completed");
         prepareStopPlaces(exportParams, stopPlacePrimaryIds, mappedStopPlaceCount, listMembers, entitiesEvictor);
         logger.info("Stop places preparation completed");
-        prepareParkings(mappedParkingCount, listMembers, entitiesEvictor,null);
-        logger.info("Parking preparation completed");
         //  prepareGroupOfStopPlaces(exportParams, stopPlacePrimaryIds, mappedGroupOfStopPlacesCount, listMembers, entitiesEvictor);
 
         completeStreamingProcess(outputStream, mappedStopPlaceCount, mappedParkingCount, mappedTariffZonesCount, mappedTopographicPlacesCount, mappedGroupOfStopPlacesCount, netexGeneralFrame, listMembers);
@@ -335,7 +334,7 @@ public class StreamingPublicationDelivery {
      * @throws SAXException
      */
     public void streamForAsyncExportJob(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime, Long exportJobId) throws JAXBException, IOException, SAXException {
-        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime);
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime, ExportTypeEnumeration.STOP_PLACE);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
         AtomicInteger mappedParkingCount = new AtomicInteger();
@@ -386,12 +385,58 @@ public class StreamingPublicationDelivery {
         logger.info("Preparing scrollable iterators");
         prepareTopographicPlaces(exportParams, completeStopPlaceList, mappedTopographicPlacesCount, listMembers, null, exportJobId);
 
+        completeStreamingProcess(outputStream, mappedStopPlaceCount, mappedParkingCount, mappedTariffZonesCount, mappedTopographicPlacesCount, mappedGroupOfStopPlacesCount, netexGeneralFrame, listMembers);
+    }
+
+    /**
+     * Launch a stream of the object, for netex export launched by user
+     * @param outputStream
+     * @param localDateTime
+     * @param exportJobId
+     * @throws JAXBException
+     * @throws IOException
+     * @throws SAXException
+     */
+    public void streamParkings(OutputStream outputStream, LocalDateTime localDateTime, Long exportJobId) throws JAXBException, IOException, SAXException {
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime, ExportTypeEnumeration.PARKING);
+
+        AtomicInteger mappedParkingCount = new AtomicInteger();
+
+        //   EntitiesEvictor entitiesEvictor = instantiateEvictor();
+
+        //List that will contain all the members in the General Frame
+        List <JAXBElement<? extends EntityStructure>> listMembers = new ArrayList<>();
+
+        GeneralFrame netexGeneralFrame = netexMapper.mapToNetexModel(generalFrame);
+
+
+        parkingRepository.initExportJobTable(exportJobId);
+        logger.info("Initialization completed for table export_job_id_list. jobId :" + exportJobId);
 
         prepareParkings(mappedParkingCount, listMembers, null,exportJobId);
         logger.info("Parking preparation completed");
 
+        List<JAXBElement<? extends EntityStructure>> filteredListMembers = filterDuplicates(listMembers);
+        logger.info("Duplicates filtered");
 
-        completeStreamingProcess(outputStream, mappedStopPlaceCount, mappedParkingCount, mappedTariffZonesCount, mappedTopographicPlacesCount, mappedGroupOfStopPlacesCount, netexGeneralFrame, listMembers);
+        //adding the members to the general Frame
+        General_VersionFrameStructure.Members general_VersionFrameStructure = netexObjectFactory.createGeneral_VersionFrameStructureMembers();
+        general_VersionFrameStructure.withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(filteredListMembers);
+        netexGeneralFrame.withMembers(general_VersionFrameStructure);
+
+        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame,"idSite",LocalDateTime.now());
+
+        Marshaller marshaller = createMarshaller();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+        JAXBElement<PublicationDeliveryStructure> publicationDelivery = netexObjectFactory.createPublicationDelivery(publicationDeliveryStructure);
+
+        logger.info("Start marshalling publication delivery");
+        marshaller.marshal(publicationDelivery, byteArrayOutputStream);
+        logger.info("marshalling completed. starting last modifications");
+        doLastModifications(outputStream, byteArrayOutputStream);
+
+        logger.info("Mapped {} parkings to netex", mappedParkingCount.get());
 
     }
 
@@ -862,11 +907,11 @@ public class StreamingPublicationDelivery {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void prepareParkings(AtomicInteger mappedParkingCount, List<JAXBElement<? extends EntityStructure>> listMembers, EntitiesEvictor evicter, Long exportJobId) {
-
         Iterator<org.rutebanken.tiamat.model.Parking> parkingResultsIterator;
 
         if (exportJobId == null){
-            parkingResultsIterator = parkingRepository.scrollParkings();
+            List<org.rutebanken.tiamat.model.Parking> parkingList = parkingRepository.getParkingsInitializedForExport(parkingRepository.scrollParkings());
+            parkingResultsIterator = parkingList.iterator();
         }else{
             parkingResultsIterator =  getIteratorForManualExport(exportJobId);
         }
@@ -877,8 +922,10 @@ public class StreamingPublicationDelivery {
         if (parkingsCount > 0) {
             // Only set parkings if they will exist during marshalling.
             logger.info("Parking count is {}, will create parking in publication delivery", parkingsCount);
+            mappedParkingCount.set(parkingsCount);
 
-            parkingResultsIterator.forEachRemaining(tp -> {
+            while (parkingResultsIterator.hasNext()) {
+                org.rutebanken.tiamat.model.Parking tp = parkingResultsIterator.next();
                 Parking np = netexMapper.getFacade().map(tp, Parking.class);
                 if (tp.getSiret() != null && !tp.getSiret().isEmpty()) {
                     String organisationId = "MOBIITI:Organisation:" + UUID.randomUUID().toString();
@@ -912,8 +959,7 @@ public class StreamingPublicationDelivery {
                     np.setResponsibilitySetRef(responsibilitySet.getId());
                 }
                 listMembers.add(netexObjectFactory.createParking(np));
-            });
-
+            }
 
             TypeOfParking typeOfParkingSecureBikeParking = new TypeOfParking();
             typeOfParkingSecureBikeParking.withVersion("any");
@@ -929,7 +975,7 @@ public class StreamingPublicationDelivery {
             listMembers.add(netexObjectFactory.createTypeOfParking(typeOfParkingIndividualBox));
             logger.info("Adding {} typesOfParking in generalFrame");
         } else {
-            logger.info("No parkings to export based on stop places");
+            logger.info("No parkings to export");
         }
     }
 

@@ -2,6 +2,8 @@ package org.rutebanken.tiamat.general;
 
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
@@ -18,18 +20,27 @@ import org.rutebanken.tiamat.model.ParkingVehicleEnumeration;
 import org.rutebanken.tiamat.model.PlaceEquipment;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
 import org.rutebanken.tiamat.service.Preconditions;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class BikesCSVHelper {
     private static final Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
+
+    private final static String DATA_GOUV_ENDPOINT = "https://api-adresse.data.gouv.fr/reverse/?lat=%s&lon=%s";
+    private final static String GEO_API_GOUV_ENDPOINT = "https://geo.api.gouv.fr/communes?lat=%s&lon=%s&fields=nom,code,codesPostaux&format=json";
 
     private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
@@ -78,6 +89,7 @@ public class BikesCSVHelper {
         dtoBikeParking.setGestionnaire(csvRecord.get(18));
         dtoBikeParking.setDateMaj(csvRecord.get(19));
         dtoBikeParking.setCommentaires(csvRecord.get(20));
+        dtoBikeParking.setName(csvRecord.get(21));
 
         return dtoBikeParking;
     }
@@ -116,7 +128,7 @@ public class BikesCSVHelper {
     }
 
 
-    public static List<Parking> mapFromDtoToEntityParking(List<DtoBikeParking> dtoParkingsCSV, boolean isRentalBike) {
+    public static List<Parking> mapFromDtoToEntityParking(List<DtoBikeParking> dtoParkingsCSV, boolean isRentalBike) throws IllegalArgumentException{
         return dtoParkingsCSV.stream().map(bikeParkingDto -> {
 
             Parking parking = new Parking();
@@ -124,7 +136,11 @@ public class BikesCSVHelper {
             parking.setVersion(1L);
 
             parking.setDescription(new EmbeddableMultilingualString(bikeParkingDto.getCommentaires()));
-            parking.setName(new EmbeddableMultilingualString(bikeParkingDto.getIdLocal()));
+            if (bikeParkingDto.getName() != null && !bikeParkingDto.getName().isEmpty()) {
+                parking.setName(new EmbeddableMultilingualString(bikeParkingDto.getName()));
+            } else {
+                parking.setName(new EmbeddableMultilingualString(buildBikeParkingName(bikeParkingDto, isRentalBike)));
+            }
 
             //Emplacement du parking
             parking.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(bikeParkingDto.getXlong()), Double.parseDouble(bikeParkingDto.getYlat()))));
@@ -137,8 +153,7 @@ public class BikesCSVHelper {
             // Parking type
             if(isRentalBike){
                 parking.setParkingType(ParkingTypeEnumeration.CYCLE_RENTAL);
-            }
-            else{
+            } else{
                 if ("CONSIGNE COLLECTIVE FERMEE".equals(bikeParkingDto.getProtection()) || "BOX INDIVIDUEL FERME".equals(bikeParkingDto.getProtection())) {
                     parking.setParkingType(ParkingTypeEnumeration.OTHER);
                 } else {
@@ -246,5 +261,48 @@ public class BikesCSVHelper {
 
             return parking;
         }).collect(Collectors.toList());
+    }
+
+    private static String buildBikeParkingName(DtoBikeParking bikeParkingDto, Boolean isRentalBike) {
+        String type = "";
+        if (isRentalBike) {
+            type = "VLS";
+        } else if ("CONSIGNE COLLECTIVE FERMEE".equals(bikeParkingDto.getProtection())) {
+            type = "CONSIGNE VELO";
+        } else if ("BOX INDIVIDUEL FERME".equals(bikeParkingDto.getProtection())) {
+            type = "BOX VELO";
+        } else {
+            type = "STATION VELO";
+        }
+
+        final String dataGouvUrl = String.format(DATA_GOUV_ENDPOINT, bikeParkingDto.getYlat(), bikeParkingDto.getXlong());
+        final String geoApiGouvUrl = String.format(GEO_API_GOUV_ENDPOINT, bikeParkingDto.getXlong(), bikeParkingDto.getYlat());
+        RestTemplate restTemplate = new RestTemplate();
+
+        try {
+            final ResponseEntity response1 = restTemplate.exchange(dataGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, String.class);
+            JSONObject body = new JSONObject(Objects.requireNonNull(response1.getBody()).toString());
+
+            if (body.getJSONArray("features") != null && body.getJSONArray("features").length() > 0) {
+                String city = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties").getString("city");
+                String street = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties").getString("street");
+
+                return "[" + type + city + " " + street + "]";
+            } else {
+
+                final ResponseEntity response2 = restTemplate.exchange(geoApiGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, Object.class);
+                body = new JSONObject(Objects.requireNonNull(response2.getBody()).toString());
+
+                if (body.getString("nom") != null && !body.getString("nom").isEmpty()) {
+                    String city = body.getString("nom");
+                    return "[" + type + city + "]";
+                } else {
+                    throw new IllegalArgumentException("Impossible de trouver le nom du parking suivant : " + bikeParkingDto.getIdLocal());
+                }
+            }
+        } catch (RestClientException | JSONException | IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

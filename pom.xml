@@ -20,7 +20,7 @@
 
     <groupId>org.rutebanken</groupId>
     <artifactId>tiamat</artifactId>
-    <version>2.3.4-mobi-iti</version>
+    <version>2.3.4-mobi-iti-testTransac</version>
     <packaging>jar</packaging>
 
     <name>Tiamat</name>

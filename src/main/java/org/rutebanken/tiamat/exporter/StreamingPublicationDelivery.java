@@ -195,17 +195,17 @@ public class StreamingPublicationDelivery {
         this.groupOfStopPlacesRepository = groupOfStopPlacesRepository;
         this.validateAgainstSchema = validateAgainstSchema;
     }
-    @Transactional
+
     public void stream(ExportParams exportParams, OutputStream outputStream, Provider provider) throws Exception {
         stream(exportParams, outputStream, false, provider);
     }
 
-    @Transactional
+
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider) throws JAXBException, IOException, SAXException {
         stream(exportParams, outputStream, false, provider, LocalDateTime.now().withNano(0), null);
     }
 
-    @Transactional
+
     public void stream(ExportParams exportParams, OutputStream outputStream, boolean ignorePaging, Provider provider, LocalDateTime localDateTime, Long exportJobId) throws JAXBException, IOException, SAXException {
         if (exportJobId == null) {
             //streaming launched by abzu queries, irkalla
@@ -1249,7 +1249,7 @@ public class StreamingPublicationDelivery {
         return bd.doubleValue();
     }
 
-    @Transactional
+
     public EntitiesEvictor instantiateEvictor() {
         if (entityManager != null) {
             Session currentSession = entityManager.unwrap(Session.class);

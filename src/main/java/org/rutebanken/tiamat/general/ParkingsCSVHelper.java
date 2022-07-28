@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.general;
 
+import io.micrometer.core.instrument.util.StringUtils;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.EnumUtils;
 import org.locationtech.jts.geom.Coordinate;
@@ -151,7 +152,21 @@ public class ParkingsCSVHelper {
                 parkingProperties.getParkingUserTypes().add(ParkingUserEnumeration.ALL);
             }
 
-            parking.setParkingType(ParkingTypeEnumeration.PARKING_ZONE);
+            BigInteger parkAndRideCapacity = parkingDto.getNbOfPr().isEmpty() ? BigInteger.ZERO : new BigInteger(parkingDto.getNbOfPr());
+
+            if (parkAndRideCapacity.equals(BigInteger.ZERO)){
+                parking.setParkingType(ParkingTypeEnumeration.PARKING_ZONE);
+            }else{
+                parking.setParkingType(ParkingTypeEnumeration.PARK_AND_RIDE);
+
+                ParkingArea parkAndRideArea = new ParkingArea();
+                parkAndRideArea.setVersion(1L);
+                parkAndRideArea.setName(new EmbeddableMultilingualString("Zone P+R", "FR"));
+                parkAndRideArea.setTotalCapacity(parkAndRideCapacity);
+                parking.getParkingAreas().add(parkAndRideArea);
+            }
+
+
             parking.setBookingUrl(parkingDto.getUrl());
             parking.setVersion(1L);
             parkingArea.setVersion(1L);

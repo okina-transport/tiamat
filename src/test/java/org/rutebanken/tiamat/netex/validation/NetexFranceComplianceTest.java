@@ -82,6 +82,7 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
 
         ExportJob exportJob = new ExportJob(JobStatus.PROCESSING);
         exportJob.setFileName(fileNameWithoutExtention);
+        exportJob.setId(1L);
         ExportParams exportParams = ExportParams.newExportParamsBuilder()
                                                 .setStopPlaceSearch(
                                                         StopPlaceSearch

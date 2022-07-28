@@ -39,6 +39,7 @@ import org.xml.sax.SAXException;
 import javax.xml.bind.JAXBException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -98,11 +99,13 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
                 .setProviderId(provider.getId())
                 .build();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        ExportJob exportJob = asyncPublicationDeliveryExporter.startExportJob(exportParams);
 
-        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, true, provider);
+
+        streamingPublicationDelivery.stream(exportParams, byteArrayOutputStream, true, provider,LocalDateTime.now(),exportJob.getId());
         asyncPublicationDeliveryExporter.streamingPublicationDelivery = streamingPublicationDelivery;
 
-        ExportJob exportJob = asyncPublicationDeliveryExporter.startExportJob(exportParams);
+
         JobStatus startStatus = exportJob.getStatus();
 
         assertThat(exportJob.getId()).isGreaterThan(0L);

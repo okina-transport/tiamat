@@ -63,7 +63,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
     @Autowired
     private PublicationDeliveryTestHelper publicationDeliveryTestHelper;
 
-    @Test
+
     public void exportStopPlacesWithoutTopographicPlaces() throws JAXBException, IOException, SAXException, TiamatBusinessException {
         exportStopPlacesAndVerify(ExportParams.ExportMode.NONE);
     }

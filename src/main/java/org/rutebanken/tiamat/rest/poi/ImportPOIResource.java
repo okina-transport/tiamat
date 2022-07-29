@@ -5,6 +5,7 @@ package org.rutebanken.tiamat.rest.poi;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.tiamat.general.PointOfInterestCSVHelper;
+import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.rest.dto.DtoPointOfInterest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +46,7 @@ public class ImportPOIResource {
         PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
         List<DtoPointOfInterest> poiWithClassification = filterPoisWithClassification(dtoPointOfInterest);
 
-        poiHelper.clearPOIExceptShop();
+        //poiHelper.clearPOIExceptShop();
 
         try {
             poiHelper.persistPointsOfInterest(poiWithClassification);
@@ -68,14 +69,13 @@ public class ImportPOIResource {
         PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
         checkShops(dtoPointOfInterest);
 
-        poiHelper.clearPOIForShopClassification();
+        //poiHelper.clearPOIForShopClassification();
 
         try {
             poiHelper.persistPointsOfInterest(dtoPointOfInterest);
         }catch(Exception e){
             logger.error(e.getMessage(),e);
         }
-
         return Response.status(200).build();
     }
 

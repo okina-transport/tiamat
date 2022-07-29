@@ -19,6 +19,7 @@ import org.rutebanken.tiamat.repository.PointOfInterestFacilitySetRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.rest.dto.DtoPointOfInterest;
 import org.rutebanken.tiamat.service.Preconditions;
+import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.PointOfInterestClassificationVersionedSaverService;
 import org.rutebanken.tiamat.versioning.save.PointOfInterestVersionedSaverService;
 import org.slf4j.Logger;
@@ -30,12 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -71,12 +67,14 @@ public class PointOfInterestCSVHelper {
     @Autowired
     private UsernameFetcher usernameFetcher;
 
-
     @Autowired
     private PointOfInterestVersionedSaverService poiVersionedSaverService;
 
     @Autowired
     private PointOfInterestClassificationVersionedSaverService poiClassVersionedSaverService;
+
+    @Autowired
+    private VersionCreator versionCreator;
 
 
     //Cache to store parent classifications
@@ -186,9 +184,63 @@ public class PointOfInterestCSVHelper {
         logger.info("Mapping completed. Starting to persist POIs");
 
         for (PointOfInterest pointOfInterest : poiToPersist) {
-            poiVersionedSaverService.saveNewVersion(pointOfInterest);
+            PointOfInterest poiInBdd = retrievePOIinBDD(pointOfInterest);
+            if (poiInBdd != null && poiInBdd.getNetexId() != null) {
+                PointOfInterest updatedPoi = versionCreator.createCopy(poiInBdd, PointOfInterest.class);
+                if (populatePOI(updatedPoi, pointOfInterest)) {
+                    poiVersionedSaverService.saveNewVersion(updatedPoi);
+                }
+            } else {
+                poiVersionedSaverService.saveNewVersion(pointOfInterest);
+            }
         }
 
+    }
+
+    private PointOfInterest retrievePOIinBDD(PointOfInterest pointOfInterest) {
+        String foundPOINetexId = pointOfInterestRepo.findFirstByKeyValues(ORIGINAL_ID_KEY, Collections.singleton(pointOfInterest.getKeyValues().get(ORIGINAL_ID_KEY).toString()));
+        if (foundPOINetexId != null) {
+            PointOfInterest foundPOI = pointOfInterestRepo.findFirstByNetexIdOrderByVersionDesc(foundPOINetexId);
+            if (foundPOI.getCentroid().equalsExact(pointOfInterest.getCentroid(),  0.0001)) {
+                return foundPOI;
+            }
+        }
+        return null;
+    }
+
+    private boolean populatePOI(PointOfInterest existingPOI, PointOfInterest newPOI) {
+        boolean updated = false;
+        if (newPOI.getClassifications() != null) {
+            existingPOI.setClassifications(newPOI.getClassifications());
+            updated = true;
+        }
+
+        if (newPOI.getAddress() != null) {
+            existingPOI.setAddress(newPOI.getAddress());
+            updated = true;
+        }
+
+        if (newPOI.getCity() != null) {
+            existingPOI.setCity(newPOI.getCity());
+            updated = true;
+        }
+
+        if (newPOI.getPointOfInterestFacilitySet() != null) {
+            existingPOI.setPointOfInterestFacilitySet(newPOI.getPointOfInterestFacilitySet());
+            updated = true;
+        }
+
+        if (newPOI.getPostalCode() != null) {
+            existingPOI.setPostalCode(newPOI.getPostalCode());
+            updated = true;
+        }
+
+        if (newPOI.getZipCode() != null) {
+            existingPOI.setZipCode(newPOI.getZipCode());
+            updated = true;
+        }
+
+        return updated;
     }
 
 

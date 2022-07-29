@@ -48,7 +48,7 @@ public class ParkingsImportedService {
                 founded = true;
                 updatedParking = versionCreator.createCopy(parkingInBDD, Parking.class);
 
-                boolean isParkingUpdated = populateParking(parkingInBDD, updatedParking);
+                boolean isParkingUpdated = populateParking(parkingToSave, updatedParking);
 
                 if(isParkingUpdated) {
                     parkingVersionedSaverService.saveNewVersion(updatedParking);
@@ -67,9 +67,7 @@ public class ParkingsImportedService {
 
     private Parking retrieveParkingInBDD(Parking parking){
 
-        String parkingId = getIdAvailableInCSV(parking.getName().getValue());
-
-        Set values = new HashSet(Arrays.asList(parkingId));
+        Set values = new HashSet(Arrays.asList(parking.getOriginalId()));
 
         String parkingNetexId = parkingRepository.findFirstByKeyValues(NetexIdMapper.ORIGINAL_ID_KEY, values);
 
@@ -80,15 +78,6 @@ public class ParkingsImportedService {
         return null;
 
     }
-
-    private String getNameAvailableInCSV(String parkingName){
-        return parkingName.split(ParkingsCSVHelper.DELIMETER_PARKING_ID_NAME)[1];
-    }
-
-    private String getIdAvailableInCSV(String parkingName){
-        return parkingName.split(ParkingsCSVHelper.DELIMETER_PARKING_ID_NAME)[0];
-    }
-
 
     private boolean populateParking(Parking existingParking, Parking updatedParking) {
         boolean isUpdated = false;

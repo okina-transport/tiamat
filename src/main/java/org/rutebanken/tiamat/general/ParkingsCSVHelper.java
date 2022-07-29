@@ -5,6 +5,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.EnumUtils;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
+
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.model.AccessibilityAssessment;
 import org.rutebanken.tiamat.model.AccessibilityLimitation;
@@ -163,6 +164,7 @@ public class ParkingsCSVHelper {
                 parkAndRideArea.setVersion(1L);
                 parkAndRideArea.setName(new EmbeddableMultilingualString("Zone P+R", "FR"));
                 parkAndRideArea.setTotalCapacity(parkAndRideCapacity);
+                parkAndRideArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.PARD_AND_RIDE);
                 parking.getParkingAreas().add(parkAndRideArea);
             }
 

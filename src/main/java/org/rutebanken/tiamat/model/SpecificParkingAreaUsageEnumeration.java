@@ -5,6 +5,7 @@ public enum SpecificParkingAreaUsageEnumeration {
     NONE("aucun"),
     CARPOOL("covoiturage"),
     CARSHARE("autopartage"),
+    PARD_AND_RIDE("parkAndRide"),
     DISABLED("handicap");
     private final String value;
 

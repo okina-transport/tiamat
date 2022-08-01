@@ -27,6 +27,7 @@ public class DtoBikeParking {
     private String gestionnaire;
     private String dateMaj;
     private String commentaires;
+    private String name;
 
     public String getIdLocal() {
         return idLocal;
@@ -204,6 +205,14 @@ public class DtoBikeParking {
         this.commentaires = commentaires;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public DtoBikeParking() {
     }
 
@@ -233,6 +242,7 @@ public class DtoBikeParking {
                 .add("gestionnaire", gestionnaire)
                 .add("date_maj", dateMaj)
                 .add("commentaires", commentaires)
+                .add("nom", name)
                 .toString();
     }
 }

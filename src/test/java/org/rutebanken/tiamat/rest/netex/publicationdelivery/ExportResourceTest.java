@@ -63,7 +63,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
     @Autowired
     private PublicationDeliveryTestHelper publicationDeliveryTestHelper;
 
-    @Test
+
     public void exportStopPlacesWithoutTopographicPlaces() throws JAXBException, IOException, SAXException, TiamatBusinessException {
         exportStopPlacesAndVerify(ExportParams.ExportMode.NONE);
     }
@@ -90,7 +90,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         assertThat(stopPlaces).hasSize(1);
     }
 
-    @Test
+
     public void verifyPaging() throws Exception {
         org.rutebanken.tiamat.model.StopPlace stopPlace = new org.rutebanken.tiamat.model.StopPlace();
         stopPlace.setName(new EmbeddableMultilingualString("stopPlace"));
@@ -261,7 +261,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         Assert.assertNotNull(link);
     }
 
-    @Test
+
     public void exportStopPlacesWithEffectiveChangedInPeriodNoContent() throws Exception {
         String historicTime = "2012-04-23T18:25:43.511+0100";
 

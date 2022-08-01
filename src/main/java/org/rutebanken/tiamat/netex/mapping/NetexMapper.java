@@ -151,6 +151,7 @@ public class NetexMapper {
                 .register();
 
         mapperFactory.classMap(WaitingRoomEquipment.class, org.rutebanken.tiamat.model.WaitingRoomEquipment.class)
+                .customize(new WaitingRoomEquipmentMapper())
                 .byDefault()
                 .register();
 

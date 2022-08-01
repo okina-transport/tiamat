@@ -5,7 +5,8 @@ import org.rutebanken.tiamat.model.AccessSpaceTypeEnumeration;
 public enum ExportTypeEnumeration {
 
     STOP_PLACE("stop place"),
-    POI("point of interest");
+    POI("point of interest"),
+    PARKING("parking");
     private final String value;
 
     ExportTypeEnumeration(String v) {

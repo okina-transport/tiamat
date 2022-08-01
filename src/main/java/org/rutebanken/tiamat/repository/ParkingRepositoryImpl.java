@@ -111,8 +111,13 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     }
 
     @Override
-    public Iterator<Parking> scrollParkings() {
-        return scrollParkings(getParkings());
+    public Set<Long> scrollParkings() {
+        Iterator<Parking> ip = scrollParkings(getParkings());
+        Set<Long> result = new HashSet<>();
+        while (ip.hasNext()) {
+            result.add(ip.next().getId());
+        }
+        return result;
     }
 
 
@@ -412,6 +417,10 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
 
         results.forEach(parking-> {
 
+            Hibernate.initialize(parking.getPlaceEquipments());
+            if (parking.getPlaceEquipments() != null) {
+                Hibernate.initialize(parking.getPlaceEquipments().getInstalledEquipment());
+            }
             Hibernate.initialize(parking.getParkingPaymentProcess());
             Hibernate.initialize(parking.getParkingVehicleTypes());
             Hibernate.initialize(parking.getAccessibilityAssessment());
@@ -430,6 +439,7 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
                 for (ParkingArea parkingArea : parking.getParkingAreas()) {
                     Hibernate.initialize(parkingArea.getAlternativeNames());
                     Hibernate.initialize(parkingArea.getAccessibilityAssessment());
+                    Hibernate.initialize(parkingArea.getKeyValues());
 
                     if (parkingArea.getAccessibilityAssessment() != null){
                         Hibernate.initialize(parkingArea.getAccessibilityAssessment().getLimitations());

@@ -19,7 +19,11 @@ import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
 import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.netex.model.PublicUseEnumeration;
+import org.rutebanken.netex.model.TypeOfPlaceRefStructure;
+import org.rutebanken.netex.model.TypeOfPlaceRefs_RelStructure;
+
 import org.rutebanken.tiamat.model.ParkingArea;
+import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
 
 public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.ParkingArea, ParkingArea> {
 
@@ -36,5 +40,13 @@ public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.P
 
         netexParkingArea.setPublicUse(tiamatParkingArea.getPublicUse() != null ? PublicUseEnumeration.fromValue(tiamatParkingArea.getPublicUse().value()) : PublicUseEnumeration.ALL);
         netexParkingArea.withRest(netexObjectFactory.createParkingArea_VersionStructureTotalCapacity(tiamatParkingArea.getTotalCapacity()));
+
+        if (SpecificParkingAreaUsageEnumeration.PARD_AND_RIDE.equals(tiamatParkingArea.getSpecificParkingAreaUsage())){
+            TypeOfPlaceRefs_RelStructure typeOfPlaceRefRel = new TypeOfPlaceRefs_RelStructure();
+            TypeOfPlaceRefStructure typeOfPlaceRef = new TypeOfPlaceRefStructure();
+            typeOfPlaceRef.withRef("parkAndRide");
+            typeOfPlaceRefRel.withTypeOfPlaceRef(typeOfPlaceRef);
+            netexParkingArea.setPlaceTypes(typeOfPlaceRefRel);
+        }
     }
 }

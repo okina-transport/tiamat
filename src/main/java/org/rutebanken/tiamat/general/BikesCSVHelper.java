@@ -154,11 +154,7 @@ public class BikesCSVHelper {
             if(isRentalBike){
                 parking.setParkingType(ParkingTypeEnumeration.CYCLE_RENTAL);
             } else{
-                if ("CONSIGNE COLLECTIVE FERMEE".equals(bikeParkingDto.getProtection()) || "BOX INDIVIDUEL FERME".equals(bikeParkingDto.getProtection())) {
-                    parking.setParkingType(ParkingTypeEnumeration.OTHER);
-                } else {
-                    parking.setParkingType(ParkingTypeEnumeration.PARKING_ZONE);
-                }
+                parking.setParkingType(ParkingTypeEnumeration.OTHER);
             }
 
 
@@ -168,7 +164,7 @@ public class BikesCSVHelper {
             } else if ("BOX INDIVIDUEL FERME".equals(bikeParkingDto.getProtection())) {
                 parking.setTypeOfParkingRef("IndividualBox");
             } else {
-                parking.setTypeOfParkingRef(null);
+                parking.setTypeOfParkingRef("BikeParking");
             }
 
             if (Boolean.parseBoolean(bikeParkingDto.getSurveillance()) || "CONSIGNE COLLECTIVE FERMEE".equals(bikeParkingDto.getProtection())) {

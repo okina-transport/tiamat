@@ -971,6 +971,12 @@ public class StreamingPublicationDelivery {
             typeOfParkingIndividualBox.withId("IndividualBox");
             typeOfParkingIndividualBox.withName(new MultilingualString().withValue("Individual Box"));
 
+            TypeOfParking typeBikeParking = new TypeOfParking();
+            typeBikeParking.withVersion("any");
+            typeBikeParking.withId("BikeParking");
+            typeBikeParking.withName(new MultilingualString().withValue("Bike Parking"));
+
+            listMembers.add(netexObjectFactory.createTypeOfParking(typeBikeParking));
             listMembers.add(netexObjectFactory.createTypeOfParking(typeOfParkingSecureBikeParking));
             listMembers.add(netexObjectFactory.createTypeOfParking(typeOfParkingIndividualBox));
             logger.info("Adding {} typesOfParking in generalFrame");

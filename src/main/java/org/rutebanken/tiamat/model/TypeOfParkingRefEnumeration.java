@@ -3,6 +3,7 @@ package org.rutebanken.tiamat.model;
 public enum TypeOfParkingRefEnumeration {
 
     SecureBikeParking("SecureBikeParking"),
+    BikeParking("BikeParking"),
     IndividualBox("IndividualBox");
 
     private final String value;

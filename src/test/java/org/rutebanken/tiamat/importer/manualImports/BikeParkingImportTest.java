@@ -60,7 +60,7 @@ public class BikeParkingImportTest extends TiamatIntegrationTest {
     @Test
     public void testPOIWithoutID() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_without_id.csv"));
-        String expectedMessage = "ID is required in all your parkings";
+        String expectedMessage = "A header name is missing in ";
         String actualMessage = exception.getMessage();
         assertTrue(actualMessage.contains(expectedMessage));
     }
@@ -68,14 +68,20 @@ public class BikeParkingImportTest extends TiamatIntegrationTest {
     @Test
     public void testPOIWithoutLongitude() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_without_longitude.csv"));
-        String expectedMessage = "X Longitud is not correct in the parking with";
+        String expectedMessage = "A header name is missing in";
         String actualMessage = exception.getMessage();
         assertTrue(actualMessage.contains(expectedMessage));
     }
 
     @Test
     public void testPOIWithoutLatitude() {
-        Exception exception = assertThrows(ArrayIndexOutOfBoundsException.class, () -> launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_without_latitude.csv"));
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_without_latitude.csv"));
+        String expectedMessage = "A header name is missing in";
+        String actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contains(expectedMessage));
+
+
     }
 
     @Test
@@ -178,7 +184,7 @@ public class BikeParkingImportTest extends TiamatIntegrationTest {
      * @param bikeParking
      */
     private void checkPersistedEnt(Parking bikeParking) {
-        assertEquals("Wrong parking type for bike import", ParkingTypeEnumeration.PARKING_ZONE, bikeParking.getParkingType());
+        assertEquals("Wrong parking type for bike import", ParkingTypeEnumeration.OTHER, bikeParking.getParkingType());
     }
 
 }

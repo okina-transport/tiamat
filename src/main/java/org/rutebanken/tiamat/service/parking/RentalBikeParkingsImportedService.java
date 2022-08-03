@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.service.parking;
 
+import io.micrometer.core.instrument.util.StringUtils;
 import org.rutebanken.tiamat.general.ParkingsCSVHelper;
 import org.rutebanken.tiamat.model.AccessibilityAssessment;
 import org.rutebanken.tiamat.model.AccessibilityLimitation;
@@ -59,10 +60,12 @@ public class RentalBikeParkingsImportedService {
             Optional<Parking> parkingInBDDOpt = retrieveParkingInBDD(parkingToSave);
 
             if (!parkingInBDDOpt.isPresent()){
-                netexIdMapper.moveOriginalIdToKeyValueList(parkingToSave, parkingToSave.getName().getValue());
-                netexIdMapper.moveOriginalNameToKeyValueList(parkingToSave, parkingToSave.getName().getValue());
 
-                parkingToSave.setName(new EmbeddableMultilingualString(parkingToSave.getName().getValue()));
+                if (StringUtils.isNotEmpty(parkingToSave.getName().getValue())){
+                    netexIdMapper.moveOriginalIdToKeyValueList(parkingToSave, parkingToSave.getName().getValue());
+                    netexIdMapper.moveOriginalNameToKeyValueList(parkingToSave, parkingToSave.getName().getValue());
+                    parkingToSave.setName(new EmbeddableMultilingualString(parkingToSave.getName().getValue()));
+                }
                 parkingVersionedSaverService.saveNewVersion(parkingToSave);
             }
         }

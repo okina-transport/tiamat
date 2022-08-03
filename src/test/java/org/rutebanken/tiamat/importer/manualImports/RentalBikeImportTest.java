@@ -59,7 +59,7 @@ public class RentalBikeImportTest extends TiamatIntegrationTest {
     @Test
     public void testPOIWithoutID() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/rentalBikes/rental_bikes_without_id.csv") );
-        String expectedMessage = "ID is required in all your parkings";
+        String expectedMessage = "A header name is missing in";
         String actualMessage = exception.getMessage();
         assertTrue(actualMessage.contains(expectedMessage));
     }
@@ -67,14 +67,17 @@ public class RentalBikeImportTest extends TiamatIntegrationTest {
     @Test
     public void testPOIWithoutLongitude() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/rentalBikes/rental_bikes_without_longitude.csv") );
-        String expectedMessage = "X Longitud is not correct in the parking with";
+        String expectedMessage = "A header name is missing in";
         String actualMessage = exception.getMessage();
         assertTrue(actualMessage.contains(expectedMessage));
     }
 
     @Test
     public void testPOIWithoutLatitude() {
-        Exception exception = assertThrows(ArrayIndexOutOfBoundsException.class, () -> launchImportForFile("src/test/resources/manualImports/rentalBikes/rental_bikes_without_latitude.csv") );
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/rentalBikes/rental_bikes_without_latitude.csv") );
+        String expectedMessage = "A header name is missing in";
+        String actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contains(expectedMessage));
     }
 
 

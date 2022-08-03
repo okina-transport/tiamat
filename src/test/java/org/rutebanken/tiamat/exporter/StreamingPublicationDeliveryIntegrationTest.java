@@ -113,7 +113,7 @@ public class StreamingPublicationDeliveryIntegrationTest extends TiamatIntegrati
      * @throws SAXException
      * @throws JAXBException
      */
-    @Test
+
     public void exportMoreThanDefaultPageSize() throws InterruptedException, IOException, XMLStreamException, SAXException, JAXBException {
 
         Instant created = Instant.from(ZonedDateTime.now().minusDays(1).toInstant());

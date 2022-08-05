@@ -198,9 +198,15 @@ public class PointOfInterestCSVHelper {
     }
 
     private PointOfInterest retrievePOIinBDD(PointOfInterest pointOfInterest) {
-        String foundPOINetexId = pointOfInterestRepo.findFirstByKeyValues(ORIGINAL_ID_KEY, Collections.singleton(pointOfInterest.getKeyValues().get(ORIGINAL_ID_KEY).toString()));
+
+        Set<String> originalidsToSearch = new HashSet<>();
+        if (pointOfInterest.getKeyValues().get(ORIGINAL_ID_KEY) != null){
+            pointOfInterest.getKeyValues().get(ORIGINAL_ID_KEY).getItems().forEach(originalidsToSearch::add);
+        }
+
+        String foundPOINetexId = pointOfInterestRepo.findFirstByKeyValues(ORIGINAL_ID_KEY, originalidsToSearch);
         if (foundPOINetexId != null) {
-            PointOfInterest foundPOI = pointOfInterestRepo.findFirstByNetexIdOrderByVersionDesc(foundPOINetexId);
+            PointOfInterest foundPOI = pointOfInterestRepo.findFirstByNetexIdOrderByVersionDescAndInitialize(foundPOINetexId);
             if (foundPOI.getCentroid().equalsExact(pointOfInterest.getCentroid(),  0.0001)) {
                 return foundPOI;
             }
@@ -237,6 +243,11 @@ public class PointOfInterestCSVHelper {
 
         if (newPOI.getZipCode() != null) {
             existingPOI.setZipCode(newPOI.getZipCode());
+            updated = true;
+        }
+
+        if (newPOI.getName().getValue() != null) {
+            existingPOI.setName(newPOI.getName());
             updated = true;
         }
 

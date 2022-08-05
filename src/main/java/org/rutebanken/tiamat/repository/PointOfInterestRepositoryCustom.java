@@ -31,4 +31,6 @@ public interface PointOfInterestRepositoryCustom extends DataManagedObjectStruct
 
     void deleteProcessedIds(Long exportJobId, Set<Long> processedPoi);
 
+    PointOfInterest findFirstByNetexIdOrderByVersionDescAndInitialize(String netexId);
+
 }

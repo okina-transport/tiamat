@@ -181,6 +181,41 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
     }
 
     @Override
+    public PointOfInterest findFirstByNetexIdOrderByVersionDescAndInitialize(String netexId){
+        String sql = "SELECT poi.* FROM point_of_interest poi WHERE poi.netex_id = :netexId AND poi.version = (SELECT max(poi2.version) FROM point_of_interest poi2 WHERE poi2.netex_id = :netexId)";
+
+        Query pointOfInterestTypedQuery = entityManager.createNativeQuery(sql, PointOfInterest.class);
+
+        pointOfInterestTypedQuery.setParameter("netexId",netexId);
+
+        List<PointOfInterest> results = pointOfInterestTypedQuery.getResultList();
+
+        results.forEach(pointOfInterest -> {
+            Hibernate.initialize(pointOfInterest.getAlternativeNames());
+            Hibernate.initialize(pointOfInterest.getClassifications());
+            Hibernate.initialize(pointOfInterest.getEquipmentPlaces());
+            Hibernate.initialize(pointOfInterest.getPolygon());
+
+            pointOfInterest.getClassifications().forEach(this::initializeRecursivelyClassification);
+
+            Hibernate.initialize(pointOfInterest.getKeyValues());
+            pointOfInterest.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+        });
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    private void initializeRecursivelyClassification(PointOfInterestClassification classification){
+        Hibernate.initialize(classification.getKeyValues());
+        classification.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+        Hibernate.initialize(classification.getParent());
+
+        if (classification.getParent() != null){
+            initializeRecursivelyClassification(classification.getParent());
+        }
+
+    }
+
+    @Override
     public int countPOIInExport(Long exportJobId) {
         String queryString = "select count(*) FROM export_job_id_list WHERE job_id = :exportJobId";
         return ((Number)entityManager.createNativeQuery(queryString).setParameter("exportJobId", exportJobId).getSingleResult()

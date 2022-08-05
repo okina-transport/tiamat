@@ -72,11 +72,31 @@ public class ParkingsImportedService {
         String parkingNetexId = parkingRepository.findFirstByKeyValues(NetexIdMapper.ORIGINAL_ID_KEY, values);
 
         if(parkingNetexId != null && !parkingNetexId.isEmpty()) {
-            return parkingRepository.findFirstByNetexIdOrderByVersionDesc(parkingNetexId);
+            Parking foundParking = parkingRepository.findFirstByNetexIdOrderByVersionDesc(parkingNetexId);
+            if (areAtTheSamePlace(foundParking, parking)){
+                return foundParking;
+            }
         }
-
         return null;
+    }
 
+    /**
+     * Check if the 2 parkings are located at the same place (coordinates are rounded with 4 digits)
+     * @param p1
+     *      first parking
+     * @param p2
+     *      second parking
+     * @return
+     *      true : parking are at the same place
+     *      false : parking are not at the same place
+     */
+    private boolean areAtTheSamePlace(Parking p1, Parking p2){
+       return roundFourDigits(p1.getCentroid().getX()) == roundFourDigits(p2.getCentroid().getX()) &&
+                roundFourDigits(p1.getCentroid().getY()) == roundFourDigits(p2.getCentroid().getY());
+    }
+
+    private double roundFourDigits(double inputValue){
+        return Math.round(inputValue*10000.0)/10000.0;
     }
 
     private boolean populateParking(Parking existingParking, Parking updatedParking) {

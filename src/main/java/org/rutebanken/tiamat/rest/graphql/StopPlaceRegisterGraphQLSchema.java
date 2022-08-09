@@ -513,6 +513,10 @@ public class StopPlaceRegisterGraphQLSchema {
                 .description(VERSION_ARG_DESCRIPTION)
                 .build());
         arguments.add(GraphQLArgument.newArgument()
+                .name(FIND_BY_STOP_PLACE_ID)
+                .type(GraphQLString)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
                 .name(PARKING_TYPE)
                 .type(new GraphQLList(parkingTypeEnum))
                 .description(PARKING_TYPE_ARG_DESCRIPTION)

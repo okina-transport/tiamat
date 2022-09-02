@@ -7,17 +7,7 @@ import org.codehaus.jettison.json.JSONObject;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
-import org.rutebanken.tiamat.model.CoveredEnumeration;
-import org.rutebanken.tiamat.model.CycleStorageEnumeration;
-import org.rutebanken.tiamat.model.CycleStorageEquipment;
-import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
-import org.rutebanken.tiamat.model.Parking;
-import org.rutebanken.tiamat.model.ParkingCapacity;
-import org.rutebanken.tiamat.model.ParkingPaymentProcessEnumeration;
-import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
-import org.rutebanken.tiamat.model.ParkingUserEnumeration;
-import org.rutebanken.tiamat.model.ParkingVehicleEnumeration;
-import org.rutebanken.tiamat.model.PlaceEquipment;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
 import org.rutebanken.tiamat.service.Preconditions;
 import org.springframework.http.HttpEntity;
@@ -175,7 +165,16 @@ public class BikesCSVHelper {
             //Capacité totale du parking
             ParkingCapacity totalCapacity = new ParkingCapacity();
             totalCapacity.setParkingUserType(ParkingUserEnumeration.ALL_USERS);
-            parking.setTotalCapacity(new BigInteger(bikeParkingDto.getCapacite()));
+            BigInteger totalCap = new BigInteger(bikeParkingDto.getCapacite());
+            parking.setTotalCapacity(totalCap);
+            totalCapacity.setNumberOfSpaces(totalCap);
+
+
+            ParkingProperties parkingProps = new ParkingProperties();
+            parkingProps.setSpaces(new ArrayList<>());
+            parkingProps.getSpaces().add(totalCapacity);
+            parking.setParkingProperties(new ArrayList<>());
+            parking.getParkingProperties().add(parkingProps);
 
             // Place equipments
             PlaceEquipment placeEquipment = new PlaceEquipment();

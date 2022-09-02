@@ -376,7 +376,7 @@ class ParkingUpdater implements DataFetcher {
         capacity.setParkingStayType((ParkingStayEnumeration) input.get(PARKING_STAY_TYPE));
         capacity.setNumberOfSpaces((BigInteger) input.get(NUMBER_OF_SPACES));
         capacity.setNumberOfSpacesWithRechargePoint((BigInteger) input.get(NUMBER_OF_SPACES_WITH_RECHARGE_POINT));
-        if (capacity.getNumberOfSpacesWithRechargePoint().compareTo(capacity.getNumberOfSpaces()) > 0) {
+        if (capacity.getNumberOfSpacesWithRechargePoint() != null && capacity.getNumberOfSpacesWithRechargePoint().compareTo(capacity.getNumberOfSpaces()) > 0) {
             throw  new IllegalArgumentException("Le nombre de places équipées de bornes de recharge ne peut pas être supérieur à la capacité totale");
         }
         capacity.setNumberOfCarsharingSpaces((BigInteger) input.get(NUMBER_OF_CARSHARING_SPACES));

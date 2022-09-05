@@ -282,7 +282,7 @@ public class BikesCSVHelper {
                 String city = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties").getString("city");
                 String street = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties").getString("street");
 
-                return "[" + type + city + " " + street + "]";
+                return "[" + type + "], " + city + ", " + street;
             } else {
 
                 final ResponseEntity response2 = restTemplate.exchange(geoApiGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, Object.class);
@@ -290,7 +290,7 @@ public class BikesCSVHelper {
 
                 if (body.getString("nom") != null && !body.getString("nom").isEmpty()) {
                     String city = body.getString("nom");
-                    return "[" + type + city + "]";
+                    return "[" + type + "], " + city;
                 } else {
                     throw new IllegalArgumentException("Impossible de trouver le nom du parking suivant : " + bikeParkingDto.getIdLocal());
                 }

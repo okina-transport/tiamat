@@ -229,7 +229,9 @@ public class ParkingsCSVHelper {
             if(!parkingDto.getElectricVehicleNb().isEmpty() && Integer.parseInt(parkingDto.getElectricVehicleNb())>=1){
                 parking.setRechargingAvailable(true);
                 totalCapacity.setNumberOfSpacesWithRechargePoint(BigInteger.valueOf(Long.parseLong(parkingDto.getElectricVehicleNb())));
-            }else{
+            }
+
+            if(!parkingDto.getElectricVehicleNb().isEmpty() && Integer.parseInt(parkingDto.getElectricVehicleNb()) == 0){
                 parking.setRechargingAvailable(false);
             }
 

@@ -406,7 +406,10 @@ class ParkingUpdater implements DataFetcher {
         }
         if (parkingArea == null) {
             parkingArea = new ParkingArea();
-            parkingArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.CARPOOL);
+            if (input.get("specificParkingAreaUsage") != null){
+                parkingArea.setSpecificParkingAreaUsage((SpecificParkingAreaUsageEnumeration) input.get("specificParkingAreaUsage"));
+            }
+
         }
         parkingArea.setTotalCapacity((BigInteger) input.get(TOTAL_CAPACITY));
         return parkingArea;

@@ -283,9 +283,7 @@ class ParkingUpdater implements DataFetcher {
                     } else if (pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.DISABLED)) {
                         pa.setTotalCapacity(BigInteger.valueOf(newPmrCapacity));
                     } else if (pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)) {
-                        if (updatedParking.isCarpoolingAvailable()) {
-
-                        } else {
+                        if (!updatedParking.isCarpoolingAvailable()) {
                             toKeep = false;
                         }
                     } else {
@@ -389,8 +387,10 @@ class ParkingUpdater implements DataFetcher {
             result.add(resolveSingleParkingArea((Map) property, existingParkingAreas));
         }
 
-        if(existingParkingAreas != null)
-        result.addAll(existingParkingAreas.stream().filter(pa -> !pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)).collect(Collectors.toList()));
+        if(existingParkingAreas != null) {
+            result.addAll(existingParkingAreas.stream().filter(pa -> !pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)).collect(Collectors.toList()));
+        }
+
         return result;
     }
 

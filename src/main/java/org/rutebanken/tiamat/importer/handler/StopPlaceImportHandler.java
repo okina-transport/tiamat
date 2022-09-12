@@ -194,9 +194,9 @@ public class StopPlaceImportHandler {
                     } else if (importParams.importType.equals(ImportType.INITIAL)) {
                         importedOrMatchedNetexStopPlaces = parallelInitialStopPlaceImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated);
                     } else if (importParams.importType.equals(ImportType.MATCH)) {
-                        importedOrMatchedNetexStopPlaces = matchingAppendingIdStopPlacesImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated, importParams.keepStopGeolocalisation);
+                        importedOrMatchedNetexStopPlaces = matchingAppendingIdStopPlacesImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated, importParams);
                     } else if (importParams.importType.equals(ImportType.ON_MOVE_ONLY)){
-                        importedOrMatchedNetexStopPlaces = matchingAppendingIdStopPlacesImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated, importParams.keepStopGeolocalisation);
+                        importedOrMatchedNetexStopPlaces = matchingAppendingIdStopPlacesImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated, importParams);
                     } else {
                         throw new NotImplementedException("Import type " + importParams.importType + " not implemented ");
                     }

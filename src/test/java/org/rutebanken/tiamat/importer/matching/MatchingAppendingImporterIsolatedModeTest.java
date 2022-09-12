@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
+import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -62,7 +63,11 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
         List<org.rutebanken.netex.model.StopPlace > matchedStopPlaces = new ArrayList<>();
 
         AtomicInteger counter = new AtomicInteger();
-        importer.findAppendAndAdd(stopPlace,matchedStopPlaces,counter,false);
+
+        ImportParams params= new ImportParams();
+        params.keepStopGeolocalisation = false;
+
+        importer.findAppendAndAdd(stopPlace,matchedStopPlaces,counter,params);
 
 
         //StopPlace checks
@@ -100,7 +105,9 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
         String quayImportedId = "PROV1:Quay:quay3";
         StopPlace stopPlace = createStopPlaceWithQuay(name, longitude,latitude,importedId,quayImportedId);
         stopPlace.setProvider("PROV1");
-        importer.findAppendAndAdd(stopPlace,matchedStopPlaces,counter,false);
+        ImportParams params= new ImportParams();
+        params.keepStopGeolocalisation = false;
+        importer.findAppendAndAdd(stopPlace,matchedStopPlaces,counter,params);
 
         assertTrue(matchedStopPlaces.size() == 1);
         org.rutebanken.netex.model.StopPlace importedStopPlaceOnProv1 = matchedStopPlaces.get(0);
@@ -113,7 +120,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
         String quayImportedIdPt2 = "PROV2:Quay:quay4";
         StopPlace stopPlacePt2 = createStopPlaceWithQuay(name, longitude,latitude,importedIdPt2,quayImportedIdPt2);
         stopPlacePt2.setProvider("PROV2");
-        importer.findAppendAndAdd(stopPlacePt2,matchedStopPlaces,counter,false);
+        importer.findAppendAndAdd(stopPlacePt2,matchedStopPlaces,counter,params);
 
         assertTrue(matchedStopPlaces.size() == 1);
         org.rutebanken.netex.model.StopPlace importedStopPlaceOnProv2 = matchedStopPlaces.get(0);
@@ -146,7 +153,9 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
         String quayImportedId = "PROV1:Quay:quay1";
         StopPlace stopPlace = createStopPlaceWithQuay(name, longitude,latitude,importedId,quayImportedId);
         stopPlace.setProvider("PROV1");
-        importer.findAppendAndAdd(stopPlace,matchedStopPlaces,counter,false);
+        ImportParams params= new ImportParams();
+        params.keepStopGeolocalisation = false;
+        importer.findAppendAndAdd(stopPlace,matchedStopPlaces,counter,params);
 
         assertTrue(matchedStopPlaces.size() == 1);
         org.rutebanken.netex.model.StopPlace importedStopPlaceOnProv1 = matchedStopPlaces.get(0);
@@ -159,7 +168,8 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
         String quayImportedIdPt2 = "PROV1:Quay:quay2";
         StopPlace stopPlacePt2 = createStopPlaceWithQuay(name, longitude,latitude,importedIdPt2,quayImportedIdPt2);
         stopPlacePt2.setProvider("PROV1");
-        importer.findAppendAndAdd(stopPlacePt2,matchedStopPlaces,counter,false);
+
+        importer.findAppendAndAdd(stopPlacePt2,matchedStopPlaces,counter,params);
 
         assertTrue(matchedStopPlaces.size() == 1);
         org.rutebanken.netex.model.StopPlace importedStopPlaceOnProv2 = matchedStopPlaces.get(0);

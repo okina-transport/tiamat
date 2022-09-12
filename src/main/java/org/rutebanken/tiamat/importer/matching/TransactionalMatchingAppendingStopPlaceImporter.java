@@ -19,6 +19,7 @@ import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
 import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
 import org.rutebanken.tiamat.importer.AlternativeStopTypes;
+import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
 import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
@@ -119,7 +120,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
-                                 AtomicInteger stopPlacesCreatedOrUpdated, boolean keepStopGeolocalisation) throws TiamatBusinessException {
+                                 AtomicInteger stopPlacesCreatedOrUpdated, ImportParams importParams) throws TiamatBusinessException {
 
 
         stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
@@ -203,6 +204,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                                 && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy)
                                 && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_STOPCODE_KEY, incomingStopPlace, copy)
                 );
+                boolean nameChanged = false;
 
                 if (incomingStopPlace.getTariffZones() != null) {
                     if (copy.getTariffZones() == null) {
@@ -211,12 +213,17 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                     copy.getTariffZones().addAll(incomingStopPlace.getTariffZones());
                 }
 
-                boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS, keepStopGeolocalisation);
+                if (!importParams.keepStopNames && !incomingStopPlace.getName().getValue().equals(copy.getName().getValue())){
+                    nameChanged = true;
+                    copy.setName(incomingStopPlace.getName());
+                }
+
+                boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS, importParams);
 
                 boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
 
 
-                if (quayChanged || keyValuesChanged || centroidChanged  ) {
+                if (quayChanged || keyValuesChanged || centroidChanged || nameChanged ) {
                     if (existingStopPlace.getParentSiteRef() != null && !existingStopPlace.isParentStopPlace()) {
                         org.rutebanken.tiamat.model.StopPlace existingParentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingStopPlace.getParentSiteRef().getRef());
                         org.rutebanken.tiamat.model.StopPlace copyParentStopPlace = versionCreator.createCopy(existingParentStopPlace, org.rutebanken.tiamat.model.StopPlace.class);

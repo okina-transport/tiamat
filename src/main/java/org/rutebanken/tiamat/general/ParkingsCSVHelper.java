@@ -175,12 +175,16 @@ public class ParkingsCSVHelper {
             parking.setSiret(parkingDto.getSiretNumber());
 
             //Gratuité du parking ou non
-            if (Boolean.parseBoolean(parkingDto.getFree())) {
-                parking.setFreeParkingOutOfHours(true);
-                parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.FREE);
-            } else {
-                parking.setFreeParkingOutOfHours(false);
+            if (parkingDto.getFree() != null) {
+                if (Boolean.parseBoolean(parkingDto.getFree())) {
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.FREE);
+                } else {
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.PAY_AND_DISPLAY);
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.PAY_BY_PREPAID_TOKEN);
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.PAY_BY_MOBILE_DEVICE);
+                }
             }
+
 
             //Hauteur maximum
             if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")){

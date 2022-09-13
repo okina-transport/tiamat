@@ -233,6 +233,7 @@ public class ParkingsCSVHelper {
 
             if(!parkingDto.getElectricVehicleNb().isEmpty() && Integer.parseInt(parkingDto.getElectricVehicleNb()) == 0){
                 parking.setRechargingAvailable(false);
+                totalCapacity.setNumberOfSpacesWithRechargePoint(BigInteger.valueOf(Long.parseLong(parkingDto.getElectricVehicleNb())));
             }
 
             //Nombre de places pour le covoiturage

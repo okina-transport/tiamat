@@ -314,6 +314,7 @@ public class PublicationDeliveryTestHelper {
         ImportParams importParams = new ImportParams();
         importParams.providerCode = "PROV1";
         importParams.importType = ImportType.MATCH;
+        importParams.keepStopNames = true;
         return postAndReturnPublicationDelivery(publicationDeliveryStructure, importParams);
     }
 

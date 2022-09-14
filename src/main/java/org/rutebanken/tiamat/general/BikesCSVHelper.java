@@ -219,11 +219,14 @@ public class BikesCSVHelper {
 
 
             //Gratuité du parking ou non
-            if (Boolean.parseBoolean(bikeParkingDto.getGratuit())) {
-                parking.setFreeParkingOutOfHours(true);
-                parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.FREE);
-            } else {
-                parking.setFreeParkingOutOfHours(false);
+            if (bikeParkingDto.getGratuit() != null) {
+                if (Boolean.parseBoolean(bikeParkingDto.getGratuit())) {
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.FREE);
+                } else {
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.PAY_AND_DISPLAY);
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.PAY_BY_PREPAID_TOKEN);
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.PAY_BY_MOBILE_DEVICE);
+                }
             }
 
 

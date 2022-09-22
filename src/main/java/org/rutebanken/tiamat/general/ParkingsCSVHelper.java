@@ -1,6 +1,5 @@
 package org.rutebanken.tiamat.general;
 
-import io.micrometer.core.instrument.util.StringUtils;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.EnumUtils;
 import org.locationtech.jts.geom.Coordinate;
@@ -176,12 +175,16 @@ public class ParkingsCSVHelper {
             parking.setSiret(parkingDto.getSiretNumber());
 
             //Gratuité du parking ou non
-            if (Boolean.parseBoolean(parkingDto.getFree())) {
-                parking.setFreeParkingOutOfHours(true);
-                parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.FREE);
-            } else {
-                parking.setFreeParkingOutOfHours(false);
+            if (parkingDto.getFree() != null) {
+                if (Boolean.parseBoolean(parkingDto.getFree())) {
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.FREE);
+                } else {
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.PAY_AND_DISPLAY);
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.PAY_BY_PREPAID_TOKEN);
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.PAY_BY_MOBILE_DEVICE);
+                }
             }
+
 
             //Hauteur maximum
             if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")){
@@ -190,19 +193,25 @@ public class ParkingsCSVHelper {
 
 
             //Gestion de la capacité max du parking
-            BigInteger nonPmrCapacity = parkingDto.getNbOfPlaces().isEmpty() ? BigInteger.ZERO : new BigInteger(parkingDto.getNbOfPlaces());
+            BigInteger totalCapacityInt = parkingDto.getNbOfPlaces().isEmpty() ? BigInteger.ZERO : new BigInteger(parkingDto.getNbOfPlaces());
             ParkingCapacity pmrCapacity = new ParkingCapacity();
             pmrCapacity.setParkingUserType(ParkingUserEnumeration.REGISTERED_DISABLED);
 
+            //Capacité totale du parking
+            ParkingCapacity totalCapacity = new ParkingCapacity();
+            totalCapacity.setParkingUserType(ParkingUserEnumeration.ALL_USERS);
+            totalCapacity.setNumberOfSpaces(totalCapacityInt);
+            parking.setTotalCapacity(totalCapacityInt);
+            parkingArea.setTotalCapacity(totalCapacityInt);
+
             //Nombre de places destinées aux personnes handicapées (à soustraire du nombre total de places)
-            if(nonPmrCapacity != BigInteger.ZERO && !parkingDto.getDisabledParkingNb().isEmpty()) {
+            if(!totalCapacityInt.equals(BigInteger.ZERO) && !parkingDto.getDisabledParkingNb().isEmpty()) {
                 if (parkingDto.getDisabledParkingNb().equals(parkingDto.getNbOfPlaces())) {
                     parking.setAllAreasWheelchairAccessible(true);
                 } else {
                     parking.setAllAreasWheelchairAccessible(false);
                 }
                 pmrCapacity.setNumberOfSpaces(new BigInteger(parkingDto.getDisabledParkingNb()));
-                nonPmrCapacity = nonPmrCapacity.subtract(new BigInteger(parkingDto.getDisabledParkingNb()));
 
                 ParkingArea pmrParkingArea = new ParkingArea();
                 pmrParkingArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.DISABLED);
@@ -219,19 +228,16 @@ public class ParkingsCSVHelper {
             }
             parkingProperties.getSpaces().add(pmrCapacity);
 
-            //Capacité totale du parking
-            ParkingCapacity totalCapacity = new ParkingCapacity();
-            totalCapacity.setParkingUserType(ParkingUserEnumeration.ALL_USERS);
-            totalCapacity.setNumberOfSpaces(nonPmrCapacity);
-            parking.setTotalCapacity(nonPmrCapacity);
-            parkingArea.setTotalCapacity(nonPmrCapacity);
 
             //Nombre de places pour véhicules électriques
             if(!parkingDto.getElectricVehicleNb().isEmpty() && Integer.parseInt(parkingDto.getElectricVehicleNb())>=1){
                 parking.setRechargingAvailable(true);
                 totalCapacity.setNumberOfSpacesWithRechargePoint(BigInteger.valueOf(Long.parseLong(parkingDto.getElectricVehicleNb())));
-            }else{
+            }
+
+            if(!parkingDto.getElectricVehicleNb().isEmpty() && Integer.parseInt(parkingDto.getElectricVehicleNb()) == 0){
                 parking.setRechargingAvailable(false);
+                totalCapacity.setNumberOfSpacesWithRechargePoint(BigInteger.valueOf(Long.parseLong(parkingDto.getElectricVehicleNb())));
             }
 
             //Nombre de places pour le covoiturage

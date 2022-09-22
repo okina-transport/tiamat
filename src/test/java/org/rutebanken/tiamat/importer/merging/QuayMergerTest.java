@@ -22,6 +22,7 @@ import org.locationtech.jts.geom.Point;
 import org.geotools.referencing.GeodeticCalculator;
 import org.junit.Test;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
+import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.matching.OriginalIdMatcher;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
@@ -58,7 +59,11 @@ public class QuayMergerTest {
         quay2.getOriginalIds().add("BRA:Quay:12321234");
         quay2.setCentroid(geometryFactory.createPoint(new Coordinate(59, 10)));
 
-        Set<Quay> result = quayMerger.mergeQuays(null, Sets.newHashSet(quay2), Sets.newHashSet(quay1), new AtomicInteger(), new AtomicInteger(), true, false, true);
+        ImportParams importParams = new ImportParams();
+        importParams.keepStopGeolocalisation = true;
+        importParams.keepStopNames = true;
+
+        Set<Quay> result = quayMerger.mergeQuays(null, Sets.newHashSet(quay2), Sets.newHashSet(quay1), new AtomicInteger(), new AtomicInteger(), true, false, importParams);
 
         assertThat(result).hasSize(1);
         assertThat(result.iterator().next().getChanged()).isNull();

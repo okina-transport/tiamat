@@ -647,7 +647,7 @@ public class StopPlaceQueryFromSearchBuilder {
 
             if (!stopPlaceSearch.isNearbyStopPlaces()){
                 //For nearby stop place search, results must me order by distance, and not by name
-                orderByStatements.add("similarity(concat(s.name_value, p.name_value), :query) desc");
+                orderByStatements.add("similarity(unaccent(concat(lower(s.name_value), lower(p.name_value))), unaccent(lower(:query))) desc");
             }
 
         }

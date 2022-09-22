@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.operation.TransformException;
+import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.matching.OriginalIdMatcher;
 import org.rutebanken.tiamat.model.AccessibilityAssessment;
 import org.rutebanken.tiamat.model.AccessibilityLimitation;
@@ -34,12 +35,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
@@ -71,15 +67,15 @@ public class QuayMerger {
         this.originalIdMatcher = originalIdMatcher;
     }
 
-    public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, boolean keepStopGeolocalisation) {
-        return mergeQuays(newStopPlace, existingStopPlace, addNewQuays, false, keepStopGeolocalisation);
+    public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, ImportParams importParams) {
+        return mergeQuays(newStopPlace, existingStopPlace, addNewQuays, false, importParams);
     }
 
 
     /**
      * Inspect quays from incoming AND matching stop place. If they do not exist from before, add them.
      */
-    public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch, boolean keepStopGeolocalisation) {
+    public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch, ImportParams importParams) {
 
         AtomicInteger updatedQuays = new AtomicInteger();
         AtomicInteger addedQuays = new AtomicInteger();
@@ -90,7 +86,7 @@ public class QuayMerger {
             newStopPlace.setQuays(new HashSet<>());
         }
 
-        Set<Quay> result = mergeQuays(newStopPlace, newStopPlace.getQuays(), existingStopPlace.getQuays(), updatedQuays, addedQuays, addNewQuays, lowDistanceCheckBeforeIdMatch, keepStopGeolocalisation);
+        Set<Quay> result = mergeQuays(newStopPlace, newStopPlace.getQuays(), existingStopPlace.getQuays(), updatedQuays, addedQuays, addNewQuays, lowDistanceCheckBeforeIdMatch, importParams);
 
         existingStopPlace.setQuays(result);
 
@@ -99,11 +95,17 @@ public class QuayMerger {
     }
 
     public Set<Quay> mergeQuays(Set<Quay> newQuays, Set<Quay> existingQuays, AtomicInteger updatedQuaysCounter, AtomicInteger addedQuaysCounter, boolean addNewQuays) {
-        return mergeQuays(null, newQuays, existingQuays, updatedQuaysCounter, addedQuaysCounter, addNewQuays, true, false);
+        ImportParams params = new ImportParams();
+        params.keepStopGeolocalisation = false;
+        params.keepStopNames = true;
+        return mergeQuays(null, newQuays, existingQuays, updatedQuaysCounter, addedQuaysCounter, addNewQuays, true, params);
     }
 
     public Set<Quay> mergeQuays(StopPlace newStopPlace, Set<Quay> newQuays, Set<Quay> existingQuays, AtomicInteger updatedQuaysCounter, AtomicInteger addedQuaysCounter, boolean addNewQuays) {
-        return mergeQuays(newStopPlace, newQuays, existingQuays, updatedQuaysCounter, addedQuaysCounter, addNewQuays, true, false);
+        ImportParams params = new ImportParams();
+        params.keepStopGeolocalisation = false;
+        params.keepStopNames = true;
+        return mergeQuays(newStopPlace, newQuays, existingQuays, updatedQuaysCounter, addedQuaysCounter, addNewQuays, true, params);
     }
 
     /**
@@ -117,7 +119,7 @@ public class QuayMerger {
      * @param addNewQuays         if allowed to add quays if not match found
      * @return the resulting set of quays after matching, appending and adding.
      */
-    public Set<Quay> mergeQuays(StopPlace newStopPlace, Set<Quay> newQuays, Set<Quay> existingQuays, AtomicInteger updatedQuaysCounter, AtomicInteger addedQuaysCounter, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch, boolean keepStopGeolocalisation) {
+    public Set<Quay> mergeQuays(StopPlace newStopPlace, Set<Quay> newQuays, Set<Quay> existingQuays, AtomicInteger updatedQuaysCounter, AtomicInteger addedQuaysCounter, boolean addNewQuays, boolean lowDistanceCheckBeforeIdMatch, ImportParams importParams) {
 
         Set<Quay> result = new HashSet<>();
         if (existingQuays != null) {
@@ -147,7 +149,7 @@ public class QuayMerger {
 
 
             if (matchingQuay.isPresent()) {
-                updateIfChanged(matchingQuay.get(), incomingQuay, updatedQuaysCounter, keepStopGeolocalisation);
+                updateIfChanged(matchingQuay.get(), incomingQuay, updatedQuaysCounter, importParams);
             } else if (addNewQuays) {
                 logger.info("Found no match for existing quay {}. Adding it!", incomingQuay);
                 result.add(incomingQuay);
@@ -183,7 +185,7 @@ public class QuayMerger {
         return Optional.empty();
     }
 
-    private void updateIfChanged(Quay alreadyAdded, Quay incomingQuay, AtomicInteger updatedQuaysCounter, boolean keepStopGeolocalisation) {
+    private void updateIfChanged(Quay alreadyAdded, Quay incomingQuay, AtomicInteger updatedQuaysCounter, ImportParams importParams) {
         // The incoming quay could for some reason already have multiple imported IDs.
 
         boolean quayAlone;
@@ -195,6 +197,7 @@ public class QuayMerger {
         boolean urlUpdated;
         boolean descUpdated;
         boolean wheelchairBoardingUpdated;
+        boolean nameUpdated = false;
 
         quayAlone = checkNumberProducers(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
         idUpdated = alreadyAdded.getOriginalIds().addAll(incomingQuay.getOriginalIds());
@@ -206,12 +209,16 @@ public class QuayMerger {
         wheelchairBoardingUpdated = updateWheelchairBoarding(alreadyAdded, incomingQuay);
         centroidUpdated = false;
 
-        if(!keepStopGeolocalisation && quayAlone){
+        if(!importParams.keepStopGeolocalisation && quayAlone){
             centroidUpdated = updateCentroid(alreadyAdded, incomingQuay);
         }
 
-        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated ||  zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated) {
-            logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated);
+        if (!importParams.keepStopNames){
+            nameUpdated = updatePropName(alreadyAdded, incomingQuay);
+        }
+
+        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated ||  zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated || nameUpdated) {
+            logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}, nameUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated, nameUpdated);
 
             alreadyAdded.setChanged(Instant.now());
             updatedQuaysCounter.incrementAndGet();
@@ -316,6 +323,34 @@ public class QuayMerger {
         }
 
         return codesUpdated;
+    }
+
+    private boolean updatePropName(Quay alreadyAdded, Quay incomingQuay) {
+
+        boolean updated = false;
+        List<String> oldList = new ArrayList<>(alreadyAdded.getOriginalNames());
+        List<String> newList = new ArrayList<>(incomingQuay.getOriginalNames());
+
+
+        if (alreadyAdded.getOriginalNames().size() != incomingQuay.getOriginalNames().size()){
+            updated = true;
+        }else{
+
+
+            Collections.sort(oldList);
+            Collections.sort(newList);
+
+            for (int i = 0; i < oldList.size(); i++){
+                if (!oldList.get(i).equals(newList.get(i))){
+                    updated = true;
+                }
+            }
+        }
+
+        alreadyAdded.getOriginalNames().clear();
+        alreadyAdded.getOriginalNames().addAll(newList);
+
+        return updated;
     }
 
     private boolean updateCentroid(Quay alreadyAdded, Quay incomingQuay) {

@@ -7,17 +7,7 @@ import org.codehaus.jettison.json.JSONObject;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
-import org.rutebanken.tiamat.model.CoveredEnumeration;
-import org.rutebanken.tiamat.model.CycleStorageEnumeration;
-import org.rutebanken.tiamat.model.CycleStorageEquipment;
-import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
-import org.rutebanken.tiamat.model.Parking;
-import org.rutebanken.tiamat.model.ParkingCapacity;
-import org.rutebanken.tiamat.model.ParkingPaymentProcessEnumeration;
-import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
-import org.rutebanken.tiamat.model.ParkingUserEnumeration;
-import org.rutebanken.tiamat.model.ParkingVehicleEnumeration;
-import org.rutebanken.tiamat.model.PlaceEquipment;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
 import org.rutebanken.tiamat.service.Preconditions;
 import org.springframework.http.HttpEntity;
@@ -175,7 +165,16 @@ public class BikesCSVHelper {
             //Capacité totale du parking
             ParkingCapacity totalCapacity = new ParkingCapacity();
             totalCapacity.setParkingUserType(ParkingUserEnumeration.ALL_USERS);
-            parking.setTotalCapacity(new BigInteger(bikeParkingDto.getCapacite()));
+            BigInteger totalCap = new BigInteger(bikeParkingDto.getCapacite());
+            parking.setTotalCapacity(totalCap);
+            totalCapacity.setNumberOfSpaces(totalCap);
+
+
+            ParkingProperties parkingProps = new ParkingProperties();
+            parkingProps.setSpaces(new ArrayList<>());
+            parkingProps.getSpaces().add(totalCapacity);
+            parking.setParkingProperties(new ArrayList<>());
+            parking.getParkingProperties().add(parkingProps);
 
             // Place equipments
             PlaceEquipment placeEquipment = new PlaceEquipment();
@@ -220,11 +219,14 @@ public class BikesCSVHelper {
 
 
             //Gratuité du parking ou non
-            if (Boolean.parseBoolean(bikeParkingDto.getGratuit())) {
-                parking.setFreeParkingOutOfHours(true);
-                parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.FREE);
-            } else {
-                parking.setFreeParkingOutOfHours(false);
+            if (bikeParkingDto.getGratuit() != null) {
+                if (Boolean.parseBoolean(bikeParkingDto.getGratuit())) {
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.FREE);
+                } else {
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.PAY_AND_DISPLAY);
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.PAY_BY_PREPAID_TOKEN);
+                    parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.PAY_BY_MOBILE_DEVICE);
+                }
             }
 
 
@@ -283,7 +285,7 @@ public class BikesCSVHelper {
                 String city = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties").getString("city");
                 String street = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties").getString("street");
 
-                return "[" + type + city + " " + street + "]";
+                return "[" + type + "], " + city + ", " + street;
             } else {
 
                 final ResponseEntity response2 = restTemplate.exchange(geoApiGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, Object.class);
@@ -291,7 +293,7 @@ public class BikesCSVHelper {
 
                 if (body.getString("nom") != null && !body.getString("nom").isEmpty()) {
                     String city = body.getString("nom");
-                    return "[" + type + city + "]";
+                    return "[" + type + "], " + city;
                 } else {
                     throw new IllegalArgumentException("Impossible de trouver le nom du parking suivant : " + bikeParkingDto.getIdLocal());
                 }

@@ -22,6 +22,7 @@ import graphql.schema.DataFetchingEnvironment;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.ParkingRepository;
+import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.rutebanken.tiamat.rest.graphql.mappers.GeometryMapper;
 import org.rutebanken.tiamat.rest.graphql.mappers.GroupOfEntitiesMapper;
 import org.rutebanken.tiamat.rest.graphql.mappers.ValidBetweenMapper;
@@ -82,7 +83,7 @@ class ParkingUpdater implements DataFetcher {
         return parkings;
     }
 
-    private Parking createOrUpdateParking(Map input) {
+    private Parking createOrUpdateParking(Map input){
         Parking updatedParking;
         Parking existingVersion = null;
         String netexId = (String) input.get(ID);
@@ -96,8 +97,8 @@ class ParkingUpdater implements DataFetcher {
             logger.info("Creating new Parking");
             updatedParking = new Parking();
         }
-        boolean isUpdated = populateParking(input, updatedParking);
 
+        boolean isUpdated = populateParking(input, updatedParking);
         if (isUpdated) {
             authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(existingVersion, updatedParking));
 
@@ -251,6 +252,7 @@ class ParkingUpdater implements DataFetcher {
                     .mapToInt(space -> space.getNumberOfCarsharingSpaces() != null ? space.getNumberOfCarsharingSpaces().intValue() : 0)
                     .sum();
 
+
             int newPmrCapacity = parkingPropertiesList.stream()
                     .map(ParkingProperties::getSpaces)
                     .filter(Objects::nonNull)
@@ -259,6 +261,14 @@ class ParkingUpdater implements DataFetcher {
                     .filter(space -> space.getParkingUserType() != null && space.getParkingUserType().equals(ParkingUserEnumeration.REGISTERED_DISABLED))
                     .mapToInt(space -> space.getNumberOfSpaces().intValue())
                     .sum();
+
+            if (newPmrCapacity > total_capacity) {
+                throw new IllegalArgumentException("La capacité PMR ne peut pas être supérieure à la capacité totale");
+            }
+
+            if (newCarsharingCapacity > total_capacity) {
+                throw  new IllegalArgumentException("La capacité autopartage ne peut pas être supérieure à la capacité totale");
+            }
 
             if (updatedParking.getParkingAreas() != null) {
                 List<ParkingArea> parkingAreaList = new ArrayList<>();
@@ -272,8 +282,10 @@ class ParkingUpdater implements DataFetcher {
                         }
                     } else if (pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.DISABLED)) {
                         pa.setTotalCapacity(BigInteger.valueOf(newPmrCapacity));
-                    } else if (pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL) && !updatedParking.isCarpoolingAvailable()) {
-                        toKeep = false;
+                    } else if (pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)) {
+                        if (!updatedParking.isCarpoolingAvailable()) {
+                            toKeep = false;
+                        }
                     } else {
                         pa.setTotalCapacity(BigInteger.valueOf(total_capacity));
                     }
@@ -295,6 +307,21 @@ class ParkingUpdater implements DataFetcher {
 
         if (input.get(PARKING_AREAS) != null) {
             List<ParkingArea> parkingAreasList = resolveParkingAreasList((List) input.get(PARKING_AREAS), updatedParking.getParkingAreas());
+
+            int totalCapacity = parkingAreasList.stream()
+                    .filter(pa -> pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.NONE))
+                    .mapToInt(pa -> pa.getTotalCapacity() != null ? pa.getTotalCapacity().intValue() : 0)
+                    .sum();
+
+            int newCarpoolingCapacity = parkingAreasList.stream()
+                    .filter(pa -> pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL))
+                    .mapToInt(pa -> pa.getTotalCapacity() != null ? pa.getTotalCapacity().intValue() : 0)
+                    .sum();
+
+            if (newCarpoolingCapacity > totalCapacity) {
+                throw  new IllegalArgumentException("La capacité covoiturage ne peut pas être supérieure à la capacité totale");
+            }
+
             isUpdated = true;
             updatedParking.setParkingAreas(parkingAreasList.stream().map(pa -> versionCreator.createCopy(pa, ParkingArea.class)).collect(Collectors.toList()));
         }
@@ -347,6 +374,9 @@ class ParkingUpdater implements DataFetcher {
         capacity.setParkingStayType((ParkingStayEnumeration) input.get(PARKING_STAY_TYPE));
         capacity.setNumberOfSpaces((BigInteger) input.get(NUMBER_OF_SPACES));
         capacity.setNumberOfSpacesWithRechargePoint((BigInteger) input.get(NUMBER_OF_SPACES_WITH_RECHARGE_POINT));
+        if (capacity.getNumberOfSpacesWithRechargePoint() != null && capacity.getNumberOfSpacesWithRechargePoint().compareTo(capacity.getNumberOfSpaces()) > 0) {
+            throw  new IllegalArgumentException("Le nombre de places équipées de bornes de recharge ne peut pas être supérieur à la capacité totale");
+        }
         capacity.setNumberOfCarsharingSpaces((BigInteger) input.get(NUMBER_OF_CARSHARING_SPACES));
         return capacity;
     }
@@ -357,8 +387,9 @@ class ParkingUpdater implements DataFetcher {
             result.add(resolveSingleParkingArea((Map) property, existingParkingAreas));
         }
 
-        if(existingParkingAreas != null)
-        result.addAll(existingParkingAreas.stream().filter(pa -> !pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)).collect(Collectors.toList()));
+        if(existingParkingAreas != null) {
+            result.addAll(existingParkingAreas.stream().filter(pa -> !pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)).collect(Collectors.toList()));
+        }
 
         return result;
     }
@@ -375,7 +406,10 @@ class ParkingUpdater implements DataFetcher {
         }
         if (parkingArea == null) {
             parkingArea = new ParkingArea();
-            parkingArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.CARPOOL);
+            if (input.get("specificParkingAreaUsage") != null){
+                parkingArea.setSpecificParkingAreaUsage((SpecificParkingAreaUsageEnumeration) input.get("specificParkingAreaUsage"));
+            }
+
         }
         parkingArea.setTotalCapacity((BigInteger) input.get(TOTAL_CAPACITY));
         return parkingArea;

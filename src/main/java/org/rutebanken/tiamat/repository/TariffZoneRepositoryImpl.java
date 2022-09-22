@@ -18,12 +18,14 @@ package org.rutebanken.tiamat.repository;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.Hibernate;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
 import org.hibernate.query.NativeQuery;
 import org.rutebanken.tiamat.exporter.params.TariffZoneSearch;
+import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.model.TariffZone;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
@@ -33,16 +35,22 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Repository
 @Transactional
@@ -144,5 +152,51 @@ public class TariffZoneRepositoryImpl implements TariffZoneRepositoryCustom {
         String sql = sqlStringBuilder.toString();
         logger.info(sql);
         return sql;
+    }
+
+    /**
+     * Initialize export job table with tariff zones ids that must be exported
+     *
+     * @param exportJobId id of the export job
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void initExportJobTable(Long exportJobId) {
+
+        Map<String, Object> parameters = new HashMap<>();
+
+        String queryStr = "INSERT INTO export_job_id_list \n" +
+                " SELECT :exportJobId, req1.tz_id     \n" +
+                " FROM ( \n" +
+                " SELECT MAX(tz.id) AS tz_id, MAX(tz.version) AS version FROM tariff_zone tz WHERE (tz.from_date <= :pointInTime OR tz.from_date IS NULL) \n" +
+                " AND (tz.to_date >= :pointInTime OR tz.to_date IS NULL) GROUP BY tz.netex_id) req1";
+
+
+        parameters.put("exportJobId", exportJobId);
+        parameters.put("pointInTime", Date.from(Instant.now()));
+
+        Session session = entityManager.unwrap(Session.class);
+        NativeQuery query = session.createNativeQuery(queryStr);
+        searchHelper.addParams(query, parameters);
+
+        query.executeUpdate();
+    }
+
+    public List<TariffZone> getTariffZonesInitializedForExport(Set<Long> tzIds) {
+
+        Set<String> tzIdStrings = tzIds.stream().map(String::valueOf).collect(Collectors.toSet());
+
+        String joinedTZIds = String.join(",", tzIdStrings);
+        String sql = "SELECT tz FROM TariffZone tz WHERE tz.id IN(" + joinedTZIds + ")";
+
+        TypedQuery<TariffZone> tariffZoneTypedQuery = entityManager.createQuery(sql, TariffZone.class);
+
+        List<TariffZone> results = tariffZoneTypedQuery.getResultList();
+
+        results.forEach(tariffZone -> {
+            Hibernate.initialize(tariffZone.getKeyValues());
+            tariffZone.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+        });
+
+        return results;
     }
 }

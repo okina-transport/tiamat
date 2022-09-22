@@ -60,8 +60,6 @@ public class AsyncPublicationDeliveryExporter {
     private static final ExecutorService exportService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("exporter-%d").build());
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-
     private final ExportJobRepository exportJobRepository;
 
     private final BlobStoreService blobStoreService;
@@ -69,8 +67,6 @@ public class AsyncPublicationDeliveryExporter {
     StreamingPublicationDelivery streamingPublicationDelivery;
 
     private final NetexXmlReferenceValidator netexXmlReferenceValidator;
-
-    private final ExportTimeZone exportTimeZone;
 
     private final String localExportPath;
 
@@ -89,7 +85,6 @@ public class AsyncPublicationDeliveryExporter {
         this.blobStoreService = blobStoreService;
         this.streamingPublicationDelivery = streamingPublicationDelivery;
         this.netexXmlReferenceValidator = netexXmlReferenceValidator;
-        this.exportTimeZone = exportTimeZone;
         this.localExportPath = localExportPath;
         this.providerRepository = providerRepository;
         this.tiamatExportDestination = tiamatExportDestination;
@@ -301,13 +296,6 @@ public class AsyncPublicationDeliveryExporter {
         exportJobWithId.setJobUrl(ASYNC_JOB_PATH + "/" + exportJobWithId.getId());
         return exportJobWithId;
     }
-
-    private String generateSubFolderName() {
-        LocalDateTime localDateTime = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
-        String gcpSubfolder = localDateTime.getYear() + "-" + String.format("%02d", localDateTime.getMonthValue());
-        return gcpSubfolder;
-    }
-
 
     public List<String> getStopPlaceFileListByProviderName(String providerName, int maxNbResults){
         List<String> stopPlaceFileList = new ArrayList<>();

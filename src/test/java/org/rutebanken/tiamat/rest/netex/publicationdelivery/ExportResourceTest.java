@@ -77,12 +77,18 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         StopPlaceSearch stopPlaceSearch = newStopPlaceSearchBuilder()
                 .setQuery("Østre gravlund")
                 .build();
+
         ExportParams exportParams = newExportParamsBuilder()
                 .setStopPlaceSearch(stopPlaceSearch)
                 .setTopographicPlaceExportMode(includeTopographicPlaces)
                 .build();
 
-        Response response = exportResource.exportStopPlaces(exportParams);
+        UriInfo uriInfoMock = Mockito.mock(UriInfo.class);
+        Mockito.when(uriInfoMock.getAbsolutePathBuilder()).thenReturn(JerseyUriBuilder.fromPath("http://test"));
+        ChangedStopPlaceSearchDto search = new ChangedStopPlaceSearchDto(null, null, 0, 1);
+
+        Response response = exportResource.exportStopPlacesWithEffectiveChangedInPeriod(search, exportParams, uriInfoMock);
+
         assertThat(response.getStatus()).isEqualTo(200);
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.fromResponse(response);
@@ -110,7 +116,11 @@ public class ExportResourceTest extends TiamatIntegrationTest {
                                 .build())
                 .build();
 
-        Response response = exportResource.exportStopPlaces(exportParams);
+        UriInfo uriInfoMock = Mockito.mock(UriInfo.class);
+        Mockito.when(uriInfoMock.getAbsolutePathBuilder()).thenReturn(JerseyUriBuilder.fromPath("http://test"));
+        ChangedStopPlaceSearchDto search = new ChangedStopPlaceSearchDto(null, null, 0, 1);
+
+        Response response = exportResource.exportStopPlacesWithEffectiveChangedInPeriod(search, exportParams, uriInfoMock);
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.fromResponse(response);
         List<StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure, true);
@@ -155,7 +165,11 @@ public class ExportResourceTest extends TiamatIntegrationTest {
                 .setGroupOfStopPlacesExportMode(ExportParams.ExportMode.RELEVANT)
                 .build();
 
-        Response response = exportResource.exportStopPlaces(exportParams);
+        UriInfo uriInfoMock = Mockito.mock(UriInfo.class);
+        Mockito.when(uriInfoMock.getAbsolutePathBuilder()).thenReturn(JerseyUriBuilder.fromPath("http://test"));
+        ChangedStopPlaceSearchDto search = new ChangedStopPlaceSearchDto(null, null, 0, 1);
+
+        Response response = exportResource.exportStopPlacesWithEffectiveChangedInPeriod(search, exportParams, uriInfoMock);
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.fromResponse(response);
 

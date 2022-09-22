@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.repository;
 
 import org.rutebanken.tiamat.exporter.params.TariffZoneSearch;
+import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.TariffZone;
 
 import java.util.Iterator;
@@ -32,4 +33,8 @@ public interface TariffZoneRepositoryCustom extends DataManagedObjectStructureRe
     Iterator<TariffZone> scrollTariffZones(Set<Long> stopPlaceDbIds);
 
     Iterator<TariffZone> scrollTariffZones();
+
+    void initExportJobTable( Long exportJobId);
+
+    List<TariffZone> getTariffZonesInitializedForExport(Set<Long> parkingIds) ;
 }

@@ -90,24 +90,6 @@ public class ExportResource {
 
     @GET
     @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
-    public Response exportStopPlaces(@BeanParam ExportParams exportParams) {
-        logger.info("Exporting publication delivery. {}", exportParams);
-
-
-        StreamingOutput streamingOutput = outputStream -> {
-            try {
-                streamingPublicationDelivery.stream(exportParams, outputStream, null);
-            } catch (Exception e) {
-                logger.warn("Could not stream site frame. {}", e.getMessage(), e);
-                throw new RuntimeException(e);
-            }
-        };
-
-        return Response.ok(streamingOutput).build();
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
     @Path("changed_in_period")
     public Response exportStopPlacesWithEffectiveChangedInPeriod(@BeanParam ChangedStopPlaceSearchDto searchDTO,
                                                                  @BeanParam ExportParams exportParams,
@@ -139,7 +121,6 @@ public class ExportResource {
     @Path("getQuayInfo")
     @Transactional
     public Response getQuayInfo(@QueryParam("quayNetexId") String quayNetexId){
-
         List<Quay> quays = stopPlaceRepository.findQuayByNetexId(quayNetexId);
         if (quays.size() == 0){
             return Response.noContent().build();
@@ -161,9 +142,7 @@ public class ExportResource {
     @Path("getStopPlaceInfo")
     @Transactional
     public Response getStopPlaceInfo(@QueryParam("stopPlaceNetexId") String stopPlaceNetexId){
-
         List<StopPlace> stopPlaces = stopPlaceRepository.findAll(Arrays.asList(stopPlaceNetexId));
-
 
         List<StopPlaceView> stopPlaceViews = stopPlaces.stream()
                 .map(StopPlaceView::new)

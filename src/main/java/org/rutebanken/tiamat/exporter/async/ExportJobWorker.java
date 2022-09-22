@@ -44,10 +44,6 @@ public class ExportJobWorker implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(ExportJobWorker.class);
 
-    /**
-     * Ignore paging for async export, to not let the default value interfer.
-     */
-    public static final boolean IGNORE_PAGING = true;
     private final ExportJob exportJob;
     private final StreamingPublicationDelivery streamingPublicationDelivery;
     private final String localExportPath;
@@ -95,10 +91,10 @@ public class ExportJobWorker implements Runnable {
 
             switch (this.exportType) {
                 case POI:
-                    exportPOIToLocalXmlFile(localExportXmlFile, provider, localDateTime);
+                    exportPOIToLocalXmlFile(localExportXmlFile);
                     break;
                 case PARKING:
-                    exportParkingsToLocalXmlFile(localExportXmlFile, provider, localDateTime);
+                    exportParkingsToLocalXmlFile(localExportXmlFile, localDateTime);
                     break;
                 default:
                     exportToLocalXmlFile(localExportXmlFile, provider, localDateTime);
@@ -142,17 +138,17 @@ public class ExportJobWorker implements Runnable {
     private void exportToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime) throws IOException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.stream(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING, provider, localDateTime, exportJob.getId());
+        streamingPublicationDelivery.stream(fileOutputStream, provider, localDateTime, exportJob.getId());
         logger.info("export to local file completed");
     }
 
-    private void exportPOIToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime) throws IOException, SAXException, JAXBException {
+    private void exportPOIToLocalXmlFile(File localExportXmlFile) throws IOException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.streamPOI(exportJob.getExportParams(), fileOutputStream, IGNORE_PAGING, provider, localDateTime, exportJob.getId());
+        streamingPublicationDelivery.streamPOI(exportJob.getExportParams(), fileOutputStream, exportJob.getId());
     }
 
-    private void exportParkingsToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime) throws IOException, SAXException, JAXBException {
+    private void exportParkingsToLocalXmlFile(File localExportXmlFile, LocalDateTime localDateTime) throws IOException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
         streamingPublicationDelivery.streamParkings(fileOutputStream, localDateTime, exportJob.getId());

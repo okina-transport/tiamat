@@ -22,10 +22,6 @@ import java.util.List;
 
 public interface ProviderRepository {
 
-//    public List<Provider> findByName(String name);
-//
-//    public List<Provider> findByCode(String code);
-
     Collection<Provider> getProviders();
 
     Provider getProvider(Long id);

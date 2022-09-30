@@ -37,8 +37,6 @@ public class PointOfInterestClassification
         return parent;
     }
 
-
-
     public void setParent(PointOfInterestClassification parent) {
         this.parent = parent;
     }

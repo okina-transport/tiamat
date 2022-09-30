@@ -71,7 +71,7 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     @Autowired
     private ParkingQueryFromSearchBuilder parkingQueryFromSearchBuilder;
 
-    private static final Logger logger = LoggerFactory.getLogger(StopPlaceRepositoryImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ParkingRepositoryImpl.class);
 
 
     /**

@@ -83,7 +83,8 @@ public class CustomGraphQLTypes {
     public static GraphQLEnumType modificationEnumerationType = createCustomEnumType("ModificationEnumerationType", ModificationEnumeration.class);
     public static GraphQLEnumType parkingCoveredEnum = createCustomEnumType("CoveredEnumeration", CoveredEnumeration.class);
     public static GraphQLEnumType typeOfParkingRefEnumeration = createCustomEnumType("TypeOfParkingRefEnumeration", TypeOfParkingRefEnumeration.class);
-
+    public static GraphQLEnumType ticketingFacilityEnumeration = createCustomEnumType("TicketingFacilityEnumeration", TicketingFacilityEnumeration.class);
+    public static GraphQLEnumType ticketingServiceFacilityEnumeration = createCustomEnumType("TicketingServiceFacilityEnumeration", TicketingServiceFacilityEnumeration.class);
 
     public static GraphQLEnumType createCustomEnumType(String name, Class c) {
 
@@ -760,6 +761,38 @@ public class CustomGraphQLTypes {
                     .type(specificParkingAreaUsageEnum))
             .build();
 
+    public static GraphQLObjectType pointOfInterestFacilitySetObjectType = newObject()
+            .name(OUTPUT_TYPE_POI_FACILITY_SET)
+            .field(newFieldDefinition()
+                    .name(ID)
+                    .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name(TICKETING_FACILITY)
+                    .type(ticketingFacilityEnumeration))
+            .field(newFieldDefinition()
+                    .name(TICKETING_SERVICE_FACILITY)
+                    .type(ticketingServiceFacilityEnumeration))
+            .build();
+
+    public static GraphQLObjectType pointOfInterestClassificationObjectType = newObject()
+            .name(OUTPUT_TYPE_POI_CLASSIFICATION)
+            .field(newFieldDefinition()
+                .name(ID)
+                .type(GraphQLString))
+            .field(newFieldDefinition()
+                .name(NAME)
+                .type(embeddableMultilingualStringObjectType))
+            .field(newFieldDefinition()
+                .name(POI_CLASSIFICATION_OSM)
+                .type(GraphQLBoolean))
+            .field(newFieldDefinition()
+                .name(POI_CLASSIFICATION_ACTIVE)
+                .type(GraphQLBoolean))
+            .field(newFieldDefinition()
+                .name(POI_CLASSIFICATION_PARENT)
+                .type(new GraphQLTypeReference(OUTPUT_TYPE_POI_CLASSIFICATION)))
+            .build();
+
     public static GraphQLInputObjectType parkingAreaInputObjectType = GraphQLInputObjectType.newInputObject()
             .name(INPUT_TYPE_PARKING_AREA)
             .field(newInputObjectField()
@@ -777,6 +810,38 @@ public class CustomGraphQLTypes {
             .field(newInputObjectField()
                     .name(SPECIFIC_PARKING_AREA_USAGE)
                     .type(specificParkingAreaUsageEnum))
+            .build();
+
+    public static GraphQLInputObjectType pointOfInterestFacilitySetInputObjectType = GraphQLInputObjectType.newInputObject()
+            .name(INPUT_TYPE_POI_FACILITY_SET)
+            .field(newInputObjectField()
+                .name(ID)
+                .type(GraphQLString))
+            .field(newInputObjectField()
+                .name(TICKETING_FACILITY)
+                .type(ticketingFacilityEnumeration))
+            .field(newInputObjectField()
+                .name(TICKETING_SERVICE_FACILITY)
+                .type(ticketingServiceFacilityEnumeration))
+            .build();
+
+    public static GraphQLInputObjectType pointOfInterestClassificationInputObjectType = GraphQLInputObjectType.newInputObject()
+            .name(INPUT_TYPE_POI_CLASSIFICATION)
+            .field(newInputObjectField()
+                    .name(ID)
+                    .type(GraphQLString))
+            .field(newInputObjectField()
+                    .name(NAME)
+                    .type(embeddableMultiLingualStringInputObjectType))
+            .field(newInputObjectField()
+                    .name(POI_CLASSIFICATION_PARENT)
+                    .type(new GraphQLTypeReference(INPUT_TYPE_POI_CLASSIFICATION)))
+            .field(newInputObjectField()
+                    .name(POI_CLASSIFICATION_OSM)
+                    .type(GraphQLBoolean))
+            .field(newInputObjectField()
+                    .name(POI_CLASSIFICATION_ACTIVE)
+                    .type(GraphQLBoolean))
             .build();
 
     public static GraphQLObjectType transportModeSubmodeObjectType = newObject()
@@ -869,6 +934,46 @@ public class CustomGraphQLTypes {
                 .field(newInputObjectField()
                         .name(COVERED)
                         .type(parkingCoveredEnum))
+                .build();
+    }
+
+    public static GraphQLInputObjectType createPointOfInterestInputObjectType(List<GraphQLInputObjectField> commonInputFieldsList, GraphQLInputObjectType validBetweenInputObjectType) {
+        return GraphQLInputObjectType.newInputObject()
+                .name(INPUT_TYPE_POINT_OF_INTEREST)
+                .fields(commonInputFieldsList)
+                .field(newInputObjectField()
+                        .name(ID)
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name(NAME)
+                        .type(embeddableMultiLingualStringInputObjectType))
+                .field(newInputObjectField()
+                        .name(PARENT_SITE_REF)
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name(GEOMETRY)
+                        .type(geoJsonInputType))
+                .field(newInputObjectField()
+                        .name(VALID_BETWEEN)
+                        .type(validBetweenInputObjectType))
+                .field(newInputObjectField()
+                        .name(ZIP_CODE)
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name(ADDRESS)
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name(CITY)
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name(POSTAL_CODE)
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name(POI_FACILITY_SET)
+                        .type(pointOfInterestFacilitySetInputObjectType))
+                .field(newInputObjectField()
+                        .name(POI_CLASSIFICATIONS)
+                        .type(new GraphQLList(pointOfInterestClassificationInputObjectType)))
                 .build();
     }
 }

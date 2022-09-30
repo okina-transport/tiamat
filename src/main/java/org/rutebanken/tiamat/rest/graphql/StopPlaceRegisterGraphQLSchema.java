@@ -25,34 +25,14 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
-import org.rutebanken.tiamat.model.GroupOfStopPlaces;
-import org.rutebanken.tiamat.model.Parking;
-import org.rutebanken.tiamat.model.Quay;
-import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.model.TariffZone;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.rest.graphql.fetchers.AuthorizationCheckDataFetcher;
 import org.rutebanken.tiamat.rest.graphql.fetchers.TagFetcher;
-import org.rutebanken.tiamat.rest.graphql.operations.MultiModalityOperationsBuilder;
-import org.rutebanken.tiamat.rest.graphql.operations.ParkingOperationsBuilder;
-import org.rutebanken.tiamat.rest.graphql.operations.StopPlaceOperationsBuilder;
-import org.rutebanken.tiamat.rest.graphql.operations.TagOperationsBuilder;
+import org.rutebanken.tiamat.rest.graphql.operations.*;
 import org.rutebanken.tiamat.rest.graphql.resolvers.MutableTypeResolver;
 import org.rutebanken.tiamat.rest.graphql.scalars.DateScalar;
 import org.rutebanken.tiamat.rest.graphql.scalars.TransportModeScalar;
-import org.rutebanken.tiamat.rest.graphql.types.EntityRefObjectTypeCreator;
-import org.rutebanken.tiamat.rest.graphql.types.GroupOfStopPlacesObjectTypeCreator;
-import org.rutebanken.tiamat.rest.graphql.types.ParentStopPlaceInputObjectTypeCreator;
-import org.rutebanken.tiamat.rest.graphql.types.ParentStopPlaceObjectTypeCreator;
-import org.rutebanken.tiamat.rest.graphql.types.ParkingInterfaceCreator;
-import org.rutebanken.tiamat.rest.graphql.types.ParkingObjectTypeCreator;
-import org.rutebanken.tiamat.rest.graphql.types.PathLinkEndObjectTypeCreator;
-import org.rutebanken.tiamat.rest.graphql.types.PathLinkObjectTypeCreator;
-import org.rutebanken.tiamat.rest.graphql.types.StopPlaceInterfaceCreator;
-import org.rutebanken.tiamat.rest.graphql.types.StopPlaceObjectTypeCreator;
-import org.rutebanken.tiamat.rest.graphql.types.TagObjectTypeCreator;
-import org.rutebanken.tiamat.rest.graphql.types.TariffZoneObjectTypeCreator;
-import org.rutebanken.tiamat.rest.graphql.types.TopographicPlaceObjectTypeCreator;
-import org.rutebanken.tiamat.rest.graphql.types.ZoneCommonFieldListCreator;
+import org.rutebanken.tiamat.rest.graphql.types.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -72,30 +52,7 @@ import static graphql.schema.GraphQLObjectType.newObject;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
 import static org.rutebanken.tiamat.rest.graphql.types.AuthorizationCheckCreator.createAuthorizationCheckArguments;
 import static org.rutebanken.tiamat.rest.graphql.types.AuthorizationCheckCreator.createAuthorizationCheckOutputType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.accessibilityAssessmentInputObjectType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.accessibilityAssessmentObjectType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.alternativeNameInputObjectType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.alternativeNameObjectType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.createParkingInputObjectType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.embeddableMultiLingualStringInputObjectType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.equipmentInputType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.equipmentType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.geoJsonInputType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.geometryFieldDefinition;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.interchangeWeightingEnum;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.keyValuesObjectInputType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.modificationEnumerationType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.netexIdFieldDefinition;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.parkingTypeEnum;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.pathLinkObjectInputType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.privateCodeFieldDefinition;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.privateCodeInputType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.stopPlaceTypeEnum;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.topographicPlaceInputObjectType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.topographicPlaceTypeEnum;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.transportModeSubmodeObjectType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.versionLessRefInputObjectType;
-import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.versionValidityEnumType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.*;
 
 @Component
 public class StopPlaceRegisterGraphQLSchema {
@@ -124,6 +81,9 @@ public class StopPlaceRegisterGraphQLSchema {
     private ParkingOperationsBuilder parkingOperationsBuilder;
 
     @Autowired
+    private PointOfInterestOperationsBuilder pointOfInterestOperationsBuilder;
+
+    @Autowired
     private ZoneCommonFieldListCreator zoneCommonFieldListCreator;
 
     @Autowired
@@ -131,6 +91,9 @@ public class StopPlaceRegisterGraphQLSchema {
 
     @Autowired
     private ParkingObjectTypeCreator parkingObjectTypeCreator;
+
+    @Autowired
+    private PointOfInterestObjectTypeCreator pointOfInterestObjectTypeCreator;
 
     @Autowired
     private GroupOfStopPlacesObjectTypeCreator groupOfStopPlaceObjectTypeCreator;
@@ -143,6 +106,9 @@ public class StopPlaceRegisterGraphQLSchema {
 
     @Autowired
     private ParkingInterfaceCreator parkingInterfaceCreator;
+
+    @Autowired
+    private PointOfInterestInterfaceCreator pointOfInterestInterfaceCreator;
 
     @Autowired
     private ParentStopPlaceInputObjectTypeCreator parentStopPlaceInputObjectTypeCreator;
@@ -199,6 +165,12 @@ public class StopPlaceRegisterGraphQLSchema {
     DataFetcher parkingUpdater;
 
     @Autowired
+    DataFetcher pointOfInterestFetcher;
+
+    @Autowired
+    DataFetcher pointOfInterestUpdater;
+
+    @Autowired
     DateScalar dateScalar;
 
     @Autowired
@@ -224,6 +196,8 @@ public class StopPlaceRegisterGraphQLSchema {
                         return ((Quay) env.getSource()).getPlaceEquipments();
                     } else if (env.getSource() instanceof Parking) {
                         return ((Parking) env.getSource()).getPlaceEquipments();
+                    } else if (env.getSource() instanceof PointOfInterest) {
+                        return ((PointOfInterest) env.getSource()).getPlaceEquipments();
                     }
                     return null;
                 })
@@ -260,11 +234,15 @@ public class StopPlaceRegisterGraphQLSchema {
 
         MutableTypeResolver stopPlaceTypeResolver = new MutableTypeResolver();
         MutableTypeResolver parkingTypeResolver = new MutableTypeResolver();
+        MutableTypeResolver pointOfInterestTypeResolver = new MutableTypeResolver();
 
         List<GraphQLFieldDefinition> stopPlaceInterfaceFields = stopPlaceInterfaceCreator.createCommonInterfaceFields(tariffZoneObjectType, topographicPlaceObjectType, validBetweenObjectType);
         List<GraphQLFieldDefinition> parkingInterfaceFields = parkingInterfaceCreator.createCommonInterfaceFields(topographicPlaceObjectType, validBetweenObjectType);
+        List<GraphQLFieldDefinition> pointOfInterestInterfaceFields = pointOfInterestInterfaceCreator.createCommonInterfaceFields(topographicPlaceObjectType, validBetweenObjectType);
+
         GraphQLInterfaceType stopPlaceInterface = stopPlaceInterfaceCreator.createInterface(stopPlaceInterfaceFields, commonFieldsList, stopPlaceTypeResolver);
         GraphQLInterfaceType parkingInterface = parkingInterfaceCreator.createInterface(parkingInterfaceFields, commonFieldsList, parkingTypeResolver);
+        GraphQLInterfaceType pointOfInterestInterface = pointOfInterestInterfaceCreator.createInterface(pointOfInterestInterfaceFields, commonFieldsList, pointOfInterestTypeResolver);
 
         GraphQLObjectType stopPlaceObjectType = stopPlaceObjectTypeCreator.create(stopPlaceInterface, stopPlaceInterfaceFields, commonFieldsList, quayObjectType);
         GraphQLObjectType parentStopPlaceObjectType = parentStopPlaceObjectTypeCreator.create(stopPlaceInterface, stopPlaceInterfaceFields, commonFieldsList, stopPlaceObjectType);
@@ -293,11 +271,20 @@ public class StopPlaceRegisterGraphQLSchema {
 
         GraphQLObjectType parkingObjectType = parkingObjectTypeCreator.create(parkingInterface, parkingInterfaceFields, commonFieldsList);
 
+        GraphQLObjectType pointOfInterestObjectType = pointOfInterestObjectTypeCreator.create(pointOfInterestInterface, pointOfInterestInterfaceFields, commonFieldsList);
+
         parkingTypeResolver.setResolveFunction(object -> {
             if (object instanceof Parking) {
                 return parkingObjectType;
             }
             throw new IllegalArgumentException("ParkingTypeResolver cannot resolve type of Object " + object + ". Was expecting Parking");
+        });
+
+        pointOfInterestTypeResolver.setResolveFunction(o -> {
+            if (o instanceof PointOfInterest) {
+                return pointOfInterestObjectType;
+            }
+            throw new IllegalArgumentException("PointOfInterestTypeResolver cannot resolve type of Object " + o + ". Was expecting PointOfInterest");
         });
 
         GraphQLArgument allVersionsArgument = GraphQLArgument.newArgument()
@@ -334,6 +321,18 @@ public class StopPlaceRegisterGraphQLSchema {
                         .description("Find Parking within given BoundingBox.")
                         .argument(createBboxArguments())
                         .dataFetcher(parkingFetcher))
+                .field(newFieldDefinition()
+                        .type(new GraphQLList(pointOfInterestInterface))
+                        .name(FIND_POI)
+                        .description("Find points of interest")
+                        .argument(createFindPointOfInterestArguments(allVersionsArgument))
+                        .dataFetcher(pointOfInterestFetcher))
+                .field(newFieldDefinition()
+                        .type(new GraphQLList(pointOfInterestInterface))
+                        .name(FIND_POI_BY_BBOX)
+                        .description("Find point of interest within given BoundingBox.")
+                        .argument(createBboxArguments())
+                        .dataFetcher(pointOfInterestFetcher))
                 .field(newFieldDefinition()
                         .name(FIND_TOPOGRAPHIC_PLACE)
                         .type(new GraphQLList(topographicPlaceObjectType))
@@ -406,6 +405,8 @@ public class StopPlaceRegisterGraphQLSchema {
 
         GraphQLInputObjectType parkingInputObjectType = createParkingInputObjectType(commonInputFieldList, validBetweenInputObjectType);
 
+        GraphQLInputObjectType pointOfInterestInputObjectType = createPointOfInterestInputObjectType(commonInputFieldList, validBetweenInputObjectType);
+
         GraphQLInputObjectType groupOfStopPlacesInputObjectType = createGroupOfStopPlacesInputObjectType();
 
         GraphQLObjectType stopPlaceRegisterMutation = newObject()
@@ -452,9 +453,18 @@ public class StopPlaceRegisterGraphQLSchema {
                                 .type(new GraphQLList(parkingInputObjectType)))
                         .description("Create new or update existing " + OUTPUT_TYPE_PARKING)
                         .dataFetcher(parkingUpdater))
+                .field(newFieldDefinition()
+                        .type(new GraphQLList(pointOfInterestObjectType))
+                        .name(MUTATE_POINT_OF_INTEREST)
+                        .argument(GraphQLArgument.newArgument()
+                                .name(OUTPUT_TYPE_POINT_OF_INTEREST)
+                                .type(new GraphQLList(pointOfInterestInputObjectType)))
+                        .description("Create new or update existing " + OUTPUT_TYPE_POINT_OF_INTEREST)
+                        .dataFetcher(pointOfInterestUpdater))
                 .fields(tagOperationsBuilder.getTagOperations())
                 .fields(stopPlaceOperationsBuilder.getStopPlaceOperations(stopPlaceInterface))
                 .fields(parkingOperationsBuilder.getParkingOperations())
+                .fields(pointOfInterestOperationsBuilder.getPointOfInterestOperations())
                 .fields(multiModalityOperationsBuilder.getMultiModalityOperations(parentStopPlaceObjectType, validBetweenInputObjectType))
                 .field(newFieldDefinition()
                         .type(GraphQLBoolean)
@@ -520,6 +530,29 @@ public class StopPlaceRegisterGraphQLSchema {
                 .name(PARKING_TYPE)
                 .type(new GraphQLList(parkingTypeEnum))
                 .description(PARKING_TYPE_ARG_DESCRIPTION)
+                .build());
+        arguments.add(allVersionsArgument);
+        return arguments;
+    }
+
+    private List<GraphQLArgument> createFindPointOfInterestArguments(GraphQLArgument allVersionsArgument) {
+        List<GraphQLArgument> arguments = createPageAndSizeArguments();
+        arguments.add(GraphQLArgument.newArgument()
+                .name(ID)
+                .type(GraphQLString)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(QUERY)
+                .type(GraphQLString)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(VERSION)
+                .type(GraphQLInt)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .type(versionValidityEnumType)
+                .name(VERSION_VALIDITY_ARG)
+                .description(VERSION_ARG_DESCRIPTION)
                 .build());
         arguments.add(allVersionsArgument);
         return arguments;
@@ -696,12 +729,6 @@ public class StopPlaceRegisterGraphQLSchema {
                 .description(WITH_NEARBY_SIMILAR_DUPLICATES_ARG_DESCRIPTION)
                 .build());
         arguments.add(GraphQLArgument.newArgument()
-                .name(HAS_PARKING)
-                .type(GraphQLBoolean)
-                .defaultValue(Boolean.FALSE)
-                .description(HAS_PARKING)
-                .build());
-        arguments.add(GraphQLArgument.newArgument()
                 .name(ONLY_MONOMODAL_STOPPLACES)
                 .type(GraphQLBoolean)
                 .defaultValue(Boolean.FALSE)
@@ -765,6 +792,11 @@ public class StopPlaceRegisterGraphQLSchema {
                 .name(IGNORE_PARKING_ID)
                 .type(GraphQLString)
                 .description("ID of Parking to excluded from result.")
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(IGNORE_POINT_OF_INTEREST_ID)
+                .type(GraphQLString)
+                .description("ID of POI to excluded from result.")
                 .build());
         arguments.add(GraphQLArgument.newArgument()
                 .name(INCLUDE_EXPIRED)

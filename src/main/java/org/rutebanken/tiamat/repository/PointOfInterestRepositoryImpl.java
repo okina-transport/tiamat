@@ -5,13 +5,18 @@ import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.query.NativeQuery;
-import org.rutebanken.tiamat.model.ParkingArea;
-import org.rutebanken.tiamat.model.PointOfInterest;
-import org.rutebanken.tiamat.model.PointOfInterestClassification;
-import org.rutebanken.tiamat.model.PointOfInterestClassificationHierarchy;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
@@ -24,13 +29,7 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
@@ -43,7 +42,12 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
     private EntityManager entityManager;
 
     @Autowired
+    private GeometryFactory geometryFactory;
+
+    @Autowired
     private SearchHelper searchHelper;
+
+    private static final Logger logger = LoggerFactory.getLogger(ParkingRepositoryImpl.class);
 
     private Pair<String, Map<String, Object>> getPointsOfInterest() {
         String sql = "SELECT p.* FROM point_of_interest p WHERE " +
@@ -273,6 +277,106 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
             result.add(bigInteger.longValue());
         }
         return result;
+    }
+
+    @Override
+    public Page<PointOfInterest> findByName(String name, Pageable pageable){
+        String queryString = "SELECT * FROM point_of_interest p " +
+                "WHERE p.parent_site_ref IS NULL " +
+                "AND p.version = (SELECT MAX(pv.version) FROM point_of_interest pv WHERE pv.netex_id = p.netex_id) " +
+                (name != null ? "AND LOWER(p.name_value) LIKE concat('%', LOWER(:name), '%')":"");
+
+
+        logger.debug("Finding point of interest by similarity name: {}", queryString);
+
+        final Query query = entityManager.createNativeQuery(queryString, PointOfInterest.class);
+
+        if(query != null){
+            query.setParameter("name", name);
+        }
+
+        query.setFirstResult(Math.toIntExact(pageable.getOffset()));
+        query.setMaxResults(pageable.getPageSize());
+        List<PointOfInterest> pointsOfInterest = query.getResultList();
+        return new PageImpl<>(pointsOfInterest, pageable, pointsOfInterest.size());
+    }
+
+    @Override
+    public Page<PointOfInterest> findByClassifications(List<String> classifications, Pageable pageable) {
+        String queryString = "SELECT * FROM point_of_interest p WHERE id IN (" +
+                                "SELECT point_of_interest_id FROM point_of_interest_classifications poic2 WHERE classifications_id IN (" +
+                                    "SELECT id FROM point_of_interest_classification poic WHERE LOWER(name_value) LIKE concat('%', LOWER(:classification), '%')));";
+
+        logger.debug("Finding poi by classification: {}", queryString);
+        final Query query = entityManager.createNativeQuery(queryString, PointOfInterest.class);
+
+        List<PointOfInterest> pointsOfInterest = new ArrayList<>();
+        for (String classification : classifications) {
+            if (query != null) {
+                query.setParameter("classification", classification);
+            }
+            query.setFirstResult(Math.toIntExact(pageable.getOffset()));
+            query.setMaxResults(pageable.getPageSize());
+            pointsOfInterest.addAll(query.getResultList());
+        }
+
+        return new PageImpl<>(pointsOfInterest, pageable, pointsOfInterest.size());
+    }
+
+    @Override
+    public Page<PointOfInterest> findNearbyPOI(Envelope envelope, String name, String ignorePointOfInterestId, Pageable pageable) {
+        Geometry geometryFilter = geometryFactory.toGeometry(envelope);
+
+        String queryString = "SELECT * FROM point_of_interest p " +
+                "WHERE ST_within(p.centroid, :filter) = true " +
+                "AND p.parent_site_ref IS NULL " +
+                "AND p.version = (SELECT MAX(pv.version) FROM point_of_interest pv WHERE pv.netex_id = p.netex_id) " +
+                (name != null ? "AND p.name_value = :name":"") +
+                (ignorePointOfInterestId != null ? " AND (p.netex_id != :ignorePointOfInterestId)":"");
+
+
+        logger.debug("Finding point of interest within bounding box with query: {}", queryString);
+
+        final Query query = entityManager.createNativeQuery(queryString, PointOfInterest.class);
+        query.setParameter("filter", geometryFilter);
+
+        if(name != null){
+            query.setParameter("name", name);
+        }
+
+        if(ignorePointOfInterestId != null) {
+            query.setParameter("ignorePointOfInterestId", ignorePointOfInterestId);
+        }
+
+        query.setFirstResult(Math.toIntExact(pageable.getOffset()));
+        query.setMaxResults(pageable.getPageSize());
+        List<PointOfInterest> pointsOfInterest = query.getResultList();
+        return new PageImpl<>(pointsOfInterest, pageable, pointsOfInterest.size());
+    }
+
+    @Override
+    public String findNearbyPOI(Envelope envelope, String name) {
+        Geometry geometryFilter = geometryFactory.toGeometry(envelope);
+
+        TypedQuery<String> query = entityManager
+                .createQuery("SELECT p.netexId FROM PointOfInterest p " +
+                                "WHERE within(p.centroid, :filter) = true " +
+                                "AND p.version = (SELECT MAX(pv.version) FROM PointOfInterest pv WHERE pv.netexId = p.netexId) " +
+                                "AND p.name.value = :name ", String.class);
+
+        query.setParameter("filter", geometryFilter);
+        query.setParameter("name", name);
+
+        return getOneOrNull(query);
+    }
+
+    private <T> T getOneOrNull(TypedQuery<T> query) {
+        try {
+            List<T> resultList = query.getResultList();
+            return resultList.isEmpty() ? null : resultList.get(0);
+        } catch (NoResultException e) {
+            return null;
+        }
     }
 
 }

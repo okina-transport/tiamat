@@ -187,6 +187,17 @@ public class GraphQLNames {
     public static final String OUTPUT_TYPE_PARKING_AREA = "ParkingArea";
     public static final String INPUT_TYPE_PARKING_AREA = OUTPUT_TYPE_PARKING_AREA + INPUT_TYPE_POSTFIX;
 
+    public static final String OUTPUT_TYPE_POINT_OF_INTEREST = "PointOfInterest";
+    public static final String OUTPUT_TYPE_POINT_OF_INTEREST_INTERFACE = OUTPUT_TYPE_POINT_OF_INTEREST + "Interface";
+
+    public static final String INPUT_TYPE_POINT_OF_INTEREST = OUTPUT_TYPE_POINT_OF_INTEREST + INPUT_TYPE_POSTFIX;
+
+    public static final String OUTPUT_TYPE_POI_FACILITY_SET = "PointOfInterestFacilitySet";
+    public static final String INPUT_TYPE_POI_FACILITY_SET = OUTPUT_TYPE_POI_FACILITY_SET + INPUT_TYPE_POSTFIX;
+
+    public static final String OUTPUT_TYPE_POI_CLASSIFICATION = "PointOfInterestClassification";
+    public static final String INPUT_TYPE_POI_CLASSIFICATION = OUTPUT_TYPE_POI_CLASSIFICATION + INPUT_TYPE_POSTFIX;
+
     public static final String OUTPUT_TYPE_AUTHORIZATION_CHECK = "AuthorizationCheck";
     public static final String AUTHORIZATION_CHECK_DESCRIPTION = "Check if authorized for entity with role";
     public static final String AUTHORIZATION_CHECK_ROLES = "roles";
@@ -259,8 +270,8 @@ public class GraphQLNames {
     //CycleStorageEquipment
     public static final String NUMBER_OF_SPACES = "numberOfSpaces";
     public static final String CYCLE_STORAGE_TYPE = "cycleStorageType";
-    //GeneralSign
 
+    //GeneralSign
     public static final String NUMBER_OF_SPACES_WITH_RECHARGE_POINT = "numberOfSpacesWithRechargePoint";
 
     public static final String NUMBER_OF_CARSHARING_SPACES = "numberOfCarsharingSpaces";
@@ -353,6 +364,7 @@ public class GraphQLNames {
     public static final String COORDINATES = "coordinates";
     public static final String IGNORE_STOPPLACE_ID = "ignoreStopPlaceId";
     public static final String IGNORE_PARKING_ID = "ignoreParkingId";
+    public static final String IGNORE_POINT_OF_INTEREST_ID = "ignorePointOfInterestId";
     public static final String QUAYS = "quays";
     public static final String COMPASS_BEARING = "compassBearing";
     public static final String VALID_BETWEEN = "validBetween";
@@ -432,6 +444,8 @@ public class GraphQLNames {
     public static final String FIND_TOPOGRAPHIC_PLACE = "topographicPlace";
     public static final String FIND_PATH_LINK = "pathLink";
     public static final String FIND_PARKING = "parking";
+    public static final String FIND_POI = "pointOfInterest";
+    public static final String FIND_POI_BY_BBOX = "pointOfInterestBBox";
 
     public static final String FIND_BY_STOP_PLACE_ID = "stopPlaceId";
     public static final String FIND_BY_GROUP_OF_STOP_PLACEs_ID = "groupOfStopPlacesId";
@@ -441,6 +455,7 @@ public class GraphQLNames {
     public static final String MUTATE_PATH_LINK = "mutatePathlink";
     public static final String MUTATE_PARKING = "mutateParking";
     public static final String MUTATE_GROUP_OF_STOP_PLACES = "mutateGroupOfStopPlaces";
+    public static final String MUTATE_POINT_OF_INTEREST = "mutatePointOfInterest";
 
     public static final String QUAY_ID = "quayId";
     public static final String STOP_PLACE_ID = "stopPlaceId";
@@ -461,8 +476,24 @@ public class GraphQLNames {
     public static final String PARKING_ID = "parkingId";
     public static final String DELETE_PARKING = "deleteParking";
 
+    public static final String POI_ID = "pointOfInterestId";
+    public static final String DELETE_POI = "deletePointOfInterest";
 
     public static final String CREATE_MULTI_MODAL_STOPPLACE = "createMultiModalStopPlace";
     public static final String ADD_TO_MULTIMODAL_STOPPLACE = "addToMultiModalStopPlace";
     public static final String REMOVE_FROM_MULTIMODAL_STOPPLACE = "removeFromMultiModalStopPlace";
+
+    public static final String TICKETING_FACILITY = "ticketingFacility";
+    public static final String TICKETING_SERVICE_FACILITY = "ticketingServiceFacility";
+
+    public static final String ZIP_CODE = "zipCode";
+    public static final String ADDRESS = "address";
+    public static final String CITY = "city";
+    public static final String POSTAL_CODE = "postalCode";
+    public static final String POI_CLASSIFICATIONS = "classifications";
+    public static final String POI_FACILITY_SET = "pointOfInterestFacilitySet";
+
+    public static final String POI_CLASSIFICATION_PARENT = "parent";
+    public static final String POI_CLASSIFICATION_OSM = "osm";
+    public static final String POI_CLASSIFICATION_ACTIVE = "active";
 }

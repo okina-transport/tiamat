@@ -27,43 +27,42 @@ import java.util.List;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CHANGED_BY;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.OUTPUT_TYPE_PARKING_INTERFACE;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.TOPOGRAPHIC_PLACE;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.VALID_BETWEEN;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.VERSION_COMMENT;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
 
 @Component
-public class ParkingInterfaceCreator {
+public class PointOfInterestInterfaceCreator {
 
     public List<GraphQLFieldDefinition> createCommonInterfaceFields(GraphQLObjectType topographicPlaceObjectType,
                                                                     GraphQLObjectType validBetweenObjectType) {
-        List<GraphQLFieldDefinition> parkingInterfaceFields = new ArrayList<>();
-        parkingInterfaceFields.add(newFieldDefinition()
+        List<GraphQLFieldDefinition> pointOfInterestInterfaceFields = new ArrayList<>();
+        pointOfInterestInterfaceFields.add(newFieldDefinition()
                 .name(VERSION_COMMENT)
                 .type(GraphQLString)
                 .build());
-        parkingInterfaceFields.add(newFieldDefinition()
+        pointOfInterestInterfaceFields.add(newFieldDefinition()
                 .name(CHANGED_BY)
-                .type(GraphQLString).build());
-        parkingInterfaceFields.add(newFieldDefinition()
+                .type(GraphQLString)
+                .build());
+        pointOfInterestInterfaceFields.add(newFieldDefinition()
                 .name(TOPOGRAPHIC_PLACE)
-                .type(topographicPlaceObjectType).build());
-        parkingInterfaceFields.add(newFieldDefinition()
+                .type(topographicPlaceObjectType)
+                .build());
+        pointOfInterestInterfaceFields.add(newFieldDefinition()
                 .name(VALID_BETWEEN)
-                .type(validBetweenObjectType).build());
-        return parkingInterfaceFields;
+                .type(validBetweenObjectType)
+                .build());
+        return pointOfInterestInterfaceFields;
     }
 
 
-    public GraphQLInterfaceType createInterface(List<GraphQLFieldDefinition> parkingInterfaceFields,
+    public GraphQLInterfaceType createInterface(List<GraphQLFieldDefinition> pointOfInterestInterfaceFields,
                                                 List<GraphQLFieldDefinition> commonFieldsList,
-                                                TypeResolver parkingTypeResolver) {
+                                                TypeResolver pointOfInterestTypeResolver) {
         return newInterface()
-                .name(OUTPUT_TYPE_PARKING_INTERFACE)
+                .name(OUTPUT_TYPE_POINT_OF_INTEREST_INTERFACE)
                 .fields(commonFieldsList)
-                .fields(parkingInterfaceFields)
-                .typeResolver(parkingTypeResolver)
+                .fields(pointOfInterestInterfaceFields)
+                .typeResolver(pointOfInterestTypeResolver)
                 .build();
     }
 

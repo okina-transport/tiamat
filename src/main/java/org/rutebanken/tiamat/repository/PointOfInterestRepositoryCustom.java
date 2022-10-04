@@ -1,8 +1,13 @@
 package org.rutebanken.tiamat.repository;
 
 
+import org.locationtech.jts.geom.Envelope;
+import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.model.PointOfInterestClassification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Iterator;
 import java.util.List;
@@ -32,5 +37,13 @@ public interface PointOfInterestRepositoryCustom extends DataManagedObjectStruct
     void deleteProcessedIds(Long exportJobId, Set<Long> processedPoi);
 
     PointOfInterest findFirstByNetexIdOrderByVersionDescAndInitialize(String netexId);
+
+    Page<PointOfInterest> findNearbyPOI(Envelope boundingBox, String name, String ignorePointOfInterestId, Pageable pageable);
+
+    String findNearbyPOI(Envelope envelope, String name);
+
+    Page<PointOfInterest> findByName(String query, Pageable pageable);
+
+    Page<PointOfInterest> findByClassifications(List<String> classifications, Pageable pageable);
 
 }

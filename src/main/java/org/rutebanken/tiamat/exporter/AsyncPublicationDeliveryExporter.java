@@ -336,6 +336,11 @@ public class AsyncPublicationDeliveryExporter {
             parkingsFileList.addAll(blobStoreService.listParkingsInBlob(providerName,maxNbResults));
         }
         Collections.sort(parkingsFileList, Collections.reverseOrder());
+
+        if (maxNbResults > 0 && maxNbResults < parkingsFileList.size()){
+            parkingsFileList = parkingsFileList.subList(0,maxNbResults);
+        }
+
         return parkingsFileList;
     }
 

@@ -129,11 +129,14 @@ public class ApiProxyService {
 			org.codehaus.jettison.json.JSONObject propJson = properties.getJSONObject("properties");
 			String cityCode = propJson.getString("citycode");
 			String postCode = propJson.getString("postcode");
-
+			String address = propJson.getString("name");
+			String city = propJson.getString("city");
 
 			DtoGeocode geocodeResult = new DtoGeocode();
 			geocodeResult.setCityCode(cityCode);
 			geocodeResult.setPostCode(postCode);
+			geocodeResult.setAddress(address);
+			geocodeResult.setCity(city);
 			return geocodeResult;
 
 		}catch (Exception e){

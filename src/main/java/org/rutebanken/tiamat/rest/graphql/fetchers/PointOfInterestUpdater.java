@@ -20,6 +20,8 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
+import org.rutebanken.tiamat.externalapis.ApiProxyService;
+import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.rutebanken.tiamat.repository.ParkingRepository;
@@ -38,6 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -78,8 +81,7 @@ class PointOfInterestUpdater implements DataFetcher {
     @Autowired
     private GroupOfEntitiesMapper groupOfEntitiesMapper;
 
-    @Autowired
-    private NetexIdHelper netexIdHelper;
+    private ApiProxyService apiProxyService = new ApiProxyService();
 
 
     @Override
@@ -135,6 +137,23 @@ class PointOfInterestUpdater implements DataFetcher {
             Point geoJsonPoint = geometryMapper.createGeoJsonPoint((Map) input.get(GEOMETRY));
             isUpdated = isUpdated || (!geoJsonPoint.equals(updatedPointOfInterest.getCentroid()));
             updatedPointOfInterest.setCentroid(geoJsonPoint);
+
+            try {
+                DtoGeocode dtoGeocode = apiProxyService.getGeocodeDataByReverseGeocoding(BigDecimal.valueOf(geoJsonPoint.getCoordinate().y), BigDecimal.valueOf(geoJsonPoint.getCoordinate().x));
+                if (dtoGeocode.getAddress() != null && !dtoGeocode.getAddress().isEmpty()) {
+                    updatedPointOfInterest.setAddress(dtoGeocode.getAddress());
+                }
+
+                if (dtoGeocode.getCity() != null && !dtoGeocode.getCity().isEmpty())  {
+                    updatedPointOfInterest.setCity(dtoGeocode.getCity());
+                }
+
+                if (dtoGeocode.getPostCode() != null && !dtoGeocode.getCity().isEmpty()) {
+                    updatedPointOfInterest.setPostalCode(dtoGeocode.getPostCode());
+                }
+            } catch (Exception e) {
+                logger.error("Unable to get zip code for poi:" + updatedPointOfInterest.getNetexId());
+            }
         }
 
         if (input.get(PARENT_SITE_REF) != null) {
@@ -144,30 +163,6 @@ class PointOfInterestUpdater implements DataFetcher {
             isUpdated = isUpdated || (!parentSiteRef.equals(updatedPointOfInterest.getParentSiteRef()));
 
             updatedPointOfInterest.setParentSiteRef(parentSiteRef);
-        }
-
-        if (input.get(ZIP_CODE) != null) {
-            String zipCode = (String) input.get(ZIP_CODE);
-            isUpdated = isUpdated || (!zipCode.equals(updatedPointOfInterest.getZipCode()));
-            updatedPointOfInterest.setZipCode(zipCode);
-        }
-
-        if (input.get(ADDRESS) != null) {
-            String address = (String) input.get(ADDRESS);
-            isUpdated = isUpdated || (!address.equals(updatedPointOfInterest.getAddress()));
-            updatedPointOfInterest.setAddress(address);
-        }
-
-        if (input.get(CITY) != null) {
-            String city = (String) input.get(CITY);
-            isUpdated = isUpdated || (!city.equals(updatedPointOfInterest.getCity()));
-            updatedPointOfInterest.setCity(city);
-        }
-
-        if (input.get(POSTAL_CODE) != null) {
-            String postalCode = (String) input.get(POSTAL_CODE);
-            isUpdated = isUpdated || (!postalCode.equals(updatedPointOfInterest.getPostalCode()));
-            updatedPointOfInterest.setPostalCode(postalCode);
         }
 
         if (input.get(POI_FACILITY_SET) != null) {

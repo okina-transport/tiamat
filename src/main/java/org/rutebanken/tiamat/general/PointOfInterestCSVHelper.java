@@ -267,15 +267,16 @@ public class PointOfInterestCSVHelper {
         PointOfInterest newPointOfInterest = new PointOfInterest();
         newPointOfInterest.getOrCreateValues(ORIGINAL_ID_KEY).add(dtoPoiCSV.getId());
         newPointOfInterest.setName(new EmbeddableMultilingualString(dtoPoiCSV.getName(),"FR"));
-        newPointOfInterest.setCentroid(geometryFactory.createPoint(new Coordinate(Double.valueOf(dtoPoiCSV.getLongitude()), Double.valueOf(dtoPoiCSV.getLatitude()))));
+        newPointOfInterest.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(dtoPoiCSV.getLongitude()), Double.parseDouble(dtoPoiCSV.getLatitude()))));
         try {
             DtoGeocode geocodeData = apiProxyService.getGeocodeDataByReverseGeocoding(new BigDecimal(dtoPoiCSV.getLatitude(), MathContext.DECIMAL64), new BigDecimal(dtoPoiCSV.getLongitude(), MathContext.DECIMAL64));
             newPointOfInterest.setZipCode(geocodeData.getCityCode());
             newPointOfInterest.setPostalCode(StringUtils.isEmpty(dtoPoiCSV.getPostCode()) ? geocodeData.getPostCode() : dtoPoiCSV.getPostCode());
+            newPointOfInterest.setAddress(dtoPoiCSV.getStreet().isEmpty() ? geocodeData.getAddress() : dtoPoiCSV.getStreet());
+            newPointOfInterest.setCity(dtoPoiCSV.getCity().isEmpty()? geocodeData.getCity() : dtoPoiCSV.getCity());
         } catch (Exception e) {
             logger.error("Unable to get zip code for poi:" + dtoPoiCSV.getId());
         }
-
 
         PointOfInterestClassification classification = getChildClassification(dtoPoiCSV);
         newPointOfInterest.getClassifications().add(classification);
@@ -285,6 +286,7 @@ public class PointOfInterestCSVHelper {
             PointOfInterestFacilitySet facilitySet = createFacilitySetForShopImport();
             newPointOfInterest.setPointOfInterestFacilitySet(facilitySet);
         }
+
 
         if (dtoPoiCSV.getTags().size() > 0){
             for (Map.Entry<String, String> tagEntry : dtoPoiCSV.getTags().entrySet()) {

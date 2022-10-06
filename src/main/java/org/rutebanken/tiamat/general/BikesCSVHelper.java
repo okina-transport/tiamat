@@ -9,7 +9,10 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
+import org.rutebanken.tiamat.rest.dto.DtoQuayResource;
 import org.rutebanken.tiamat.service.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +36,8 @@ public class BikesCSVHelper {
     private final static String GEO_API_GOUV_ENDPOINT = "https://geo.api.gouv.fr/communes?lat=%s&lon=%s&fields=nom,code,codesPostaux&format=json";
 
     private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
+
+    private static final Logger logger = LoggerFactory.getLogger(BikesCSVHelper.class);
 
 
     public static List<DtoBikeParking> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
@@ -277,30 +282,52 @@ public class BikesCSVHelper {
         final String geoApiGouvUrl = String.format(GEO_API_GOUV_ENDPOINT, bikeParkingDto.getXlong(), bikeParkingDto.getYlat());
         RestTemplate restTemplate = new RestTemplate();
 
+        ResponseEntity response = null;
+        String city = "";
+        String street = "";
+
         try {
-            final ResponseEntity response1 = restTemplate.exchange(dataGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, String.class);
-            JSONObject body = new JSONObject(Objects.requireNonNull(response1.getBody()).toString());
+            response = restTemplate.exchange(dataGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, String.class);
+            JSONObject body = new JSONObject(Objects.requireNonNull(response.getBody()).toString());
 
             if (body.getJSONArray("features") != null && body.getJSONArray("features").length() > 0) {
-                String city = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties").getString("city");
-                String street = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties").getString("street");
+
+                JSONObject properties = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties");
+                city = properties.has("city") ? properties.getString("city") : "";
+                street = properties.has("street") ? properties.getString("street") : "";
 
                 return "[" + type + "], " + city + ", " + street;
             } else {
 
-                final ResponseEntity response2 = restTemplate.exchange(geoApiGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, Object.class);
-                body = new JSONObject(Objects.requireNonNull(response2.getBody()).toString());
+                response = restTemplate.exchange(geoApiGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, Object.class);
+                body = new JSONObject(Objects.requireNonNull(response.getBody()).toString());
 
                 if (body.getString("nom") != null && !body.getString("nom").isEmpty()) {
-                    String city = body.getString("nom");
+                    city = body.getString("nom");
                     return "[" + type + "], " + city;
                 } else {
                     throw new IllegalArgumentException("Impossible de trouver le nom du parking suivant : " + bikeParkingDto.getIdLocal());
                 }
             }
         } catch (RestClientException | JSONException | IllegalArgumentException e) {
-            e.printStackTrace();
+            logger.error("Error on parking name build", e);
+            logger.error("dataGouvUrl : " + dataGouvUrl);
+            logger.error("geoApiGouvUrl : " + geoApiGouvUrl);
+            if (response != null && response.getBody() != null){
+                logger.error(response.getBody().toString());
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("[" + type + "]");
+
+            if (StringUtils.isNotEmpty(city)){
+                sb.append(", " + city);
+            }
+
+            if (StringUtils.isNotEmpty(street)){
+                sb.append(", " + street);
+            }
+            return sb.toString();
         }
-        return null;
     }
 }

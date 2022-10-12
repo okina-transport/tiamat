@@ -105,6 +105,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
     public void test() throws InterruptedException, JAXBException, IOException, SAXException {
 
         asyncPublicationDeliveryExporter.providerRepository = providerRepository;
+        stopPlaceRepository.deleteAll();
 
         final int numberOfStopPlaces = StopPlaceSearch.DEFAULT_PAGE_SIZE;
         for (int i = 0; i < numberOfStopPlaces; i++) {

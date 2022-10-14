@@ -52,7 +52,6 @@ public class AccessibilityAssessmentOptimizer {
 
             // Collect all assessments
             stopPlace.getQuays()
-                    .stream()
                     .forEach(quay -> allQuayAccessibilityAssessments.add(quay.getAccessibilityAssessment()));
         }
 
@@ -70,13 +69,9 @@ public class AccessibilityAssessmentOptimizer {
                     AccessibilityAssessment nextVersion = stopPlace.getAccessibilityAssessment();
                     nextVersion.setLimitations(firstAccessibilityAssessment.getLimitations());
                     firstAccessibilityAssessment = nextVersion;
-//                    firstAccessibilityAssessment = versionCreator.createCopy(nextVersion, AccessibilityAssessment.class);
                 }
 
                 stopPlace.setAccessibilityAssessment(firstAccessibilityAssessment);
-
-                //Remove Assessment from Quays
-//                stopPlace.getQuays().forEach(quay -> quay.setAccessibilityAssessment(null));
             } else {
                 // Assessments are different - remove from StopPlace
                 stopPlace.setAccessibilityAssessment(null);

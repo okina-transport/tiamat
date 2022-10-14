@@ -29,6 +29,7 @@ public class AlternativeNamesMerger {
             fromAlternativeNames.forEach(altName -> {
                 AlternativeName mergedAltName = new AlternativeName();
                 ObjectMerger.copyPropertiesNotNull(altName, mergedAltName);
+                mergedAltName.setVersion(mergedAltName.getVersion() + 2);
                 toAlternativeNames.add(mergedAltName);
             });
         }

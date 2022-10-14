@@ -38,9 +38,9 @@ public class PlaceEquipmentMerger {
             List<InstalledEquipment_VersionStructure> toInstalledEquipment = toPlaceEquipments.getInstalledEquipment();
             if (fromInstalledEquipment != null) {
                 fromInstalledEquipment.forEach(eq -> {
-                    toInstalledEquipment.add(
-                            versionCreator.createCopy(eq, InstalledEquipment_VersionStructure.class)
-                    );
+                    InstalledEquipment_VersionStructure installedEquipment_versionStructure = versionCreator.createCopy(eq, InstalledEquipment_VersionStructure.class);
+                    installedEquipment_versionStructure.setVersion(eq.getVersion() + 2);
+                    toInstalledEquipment.add(installedEquipment_versionStructure);
                 });
             }
         }

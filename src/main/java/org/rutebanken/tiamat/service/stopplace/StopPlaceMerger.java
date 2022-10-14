@@ -178,7 +178,7 @@ public class StopPlaceMerger {
     }
 
     private void transferQuays(StopPlace fromStopPlaceToTerminate, StopPlace mergedStopPlace) {
-        fromStopPlaceToTerminate.getQuays().stream()
+        fromStopPlaceToTerminate.getQuays()
                 .forEach(quay -> mergedStopPlace.getQuays().add(versionCreator.createCopy(quay, Quay.class)));
     }
 

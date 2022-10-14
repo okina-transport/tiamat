@@ -62,9 +62,8 @@ public class VersionIncrementor {
     }
 
     public void initiateOrIncrementAlternativeNamesVersion(List<AlternativeName> alternativeNames) {
-
         if (alternativeNames != null) {
-            alternativeNames.forEach(alternativeName -> initiateOrIncrement(alternativeName));
+            alternativeNames.forEach(this::initiateOrIncrement);
         }
     }
 

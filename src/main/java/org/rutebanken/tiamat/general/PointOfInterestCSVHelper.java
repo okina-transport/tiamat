@@ -8,12 +8,7 @@ import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.externalapis.ApiProxyService;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
-import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
-import org.rutebanken.tiamat.model.PointOfInterest;
-import org.rutebanken.tiamat.model.PointOfInterestClassification;
-import org.rutebanken.tiamat.model.PointOfInterestFacilitySet;
-import org.rutebanken.tiamat.model.TicketingFacilityEnumeration;
-import org.rutebanken.tiamat.model.TicketingServiceFacilityEnumeration;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.PointOfInterestClassificationRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestFacilitySetRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
@@ -31,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.time.Instant;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -294,6 +290,25 @@ public class PointOfInterestCSVHelper {
             }
         }
 
+        newPointOfInterest.getOrCreateValues("network");
+
+        AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
+        accessibilityAssessment.setVersion(1);
+        accessibilityAssessment.setCreated(Instant.now());
+        accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.UNKNOWN);
+        accessibilityAssessment.setLimitations(new ArrayList<>());
+
+        AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
+        accessibilityLimitation.setCreated(Instant.now());
+        accessibilityLimitation.setWheelchairAccess(LimitationStatusEnumeration.UNKNOWN);
+        accessibilityLimitation.setAudibleSignalsAvailable(LimitationStatusEnumeration.UNKNOWN);
+        accessibilityLimitation.setEscalatorFreeAccess(LimitationStatusEnumeration.UNKNOWN);
+        accessibilityLimitation.setLiftFreeAccess(LimitationStatusEnumeration.UNKNOWN);
+        accessibilityLimitation.setStepFreeAccess(LimitationStatusEnumeration.UNKNOWN);
+        accessibilityLimitation.setVisualSignsAvailable(LimitationStatusEnumeration.UNKNOWN);
+
+        accessibilityAssessment.getLimitations().add(accessibilityLimitation);
+        newPointOfInterest.setAccessibilityAssessment(accessibilityAssessment);
 
         return newPointOfInterest;
     }

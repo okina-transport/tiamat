@@ -67,6 +67,7 @@ public class PointOfInterestVersionedSaverService {
         PointOfInterest result;
         newVersion.setValidBetween(null);
         versionIncrementor.initiateOrIncrement(newVersion);
+        versionIncrementor.initiateOrIncrementAccessibilityAssesmentVersion(newVersion);
         newVersion.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
         result = poiRepository.save(newVersion);
 

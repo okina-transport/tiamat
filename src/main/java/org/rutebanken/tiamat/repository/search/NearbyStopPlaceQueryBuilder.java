@@ -78,7 +78,7 @@ public class NearbyStopPlaceQueryBuilder {
         StringBuilder importedIdPattern = new StringBuilder();
 
 
-        importedIdPattern.append(stopPlaceSearch.getOrganisationName());
+        importedIdPattern.append(stopPlaceSearch.getOrganisationName().toLowerCase());
         importedIdPattern.append(":stopplace:%");
         return importedIdPattern.toString();
     }

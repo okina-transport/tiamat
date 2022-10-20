@@ -86,31 +86,27 @@ public class PointOfInterestCSVHelper {
     /**
      * Parse the CSV file and converts each line to a DTO object
      *
-     * @param csvFile
-     *  input file uploaded by user
-     * @return
-     *  a list of DTO object
-     * @throws IllegalArgumentException
-     * exception in case of error in the data
+     * @param csvFile input file uploaded by user
+     * @return a list of DTO object
+     * @throws IllegalArgumentException exception in case of error in the data
      */
     public List<DtoPointOfInterest> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
         Iterable<CSVRecord> records = CSVHelper.getRecords(csvFile);
 
         return StreamSupport.stream(records.spliterator(), false)
-                                                .map(this::convertToDTO)
-                                            .collect(Collectors.toList());
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
 
     }
 
 
     /**
      * Converts a raw string from CSV to a DTO object
-     * @param rawString
-     *  line from CSV file
-     * @return
-     *  a DTO object with data from the CSV file
+     *
+     * @param rawString line from CSV file
+     * @return a DTO object with data from the CSV file
      */
-    private DtoPointOfInterest convertToDTO(CSVRecord rawString){
+    private DtoPointOfInterest convertToDTO(CSVRecord rawString) {
 
         DtoPointOfInterest poiDTO = new DtoPointOfInterest(rawString);
         validatePoi(poiDTO);
@@ -120,62 +116,60 @@ public class PointOfInterestCSVHelper {
     /**
      * Checks if Point of interest matches the conditions
      *
-     * @param poi
-     *  The point of interest to check
-     * @throws IllegalArgumentException
-     *  Exception if the point of interest does not meet the required conditions
+     * @param poi The point of interest to check
+     * @throws IllegalArgumentException Exception if the point of interest does not meet the required conditions
      */
-    private static void validatePoi(DtoPointOfInterest poi) throws IllegalArgumentException{
-        Preconditions.checkArgument(!poi.getId().isEmpty(),"ID is required in all POI" );
-        Preconditions.checkArgument(!poi.getName().isEmpty() ,"NAME is required for POI :" + poi.getId());
-        Preconditions.checkArgument(patternXlongYlat.matcher(poi.getLongitude()).matches(),"longitude is required for POI: " + poi.getId());
-        Preconditions.checkArgument(patternXlongYlat.matcher(poi.getLatitude()).matches(),"latitude is required for POI: " + poi.getId());
+    private static void validatePoi(DtoPointOfInterest poi) throws IllegalArgumentException {
+        Preconditions.checkArgument(!poi.getId().isEmpty(), "ID is required in all POI");
+        Preconditions.checkArgument(!poi.getName().isEmpty(), "NAME is required for POI :" + poi.getId());
+        Preconditions.checkArgument(patternXlongYlat.matcher(poi.getLongitude()).matches(), "longitude is required for POI: " + poi.getId());
+        Preconditions.checkArgument(patternXlongYlat.matcher(poi.getLatitude()).matches(), "latitude is required for POI: " + poi.getId());
     }
 
 
     /**
      * Removes duplicate Point of interest from the input
+     *
      * @param pointOfInterestList
      * @throws IllegalArgumentException
      */
-    public static void checkDuplicatedPois(List<DtoPointOfInterest> pointOfInterestList) throws IllegalArgumentException{
-        List <String> compositeKey = pointOfInterestList.stream()
-                                                         .map(poi -> poi.getId()+poi.getName())
-                                                         .collect(Collectors.toList());
+    public static void checkDuplicatedPois(List<DtoPointOfInterest> pointOfInterestList) throws IllegalArgumentException {
+        List<String> compositeKey = pointOfInterestList.stream()
+                .map(poi -> poi.getId() + poi.getName())
+                .collect(Collectors.toList());
 
         Set listWithoutDuplicatedValues = new HashSet(compositeKey);
 
-        if(compositeKey.size() > listWithoutDuplicatedValues.size())
-                throw new IllegalArgumentException("There are duplicated POI in your CSV File (With the same ID & Name)");
+        if (compositeKey.size() > listWithoutDuplicatedValues.size())
+            throw new IllegalArgumentException("There are duplicated POI in your CSV File (With the same ID & Name)");
     }
 
 
     /**
      * Removes PointOfInterest from database for shop classification
-     *
      */
-    public void clearPOIForShopClassification(){
+    public void clearPOIForShopClassification() {
         pointOfInterestRepo.clearPOIForClassification(SHOP_CLASSIFICATION_NAME);
     }
 
     /**
      * Removes PointOfInterest from database for all classifications EXCEPT shop
-     *
      */
-    public void clearPOIExceptShop(){
+    public void clearPOIExceptShop() {
         pointOfInterestRepo.clearPOIExceptClassification(SHOP_CLASSIFICATION_NAME);
     }
 
 
     /**
      * Persist a list of POI into database
+     *
      * @param dtoPoiList
      */
-    public void persistPointsOfInterest(List<DtoPointOfInterest> dtoPoiList){
+    public void persistPointsOfInterest(List<DtoPointOfInterest> dtoPoiList) {
 
         List<PointOfInterest> poiToPersist = dtoPoiList.stream()
-                                                        .map(this::mapFromDtoToEntity)
-                                                        .collect(Collectors.toList());
+                .map(this::mapFromDtoToEntity)
+                .collect(Collectors.toList());
 
         logger.info("Mapping completed. Starting to persist POIs");
 
@@ -196,14 +190,14 @@ public class PointOfInterestCSVHelper {
     private PointOfInterest retrievePOIinBDD(PointOfInterest pointOfInterest) {
 
         Set<String> originalidsToSearch = new HashSet<>();
-        if (pointOfInterest.getKeyValues().get(ORIGINAL_ID_KEY) != null){
+        if (pointOfInterest.getKeyValues().get(ORIGINAL_ID_KEY) != null) {
             pointOfInterest.getKeyValues().get(ORIGINAL_ID_KEY).getItems().forEach(originalidsToSearch::add);
         }
 
         String foundPOINetexId = pointOfInterestRepo.findFirstByKeyValues(ORIGINAL_ID_KEY, originalidsToSearch);
         if (foundPOINetexId != null) {
             PointOfInterest foundPOI = pointOfInterestRepo.findFirstByNetexIdOrderByVersionDescAndInitialize(foundPOINetexId);
-            if (foundPOI.getCentroid().equalsExact(pointOfInterest.getCentroid(),  0.0001)) {
+            if (foundPOI.getCentroid().equalsExact(pointOfInterest.getCentroid(), 0.0001)) {
                 return foundPOI;
             }
         }
@@ -253,23 +247,32 @@ public class PointOfInterestCSVHelper {
 
     /**
      * Converts a DTO from the CSV read
-     * @param dtoPoiCSV
-     *     the DTO filled with data from the CSV
-     * @return
-     *     the entity PointOfInterest
+     *
+     * @param dtoPoiCSV the DTO filled with data from the CSV
+     * @return the entity PointOfInterest
      */
-    public PointOfInterest mapFromDtoToEntity(DtoPointOfInterest dtoPoiCSV){
+    public PointOfInterest mapFromDtoToEntity(DtoPointOfInterest dtoPoiCSV) {
 
         PointOfInterest newPointOfInterest = new PointOfInterest();
         newPointOfInterest.getOrCreateValues(ORIGINAL_ID_KEY).add(dtoPoiCSV.getId());
-        newPointOfInterest.setName(new EmbeddableMultilingualString(dtoPoiCSV.getName(),"FR"));
+        newPointOfInterest.setName(new EmbeddableMultilingualString(dtoPoiCSV.getName(), "FR"));
         newPointOfInterest.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(dtoPoiCSV.getLongitude()), Double.parseDouble(dtoPoiCSV.getLatitude()))));
         try {
             DtoGeocode geocodeData = apiProxyService.getGeocodeDataByReverseGeocoding(new BigDecimal(dtoPoiCSV.getLatitude(), MathContext.DECIMAL64), new BigDecimal(dtoPoiCSV.getLongitude(), MathContext.DECIMAL64));
             newPointOfInterest.setZipCode(geocodeData.getCityCode());
             newPointOfInterest.setPostalCode(StringUtils.isEmpty(dtoPoiCSV.getPostCode()) ? geocodeData.getPostCode() : dtoPoiCSV.getPostCode());
-            newPointOfInterest.setAddress(dtoPoiCSV.getStreet().isEmpty() ? geocodeData.getAddress() : dtoPoiCSV.getStreet());
-            newPointOfInterest.setCity(dtoPoiCSV.getCity().isEmpty()? geocodeData.getCity() : dtoPoiCSV.getCity());
+            newPointOfInterest.setCity(dtoPoiCSV.getCity().isEmpty() ? geocodeData.getCity() : dtoPoiCSV.getCity());
+            if(StringUtils.isNotEmpty(dtoPoiCSV.getStreet())){
+                StringBuilder address = new StringBuilder();
+                if(StringUtils.isNotEmpty(dtoPoiCSV.getHouseNumber())){
+                    address.append(dtoPoiCSV.getHouseNumber()).append(" ");
+                }
+                address.append(dtoPoiCSV.getStreet());
+                newPointOfInterest.setAddress(address.toString());
+            }
+            else{
+                newPointOfInterest.setAddress(geocodeData.getAddress());
+            }
         } catch (Exception e) {
             logger.error("Unable to get zip code for poi:" + dtoPoiCSV.getId());
         }
@@ -278,13 +281,13 @@ public class PointOfInterestCSVHelper {
         newPointOfInterest.getClassifications().add(classification);
 
 
-        if (StringUtils.isNotEmpty(dtoPoiCSV.getShop())){
+        if (StringUtils.isNotEmpty(dtoPoiCSV.getShop())) {
             PointOfInterestFacilitySet facilitySet = createFacilitySetForShopImport();
             newPointOfInterest.setPointOfInterestFacilitySet(facilitySet);
         }
 
 
-        if (dtoPoiCSV.getTags().size() > 0){
+        if (dtoPoiCSV.getTags().size() > 0) {
             for (Map.Entry<String, String> tagEntry : dtoPoiCSV.getTags().entrySet()) {
                 newPointOfInterest.getOrCreateValues(tagEntry.getKey()).add(tagEntry.getValue());
             }
@@ -317,29 +320,27 @@ public class PointOfInterestCSVHelper {
     /**
      * Recovers the parent classification of the POI
      *
-     * @param dtoPoiCSV
-     *  POI comming from input file
-     * @return
-     *  The parent classification
+     * @param dtoPoiCSV POI comming from input file
+     * @return The parent classification
      */
-    private PointOfInterestClassification getParentClassification(DtoPointOfInterest dtoPoiCSV){
+    private PointOfInterestClassification getParentClassification(DtoPointOfInterest dtoPoiCSV) {
 
 
-        if (StringUtils.isNotEmpty(dtoPoiCSV.getShop())){
+        if (StringUtils.isNotEmpty(dtoPoiCSV.getShop())) {
             return getOrCreateParentClassification(SHOP_CLASSIFICATION_NAME);
-        }else if (StringUtils.isNotEmpty(dtoPoiCSV.getAmenity())){
+        } else if (StringUtils.isNotEmpty(dtoPoiCSV.getAmenity())) {
             return getOrCreateParentClassification(AMENITY_CLASSIFICATION_NAME);
-        }else if (StringUtils.isNotEmpty(dtoPoiCSV.getBuilding())){
+        } else if (StringUtils.isNotEmpty(dtoPoiCSV.getBuilding())) {
             return getOrCreateParentClassification(BUILDING_CLASSIFICATION_NAME);
-        }else if (StringUtils.isNotEmpty(dtoPoiCSV.getHistoric())){
+        } else if (StringUtils.isNotEmpty(dtoPoiCSV.getHistoric())) {
             return getOrCreateParentClassification(HISTORIC_CLASSIFICATION_NAME);
-        }else if (StringUtils.isNotEmpty(dtoPoiCSV.getLanduse())){
+        } else if (StringUtils.isNotEmpty(dtoPoiCSV.getLanduse())) {
             return getOrCreateParentClassification(LANDUSE_CLASSIFICATION_NAME);
-        }else if (StringUtils.isNotEmpty(dtoPoiCSV.getLeisure())){
+        } else if (StringUtils.isNotEmpty(dtoPoiCSV.getLeisure())) {
             return getOrCreateParentClassification(LEISURE_CLASSIFICATION_NAME);
-        }else if (StringUtils.isNotEmpty(dtoPoiCSV.getTourism())){
+        } else if (StringUtils.isNotEmpty(dtoPoiCSV.getTourism())) {
             return getOrCreateParentClassification(TOURISM_CLASSIFICATION_NAME);
-        }else if (StringUtils.isNotEmpty(dtoPoiCSV.getOffice())){
+        } else if (StringUtils.isNotEmpty(dtoPoiCSV.getOffice())) {
             return getOrCreateParentClassification(OFFICE_CLASSIFICATION_NAME);
         }
 
@@ -349,12 +350,12 @@ public class PointOfInterestCSVHelper {
 
     /**
      * Create a facility set for SHOP import
-     * @return
-     *  the new facility set
+     *
+     * @return the new facility set
      */
-    private PointOfInterestFacilitySet createFacilitySetForShopImport(){
+    private PointOfInterestFacilitySet createFacilitySetForShopImport() {
         PointOfInterestFacilitySet newFacilitySet = new PointOfInterestFacilitySet();
-        newFacilitySet.setTicketingServiceFacility( TicketingServiceFacilityEnumeration.PURCHASE);
+        newFacilitySet.setTicketingServiceFacility(TicketingServiceFacilityEnumeration.PURCHASE);
         newFacilitySet.setTicketingFacility(TicketingFacilityEnumeration.TICKET_MACHINES);
         newFacilitySet.setVersion(1);
         facilitySetRepo.save(newFacilitySet);
@@ -364,25 +365,24 @@ public class PointOfInterestCSVHelper {
 
     /**
      * Recovers a child classification  from cache or creates it
-     * @param pointOfInterest
      *
-     * @return
-     *      The classification
+     * @param pointOfInterest
+     * @return The classification
      */
-    private PointOfInterestClassification getChildClassification(DtoPointOfInterest pointOfInterest){
+    private PointOfInterestClassification getChildClassification(DtoPointOfInterest pointOfInterest) {
 
         PointOfInterestClassification parentClassification = getParentClassification(pointOfInterest);
         String parentName = parentClassification.getName().getValue();
 
-        if (!childClassificationCache.containsKey(parentName)){
-            Map<String, PointOfInterestClassification>  newMap = new HashMap<>();
+        if (!childClassificationCache.containsKey(parentName)) {
+            Map<String, PointOfInterestClassification> newMap = new HashMap<>();
             childClassificationCache.put(parentName, newMap);
         }
 
         Map<String, PointOfInterestClassification> childrenClassificationMap = childClassificationCache.get(parentName);
         String childClassificationName = getChildClassificationName(pointOfInterest);
 
-        if (childrenClassificationMap.containsKey(childClassificationName)){
+        if (childrenClassificationMap.containsKey(childClassificationName)) {
             return childrenClassificationMap.get(childClassificationName);
         }
 
@@ -390,16 +390,16 @@ public class PointOfInterestCSVHelper {
         Optional<String> netexClassOpt = poiClassificationRepo.getClassification(childClassificationName, parentClassification.getId());
         PointOfInterestClassification childClassification;
 
-        if (netexClassOpt.isPresent()){
-            childClassification =  poiClassificationRepo.findFirstByNetexIdOrderByVersionDesc(netexClassOpt.get());
+        if (netexClassOpt.isPresent()) {
+            childClassification = poiClassificationRepo.findFirstByNetexIdOrderByVersionDesc(netexClassOpt.get());
 
-        }else{
+        } else {
 
             PointOfInterestClassification newClass = new PointOfInterestClassification();
-            newClass.setName(new EmbeddableMultilingualString(childClassificationName,"FR"));
+            newClass.setName(new EmbeddableMultilingualString(childClassificationName, "FR"));
             newClass.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
             newClass.setParent(parentClassification);
-            childClassification =  poiClassVersionedSaverService.saveNewVersion(newClass);
+            childClassification = poiClassVersionedSaverService.saveNewVersion(newClass);
             childClassification = poiClassificationRepo.findFirstByNetexIdOrderByVersionDesc(childClassification.getNetexId());
         }
         childrenClassificationMap.put(childClassificationName, childClassification);
@@ -408,28 +408,27 @@ public class PointOfInterestCSVHelper {
 
     /**
      * Determines the classification name from the POI read in input file
-     * @param dtoPoiCSV
-     *      POI from the input file
-     * @return
-     *      the classification name
+     *
+     * @param dtoPoiCSV POI from the input file
+     * @return the classification name
      */
-    private String getChildClassificationName(DtoPointOfInterest dtoPoiCSV){
+    private String getChildClassificationName(DtoPointOfInterest dtoPoiCSV) {
 
-        if (StringUtils.isNotEmpty(dtoPoiCSV.getShop())){
+        if (StringUtils.isNotEmpty(dtoPoiCSV.getShop())) {
             return dtoPoiCSV.getShop();
-        }else if (StringUtils.isNotEmpty(dtoPoiCSV.getAmenity())){
+        } else if (StringUtils.isNotEmpty(dtoPoiCSV.getAmenity())) {
             return dtoPoiCSV.getAmenity();
-        }else if (StringUtils.isNotEmpty(dtoPoiCSV.getBuilding())){
+        } else if (StringUtils.isNotEmpty(dtoPoiCSV.getBuilding())) {
             return dtoPoiCSV.getBuilding();
-        }else if (StringUtils.isNotEmpty(dtoPoiCSV.getHistoric())){
+        } else if (StringUtils.isNotEmpty(dtoPoiCSV.getHistoric())) {
             return dtoPoiCSV.getHistoric();
-        }else if (StringUtils.isNotEmpty(dtoPoiCSV.getLanduse())){
+        } else if (StringUtils.isNotEmpty(dtoPoiCSV.getLanduse())) {
             return dtoPoiCSV.getLanduse();
-        }else if (StringUtils.isNotEmpty(dtoPoiCSV.getLeisure())){
+        } else if (StringUtils.isNotEmpty(dtoPoiCSV.getLeisure())) {
             return dtoPoiCSV.getLeisure();
-        }else if (StringUtils.isNotEmpty(dtoPoiCSV.getTourism())){
+        } else if (StringUtils.isNotEmpty(dtoPoiCSV.getTourism())) {
             return dtoPoiCSV.getTourism();
-        }else if (StringUtils.isNotEmpty(dtoPoiCSV.getOffice())){
+        } else if (StringUtils.isNotEmpty(dtoPoiCSV.getOffice())) {
             return dtoPoiCSV.getOffice();
         }
         throw new IllegalArgumentException("Unable to find classification for id :" + dtoPoiCSV.getId());
@@ -439,14 +438,13 @@ public class PointOfInterestCSVHelper {
     /**
      * Recovers a parent classification from cache or creates it
      * (a parent classification is a classification with no other classification above. The root level of classification)
-     * @param parentClassificationName
-     *         The parent classification name to recover
-     * @return
-     *         The classification
+     *
+     * @param parentClassificationName The parent classification name to recover
+     * @return The classification
      */
-    private PointOfInterestClassification getOrCreateParentClassification(String parentClassificationName){
+    private PointOfInterestClassification getOrCreateParentClassification(String parentClassificationName) {
 
-        if (parentClassificationCache.containsKey(parentClassificationName)){
+        if (parentClassificationCache.containsKey(parentClassificationName)) {
             return parentClassificationCache.get(parentClassificationName);
         }
 
@@ -454,11 +452,11 @@ public class PointOfInterestCSVHelper {
         PointOfInterestClassification parentClassification;
 
 
-        if (netexClassOpt.isPresent()){
-             parentClassification = poiClassificationRepo.findFirstByNetexIdOrderByVersionDesc(netexClassOpt.get());
-        }else{
+        if (netexClassOpt.isPresent()) {
+            parentClassification = poiClassificationRepo.findFirstByNetexIdOrderByVersionDesc(netexClassOpt.get());
+        } else {
             PointOfInterestClassification newClass = new PointOfInterestClassification();
-            newClass.setName(new EmbeddableMultilingualString(parentClassificationName,"FR"));
+            newClass.setName(new EmbeddableMultilingualString(parentClassificationName, "FR"));
             newClass.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
             parentClassification = poiClassVersionedSaverService.saveNewVersion(newClass);
             parentClassification = poiClassificationRepo.findFirstByNetexIdOrderByVersionDesc(parentClassification.getNetexId());
@@ -467,13 +465,4 @@ public class PointOfInterestCSVHelper {
         return parentClassification;
 
     }
-
-
-
-
-
-
-
-
-
 }

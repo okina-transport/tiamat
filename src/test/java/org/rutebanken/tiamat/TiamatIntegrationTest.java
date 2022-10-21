@@ -26,16 +26,7 @@ import org.rutebanken.tiamat.domain.ChouetteInfo;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.GeneratedIdState;
-import org.rutebanken.tiamat.repository.CacheProviderRepository;
-import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
-import org.rutebanken.tiamat.repository.ParkingRepository;
-import org.rutebanken.tiamat.repository.PathJunctionRepository;
-import org.rutebanken.tiamat.repository.PathLinkRepository;
-import org.rutebanken.tiamat.repository.QuayRepository;
-import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.repository.TagRepository;
-import org.rutebanken.tiamat.repository.TariffZoneRepository;
-import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
+import org.rutebanken.tiamat.repository.*;
 import org.rutebanken.tiamat.service.BlobStoreService;
 import org.rutebanken.tiamat.service.TariffZonesLookupService;
 import org.rutebanken.tiamat.service.TopographicPlaceLookupService;
@@ -84,6 +75,9 @@ public abstract class TiamatIntegrationTest {
 
     @Autowired
     protected StopPlaceRepository stopPlaceRepository;
+
+    @Autowired
+    protected PointOfInterestRepository poiRepository;
 
     @Autowired
     protected StopPlaceVersionedSaverService stopPlaceVersionedSaverService;

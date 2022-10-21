@@ -106,6 +106,9 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
 
         asyncPublicationDeliveryExporter.providerRepository = providerRepository;
         stopPlaceRepository.deleteAll();
+        parkingRepository.deleteAll();
+        poiRepository.deleteAll();
+
 
         final int numberOfStopPlaces = StopPlaceSearch.DEFAULT_PAGE_SIZE;
         for (int i = 0; i < numberOfStopPlaces; i++) {

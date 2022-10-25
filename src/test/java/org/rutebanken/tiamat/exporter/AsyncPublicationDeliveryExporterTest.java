@@ -51,8 +51,12 @@ import org.rutebanken.tiamat.versioning.save.TopographicPlaceVersionedSaverServi
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.xml.sax.SAXException;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
@@ -101,16 +105,16 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
     @Autowired
     private PublicationDeliveryHelper publicationDeliveryHelper;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @Test
     public void test() throws InterruptedException, JAXBException, IOException, SAXException {
 
         asyncPublicationDeliveryExporter.providerRepository = providerRepository;
-        stopPlaceRepository.deleteAll();
-        stopPlaceRepository.flush();
-        parkingRepository.deleteAll();
-        parkingRepository.flush();
-        poiRepository.deleteAll();
-        poiRepository.flush();
+
+
+        clearDB();
 
 
         final int numberOfStopPlaces = StopPlaceSearch.DEFAULT_PAGE_SIZE;
@@ -179,6 +183,18 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
             }
         }
     }
+
+    @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void clearDB() {
+
+        stopPlaceRepository.deleteAll();
+        stopPlaceRepository.flush();
+        parkingRepository.deleteAll();
+        parkingRepository.flush();
+        poiRepository.deleteAll();
+        poiRepository.flush();
+    }
+
 
     @Test
     public void testName() {

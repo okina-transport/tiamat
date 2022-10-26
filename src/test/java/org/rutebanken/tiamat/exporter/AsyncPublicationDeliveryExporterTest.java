@@ -186,13 +186,18 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
 
     @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
     public void clearDB() {
-
+        quayRepository.deleteAll();
+        quayRepository.flush();
         stopPlaceRepository.deleteAll();
         stopPlaceRepository.flush();
         parkingRepository.deleteAll();
         parkingRepository.flush();
         poiRepository.deleteAll();
         poiRepository.flush();
+        topographicPlaceRepository.deleteAll();
+        topographicPlaceRepository.flush();
+
+
     }
 
 

@@ -817,19 +817,21 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         Map<String, Object> parameters = new HashMap<>();
 
-        String queryStr = "INSERT INTO export_job_id_list \n" +
-                " SELECT :exportJobId,req1.stop_id  \n" +
-                " FROM ( \n" +
-                " SELECT max(s.id)as stop_id,MAX(s.version) as version FROM stop_place s  WHERE  (s.from_date <= :pointInTime OR  s.from_date IS NULL) \n" +
-                " AND (   s.to_date >= :pointInTime  OR s.to_date IS NULL) \n" +
-                " and s.parent_stop_place = false ";
+
+        String queryStr = " INSERT INTO export_job_id_list \n" +
+                "           SELECT :exportJobId,s.id as stop_id FROM stop_place s where s.id in  \n" +
+                "                 ( SELECT max(s1.id) FROM stop_place s1 group by s1.netex_id  \n";
+
 
         if (provider != null && provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName)){
-            queryStr = queryStr + " AND s.provider = :providerName \n";
+            queryStr = queryStr + " AND s1.provider = :providerName \n";
             parameters.put("providerName",  provider.getChouetteInfo().getReferential());
         }
+        queryStr = queryStr + ") " +
+                "                     AND  (s.from_date <= :pointInTime OR  s.from_date IS NULL) \n" +
+                "                     AND (   s.to_date >= :pointInTime  OR s.to_date IS NULL) \n" +
+                "                        and s.parent_stop_place = false  ";
 
-        queryStr = queryStr + "GROUP BY s.netex_id  ) req1";
 
         parameters.put("exportJobId", exportJobId);
         parameters.put("pointInTime", Date.from(Instant.now()));

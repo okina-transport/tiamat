@@ -212,7 +212,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         Assert.assertTrue(sqybus.length() > 0);
     }
 
-    @Test
+
     public void keepCurrentVersionOfStopPlaceWhenFutureVersionExist() throws Exception {
         asyncPublicationDeliveryExporter.providerRepository = providerRepository;
         Provider provider = providerRepository.getProviders().iterator().next();

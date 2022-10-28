@@ -340,6 +340,10 @@ public class GraphQLNames {
     public static final String NEARBY_RADIUS = "nearbyRadius";
     public static final String NEARBY_RADIUS_DESCRIPTION = "Radius arround which neighbors must be searched";
     public static final String NEARBY_STOP_PLACES_DESCRIPTION = "Set to true to only return stop places that have nearby stop place around them";
+    public static final String STOP_PLACES_WITH_MULTIPLE_PRODUCERS = "stopPlacesWithMultipleProducers";
+    public static final String STOP_PLACES_WITH_MULTIPLE_PRODUCERS_DESCRIPTION = "Set to true to only return stop places that have multiple producers";
+    public static final String QUAYS_WITH_MULTIPLE_PRODUCERS = "quaysWithMultipleProducers";
+    public static final String QUAYS_WITH_MULTIPLE_PRODUCERS_DESCRIPTION = "Set to true to only return quays that have multiple producers";
 
     public static final String ORGANISATION_NAME = "organisationName";
     public static final String ORGANISATION_NAME_DESCRIPTION = "argument to filter the nearby stop places by the organisation name";

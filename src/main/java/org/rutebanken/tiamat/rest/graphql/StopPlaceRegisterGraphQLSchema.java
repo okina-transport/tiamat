@@ -687,6 +687,18 @@ public class StopPlaceRegisterGraphQLSchema {
                 .description(STOP_PLACES_WITHOUT_QUAY_DESCRIPTION)
                 .build());
         arguments.add(GraphQLArgument.newArgument()
+                .name(STOP_PLACES_WITH_MULTIPLE_PRODUCERS)
+                .type(GraphQLBoolean)
+                .defaultValue(Boolean.FALSE)
+                .description(STOP_PLACES_WITH_MULTIPLE_PRODUCERS_DESCRIPTION)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(QUAYS_WITH_MULTIPLE_PRODUCERS)
+                .type(GraphQLBoolean)
+                .defaultValue(Boolean.FALSE)
+                .description(QUAYS_WITH_MULTIPLE_PRODUCERS_DESCRIPTION)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
                 .name(DETECT_MULTI_MODAL_POINTS)
                 .type(GraphQLBoolean)
                 .defaultValue(Boolean.FALSE)

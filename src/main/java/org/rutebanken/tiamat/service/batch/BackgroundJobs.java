@@ -29,10 +29,13 @@ public class BackgroundJobs {
 
     private final StopPlaceRefUpdaterService stopPlaceRefUpdaterService;
 
+    private final QuayIdMappingService quayIdMappingService;
+
     @Autowired
-    public BackgroundJobs(GaplessIdGeneratorService gaplessIdGeneratorService, StopPlaceRefUpdaterService stopPlaceRefUpdaterService) {
+    public BackgroundJobs(GaplessIdGeneratorService gaplessIdGeneratorService, StopPlaceRefUpdaterService stopPlaceRefUpdaterService, QuayIdMappingService quayIdMappingService) {
         this.gaplessIdGeneratorService = gaplessIdGeneratorService;
         this.stopPlaceRefUpdaterService = stopPlaceRefUpdaterService;
+        this.quayIdMappingService = quayIdMappingService;
     }
 
     @PostConstruct
@@ -43,6 +46,10 @@ public class BackgroundJobs {
         // Initial delay for the background stop place reference updater service can be good to avoid conflicts when running tests
         logger.info("Scheduling background job for updating stop places");
         backgroundJobExecutor.scheduleAtFixedRate(stopPlaceRefUpdaterService::updateAllStopPlaces, 30, 280, TimeUnit.MINUTES);
+
+
+        logger.info("Scheduling background job for quay id mapping file creation");
+        backgroundJobExecutor.scheduleAtFixedRate(quayIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
     }
 
     public void triggerStopPlaceUpdate() {

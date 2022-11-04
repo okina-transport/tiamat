@@ -172,6 +172,12 @@ public class StopPlaceQueryFromSearchBuilder {
     private StopPlaceWithoutQuayQueryBuilder stopPlaceWithoutQuayQueryBuilder;
 
     @Autowired
+    private StopPlaceWithMultipleProducersQueryBuilder stopPlaceWithMultipleProducersQueryBuilder;
+
+    @Autowired
+    private QuayWithMultipleProducersQueryBuilder quayWithMultipleProducersQueryBuilder;
+
+    @Autowired
     private MultiModalStopPlaceQueryBuilder multiModalStopPlaceQueryFromSearchBuilder;
 
     @Autowired
@@ -211,6 +217,14 @@ public class StopPlaceQueryFromSearchBuilder {
 
         if(stopPlaceSearch.isStopPlacesWithoutQuay()){
             return stopPlaceWithoutQuayQueryBuilder.buildQuery(stopPlaceSearch);
+        }
+
+        if(stopPlaceSearch.isStopPlacesWithMultipleProducers()){
+            return stopPlaceWithMultipleProducersQueryBuilder.buildQuery(stopPlaceSearch);
+        }
+
+        if(stopPlaceSearch.isQuaysWithMultipleProducers()){
+            return quayWithMultipleProducersQueryBuilder.buildQuery(stopPlaceSearch);
         }
 
 

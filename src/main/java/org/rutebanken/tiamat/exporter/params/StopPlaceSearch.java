@@ -99,6 +99,14 @@ public class StopPlaceSearch implements SearchObject {
     @ApiParam(value = STOP_PLACES_WITHOUT_QUAY)
     private boolean stopPlacesWithoutQuay;
 
+    @QueryParam(value = "stopPlacesWithMultipleProducers")
+    @ApiParam(value = STOP_PLACES_WITH_MULTIPLE_PRODUCERS)
+    private boolean stopPlacesWithMultipleProducers;
+
+    @QueryParam(value = "quaysWithMultipleProducers")
+    @ApiParam(value = QUAYS_WITH_MULTIPLE_PRODUCERS)
+    private boolean quaysWithMultipleProducers;
+
     @QueryParam(value = "nearbyRadius")
     @ApiParam(value = NEARBY_RADIUS)
     private int nearbyRadius;
@@ -146,6 +154,8 @@ public class StopPlaceSearch implements SearchObject {
                             boolean withDuplicatedQuayImportedIds,
                             boolean withNearbySimilarDuplicates,
                             boolean stopPlacesWithoutQuay,
+                            boolean stopPlacesWithMultipleProducers,
+                            boolean quaysWithMultipleProducers,
                             boolean nearbyStopPlaces,
                             boolean detectMultiModalPoints,
                             int nearbyRadius,
@@ -168,6 +178,8 @@ public class StopPlaceSearch implements SearchObject {
         this.withDuplicatedQuayImportedIds = withDuplicatedQuayImportedIds;
         this.withNearbySimilarDuplicates = withNearbySimilarDuplicates;
         this.stopPlacesWithoutQuay = stopPlacesWithoutQuay;
+        this.stopPlacesWithMultipleProducers = stopPlacesWithMultipleProducers;
+        this.quaysWithMultipleProducers = quaysWithMultipleProducers;
         this.nearbyStopPlaces = nearbyStopPlaces;
         this.nearbyRadius = nearbyRadius;
         this.detectMultiModalPoints = detectMultiModalPoints;
@@ -236,6 +248,14 @@ public class StopPlaceSearch implements SearchObject {
         return stopPlacesWithoutQuay;
     }
 
+    public boolean isStopPlacesWithMultipleProducers() {
+        return stopPlacesWithMultipleProducers;
+    }
+
+    public boolean isQuaysWithMultipleProducers() {
+        return quaysWithMultipleProducers;
+    }
+
     public boolean isDetectMultiModalPoints(){return detectMultiModalPoints;}
 
     public int getNearbyRadius() {
@@ -281,6 +301,8 @@ public class StopPlaceSearch implements SearchObject {
                 .add("withoutQuaysOnly", isWithoutQuaysOnly())
                 .add("withDuplicatedQuayImportedIds", isWithDuplicatedQuayImportedIds())
                 .add("stopPlacesWithoutQuay", isStopPlacesWithoutQuay())
+                .add("stopPlacesWithMultipleProducers", isStopPlacesWithMultipleProducers())
+                .add("quaysWithMultipleProducers", isQuaysWithMultipleProducers())
                 .add("nearbyStopPlaces", isNearbyStopPlaces())
                 .add("nearbyRadius", getNearbyRadius())
                 .add("detectMultiModalPoints",isDetectMultiModalPoints())
@@ -308,6 +330,8 @@ public class StopPlaceSearch implements SearchObject {
         private boolean withDuplicatedQuayImportedIds;
         private boolean withNearbySimilarDuplicates;
         private boolean stopPlacesWithoutQuay;
+        private boolean stopPlacesWithMultipleProducers;
+        private boolean quaysWithMultipleProducers;
         private boolean nearbyStopPlaces;
         private boolean detectMultiModalPoints;
         private int nearbyRadius;
@@ -386,6 +410,14 @@ public class StopPlaceSearch implements SearchObject {
             this.stopPlacesWithoutQuay = stopPlacesWithoutQuay;
         }
 
+        public void setStopPlacesWithMultipleProducers(boolean stopPlacesWithMultipleProducers) {
+            this.stopPlacesWithMultipleProducers = stopPlacesWithMultipleProducers;
+        }
+
+        public void setQuaysWithMultipleProducers(boolean quaysWithMultipleProducers) {
+            this.quaysWithMultipleProducers = quaysWithMultipleProducers;
+        }
+
         public void setNearbyRadius(int nearbyRadius) {
             this.nearbyRadius = nearbyRadius;
         }
@@ -437,6 +469,8 @@ public class StopPlaceSearch implements SearchObject {
                     withDuplicatedQuayImportedIds,
                     withNearbySimilarDuplicates,
                     stopPlacesWithoutQuay,
+                    stopPlacesWithMultipleProducers,
+                    quaysWithMultipleProducers,
                     nearbyStopPlaces,
                     detectMultiModalPoints,
                     nearbyRadius,

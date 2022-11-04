@@ -117,6 +117,9 @@ class StopPlaceFetcher implements DataFetcher {
         setIfNonNull(environment, DETECT_MULTI_MODAL_POINTS, stopPlaceSearchBuilder::setDetectMultiModalPoints);
         setIfNonNull(environment, HAS_PARKING, stopPlaceSearchBuilder::setHasParking);
         setIfNonNull(environment, WITH_TAGS, stopPlaceSearchBuilder::setWithTags);
+        setIfNonNull(environment, STOP_PLACES_WITH_MULTIPLE_PRODUCERS, stopPlaceSearchBuilder::setStopPlacesWithMultipleProducers);
+        setIfNonNull(environment, QUAYS_WITH_MULTIPLE_PRODUCERS, stopPlaceSearchBuilder::setQuaysWithMultipleProducers);
+
 
         Instant pointInTime;
         if (environment.getArgument(POINT_IN_TIME) != null) {
@@ -270,9 +273,19 @@ class StopPlaceFetcher implements DataFetcher {
             stopPlacesWithoutQuaySearch = environment.getArgument(STOP_PLACES_WITHOUT_QUAY);
         }
 
+        boolean stopPlacesWithMultipleProducersSearch = false;
+        if (environment.getArgument(STOP_PLACES_WITH_MULTIPLE_PRODUCERS) != null) {
+            stopPlacesWithMultipleProducersSearch = environment.getArgument(STOP_PLACES_WITH_MULTIPLE_PRODUCERS);
+        }
+
+        boolean quaysWithMultipleProducersSearch = false;
+        if (environment.getArgument(QUAYS_WITH_MULTIPLE_PRODUCERS) != null) {
+            quaysWithMultipleProducersSearch = environment.getArgument(QUAYS_WITH_MULTIPLE_PRODUCERS);
+        }
+
 
         //By default stop should resolve parent stops
-        if (nearbyStopPlaceSearch || onlyMonomodalStopplaces || stopPlacesWithoutQuaySearch) {
+        if (nearbyStopPlaceSearch || onlyMonomodalStopplaces || stopPlacesWithoutQuaySearch || stopPlacesWithMultipleProducersSearch || quaysWithMultipleProducersSearch) {
             return getStopPlaces(environment, stopPlaces, stopPlaces.size());
         } else {
             List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(stopPlaces, KEEP_CHILDREN);

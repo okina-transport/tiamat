@@ -107,8 +107,8 @@ public class StopPlaceWithMultipleProducersQueryBuilder {
         }
 
         queryBuilder.append("  )TMP_STOPS WHERE EXISTS (           " +
-                "               SELECT 1 FROM stop_place sp1 WHERE sp1.netex_id in " +
-                "               (SELECT netex_id FROM sp_with_multiple_producers GROUP BY netex_id HAVING count(producer) > 1)" +
+                "               SELECT 1 FROM stop_place sp1 WHERE EXISTS " +
+                "               (SELECT 1 FROM sp_with_multiple_producers WHERE sp1.netex_id = sp_with_multiple_producers.netex_id GROUP BY netex_id HAVING count(producer) > 1)" +
                 "               AND sp1.netex_id = TMP_STOPS.netex_id ) ");
 
 

@@ -108,21 +108,25 @@ public class QuayWithMultipleProducersQueryBuilder {
         }
 
         queryBuilder.append("  )TMP_STOPS WHERE EXISTS (           " +
-                "               SELECT 1 FROM stop_place sp1 WHERE sp1.netex_id in " +
-                "               (SELECT netex_id FROM sp_with_quays_with_multiple_producers GROUP BY netex_id HAVING count(producer) > 1)" +
-                "               AND sp1.netex_id = TMP_STOPS.netex_id ) ");
+                " SELECT 1 FROM stop_place sp1 " +
+                " JOIN stop_place_quays spq ON sp1.id = spq.stop_place_id" +
+                " JOIN quay q ON spq.quays_id = q.id" +
+                " WHERE EXISTS " +
+                "   (SELECT 1 FROM quays_with_multiple_producers WHERE q.netex_id = quays_with_multiple_producers.quay_netex_id)" +
+                " AND sp1.netex_id = TMP_STOPS.netex_id ) ");
 
 
         return queryBuilder.toString();
     }
 
     private String generateWithStatement() {
-        return "WITH sp_with_quays_with_multiple_producers AS (\n" +
-                "SELECT DISTINCT(SPLIT_PART(vi.items,':',1)) AS producer, sp.netex_id as netex_id FROM stop_place sp\n" +
-                "LEFT JOIN stop_place_quays spq ON sp.id = spq.stop_place_id\n" +
-                "LEFT JOIN quay_key_values qkv ON qkv.quay_id = spq.quays_id\n" +
+        return "WITH quays_with_multiple_producers AS (\n" +
+                "SELECT q.netex_id as quay_netex_id FROM quay q\n" +
+                "LEFT JOIN quay_key_values qkv ON qkv.quay_id = q.id\n" +
                 "LEFT JOIN value_items vi ON vi.value_id = qkv.key_values_id\n" +
-                "WHERE qkv.key_values_key = 'imported-id')\n";
+                "WHERE qkv.key_values_key = 'imported-id'\n" +
+                "GROUP BY q.netex_id\n" +
+                "HAVING COUNT(DISTINCT(SPLIT_PART(vi.items,':',1))) > 1)\n";
     }
 
     private String generateOrderbyStatement() {

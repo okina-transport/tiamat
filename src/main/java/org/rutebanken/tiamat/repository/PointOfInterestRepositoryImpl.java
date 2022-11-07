@@ -252,7 +252,7 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
         results.forEach(pointOfInterest -> {
             Hibernate.initialize(pointOfInterest.getAlternativeNames());
             Hibernate.initialize(pointOfInterest.getClassifications());
-            Hibernate.initialize(pointOfInterest.getEquipmentPlaces());
+//            Hibernate.initialize(pointOfInterest.getEquipmentPlaces());
             Hibernate.initialize(pointOfInterest.getPolygon());
 
             pointOfInterest.getClassifications().forEach(this::initializeRecursivelyClassification);

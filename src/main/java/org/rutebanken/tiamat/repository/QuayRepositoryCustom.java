@@ -43,6 +43,10 @@ public interface QuayRepositoryCustom extends DataManagedObjectStructureReposito
 
     Optional<Quay> findActiveQuayForImportedId(String importedId);
 
+    List<JbvCodeMappingDto> findIdMappingsForQuay();
+
+    List<JbvCodeMappingDto> findSelectedIdMappingsForQuay();
+
 
 
 }

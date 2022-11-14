@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 import com.google.common.base.Preconditions;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import io.micrometer.core.instrument.util.StringUtils;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.externalapis.ApiProxyService;
@@ -140,16 +141,20 @@ class PointOfInterestUpdater implements DataFetcher {
 
             try {
                 DtoGeocode dtoGeocode = apiProxyService.getGeocodeDataByReverseGeocoding(BigDecimal.valueOf(geoJsonPoint.getCoordinate().y), BigDecimal.valueOf(geoJsonPoint.getCoordinate().x));
-                if (dtoGeocode.getAddress() != null && !dtoGeocode.getAddress().isEmpty()) {
+                if (StringUtils.isNotEmpty(dtoGeocode.getAddress())) {
                     updatedPointOfInterest.setAddress(dtoGeocode.getAddress());
                 }
 
-                if (dtoGeocode.getCity() != null && !dtoGeocode.getCity().isEmpty())  {
+                if (StringUtils.isNotEmpty(dtoGeocode.getCity()))  {
                     updatedPointOfInterest.setCity(dtoGeocode.getCity());
                 }
 
-                if (dtoGeocode.getPostCode() != null && !dtoGeocode.getCity().isEmpty()) {
+                if (StringUtils.isNotEmpty(dtoGeocode.getCity())) {
                     updatedPointOfInterest.setPostalCode(dtoGeocode.getPostCode());
+                }
+
+                if (StringUtils.isNotEmpty(dtoGeocode.getCityCode())){
+                    updatedPointOfInterest.setZipCode(dtoGeocode.getCityCode());
                 }
             } catch (Exception e) {
                 logger.error("Unable to get zip code for poi:" + updatedPointOfInterest.getNetexId());

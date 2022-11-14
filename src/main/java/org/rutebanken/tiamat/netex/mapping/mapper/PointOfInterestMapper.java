@@ -20,6 +20,29 @@ public class PointOfInterestMapper extends CustomMapper<PointOfInterest, org.rut
     public void mapBtoA(org.rutebanken.tiamat.model.PointOfInterest pointOfInterest, PointOfInterest pointOfInterest2, MappingContext context) {
         super.mapBtoA(pointOfInterest, pointOfInterest2, context);
 
+        PostalAddress pa = new PostalAddress();
+        Boolean mustAddPostalAddress = false;
+        if (pointOfInterest.getZipCode() != null) {
+            pa.setPostCode(pointOfInterest.getZipCode());
+            mustAddPostalAddress = true;
+        }
+
+        if (pointOfInterest.getAddress() != null) {
+            pa.setAddressLine1(new MultilingualString().withValue(pointOfInterest.getAddress()));
+            mustAddPostalAddress = true;
+        }
+
+        if (pointOfInterest.getCity() != null) {
+            pa.setTown(new MultilingualString().withValue(pointOfInterest.getCity()));
+            mustAddPostalAddress = true;
+        }
+
+        if (mustAddPostalAddress) {
+            pa.setId("MOBIITI:PostalAddress:" + pointOfInterest.getId());
+            pa.setVersion("0");
+            pointOfInterest2.setPostalAddress(pa);
+        }
+
         if (pointOfInterest.getPointOfInterestFacilitySet() != null) {
             PointOfInterestFacilitySet pointOfInterestFacilitySet = pointOfInterest.getPointOfInterestFacilitySet();
             if (pointOfInterestFacilitySet != null) {

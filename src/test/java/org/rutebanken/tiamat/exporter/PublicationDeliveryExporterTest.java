@@ -70,7 +70,7 @@ public class PublicationDeliveryExporterTest extends TiamatIntegrationTest {
         stopPlaceRepository.save(parent);
 
 
-        Pageable pageable = new PageRequest(0, 10);
+        Pageable pageable = PageRequest.of(0, 10);
         ChangedStopPlaceSearch changedStopPlaceSearch = new ChangedStopPlaceSearch(now.minusSeconds(100), now.plusSeconds(100), pageable);
 
         ExportParams exportParams = ExportParams.newExportParamsBuilder().build();
@@ -116,7 +116,7 @@ public class PublicationDeliveryExporterTest extends TiamatIntegrationTest {
         stopPlaceRepository.save(parent);
 
 
-        Pageable pageable = new PageRequest(0, 10);
+        Pageable pageable = PageRequest.of(0, 10);
         ChangedStopPlaceSearch changedStopPlaceSearch = new ChangedStopPlaceSearch(now.minusSeconds(100), now.plusSeconds(100), pageable);
 
         ExportParams exportParams = ExportParams.newExportParamsBuilder().build();

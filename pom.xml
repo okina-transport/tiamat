@@ -58,52 +58,47 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.8</java.version>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
-
-        <!-- Docker & Fabric8 Configs -->
-        <docker.from>registry.okina.fr/okina/java-base-image</docker.from>
-        <docker.image>registry.okina.fr/mobiiti/${project.artifactId}:${project.version}</docker.image>
-        <docker.cleanup>none</docker.cleanup>
-        <!--<docker.port.container.jolokia>8778</docker.port.container.jolokia>-->
-
-        <fabric8.dockerUser>carbon-1287/</fabric8.dockerUser>
-
+        <java.version>11</java.version>
+        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
         <plexus.compiler.javac.version>2.8.5</plexus.compiler.javac.version>
         <docker.maven.plugin.version>0.21.0</docker.maven.plugin.version>
-        <spring-boot-plugin.version>2.1.1.RELEASE</spring-boot-plugin.version>
-        <spring-boot.version>2.1.1.RELEASE</spring-boot.version>
-        <spring.security.version>5.0.7.RELEASE</spring.security.version>
+        <spring-boot-plugin.version>2.4.13</spring-boot-plugin.version>
+        <spring-boot.version>2.4.13</spring-boot.version>
+        <spring.security.version>5.3.5.RELEASE</spring.security.version>
         <keycloak.version>4.7.0.Final</keycloak.version>
         <postgresql.version>42.2.4</postgresql.version>
         <geodb.version>0.9</geodb.version>
         <geotools.version>20.1</geotools.version>
-        <activemq-client.version>5.15.6</activemq-client.version>
+        <activemq-client.version>5.15.9</activemq-client.version>
         <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
-        <flyway-core.version>5.2.4</flyway-core.version>
+        <flyway-core.version>8.5.10</flyway-core.version>
         <logstash-logback.version>5.2</logstash-logback.version>
-        <kubernetes-client.version>4.0.3</kubernetes-client.version>
+        <kubernetes-client.version>4.1.1</kubernetes-client.version>
         <janino.version>3.0.8</janino.version>
         <assertj-core.version>3.10.0</assertj-core.version>
         <rest-assured.version>3.1.0</rest-assured.version>
         <javax.el.version>3.0.0</javax.el.version>
         <com.h2database.version>1.4.197</com.h2database.version>
-        <hikariCP.version>4.0.0</hikariCP.version>
+        <hikariCP.version>3.2.0</hikariCP.version>
         <commons.lang3.version>3.7</commons.lang3.version>
-        <orika-core.version>1.5.2</orika-core.version>
-        <guava.version>27.0-jre</guava.version>
-        <graphql-java.version>9.2</graphql-java.version>
+        <orika-core.version>1.5.4</orika-core.version>
+        <guava.version>30.1.1-jre</guava.version>
+        <graphql-java.version>11.0</graphql-java.version>
         <hazelcast.version>4.1.8</hazelcast.version>
 
         <hazelcast-hibernate53.version>2.2.0</hazelcast-hibernate53.version>
         <hibernate.version>5.4.0.Final</hibernate.version>
         <hibernate-spatial.version>5.4.0.Final</hibernate-spatial.version>
-
-        <groovy-all.version>2.5.4</groovy-all.version>
+        <groovy-all.version>3.0.9</groovy-all.version>
         <jaxb-version>2.3.0.1</jaxb-version>
-        <swagger-jersey2.version>1.5.20</swagger-jersey2.version>
+        <swagger-jersey2.version>1.6.2</swagger-jersey2.version>
+        <jackson-version>2.11.3</jackson-version>
+        <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
+        <sonar-maven-plugin.version>3.9.1.2184</sonar-maven-plugin.version>
+
+        <!-- TODO supprimer ?-->
         <jersey-media-multipart.version>2.35</jersey-media-multipart.version>
 
 
@@ -114,9 +109,12 @@
         <fabric8.version>2.3.7</fabric8.version>
         <metrics.version>3.2.3</metrics.version>
 
+        <javax-jms.version>2.0.1</javax-jms.version>
+        <jts-core.version>1.16.0</jts-core.version>
 
-        <maven-surefire-plugin.version>3.0.0-M1</maven-surefire-plugin.version>
-        <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
+        <maven-surefire-plugin.version>3.0.0-M6</maven-surefire-plugin.version>
+        <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
+        <argLine></argLine>
         <!--TODO temporary manual upgrade of Logback-->
         <logback.version>1.2.8</logback.version>
         <log4j2.version>2.17.1</log4j2.version>
@@ -232,6 +230,18 @@
             <groupId>io.swagger</groupId>
             <artifactId>swagger-jersey2-jaxrs</artifactId>
             <version>${swagger-jersey2.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson-version}</version>
         </dependency>
 
         <dependency>
@@ -253,7 +263,7 @@
         <dependency>
             <groupId>javax.jms</groupId>
             <artifactId>javax.jms-api</artifactId>
-            <version>2.0.1</version>
+            <version>${javax-jms.version}</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
@@ -495,7 +505,7 @@
         <dependency>
             <groupId>org.locationtech.jts</groupId>
             <artifactId>jts-core</artifactId>
-            <version>1.16.0</version>
+            <version>${jts-core.version}</version>
         </dependency>
 
         <dependency>
@@ -652,8 +662,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.plugin.version}</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>11</source>
+                    <target>11</target>
                     <encoding>UTF-8</encoding>
                     <compilerArgs>
                         <!--arg>-Werror</arg-->
@@ -674,12 +684,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
-                    <useSystemClassLoader>false</useSystemClassLoader>
-                    <argLine>-Xmx3G</argLine>
-                    <systemPropertyVariables combine.children="override">
-                        <spring.output.ansi.enabled>ALWAYS</spring.output.ansi.enabled>
-                        <env>dev</env>
-                    </systemPropertyVariables>
+                    <argLine>@{argLine} -Xms500m -Xmx1000m -Xss256k</argLine>
+                    <runOrder>alphabetical</runOrder>
                 </configuration>
             </plugin>
             <plugin>
@@ -690,7 +696,7 @@
                         <id>test-compile</id>
                         <phase>test-compile</phase>
                         <configuration>
-                            <tasks>
+                            <target>
                                 <mkdir dir="${basedir}/src/test/groovy"/>
                                 <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
                                     <classpath refid="maven.test.classpath"/>
@@ -700,7 +706,7 @@
                                          srcdir="${basedir}/src/test/groovy/" listfiles="true">
                                     <classpath refid="maven.test.classpath"/>
                                 </groovyc>
-                            </tasks>
+                            </target>
                         </configuration>
                         <goals>
                             <goal>run</goal>
@@ -724,34 +730,6 @@
                 </executions>
             </plugin>
 
-            <plugin>
-                <groupId>io.fabric8</groupId>
-                <artifactId>docker-maven-plugin</artifactId>
-                <version>${docker.maven.plugin.version}</version>
-                <configuration>
-                    <autoPull>always</autoPull>
-                    <images>
-                        <image>
-                            <name>${docker.image}</name>
-                            <build>
-                                <from>${docker.from}</from>
-                                <cleanup>${docker.cleanup}</cleanup>
-                                <assembly>
-                                    <basedir>/deployments</basedir>
-                                    <descriptorRef>artifact</descriptorRef>
-                                </assembly>
-                                <env>
-                                    <JAVA_APP_JAR>${project.build.finalName}.jar</JAVA_APP_JAR>
-                                </env>
-                                <runCmds>
-                                    <runCmd>mkdir /deployments/data</runCmd>
-                                    <runCmd>chown -R jboss:jboss /deployments/data</runCmd>
-                                </runCmds>
-                            </build>
-                        </image>
-                    </images>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
@@ -794,25 +772,6 @@
      -->
 
     <profiles>
-        <profile>
-            <id>rutebanken</id>
-            <properties>
-                <fabric8.imagePullPolicySnapshot>Always</fabric8.imagePullPolicySnapshot>
-                <fabric8.recreate>true</fabric8.recreate>
-            </properties>
-            <build>
-                <defaultGoal>clean install docker:build docker:push</defaultGoal>
-            </build>
-        </profile>
-        <profile>
-            <id>docker-build</id>
-            <properties>
-                <fabric8.recreate>true</fabric8.recreate>
-            </properties>
-            <build>
-                <defaultGoal>clean install docker:build</defaultGoal>
-            </build>
-        </profile>
 
         <profile>
             <id>sonar</id>
@@ -827,7 +786,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.8.5</version>
+                <version>${jacoco-maven-plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>default-prepare-agent</id>
@@ -836,25 +795,20 @@
                                 </goals>
                             </execution>
                             <execution>
-                                <id>report</id>
+                        <id>default-report</id>
+                        <phase>prepare-package</phase>
                                 <goals>
                                     <goal>report</goal>
                                 </goals>
                             </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.owasp</groupId>
-                        <artifactId>dependency-check-maven</artifactId>
-                        <version>6.5.2</version>
-                        <configuration>
-                            <format>ALL</format>
-                        </configuration>
-                        <executions>
                             <execution>
+                        <id>default-check</id>
                                 <goals>
-                                    <goal>aggregate</goal>
+                            <goal>check</goal>
                                 </goals>
+                        <configuration>
+                            <rules />
+                        </configuration>
                             </execution>
                         </executions>
                     </plugin>

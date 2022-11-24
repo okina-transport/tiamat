@@ -52,7 +52,7 @@ public class StopPlaceRepositoryTest extends TiamatIntegrationTest {
 		stopPlaceRepository.save(stopPlaceNewer);
 		stopPlaceRepository.save(stopPlaceOlder);
 
-		Pageable pageable = new PageRequest(0, 2);
+		Pageable pageable = PageRequest.of(0, 2);
 		Page<StopPlace> page = stopPlaceRepository.findAllByOrderByChangedDesc(pageable);
 
 		assertThat(page.getContent().get(0).getNetexId()).isEqualTo(stopPlaceNewer.getNetexId());
@@ -75,7 +75,7 @@ public class StopPlaceRepositoryTest extends TiamatIntegrationTest {
 		stopPlaceRepository.save(stopPlaceNewer);
 		stopPlaceRepository.save(stopPlaceOlder);
 
-		Pageable pageable = new PageRequest(0, 2);
+		Pageable pageable = PageRequest.of(0, 2);
 		Page<StopPlace> page = stopPlaceRepository.findByNameValueContainingIgnoreCaseOrderByChangedDesc("it", pageable);
 
 		assertThat(page.getContent().get(0).getChanged()).isEqualTo(stopPlaceNewer.getChanged());

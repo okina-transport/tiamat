@@ -714,11 +714,6 @@
                 <version>${spring-boot-plugin.version}</version>
                 <configuration>
                     <mainClass>org.rutebanken.tiamat.TiamatApplication</mainClass>
-                    <image>
-                        <env>
-                            <BPE_LANG>fr_FR.UTF-8</BPE_LANG>
-                        </env>
-                    </image>
                 </configuration>
                 <executions>
                     <execution>
@@ -737,6 +732,9 @@
                     <autoPull>always</autoPull>
                     <images>
                         <image>
+                            <env>
+                                <BPE_LANG>fr_FR.UTF-8</BPE_LANG>
+                            </env>
                             <name>${docker.image}</name>
                             <build>
                                 <from>${docker.from}</from>

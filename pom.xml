@@ -732,9 +732,6 @@
                     <autoPull>always</autoPull>
                     <images>
                         <image>
-                            <env>
-                                <BPE_LANG>fr_FR.UTF-8</BPE_LANG>
-                            </env>
                             <name>${docker.image}</name>
                             <build>
                                 <from>${docker.from}</from>
@@ -744,6 +741,7 @@
                                     <descriptorRef>artifact</descriptorRef>
                                 </assembly>
                                 <env>
+                                    <BPE_LANG>fr_FR.UTF-8</BPE_LANG>
                                     <JAVA_APP_JAR>${project.build.finalName}.jar</JAVA_APP_JAR>
                                 </env>
                                 <runCmds>

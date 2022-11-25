@@ -1,11 +1,8 @@
 FROM openjdk:11-jre
-ADD target/tiamat-*-SNAPSHOT.jar tiamat.jar
+ARG JAR_FILE
 
-RUN echo "fr_FR.UTF-8 UTF-8" > /etc/locale.gen && \
-    locale-gen fr_FR.UTF-8 && \
-    dpkg-reconfigure locales && \
-    /usr/sbin/update-locale LANG=fr_FR.UTF-8
-ENV LC_ALL fr_FR.UTF-8
 
-EXPOSE 8777
-CMD java $JAVA_OPTIONS -jar /tiamat.jar
+EXPOSE 8585
+
+COPY ${JAR_FILE} tiamat.jar
+ENTRYPOINT ["java","-jar","tiamat.jar"]

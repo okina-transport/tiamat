@@ -10,5 +10,9 @@ VERSION=$(mvn -q \
     exec:exec)
 IMAGE_NAME=registry.okina.fr/mobiiti/tiamat:"${VERSION}"
 
-mvn spring-boot:build-image -Dspring-boot.build-image.imageName="${IMAGE_NAME}"
+echo version:${VERSION}
+echo targetFile:target/tiamat-${VERSION}.jar
+
+#mvn spring-boot:build-image -Dspring-boot.build-image.imageName="${IMAGE_NAME}" -Dfile.encoding=UTF-8
+docker build -t "${IMAGE_NAME}" --build-arg JAR_FILE=target/tiamat-${VERSION}.jar .
 docker push "${IMAGE_NAME}"

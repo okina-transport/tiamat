@@ -251,11 +251,11 @@ class StopPlaceFetcher implements DataFetcher {
         }
 
         // Remove SP not belonging to user orgs
-        if (!stopPlacesPage.getContent().isEmpty() && !isUserAdmin) {
-            // TODO surement à revoir à tester
-            List<StopPlace> userOrgFilteredStopPlaces = stopPlacesPage.getContent().stream().filter(stopPlace -> userOrgs.contains(stopPlace.getProvider())).collect(Collectors.toList());
-            stopPlacesPage = new PageImpl<>(userOrgFilteredStopPlaces, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), 1L);
-        }
+        // TODO surement à revoir à tester
+//        if (!stopPlacesPage.getContent().isEmpty() && !isUserAdmin) {
+//            List<StopPlace> userOrgFilteredStopPlaces = stopPlacesPage.getContent().stream().filter(stopPlace -> userOrgs.contains(stopPlace.getProvider())).collect(Collectors.toList());
+//            stopPlacesPage = new PageImpl<>(userOrgFilteredStopPlaces, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), 1L);
+//        }
 
         final List<StopPlace> stopPlaces = stopPlacesPage.getContent();
         boolean onlyMonomodalStopplaces = false;

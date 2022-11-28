@@ -197,6 +197,11 @@ public class PublicationDeliveryExporter {
             stopPlaces = parentStopPlacesFetcher.resolveParents(stopPlaces, true);
         }
 
+        stopPlaces.forEach(stopPlace -> {
+            if(stopPlace.getValidBetween() != null && stopPlace.getValidBetween().getToDate() != null && stopPlace.getValidBetween().getFromDate() == null){
+                logger.info("Stop place with to_date but not from_date : " + stopPlace.getNetexId() + " - version : " + stopPlace.getVersion());
+            }
+        });
 
         org.rutebanken.tiamat.model.SiteFrame siteFrame = tiamatSiteFrameExporter.createTiamatSiteFrame("Site frame with stops");
 

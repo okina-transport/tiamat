@@ -42,7 +42,7 @@ public class CacheProviderRepository implements ProviderRepository {
     @Autowired
     RestProviderDAO restProviderService;
 
-    @Value("${tiamat.provider.cache.refresh.max.size:200}")
+    @Value("${tiamat.provider.cache.refresh.max.size:1000}")
     private Integer cacheMaxSize;
 
     private Cache<Long, Provider> cache;

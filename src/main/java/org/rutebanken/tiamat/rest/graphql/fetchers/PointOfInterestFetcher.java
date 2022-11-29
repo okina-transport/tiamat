@@ -54,6 +54,9 @@ class PointOfInterestFetcher implements DataFetcher {
     @Override
     public Object get(DataFetchingEnvironment environment) {
 
+        Boolean ignorePois = environment.getArgument(IGNORE_POIS);
+        if (ignorePois) { return new PageImpl<>(new ArrayList<>()); }
+
         PageRequest pageable = PageRequest.of(environment.getArgument(PAGE), environment.getArgument(SIZE));
 
         Page<PointOfInterest> pointOfInterestPage;

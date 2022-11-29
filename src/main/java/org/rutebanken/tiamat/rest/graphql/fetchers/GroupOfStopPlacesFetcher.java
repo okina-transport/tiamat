@@ -75,6 +75,9 @@ public class GroupOfStopPlacesFetcher implements DataFetcher<Page<GroupOfStopPla
     @Transactional
     public Page<GroupOfStopPlaces> get(DataFetchingEnvironment environment) {
 
+        Boolean ignoreStops = environment.getArgument(IGNORE_STOPS);
+        if (ignoreStops) { return new PageImpl<>(new ArrayList<>()); }
+
         GroupOfStopPlacesSearch groupOfStopPlacesSearch = GroupOfStopPlacesSearch.newGroupOfStopPlacesSearchBuilder()
                 .stopPlaceId(environment.getArgument(FIND_BY_STOP_PLACE_ID))
                 .idList(environment.getArgument(ID) != null ? Arrays.asList( (String) environment.getArgument(ID)) : null)

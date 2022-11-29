@@ -60,6 +60,9 @@ class ParkingFetcher implements DataFetcher {
 
         String stopPlaceId = environment.getArgument(FIND_BY_STOP_PLACE_ID);
 
+        Boolean ignoreParking = environment.getArgument(IGNORE_PARKINGS);
+        if (ignoreParking) { return new PageImpl<>(new ArrayList<>()); }
+
         String parkingId = environment.getArgument(GraphQLNames.ID);
         Integer version = environment.getArgument(VERSION);
 

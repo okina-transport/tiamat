@@ -531,6 +531,12 @@ public class StopPlaceRegisterGraphQLSchema {
                 .type(new GraphQLList(parkingTypeEnum))
                 .description(PARKING_TYPE_ARG_DESCRIPTION)
                 .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(IGNORE_PARKINGS)
+                .type(GraphQLBoolean)
+                .defaultValue(false)
+                .description("Include Parkings in search result")
+                .build());
         arguments.add(allVersionsArgument);
         return arguments;
     }
@@ -554,6 +560,12 @@ public class StopPlaceRegisterGraphQLSchema {
                 .name(VERSION_VALIDITY_ARG)
                 .description(VERSION_ARG_DESCRIPTION)
                 .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(IGNORE_POIS)
+                .type(GraphQLBoolean)
+                .defaultValue(false)
+                .description("Include Points of Interest in search result")
+                .build());
         arguments.add(allVersionsArgument);
         return arguments;
     }
@@ -571,6 +583,12 @@ public class StopPlaceRegisterGraphQLSchema {
         arguments.add(GraphQLArgument.newArgument()
                 .name(FIND_BY_STOP_PLACE_ID)
                 .type(GraphQLString)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(IGNORE_STOPS)
+                .type(GraphQLBoolean)
+                .defaultValue(false)
+                .description("Include Group Of Stop Places in search result")
                 .build());
         return arguments;
     }
@@ -768,6 +786,12 @@ public class StopPlaceRegisterGraphQLSchema {
                 .type(GraphQLString)
                 .defaultValue(null)
                 .description(SEARCH_WITH_CODE_SPACE_ARG_DESCRIPTION)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(IGNORE_STOPS)
+                .type(GraphQLBoolean)
+                .defaultValue(false)
+                .description("Include Stops in search result")
                 .build());
         return arguments;
     }

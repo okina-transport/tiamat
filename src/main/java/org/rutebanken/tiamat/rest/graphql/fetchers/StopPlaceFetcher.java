@@ -91,7 +91,7 @@ class StopPlaceFetcher implements DataFetcher {
         boolean isUserAdmin = roleAssignmentExtractor.getRoleAssignmentsForUser().stream().anyMatch(roleAssignment -> roleAssignment.getRole().startsWith(ROLE_ADMIN_PREFIX));
 
         Boolean ignoreStops = environment.getArgument(IGNORE_STOPS);
-        if (ignoreStops) { return new PageImpl<>(new ArrayList<>()); }
+        if (ignoreStops != null && ignoreStops) { return new PageImpl<>(new ArrayList<>()); }
 
         logger.info("Searching for StopPlaces with arguments {}", environment.getArguments());
         logger.info("User organisations : {}", userOrgs);

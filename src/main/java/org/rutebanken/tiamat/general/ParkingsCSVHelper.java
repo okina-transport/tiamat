@@ -9,6 +9,7 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
+import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.AccessibilityAssessment;
 import org.rutebanken.tiamat.model.AccessibilityLimitation;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
@@ -50,8 +51,7 @@ public class ParkingsCSVHelper {
 
     public final static String DELIMETER_PARKING_ID_NAME = " : ";
 
-    private final static String DATA_GOUV_ENDPOINT = "https://api-adresse.data.gouv.fr/reverse/?lat=%s&lon=%s";
-    private final static String GEO_API_GOUV_ENDPOINT = "https://geo.api.gouv.fr/communes?lat=%s&lon=%s&fields=nom,code,codesPostaux&format=json";
+
 
     private final static Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
 
@@ -296,10 +296,11 @@ public class ParkingsCSVHelper {
 
             //Emplacement du parking
             parking.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(parkingDto.getXlong()), Double.parseDouble(parkingDto.getYlat()))));
-            feedInseeFromApi(parking);
-            if (StringUtils.isEmpty(parking.getInsee())){
-                parking.setInsee(parkingDto.getInsee());
-            }
+
+
+            Optional<String> inseeOpt = ImporterUtils.getInseeFromLatLng(parking.getCentroid().getX(), parking.getCentroid().getY());
+            parking.setInsee(inseeOpt.orElse(parkingDto.getInsee()));
+
 
             parking.getParkingAreas().add(parkingArea);
             parking.getParkingProperties().add(parkingProperties);
@@ -331,61 +332,6 @@ public class ParkingsCSVHelper {
 
     }
 
-    private static void feedInseeFromApi(Parking parking) {
 
-
-        final String dataGouvUrl = String.format(DATA_GOUV_ENDPOINT, parking.getCentroid().getY(),parking.getCentroid().getX());
-        final String geoApiGouvUrl = String.format(GEO_API_GOUV_ENDPOINT, parking.getCentroid().getX(),parking.getCentroid().getY());
-        RestTemplate restTemplate = new RestTemplate();
-
-        ResponseEntity response = null;
-        String city = "";
-
-        try {
-            response = restTemplate.exchange(dataGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, String.class);
-            JSONObject body = new JSONObject(Objects.requireNonNull(response.getBody()).toString());
-
-            if (body.getJSONArray("features") != null && body.getJSONArray("features").length() > 0) {
-
-                JSONObject properties = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties");
-                city = properties.has("citycode") ? properties.getString("citycode") : "";
-                parking.setInsee(city);
-            }
-        } catch (RestClientException | JSONException | IllegalArgumentException e) {
-            logger.error("Error on insee recovering", e);
-            logger.error("dataGouvUrl : " + dataGouvUrl);
-            logger.error("geoApiGouvUrl : " + geoApiGouvUrl);
-            if (response != null && response.getBody() != null){
-                logger.error(response.getBody().toString());
-            }
-
-        }
-
-
-        //2ème essai avec la 2ème URL
-        if (StringUtils.isEmpty(parking.getInsee())){
-            try {
-                response = restTemplate.exchange(geoApiGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, Object.class);
-                JSONObject body = new JSONObject(Objects.requireNonNull(response.getBody()).toString());
-
-                if (body.getString("nom") != null && !body.getString("nom").isEmpty()) {
-                    city = body.getString("nom");
-                    parking.setInsee(city);
-                }
-            } catch (RestClientException | JSONException | IllegalArgumentException e) {
-                logger.error("Error on insee recovering", e);
-                logger.error("dataGouvUrl : " + dataGouvUrl);
-                logger.error("geoApiGouvUrl : " + geoApiGouvUrl);
-                if (response != null && response.getBody() != null){
-                    logger.error(response.getBody().toString());
-                }
-
-            }
-
-        }
-
-
-
-    }
 
 }

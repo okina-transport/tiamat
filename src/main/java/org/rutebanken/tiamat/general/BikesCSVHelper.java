@@ -7,6 +7,7 @@ import org.codehaus.jettison.json.JSONObject;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
+import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
 import org.rutebanken.tiamat.rest.dto.DtoQuayResource;
@@ -22,10 +23,7 @@ import org.springframework.web.client.RestTemplate;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -215,8 +213,9 @@ public class BikesCSVHelper {
             parking.setPlaceEquipments(placeEquipment);
 
 
-            // INSEE
-            parking.setInsee(bikeParkingDto.getCodeCom());
+            Optional<String> inseeOpt = ImporterUtils.getInseeFromLatLng(parking.getCentroid().getX(), parking.getCentroid().getY());
+            parking.setInsee(inseeOpt.orElse(bikeParkingDto.getCodeCom()));
+
 
 
             // Parking vehicle types

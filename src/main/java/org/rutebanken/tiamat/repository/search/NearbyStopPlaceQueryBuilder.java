@@ -86,7 +86,7 @@ public class NearbyStopPlaceQueryBuilder {
     private String generateNearbySelectStatement(StopPlaceSearch stopPlaceSearch) {
         StringBuilder queryBuilder = new StringBuilder();
 
-        queryBuilder.append("  )TMP_STOPS  WHERE exists ( \n" +
+        queryBuilder.append("  )TMP_STOPS  WHERE EXISTS ( \n" +
                 "            SELECT nearby.id \n" +
                 "            FROM  stop_place nearby \n");
 
@@ -95,10 +95,13 @@ public class NearbyStopPlaceQueryBuilder {
 
 
     private String generateOrderbyStatement() {
-        return " order by\n" +
-                "            TMP_STOPS.centroid ,\n" +
-                "            TMP_STOPS.netex_id,\n" +
-                "            TMP_STOPS.version asc ";
+        return " \n" +
+                "                \n" +
+                "                group by netex_id) TMP_NETEX_VERS\n" +
+                "                where (s2.netex_id = TMP_NETEX_VERS.netex_id and s2.version = TMP_NETEX_VERS.max_vers)\n" +
+                "                order by s2.centroid,\n" +
+                "                s2.netex_id,\n" +
+                "                s2.version asc ";
     }
 
     private String generateNearbyWhereStatement(StopPlaceSearch stopPlaceSearch) {
@@ -132,7 +135,7 @@ public class NearbyStopPlaceQueryBuilder {
 
     private String generateWhereStatement(StopPlaceSearch stopPlaceSearch) {
         StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append("  WHERE  s.parent_stop_place = false \n" +
+        queryBuilder.append("  WHERE  s.parent_stop_place = false AND s.parent_site_ref is null \n" +
                 "    AND (            \n" +
                 "                    (\n" +
                 "                        s.from_date IS NULL \n" +
@@ -166,12 +169,12 @@ public class NearbyStopPlaceQueryBuilder {
 
     private String generateSelectStatement(StopPlaceSearch stopPlaceSearch) {
         StringBuilder selectBuilder = new StringBuilder();
-        selectBuilder.append(" select * FROM      \n" +
-                "      \n" +
-                "(     select distinct\n" +
-                "        s.*\n" +
-                "                from\n" +
-                "        stop_place s");
+        selectBuilder.append(" SELECT s2.* FROM   stop_place s2, \n" +
+                " (SELECT netex_id,max(version) as max_vers FROM     \n" +
+                "      (     SELECT distinct\n" +
+                "        s.netex_id, s.version,stop_place_type,centroid\n" +
+                "                FROM \n" +
+                "        stop_place s ");
 
         if (!stopPlaceSearch.getOrganisationName().isEmpty() || !stopPlaceSearch.getQuery().isEmpty()) {
             selectBuilder.append("    LEFT JOIN    stop_place_key_values spkv  on  s.id = spkv.stop_place_id   \n" +

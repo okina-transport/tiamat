@@ -210,6 +210,7 @@ public class MultiModalStopPlaceEditor {
                     logger.info("Adding child stop place {} to parent stop place {}", existingVersion, parentStopPlace);
                     // Create copy to get rid of database primary keys, preparing it to be versioned under parent stop place.
                     StopPlace stopPlaceCopy = versionCreator.createCopy(existingVersion, StopPlace.class);
+                    stopPlaceCopy.setValidBetween(parentStopPlace.getValidBetween());
                     return stopPlaceCopy;
                 })
                 .collect(toSet());

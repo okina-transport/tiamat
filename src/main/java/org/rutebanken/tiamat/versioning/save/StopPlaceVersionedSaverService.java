@@ -155,6 +155,7 @@ public class StopPlaceVersionedSaverService {
         accessibilityAssessmentOptimizer.optimizeAccessibilityAssessments(newVersion);
 
         Instant newVersionValidFrom = validityUpdater.updateValidBetween(existingVersion, newVersion, defaultValidFrom);
+        updateValidBetweenInChildren(newVersion, newVersion.getValidBetween());
 
         if (existingVersion == null) {
             logger.debug("Existing version is not present, which means new entity. {}", newVersion);
@@ -162,10 +163,12 @@ public class StopPlaceVersionedSaverService {
             stopPlaceAuthorizationService.assertAuthorizedToEdit(null, newVersion, childStopsUpdated);
         } else {
             newVersion.setChanged(changed);
+            Instant oldversionTerminationTime = newVersionValidFrom.minusMillis(MILLIS_BETWEEN_VERSIONS);
             logger.debug("About to terminate previous version for {},{}", existingVersion.getNetexId(), existingVersion.getVersion());
             StopPlace existingVersionRefetched = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingVersion.getNetexId());
             logger.debug("Found previous version {},{}. Terminating it.", existingVersionRefetched.getNetexId(), existingVersionRefetched.getVersion());
-            validityUpdater.terminateVersion(existingVersionRefetched, newVersionValidFrom.minusMillis(MILLIS_BETWEEN_VERSIONS));
+            validityUpdater.terminateVersion(existingVersionRefetched, oldversionTerminationTime);
+            terminateChild(existingVersionRefetched, oldversionTerminationTime);
             stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersionRefetched, newVersion, childStopsUpdated);
         }
 
@@ -181,7 +184,7 @@ public class StopPlaceVersionedSaverService {
 
         countyAndMunicipalityLookupService.populateTopographicPlaceRelation(newVersion);
         tariffZonesLookupService.populateTariffZone(newVersion);
-        clearUnwantedChildFields(newVersion);
+
 
         if (newVersion.getChildren() != null) {
             newVersion.getChildren().forEach(child -> {
@@ -213,6 +216,34 @@ public class StopPlaceVersionedSaverService {
         entityChangedListener.onChange(newVersion);
 
         return newVersion;
+    }
+
+
+    private void updateValidBetweenInChildren(StopPlace stopPlace, ValidBetween validBetween){
+        if (stopPlace.getChildren() == null){
+            return;
+        }
+
+        for (StopPlace child : stopPlace.getChildren()) {
+            child.setValidBetween(validBetween);
+        }
+    }
+
+    private void terminateChild(StopPlace stopPlaceToTerminate, Instant terminationInstant ){
+        if (stopPlaceToTerminate.getChildren() != null){
+
+            for (StopPlace child : stopPlaceToTerminate.getChildren()) {
+                ValidBetween validBetween;
+                if (child.getValidBetween() != null){
+                    validBetween = child.getValidBetween();
+                }else{
+                    validBetween = new ValidBetween();
+                    validBetween.setFromDate(terminationInstant.minusMillis(MILLIS_BETWEEN_VERSIONS));
+                    child.setValidBetween(validBetween);
+                }
+                validBetween.setToDate(terminationInstant);
+            }
+        }
     }
 
     private void validateAdjacentSites(StopPlace newVersion) {
@@ -254,12 +285,6 @@ public class StopPlaceVersionedSaverService {
         }
     }
 
-    private void clearUnwantedChildFields(StopPlace stopPlaceToSave) {
-        if (stopPlaceToSave.getChildren() == null) return;
-        stopPlaceToSave.getChildren().forEach(child -> {
-            child.setValidBetween(null);
-        });
-    }
 
     /**
      * Needs to be done after parent stop place has been assigned an ID

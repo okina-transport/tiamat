@@ -15,20 +15,7 @@
 
 package org.rutebanken.tiamat.rest.graphql.mappers;
 
-import org.rutebanken.tiamat.model.AirSubmodeEnumeration;
-import org.rutebanken.tiamat.model.BusSubmodeEnumeration;
-import org.rutebanken.tiamat.model.FunicularSubmodeEnumeration;
-import org.rutebanken.tiamat.model.InterchangeWeightingEnumeration;
-import org.rutebanken.tiamat.model.MetroSubmodeEnumeration;
-import org.rutebanken.tiamat.model.PrivateCodeStructure;
-import org.rutebanken.tiamat.model.RailSubmodeEnumeration;
-import org.rutebanken.tiamat.model.SiteRefStructure;
-import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.model.StopTypeEnumeration;
-import org.rutebanken.tiamat.model.TelecabinSubmodeEnumeration;
-import org.rutebanken.tiamat.model.TramSubmodeEnumeration;
-import org.rutebanken.tiamat.model.VehicleModeEnumeration;
-import org.rutebanken.tiamat.model.WaterSubmodeEnumeration;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.rest.graphql.scalars.TransportModeScalar;
 import org.rutebanken.tiamat.service.Preconditions;
 import org.slf4j.Logger;
@@ -84,7 +71,17 @@ public class StopPlaceMapper {
         }
 
         if (input.get(VALID_BETWEEN) != null) {
-            stopPlace.setValidBetween(validBetweenMapper.map((Map) input.get(VALID_BETWEEN)));
+
+            ValidBetween validBetween = validBetweenMapper.map((Map) input.get(VALID_BETWEEN));
+            stopPlace.setValidBetween(validBetween);
+            if (stopPlace.getChildren() != null){
+                for (StopPlace child : stopPlace.getChildren()) {
+                    child.setValidBetween(validBetween);
+                }
+            }
+
+
+
             isUpdated = true;
         }
 

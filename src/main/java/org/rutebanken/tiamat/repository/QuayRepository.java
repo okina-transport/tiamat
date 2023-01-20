@@ -16,8 +16,16 @@
 package org.rutebanken.tiamat.repository;
 
 import org.rutebanken.tiamat.model.Quay;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
+
+import javax.persistence.QueryHint;
+import java.util.List;
 
 public interface QuayRepository extends QuayRepositoryCustom, EntityInVersionRepository<Quay> {
+
+    @QueryHints(value = { @QueryHint(name = "org.hibernate.cacheable", value = "true")}, forCounting = false)
+    @Query("select q from Quay q where q.zipCode is null or q.zipCode = ''")
+    List<Quay> findQuaysWithoutZipcode();
 
 }

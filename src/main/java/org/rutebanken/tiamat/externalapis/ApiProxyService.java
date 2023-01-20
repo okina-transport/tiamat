@@ -1,116 +1,140 @@
 package org.rutebanken.tiamat.externalapis;
 
-import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
-import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
-import com.google.common.base.Strings;
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.rutebanken.tiamat.model.Quay;
+import org.rutebanken.tiamat.repository.QuayRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.client.ClientBuilder;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.math.BigDecimal;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import javax.annotation.PostConstruct;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 
 /**
  * Service métier Stop Areas
  */
 
+@Component
 public class ApiProxyService {
 
-	private static final String FIRST_GOUV_API_REVERSE_GEOCODE_REQUEST = "https://api-adresse.data.gouv.fr/reverse/";
-	private static final String SECOND_GOUV_API_REVERSE_GEOCODE_REQUEST = "https://geo.api.gouv.fr/communes?lon={lon}&lat={lat}";
+    public static final Logger logger = LoggerFactory.getLogger(ApiProxyService.class);
+    private final static String OKINA_ENDPOINT = "https://api.adresse.okina.fr/reverse?lon=%s&lat=%s";
+    private final static String DATA_GOUV_ENDPOINT = "https://api-adresse.data.gouv.fr/reverse/?lon=%s&lat=%s";
+    private final static String GEO_API_GOUV_ENDPOINT = "https://geo.api.gouv.fr/communes?lon=%s&lat=%s";
+
+    @Autowired
+    private QuayRepository quayRepository;
+
+    @PostConstruct
+    void init() {
+        logger.info("Starting insee recovering of quays service");
+        List<Quay> quays = quayRepository.findQuaysWithoutZipcode();
+        for (Quay quay : quays) {
+            Optional<String> citycodeReverseGeocoding = ApiProxyService.getInseeFromLatLng(quay.getCentroid().getCoordinate().x, quay.getCentroid().getCoordinate().y);
+            if (citycodeReverseGeocoding.isPresent()) {
+                quay.setZipCode(citycodeReverseGeocoding.get());
+                quayRepository.save(quay);
+                logger.info("Adding insee code : " + quay.getZipCode() + " of quay : " + quay.getNetexId());
+            } else {
+                logger.error("Error on insee recovering of quay : " + quay.getNetexId());
+            }
+        }
+        logger.info("Insee recovering of quays service done");
+    }
+
+    public static Optional<String> getInseeFromLatLng(double x, double y) {
+        return getInseeFromOkinaAPI(x, y);
+    }
 
 
-	private static final BigDecimal LAT_MIN_BOUND = new BigDecimal(-90);
-	private static final BigDecimal LAT_MAX_BOUND = new BigDecimal(90);
-	private static final BigDecimal LON_MIN_BOUND = new BigDecimal(-180);
-	private static final BigDecimal LON_MAX_BOUND = new BigDecimal(1800);
+    private static Optional<String> getInseeFromOkinaAPI(double x, double y) {
+        String okinaUrl = String.format(OKINA_ENDPOINT, x, y);
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity response = null;
+        String city;
 
-	public static final Logger logger = LoggerFactory.getLogger(ApiProxyService.class);
+        try {
+            response = restTemplate.exchange(okinaUrl, HttpMethod.GET, HttpEntity.EMPTY, String.class);
+            JSONObject body = new JSONObject(Objects.requireNonNull(response.getBody()).toString());
 
+            if (body.getJSONArray("features") != null && body.getJSONArray("features").length() > 0) {
+                JSONObject properties = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties");
+                city = properties.has("citycode") ? properties.getString("citycode") : "";
+                return Optional.of(city);
+            }
+        } catch (RestClientException | JSONException | IllegalArgumentException e) {
+            logger.error("Error on insee recovering", e);
+            logger.error("okinaUrl : " + okinaUrl);
+            if (response != null && response.getBody() != null) {
+                logger.error(response.getBody().toString());
+            }
+            return getInseeFromGovAPI(x, y);
+        }
 
-	/**
-	 * "Base" de client jersey. Cette webtarget est ensuite dérivée spécifiquement dans les méthodes pour cibler les ressources voulues.
-	 */
-	private javax.ws.rs.client.Client client = ClientBuilder.newBuilder()
-		.build()
-		.register(JacksonJaxbJsonProvider.class)
-		.register(JacksonJsonProvider.class);
+        return getInseeFromGovAPI(x, y);
+    }
 
+    private static Optional<String> getInseeFromGovAPI(double x, double y) {
+        String dataGouvUrl = String.format(DATA_GOUV_ENDPOINT, x, y);
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity response = null;
+        String city;
 
-	/**
-	 * Reverse geocoding d'après long / lat
-	 *
-	 * @param latitude
-	 * @param longitude
-	 * @return Geojson Object
-	 */
-	public String getCitycodeByReverseGeocoding(@NotNull BigDecimal latitude, @NotNull BigDecimal longitude) throws Exception {
-		if (latitude == null || longitude == null) {
-			throw new Exception("Latitude / Longitude ne peuvent pas être null pour demander un reverse geocoding");
-		}
-		if (latitude.compareTo(LAT_MIN_BOUND) < 0
-			|| latitude.compareTo(LAT_MAX_BOUND) > 0
-			|| longitude.compareTo(LON_MIN_BOUND) < 0
-			|| longitude.compareTo(LON_MAX_BOUND) > 0) {
-			throw new Exception("Latitude / Longitude hors des valeurs permises (LAT : -90 -> 90; LON : -180 -> 180)");
-		}
+        try {
+            response = restTemplate.exchange(dataGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, String.class);
+            JSONObject body = new JSONObject(Objects.requireNonNull(response.getBody()).toString());
 
-		URL apiUrl = new URL(FIRST_GOUV_API_REVERSE_GEOCODE_REQUEST + "?lon=" + longitude + "&lat=" + latitude);
+            if (body.getJSONArray("features") != null && body.getJSONArray("features").length() > 0) {
+                JSONObject properties = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties");
+                city = properties.has("citycode") ? properties.getString("citycode") : "";
+                return Optional.of(city);
+            }
+        } catch (RestClientException | JSONException | IllegalArgumentException e) {
+            logger.error("Error on insee recovering", e);
+            logger.error("dataGouvUrl : " + dataGouvUrl);
+            if (response != null && response.getBody() != null) {
+                logger.error(response.getBody().toString());
+            }
+            return getInseeFromGeoApiGouv(x, y);
+        }
 
-		String citycode = getCitycode(apiUrl);
+        return getInseeFromGeoApiGouv(x, y);
+    }
 
-		if(Strings.isNullOrEmpty(citycode)){
-			GouvApiReverseGeocoding gouvApiReverseGeocoding;
-			try {
-				gouvApiReverseGeocoding = Arrays.stream(client.target(SECOND_GOUV_API_REVERSE_GEOCODE_REQUEST)
-						.resolveTemplate("lon", longitude)
-						.resolveTemplate("lat", latitude)
-						.request().get().readEntity(GouvApiReverseGeocoding[].class))
-						.findFirst()
-						.orElse(null);
-			} catch (Exception e) {
-				throw new Exception("Format de réponse du WS inattendu");
-			}
+    private static Optional<String> getInseeFromGeoApiGouv(double x, double y) {
+        String geoApiGouvUrl = String.format(GEO_API_GOUV_ENDPOINT, x, y);
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity response = null;
+        String city;
 
-			if(gouvApiReverseGeocoding != null){
-				citycode = gouvApiReverseGeocoding.getCode();
-			}
-		}
+        try {
+            response = restTemplate.exchange(geoApiGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, String.class);
+            JSONArray body = new JSONArray(Objects.requireNonNull(response.getBody()).toString());
 
-		return citycode;
-	}
+            if (body.length() > 0 && body.getJSONObject(0) != null && StringUtils.isNotEmpty(body.getJSONObject(0).get("code").toString())) {
+                city = body.getJSONObject(0).get("code").toString();
+                return Optional.of(city);
+            }
+        } catch (Exception e) {
+            logger.error("Error on insee recovering", e);
+            logger.error("geoApiGouvUrl : " + geoApiGouvUrl);
+            if (response != null && response.getBody() != null) {
+                logger.error(response.getBody().toString());
+            }
+        }
 
-	private String getCitycode(URL apiUrl) throws Exception {
-		InputStream inputStream;
-		try {
-			inputStream = apiUrl.openStream();
-		} catch (Exception e) {
-			logger.error("Problème de connexion à l'API");
-			return null;
-		}
-
-        StringWriter writer = new StringWriter();
-        String encoding = StandardCharsets.UTF_8.name();
-
-        try{
-			IOUtils.copy(inputStream, writer, encoding);
-			org.codehaus.jettison.json.JSONObject jsonObject = new JSONObject(writer.toString());
-			org.codehaus.jettison.json.JSONArray features = jsonObject.optJSONArray("features");
-			org.codehaus.jettison.json.JSONObject properties = (JSONObject) features.get(0);
-			org.codehaus.jettison.json.JSONObject cityCode = properties.getJSONObject("properties");
-			return cityCode.getString("citycode");
-
-		}catch (Exception e){
-        	logger.error("Problème sur la récupération du city code");
-        	return null;
-		}
-	}
+        return Optional.empty();
+    }
 }

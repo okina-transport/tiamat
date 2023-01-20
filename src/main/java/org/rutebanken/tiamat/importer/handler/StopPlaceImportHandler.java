@@ -34,7 +34,6 @@ import org.rutebanken.tiamat.importer.matching.StopPlaceIdMatcher;
 import org.rutebanken.tiamat.importer.merging.TransactionalMergingStopPlacesImporter;
 import org.rutebanken.tiamat.importer.modifier.StopPlacePostFilterSteps;
 import org.rutebanken.tiamat.importer.modifier.StopPlacePreSteps;
-import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
@@ -45,8 +44,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.math.MathContext;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -113,8 +110,6 @@ public class StopPlaceImportHandler {
     @Autowired
     private CacheProviderRepository providerRepository;
 
-    private ApiProxyService apiProxyService = new ApiProxyService();
-
 
     // TODO: Use ExportParams to control what is returned?
     public void handleStops(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger stopPlacesCreatedMatchedOrUpdated, SiteFrame responseSiteframe) {
@@ -126,14 +121,12 @@ public class StopPlaceImportHandler {
                     .stream()
                     .flatMap(stopPlace -> stopPlace.getQuays().stream())
                     .forEach(quay -> {
-                        String citycodeReverseGeocoding = null;
-                        try {
-                            citycodeReverseGeocoding = apiProxyService.getCitycodeByReverseGeocoding(new BigDecimal(quay.getCentroid().getCoordinate().y, MathContext.DECIMAL64), new BigDecimal(quay.getCentroid().getCoordinate().x, MathContext.DECIMAL64));
-                        } catch (Exception e) {
-                            logger.error("Erreur lors de la récupération du code postal du quay = " + quay.getId(), e);
+                        Optional<String> citycodeReverseGeocoding = ApiProxyService.getInseeFromLatLng(quay.getCentroid().getCoordinate().x, quay.getCentroid().getCoordinate().y);
+                        if (citycodeReverseGeocoding.isPresent()) {
+                            quay.setZipCode(citycodeReverseGeocoding.get());
                         }
-                        if (citycodeReverseGeocoding != null) {
-                            quay.setZipCode(citycodeReverseGeocoding);
+                        else{
+                            logger.error("Erreur lors de la récupération du code postal du quay = " + quay.getId());
                         }
                     });
 

@@ -33,8 +33,24 @@ public class KeyValueListAppender {
         Set<String> newObjectIds = newObject.getOrCreateValues(key);
 
         boolean changed = false;
-        for(String newOriginalId : newObjectIds) {
-            if(!existingObjectIds.contains(newOriginalId)) {
+        for (String newOriginalId : newObjectIds) {
+            if (!existingObjectIds.contains(newOriginalId)) {
+                logger.debug("Adding new {} '{}' to existing object {}", key, newOriginalId, existingObject);
+                existingObjectIds.add(newOriginalId);
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    public boolean appendKeyValueExternalRef(String key, DataManagedObjectStructure newObject, DataManagedObjectStructure existingObject) {
+        Set<String> existingObjectIds = existingObject.getOrCreateValues(key);
+        Set<String> newObjectIds = newObject.getOrCreateValues(key);
+
+        boolean changed = false;
+        for (String newOriginalId : newObjectIds) {
+            if (!existingObjectIds.contains(newOriginalId)) {
+                existingObjectIds.clear();
                 logger.debug("Adding new {} '{}' to existing object {}", key, newOriginalId, existingObject);
                 existingObjectIds.add(newOriginalId);
                 changed = true;

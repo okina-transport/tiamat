@@ -199,11 +199,22 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
                 logger.debug("Found matching stop place {}", existingStopPlace);
 
-                boolean keyValuesChanged = (
-                        keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy)
-                                && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy)
-                                && keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_STOPCODE_KEY, incomingStopPlace, copy)
-                );
+
+                boolean keyValuesChanged  = false;
+
+                if(keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy)){
+                    keyValuesChanged = true;
+                }
+                if(keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy)){
+                    keyValuesChanged = true;
+                }
+                if(keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_STOPCODE_KEY, incomingStopPlace, copy)){
+                    keyValuesChanged = true;
+                }
+                if(keyValueListAppender.appendKeyValueExternalRef(NetexIdMapper.EXTERNAL_REF, incomingStopPlace, copy)){
+                    keyValuesChanged = true;
+                }
+
                 boolean nameChanged = false;
 
                 if (incomingStopPlace.getTariffZones() != null) {

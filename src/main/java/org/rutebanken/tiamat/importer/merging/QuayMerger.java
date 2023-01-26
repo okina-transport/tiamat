@@ -20,6 +20,7 @@ import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.operation.TransformException;
 import org.rutebanken.tiamat.importer.ImportParams;
+import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.matching.OriginalIdMatcher;
 import org.rutebanken.tiamat.model.AccessibilityAssessment;
 import org.rutebanken.tiamat.model.AccessibilityLimitation;
@@ -28,6 +29,7 @@ import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
 import org.rutebanken.tiamat.model.MultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,6 +72,9 @@ public class QuayMerger {
     public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, ImportParams importParams) {
         return mergeQuays(newStopPlace, existingStopPlace, addNewQuays, false, importParams);
     }
+
+    @Autowired
+    private KeyValueListAppender keyValueListAppender;
 
 
     /**
@@ -198,6 +203,7 @@ public class QuayMerger {
         boolean descUpdated;
         boolean wheelchairBoardingUpdated;
         boolean nameUpdated = false;
+        boolean keyValueUpdated;
 
         quayAlone = checkNumberProducers(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
         idUpdated = alreadyAdded.getOriginalIds().addAll(incomingQuay.getOriginalIds());
@@ -217,8 +223,10 @@ public class QuayMerger {
             nameUpdated = updatePropName(alreadyAdded, incomingQuay);
         }
 
-        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated ||  zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated || nameUpdated) {
-            logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}, nameUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated, nameUpdated);
+        keyValueUpdated = keyValueListAppender.appendKeyValueExternalRef(NetexIdMapper.EXTERNAL_REF, incomingQuay, alreadyAdded);
+
+        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated ||  zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated || nameUpdated || keyValueUpdated) {
+            logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}, nameUpdated:{}, keyValueUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated, nameUpdated, keyValueUpdated);
 
             alreadyAdded.setChanged(Instant.now());
             updatedQuaysCounter.incrementAndGet();

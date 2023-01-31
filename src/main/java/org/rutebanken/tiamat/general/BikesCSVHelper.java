@@ -261,6 +261,9 @@ public class BikesCSVHelper {
             Set<String> hookType = parking.getOrCreateValues("hook_type");
             hookType.add(bikeParkingDto.getTypeAccroche());
 
+            Set<String> importedId = parking.getOrCreateValues("imported-id");
+            importedId.add(bikeParkingDto.getIdLocal());
+
             return parking;
         }).collect(Collectors.toList());
     }

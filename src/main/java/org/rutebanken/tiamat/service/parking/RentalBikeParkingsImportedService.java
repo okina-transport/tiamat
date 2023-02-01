@@ -62,7 +62,6 @@ public class RentalBikeParkingsImportedService {
             if (!parkingInBDDOpt.isPresent()){
 
                 if (StringUtils.isNotEmpty(parkingToSave.getName().getValue())){
-                    netexIdMapper.moveOriginalIdToKeyValueList(parkingToSave, parkingToSave.getName().getValue());
                     netexIdMapper.moveOriginalNameToKeyValueList(parkingToSave, parkingToSave.getName().getValue());
                     parkingToSave.setName(new EmbeddableMultilingualString(parkingToSave.getName().getValue()));
                 }

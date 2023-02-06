@@ -59,19 +59,24 @@ public class StopPlaceQuayDeleter {
     @Autowired
     private MutateLock mutateLock;
 
-    public StopPlace deleteQuay(String stopPlaceId, String quayId, String versionComment) {
+    @Autowired
+    private StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
+
+    public StopPlace deleteQuay(String stopPlaceNetexId, String quayNetexId, String versionComment) {
 
         return mutateLock.executeInLock(() -> {
-            logger.warn("{} is deleting quay {} from stop place {} with comment {}", usernameFetcher.getUserNameForAuthenticatedUser(), quayId, stopPlaceId, versionComment);
+            logger.warn("{} is deleting quay {} from stop place {} with comment {}", usernameFetcher.getUserNameForAuthenticatedUser(), quayNetexId, stopPlaceNetexId, versionComment);
 
-            StopPlace stopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceId);
+            stopPlaceQuayDeleterToChouette.delete(quayNetexId);
 
-            Preconditions.checkArgument(stopPlace != null, "Attempting to delete StopPlace [id = %s], but StopPlace does not exist.", stopPlaceId);
+            StopPlace stopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceNetexId);
 
-            Preconditions.checkArgument(!stopPlace.isParentStopPlace(), "Cannot merge quays of parent stop place: [id = %s].", stopPlaceId);
+            Preconditions.checkArgument(stopPlace != null, "Attempting to delete StopPlace [id = %s], but StopPlace does not exist.", stopPlaceNetexId);
 
-            Optional<Quay> optionalQuay = stopPlace.getQuays().stream().filter(quay -> quay.getNetexId().equals(quayId)).findFirst();
-            Preconditions.checkArgument(optionalQuay.isPresent(), "Attempting to delete Quay [id = %s], but Quay does not exist on StopPlace [id = %s].", quayId, stopPlaceId);
+            Preconditions.checkArgument(!stopPlace.isParentStopPlace(), "Cannot merge quays of parent stop place: [id = %s].", stopPlaceNetexId);
+
+            Optional<Quay> optionalQuay = stopPlace.getQuays().stream().filter(quay -> quay.getNetexId().equals(quayNetexId)).findFirst();
+            Preconditions.checkArgument(optionalQuay.isPresent(), "Attempting to delete Quay [id = %s], but Quay does not exist on StopPlace [id = %s].", quayNetexId, stopPlaceNetexId);
 
             authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(stopPlace));
 
@@ -79,7 +84,7 @@ public class StopPlaceQuayDeleter {
 
             CopiedEntity<StopPlace> stopPlaceCopies = stopPlaceCopyHelper.createCopies(stopPlace);
 
-            stopPlaceCopies.getCopiedEntity().getQuays().removeIf(quay -> quay.getNetexId().equals(quayId));
+            stopPlaceCopies.getCopiedEntity().getQuays().removeIf(quay -> quay.getNetexId().equals(quayNetexId));
 
             if (stopPlaceCopies.hasParent()) {
                 stopPlaceCopies.getCopiedParent().setVersionComment(versionComment);

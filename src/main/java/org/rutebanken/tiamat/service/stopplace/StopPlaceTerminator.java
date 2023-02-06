@@ -48,36 +48,41 @@ public class StopPlaceTerminator {
     private MutateLock mutateLock;
 
     @Autowired
+    private StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
+
+    @Autowired
     private VersionCreator versionCreator;
 
-    public StopPlace terminateStopPlace(String stopPlaceId, Instant suggestedTimeOfTermination, String versionComment, ModificationEnumeration modificationEnumeration) {
+    public StopPlace terminateStopPlace(String stopPlaceNetexId, Instant suggestedTimeOfTermination, String versionComment, ModificationEnumeration modificationEnumeration) {
 
         return mutateLock.executeInLock(() -> {
+
+            stopPlaceQuayDeleterToChouette.delete(stopPlaceNetexId);
 
             Instant now = Instant.now();
             Instant timeOfTermination;
 
             if (suggestedTimeOfTermination.isBefore(now)) {
-                logger.warn("Termination date {} cannot be before now {}. Setting now as time of termination for {}", suggestedTimeOfTermination, now, stopPlaceId);
+                logger.warn("Termination date {} cannot be before now {}. Setting now as time of termination for {}", suggestedTimeOfTermination, now, stopPlaceNetexId);
                 timeOfTermination = now;
             } else {
                 timeOfTermination = suggestedTimeOfTermination;
             }
 
-            logger.info("User {} is terminating stop {} at {} with comment '{}'", usernameFetcher.getUserNameForAuthenticatedUser(), stopPlaceId, timeOfTermination, versionComment);
+            logger.info("User {} is terminating stop {} at {} with comment '{}'", usernameFetcher.getUserNameForAuthenticatedUser(), stopPlaceNetexId, timeOfTermination, versionComment);
 
-            StopPlace previousStopPlaceVersion = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceId);
+            StopPlace previousStopPlaceVersion = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceNetexId);
 
             if (previousStopPlaceVersion != null) {
 
                 // Stop Place Saver service should always check that the user is authorized
 
                 if (!previousStopPlaceVersion.isParentStopPlace() && previousStopPlaceVersion.getParentSiteRef() != null && previousStopPlaceVersion.getParentSiteRef().getRef() != null) {
-                    throw new IllegalArgumentException("Cannot terminate child stop of multi modal stop place: " + stopPlaceId);
+                    throw new IllegalArgumentException("Cannot terminate child stop of multi modal stop place: " + stopPlaceNetexId);
                 }
 
                 if (previousStopPlaceVersion.getValidBetween() != null && previousStopPlaceVersion.getValidBetween().getToDate() != null) {
-                    throw new IllegalArgumentException("The stop place " + stopPlaceId + ", version " + previousStopPlaceVersion.getVersion() + " is already terminated at " + previousStopPlaceVersion.getValidBetween().getToDate());
+                    throw new IllegalArgumentException("The stop place " + stopPlaceNetexId + ", version " + previousStopPlaceVersion.getVersion() + " is already terminated at " + previousStopPlaceVersion.getValidBetween().getToDate());
                 }
 
                 StopPlace nextVersionStopPlace = versionCreator.createCopy(previousStopPlaceVersion, StopPlace.class);
@@ -90,7 +95,7 @@ public class StopPlaceTerminator {
 
 
                 if (ModificationEnumeration.DELETE.equals(modificationEnumeration)) {
-                    logger.debug("Set terminate type to DELETE, to permanently terminate stop place: " + stopPlaceId);
+                    logger.debug("Set terminate type to DELETE, to permanently terminate stop place: " + stopPlaceNetexId);
                     nextVersionStopPlace.setModificationEnumeration(ModificationEnumeration.DELETE);
                 }
 
@@ -98,7 +103,7 @@ public class StopPlaceTerminator {
 
                 return stopPlaceVersionedSaverService.saveNewVersion(previousStopPlaceVersion, nextVersionStopPlace, now);
             } else {
-                throw new IllegalArgumentException("Cannot find stop place to terminate: " + stopPlaceId + ". No changes executed.");
+                throw new IllegalArgumentException("Cannot find stop place to terminate: " + stopPlaceNetexId + ". No changes executed.");
             }
         });
     }

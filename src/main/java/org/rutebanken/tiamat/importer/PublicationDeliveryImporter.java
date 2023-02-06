@@ -159,7 +159,7 @@ public class PublicationDeliveryImporter {
             Provider provider = providerRepository.getByReferential(importParams.providerCode).orElseThrow(() -> new RuntimeException("Aucun provider correspondant au code " + providerCode));
             String idSite = provider.getChouetteInfo().getCodeIdfm();
             publicationDelivery.withParticipantRef(idSite);
-            return  publicationDelivery;
+            return publicationDelivery;
         } finally {
             MDC.remove(IMPORT_CORRELATION_ID);
             loggerTimer.cancel();

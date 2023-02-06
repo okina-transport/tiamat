@@ -45,8 +45,9 @@ public class StopPlaceDeleterTest {
             return supplier.get();
         }
     };
+    private final StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette = mock(StopPlaceQuayDeleterToChouette.class);
 
-    private StopPlaceDeleter stopPlaceDeleter = new StopPlaceDeleter(stopPlaceRepository, entityChangedListener, authorizationService, usernameFetcher, mutateLock);
+    private StopPlaceDeleter stopPlaceDeleter = new StopPlaceDeleter(stopPlaceRepository, entityChangedListener, authorizationService, usernameFetcher, mutateLock, stopPlaceQuayDeleterToChouette);
 
     @Test(expected = IllegalArgumentException.class)
     public void doNotDeleteParent() {

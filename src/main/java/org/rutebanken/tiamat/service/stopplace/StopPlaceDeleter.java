@@ -48,33 +48,38 @@ public class StopPlaceDeleter {
 
     private final MutateLock mutateLock;
 
+    private final StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
+
     @Autowired
-    public StopPlaceDeleter(StopPlaceRepository stopPlaceRepository, EntityChangedListener entityChangedListener, ReflectionAuthorizationService authorizationService, UsernameFetcher usernameFetcher, MutateLock mutateLock) {
+    public StopPlaceDeleter(StopPlaceRepository stopPlaceRepository, EntityChangedListener entityChangedListener, ReflectionAuthorizationService authorizationService, UsernameFetcher usernameFetcher, MutateLock mutateLock, StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette) {
         this.stopPlaceRepository = stopPlaceRepository;
         this.entityChangedListener = entityChangedListener;
         this.authorizationService = authorizationService;
         this.usernameFetcher = usernameFetcher;
         this.mutateLock = mutateLock;
+        this.stopPlaceQuayDeleterToChouette = stopPlaceQuayDeleterToChouette;
     }
 
-    public boolean deleteStopPlace(String stopPlaceId) {
+    public boolean deleteStopPlace(String stopPlaceNetexId) {
 
         return mutateLock.executeInLock(() -> {
             String usernameForAuthenticatedUser = usernameFetcher.getUserNameForAuthenticatedUser();
-            logger.warn("About to delete stop place by ID {}. User: {}", stopPlaceId, usernameForAuthenticatedUser);
+            logger.warn("About to delete stop place by ID {}. User: {}", stopPlaceNetexId, usernameForAuthenticatedUser);
 
-            List<StopPlace> stopPlaces = getAllVersionsOfStopPlace(stopPlaceId);
+            List<StopPlace> stopPlaces = getAllVersionsOfStopPlace(stopPlaceNetexId);
+
+            stopPlaceQuayDeleterToChouette.delete(stopPlaceNetexId);
 
             if (stopPlaces.stream().anyMatch(stopPlace -> stopPlace.isParentStopPlace() || stopPlace.getParentSiteRef() != null)) {
-                throw new IllegalArgumentException("Deleting parent stop place or childs of parent stop place is not allowed: " + stopPlaceId);
+                throw new IllegalArgumentException("Deleting parent stop place or childs of parent stop place is not allowed: " + stopPlaceNetexId);
             }
 
             authorizationService.assertAuthorized(ROLE_DELETE_STOPS, stopPlaces);
             stopPlaceRepository.deleteAll(stopPlaces);
 
-            notifyDeleted(stopPlaces);
+//            notifyDeleted(stopPlaces);
 
-            logger.warn("All versions ({}) of stop place {} deleted by user {}", stopPlaces.size(), stopPlaceId, usernameForAuthenticatedUser);
+            logger.warn("All versions ({}) of stop place {} deleted by user {}", stopPlaces.size(), stopPlaceNetexId, usernameForAuthenticatedUser);
 
             return true;
         });

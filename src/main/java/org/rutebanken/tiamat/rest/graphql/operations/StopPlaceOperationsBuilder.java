@@ -53,6 +53,9 @@ public class StopPlaceOperationsBuilder {
     private StopPlaceDeleter stopPlaceDeleter;
 
     @Autowired
+    private StopPlaceDeleterByOrganisation stopPlaceDeleterByOrganisation;
+
+    @Autowired
     private StopPlaceTerminator stopPlaceTerminator;
 
     @Autowired
@@ -145,6 +148,15 @@ public class StopPlaceOperationsBuilder {
                 .argument(newArgument().name(QUAY_ID).type(new GraphQLNonNull(GraphQLString)))
                 .argument(newArgument().name(VERSION_COMMENT).type(GraphQLString))
                 .dataFetcher(environment -> stopPlaceQuayDeleter.deleteQuay(environment.getArgument(STOP_PLACE_ID), environment.getArgument(QUAY_ID), environment.getArgument(VERSION_COMMENT)))
+                .build());
+
+        //Delete StopPlaces by organisation
+        operations.add(newFieldDefinition()
+                .type(GraphQLBoolean)
+                .name(DELETE_STOP_PLACE_BY_ORGANISATION)
+                .description("!!! Deletes all versions of StopPlace from database - use with caution !!!")
+                .argument(newArgument().name(ORGANISATION_NAME).type(new GraphQLNonNull(GraphQLString)))
+                .dataFetcher(environment -> stopPlaceDeleterByOrganisation.deleteStopPlacesByOrganisation(environment.getArgument(ORGANISATION_NAME)))
                 .build());
 
         return operations;

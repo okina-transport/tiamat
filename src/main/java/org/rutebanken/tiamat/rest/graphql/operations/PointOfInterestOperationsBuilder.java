@@ -17,7 +17,6 @@ package org.rutebanken.tiamat.rest.graphql.operations;
 
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLNonNull;
-import org.rutebanken.tiamat.service.parking.ParkingDeleter;
 import org.rutebanken.tiamat.service.poi.PointOfInterestDeleter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

@@ -105,4 +105,6 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     List<StopPlace> getStopPlaceInitializedForExport(Set<Long> stopPlacePrimaryIds);
 
+    boolean deleteAllStopPlacesQuaysByOrganisation(String organisation);
+
     }

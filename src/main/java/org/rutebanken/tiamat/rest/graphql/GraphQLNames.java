@@ -480,6 +480,7 @@ public class GraphQLNames {
     public static final String REOPEN_STOP_PLACE = "reopenStopPlace";
     public static final String DELETE_STOP_PLACE = "deleteStopPlace";
     public static final String DELETE_QUAY_FROM_STOP_PLACE = "deleteQuay";
+    public static final String DELETE_STOP_PLACE_BY_ORGANISATION = "deleteStopPlaceByOrganisation";
 
     public static final String PARKING_ID = "parkingId";
     public static final String DELETE_PARKING = "deleteParking";

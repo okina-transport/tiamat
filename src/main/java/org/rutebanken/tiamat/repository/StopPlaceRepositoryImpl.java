@@ -1163,5 +1163,12 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
             return Sets.newHashSet();
         }
     }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean deleteAllStopPlacesQuaysByOrganisation(String organisation){
+        Query query = entityManager.createNativeQuery("SELECT clean_orga(:organisation)");
+        query.setParameter("organisation", organisation);
+        return (boolean) query.getSingleResult();
+    }
 }
 

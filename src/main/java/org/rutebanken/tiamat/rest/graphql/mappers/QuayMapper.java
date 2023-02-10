@@ -47,8 +47,6 @@ public class QuayMapper {
     @Autowired
     private GroupOfEntitiesMapper groupOfEntitiesMapper;
 
-    private ApiProxyService apiProxyService = new ApiProxyService();
-
     public boolean populateQuayFromInput(StopPlace stopPlace, Map quayInputMap) {
         Quay quay;
         if (quayInputMap.get(ID) != null) {
@@ -89,14 +87,16 @@ public class QuayMapper {
         }
 
         // On mets à jour le zip code
-        String citycodeReverseGeocoding = null;
-        try {
-           citycodeReverseGeocoding = apiProxyService.getCitycodeByReverseGeocoding(new BigDecimal(quay.getCentroid().getCoordinate().y, MathContext.DECIMAL64), new BigDecimal(quay.getCentroid().getCoordinate().x, MathContext.DECIMAL64));
-        } catch (Exception e) {
-            logger.error("Erreur lors de la récupération du code postal du quay = " + quay.getId(), e);
+        Optional<String> citycodeReverseGeocoding = ApiProxyService.getInseeFromLatLng(quay.getCentroid().getCoordinate().x, quay.getCentroid().getCoordinate().y);
+        if (citycodeReverseGeocoding.isPresent()) {
+            quay.setZipCode(citycodeReverseGeocoding.get());
         }
-        if (!StringUtils.equals(quay.getZipCode(), citycodeReverseGeocoding) && citycodeReverseGeocoding != null) {
-            quay.setZipCode(citycodeReverseGeocoding);
+        else{
+            logger.error("Erreur lors de la récupération du code postal du quay = " + quay.getId());
+        }
+
+        if (citycodeReverseGeocoding.isPresent() && !StringUtils.equals(quay.getZipCode(), citycodeReverseGeocoding.get())) {
+            quay.setZipCode(citycodeReverseGeocoding.get());
             isQuayUpdated = true;
         }
 

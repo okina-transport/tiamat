@@ -212,7 +212,7 @@ public class QuayMerger {
         zipCodeUpdated = updateZipCode(alreadyAdded, incomingQuay);
         urlUpdated = updateUrl(alreadyAdded, incomingQuay);
         descUpdated = updateDesc(alreadyAdded, incomingQuay);
-        wheelchairBoardingUpdated = updateWheelchairBoarding(alreadyAdded, incomingQuay);
+        wheelchairBoardingUpdated = false;
         centroidUpdated = false;
 
         if(!importParams.keepStopGeolocalisation && quayAlone){

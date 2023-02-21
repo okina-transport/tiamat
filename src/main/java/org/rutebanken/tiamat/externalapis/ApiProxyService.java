@@ -12,11 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,8 +37,8 @@ public class ApiProxyService {
     @Autowired
     private QuayRepository quayRepository;
 
-    @PostConstruct
-    void init() {
+    @Scheduled(cron = "0 30 8 ? * MON-FRI")
+    void populateCodeInsee() {
         logger.info("Starting insee recovering of quays service");
         List<Quay> quays = quayRepository.findQuaysWithoutZipcode();
         for (Quay quay : quays) {

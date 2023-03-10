@@ -189,6 +189,22 @@ public class ExportResource {
 
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("getTADStopPlaces")
+    @Transactional
+    public Response getTADStopsInArea(@QueryParam("area")String area){
+
+        List<StopPlace> stopPlaces = stopPlaceRepository.findTADStopPlacesForArea(area);
+
+        List<StopPlaceView> stopPlaceViews = stopPlaces.stream()
+                .map(StopPlaceView::new)
+                .collect(Collectors.toList());
+
+        return Response.ok().entity(stopPlaceViews).build();
+
+    }
+
 
 
     private URI createLinkToNextPage(String from, String to, int page, int perPage, ExportParams.ExportMode topographicPlaceExportMode, ExportParams.ExportMode tariffZoneExportMode, UriInfo uriInfo) {

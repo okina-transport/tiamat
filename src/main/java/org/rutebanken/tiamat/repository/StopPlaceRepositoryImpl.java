@@ -448,7 +448,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         query.setParameter("key", key);
         query.setParameter("value", value);
-        query.setParameter("pointInTime", Date.from(Instant.now()));
+        query.setParameter("pointInTime", Timestamp.from(Instant.now()));
 
         try {
             @SuppressWarnings("unchecked")
@@ -1170,5 +1170,43 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         query.setParameter("organisation", organisation);
         return (boolean) query.getSingleResult();
     }
+
+    public List<StopPlace> findTADStopPlacesForArea(String area){
+        List<StopPlace> results = new ArrayList<>();
+        results.addAll(findTADStopPlacesForTypeAndArea("yes",area));
+        results.addAll(findTADStopPlacesForTypeAndArea("partial",area));
+        return results;
+    }
+
+    List<StopPlace> findTADStopPlacesForTypeAndArea(String type, String area){
+        String queryStr = "SELECT s.* " +
+                "FROM stop_place_key_values spkv " +
+                "INNER JOIN value_items v " +
+                "ON spkv.key_values_id = v.value_id " +
+                "INNER JOIN stop_place s " +
+                "ON spkv.stop_place_id = s.id " +
+                SQL_LEFT_JOIN_PARENT_STOP +
+                "WHERE  spkv.key_values_key = :key " +
+                "AND v.items LIKE ( :value ) " +
+                " AND ST_contains(ST_GEOMFROMTEXT(:polygon ,4326),s.centroid) " +
+                "AND " + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME;
+
+
+
+        Query query = entityManager.createNativeQuery(queryStr, StopPlace.class);
+        query.setParameter("key", "zonalStopPlace");
+        query.setParameter("value", type);
+        query.setParameter("polygon", area);
+        query.setParameter("pointInTime", Timestamp.from(Instant.now()));
+
+        try {
+           return query.getResultList();
+        } catch (NoResultException noResultException) {
+            logger.info("no TAD stop found found for type :" + type + " and area:" + area );
+            return new ArrayList<>();
+        }
+    }
+
+
 }
 

@@ -275,6 +275,68 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         Assert.assertNotNull(link);
     }
 
+    @Test
+    public void exportTADtest() throws Exception {
+
+        StopPlace inAreaFullTAD = createStopPlace("1","inAreaFullTAD" , "47.284571", "0.7819685");
+        addKeyValue(inAreaFullTAD,"zonalStopPlace", "yes" );
+
+        StopPlace inAreaPartialTAD = createStopPlace("2","inAreaPartialTAD" , "47.284571", "0.7819685");
+        addKeyValue(inAreaPartialTAD,"zonalStopPlace", "partial" );
+
+        StopPlace inAreaNoTAD = createStopPlace("3","inAreaNoTAD" , "47.284571", "0.7819685");
+        addKeyValue(inAreaNoTAD,"zonalStopPlace", "no" );
+
+        StopPlace outOfAreaFullTAD = createStopPlace("4","outOfAreaFullTAD" , "22.284571", "0.5819685");
+        addKeyValue(outOfAreaFullTAD,"zonalStopPlace", "yes" );
+
+        PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(inAreaFullTAD, inAreaPartialTAD, inAreaNoTAD,outOfAreaFullTAD);
+        publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
+
+        String area = "POLYGON ((0.7411875 47.280809, 0.781822 47.288727, 0.789707 47.286915, 0.7986116 47.269591, 0.7411875 47.280809))";
+        Response response = exportResource.getTADStopsInArea(area);
+
+        List<StopPlace> recoveredStopPlaces = (List<StopPlace>) response.getEntity();
+
+        //only inAreaFullTAD and inAreaPartialTAD should be recovered. noTAD and outOfArea should be ignored
+        Assert.assertEquals(2, recoveredStopPlaces.size());
+
+    }
+
+    private StopPlace createStopPlace(String netexId, String name, String latitude, String longitude){
+
+        LocalDateTime validFrom = LocalDateTime.now().minusDays(3);
+        return new StopPlace()
+                .withId("MOBIITI:StopPlace:" + netexId)
+                .withVersion("1")
+                .withName(new MultilingualString().withValue(name))
+                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
+                .withStopPlaceType(StopTypeEnumeration.BUS_STATION)
+                .withValidBetween(new ValidBetween().withFromDate(validFrom.plusDays(1)))
+                .withCentroid(new SimplePoint_VersionStructure()
+                        .withLocation(new LocationStructure()
+                                .withLatitude(new BigDecimal(latitude))
+                                .withLongitude(new BigDecimal(longitude))))
+                .withQuays(new Quays_RelStructure()
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(new Quay()
+                                .withVersion("1")
+                                .withId("MOBIITI:Quay:" + netexId)
+                                .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
+                                .withSiteRef(new SiteRefStructure().withValue("MOBIITI:StopPlace:" + netexId).withRef("MOBIITI:StopPlace:" + netexId))
+                                .withName(new MultilingualString().withValue("q1").withLang("no"))
+                                .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
+                                        .withLatitude(new BigDecimal(latitude))
+                                        .withLongitude(new BigDecimal(longitude)))))));
+    }
+
+    private void addKeyValue(StopPlace stopPlace, String key, String value){
+        KeyListStructure keyListStruct = new KeyListStructure();
+        KeyValueStructure keyValueStruct = new KeyValueStructure();
+        keyValueStruct.setValue(value);
+        keyValueStruct.setKey(key);
+        keyListStruct.withKeyValue(keyValueStruct);
+        stopPlace.setKeyList(keyListStruct);
+    }
 
     public void exportStopPlacesWithEffectiveChangedInPeriodNoContent() throws Exception {
         String historicTime = "2012-04-23T18:25:43.511+0100";

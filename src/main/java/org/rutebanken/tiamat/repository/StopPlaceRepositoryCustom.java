@@ -107,4 +107,7 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     boolean deleteAllStopPlacesQuaysByOrganisation(String organisation);
 
+
+    List<StopPlace> findTADStopPlacesForArea(String area);
+
     }

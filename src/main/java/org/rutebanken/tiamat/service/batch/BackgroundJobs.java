@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.service.batch;
 
+import com.hazelcast.core.HazelcastInstance;
 import org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,6 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +39,12 @@ public class BackgroundJobs {
     private final QuayIdMappingService quayIdMappingService;
 
     @Autowired
+    private HazelcastInstance hazelcastInstance;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Autowired
     public BackgroundJobs(GaplessIdGeneratorService gaplessIdGeneratorService, StopPlaceRefUpdaterService stopPlaceRefUpdaterService, QuayIdMappingService quayIdMappingService) {
         this.gaplessIdGeneratorService = gaplessIdGeneratorService;
         this.stopPlaceRefUpdaterService = stopPlaceRefUpdaterService;
@@ -50,6 +63,28 @@ public class BackgroundJobs {
 
         logger.info("Scheduling background job for quay id mapping file creation");
         backgroundJobExecutor.scheduleAtFixedRate(quayIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
+        
+        syncIdGenerator();
+    }
+
+    /**
+     * Synchronize table idGenerator and clear all queues stored in hazelcast
+     */
+    private void syncIdGenerator() {
+
+        Query query = entityManager.createNativeQuery("SELECT sync_id_generator_table()");
+        query.getSingleResult();
+        logger.info("Id generator table has been synchronized");
+
+        List<String> queueList = Arrays.asList("StopPlace", "AccessibilityLimitation", "Quay","AccessibilityAssessment");
+
+        for (String queueName : queueList) {
+            BlockingQueue<Long> queue = hazelcastInstance.getQueue(queueName);
+            if(queue != null){
+                logger.info("Clearing queue : " + queueName);
+                queue.clear();
+            }
+        }
     }
 
     public void triggerStopPlaceUpdate() {

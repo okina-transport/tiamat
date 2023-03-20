@@ -47,6 +47,8 @@ public interface QuayRepositoryCustom extends DataManagedObjectStructureReposito
 
     List<JbvCodeMappingDto> findSelectedIdMappingsForQuay();
 
+    Optional<Quay> findTADQuay(String netexId) ;
+
 
 
 }

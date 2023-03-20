@@ -16,8 +16,15 @@
 package org.rutebanken.tiamat.rest.dto;
 
 import io.swagger.annotations.Api;
+import org.locationtech.jts.geom.Point;
+import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDtoCsvMapper;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.Quay;
+import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.netex.mapping.NetexMapper;
+import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,13 +35,13 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+import javax.xml.bind.JAXBElement;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Component
 @Api(tags = {"Stop place resource"}, produces = "text/plain")
@@ -51,11 +58,20 @@ public class DtoStopPlaceResource {
 
     private final IdMappingDtoCsvMapper csvMapper;
 
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
+
     @Autowired
-    public DtoStopPlaceResource(StopPlaceRepository stopPlaceRepository, DtoMappingSemaphore dtoMappingSemaphore, IdMappingDtoCsvMapper csvMapper) {
+    private NetexMapper netexMapper;
+
+
+    private final QuayRepository quayRepository;
+
+    @Autowired
+    public DtoStopPlaceResource(StopPlaceRepository stopPlaceRepository, DtoMappingSemaphore dtoMappingSemaphore, IdMappingDtoCsvMapper csvMapper, QuayRepository quayRepository) {
         this.stopPlaceRepository = stopPlaceRepository;
         this.dtoMappingSemaphore = dtoMappingSemaphore;
         this.csvMapper = csvMapper;
+        this.quayRepository = quayRepository;
     }
 
     @GET
@@ -109,4 +125,76 @@ public class DtoStopPlaceResource {
         Instant validTo = includeFuture ? null : validFrom;
         return stopPlaceRepository.listStopPlaceIdsAndQuayIds(validFrom, validTo);
     }
+
+    @GET
+    @Path("/tad_stop_place_from_quay")
+    @Produces("application/xml")
+    public JAXBElement<org.rutebanken.netex.model.StopPlace> getTadStopPlaceFromQuayId(@QueryParam("quayId") String netexQuayId) {
+
+        Optional<Quay> quayOpt = quayRepository.findTADQuay(netexQuayId);
+        if (quayOpt.isEmpty()){
+            return null;
+        }
+
+        Quay quay = quayOpt.get();
+        StopPlace stopPlace = stopPlaceRepository.findByQuay(quay);
+
+        org.rutebanken.netex.model.StopPlace lightNetex = convertToLightNetex(stopPlace);
+        return netexObjectFactory.createStopPlace(lightNetex);
+    }
+
+
+    /**
+     * Creates a light netex stop place with only few informations (name/id/location)
+     * @param stopPlace
+     * @return
+     */
+    private org.rutebanken.netex.model.StopPlace convertToLightNetex(StopPlace stopPlace){
+
+        org.rutebanken.netex.model.StopPlace lightStopPlace = new org.rutebanken.netex.model.StopPlace();
+        lightStopPlace.setId(stopPlace.getNetexId());
+        if (stopPlace.getName() != null){
+            lightStopPlace.setName(convertToMultiLingualString(stopPlace.getName()));
+        }
+
+        try {
+            convertQuaysToLightNetex(lightStopPlace, stopPlace);
+        }catch(Exception e){
+            logger.error("Error while converting to light netex",e);
+        }
+
+        return lightStopPlace;
+    }
+
+    private void convertQuaysToLightNetex(org.rutebanken.netex.model.StopPlace lightStopPlace, StopPlace stopPlace) {
+        List<JAXBElement<?>> netexLightQuays = new ArrayList<>();
+        for (Quay quay : stopPlace.getQuays()) {
+
+            org.rutebanken.netex.model.Quay netexQuay = new org.rutebanken.netex.model.Quay();
+            netexQuay.setId(quay.getNetexId());
+            if (quay.getName() != null){
+                netexQuay.setName(convertToMultiLingualString(quay.getName()));
+            }
+            Point centroid = quay.getCentroid();
+            SimplePoint_VersionStructure simplePoint = new SimplePoint_VersionStructure();
+            LocationStructure location = new LocationStructure();
+            location.setLongitude(BigDecimal.valueOf(centroid.getX()));
+            location.setLatitude(BigDecimal.valueOf(centroid.getY()));
+            simplePoint.setLocation(location);
+            netexQuay.setCentroid(simplePoint);
+            netexLightQuays.add(netexObjectFactory.createQuay(netexQuay));
+        }
+        Quays_RelStructure quays = new Quays_RelStructure();
+        quays.withQuayRefOrQuay(netexLightQuays);
+        lightStopPlace.setQuays(quays);
+    }
+
+    private MultilingualString convertToMultiLingualString(EmbeddableMultilingualString emString) {
+        MultilingualString result = new MultilingualString();
+
+        result.setValue(emString.getValue());
+        return result;
+    }
+
+
 }

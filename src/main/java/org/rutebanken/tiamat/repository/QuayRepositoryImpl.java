@@ -372,4 +372,34 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
 
     }
 
+    @Override
+    public Optional<Quay> findTADQuay(String netexId) {
+
+
+        Query query = entityManager.createNativeQuery("SELECT q.* " +
+                "FROM quay q " +
+                "INNER JOIN quay_key_values qkv ON qkv.quay_id = q.id " +
+                "INNER JOIN value_items v  ON qkv.key_values_id = v.value_id " +
+                "INNER JOIN stop_place_quays spq ON spq.quays_id = qkv.quay_id " +
+                "INNER JOIN stop_place s ON s.id = spq.stop_place_id  " +
+
+                "WHERE qkv.key_values_key = 'zonalStopPlace' " +
+                " AND q.netex_id = :netexIdParam " +
+                " AND  (s.from_date IS NULL OR s.from_date <= :pointInTime) " +
+                " AND (s.to_date IS NULL OR s.to_date >= :pointInTime) " +
+                "AND v.items IN ('yes','partial')", Quay.class );
+
+        query.setParameter("netexIdParam", netexId);
+        query.setParameter("pointInTime", Date.from(Instant.now()));
+
+
+        List<Quay> resultList = query.getResultList();
+
+        if (resultList.isEmpty()){
+            return Optional.empty();
+        }
+
+        return Optional.of(resultList.get(0));
+    }
+
 }

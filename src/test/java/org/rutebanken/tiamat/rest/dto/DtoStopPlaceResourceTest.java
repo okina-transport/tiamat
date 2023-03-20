@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDtoCsvMapper;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
+import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.time.ExportTimeZone;
 import org.springframework.test.annotation.DirtiesContext;
@@ -41,11 +42,13 @@ import static org.mockito.Mockito.*;
 public class DtoStopPlaceResourceTest {
 
     private StopPlaceRepository stopPlaceRepository = mock(StopPlaceRepository.class);
+
+    private QuayRepository quayPlaceRepository = mock(QuayRepository.class);
     private DtoStopPlaceResource dtoStopPlaceResource;
     private Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
     @Before
     public void setUp() {
-        dtoStopPlaceResource = new DtoStopPlaceResource(stopPlaceRepository, mock(DtoMappingSemaphore.class), new IdMappingDtoCsvMapper(new ExportTimeZone()));
+        dtoStopPlaceResource = new DtoStopPlaceResource(stopPlaceRepository, mock(DtoMappingSemaphore.class), new IdMappingDtoCsvMapper(new ExportTimeZone()),quayPlaceRepository);
     }
 
     @Test

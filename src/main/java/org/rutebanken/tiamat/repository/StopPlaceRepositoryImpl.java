@@ -1033,7 +1033,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         final String queryString = "select s from StopPlace s where :quay member of s.quays";
         final TypedQuery<StopPlace> typedQuery = entityManager.createQuery(queryString, StopPlace.class);
         typedQuery.setParameter("quay", quay);
-        return getOneOrNull(typedQuery);
+        StopPlace stopPlace = getOneOrNull(typedQuery);
+        Hibernate.initialize(stopPlace.getKeyValues());
+        return stopPlace;
     }
 
     /**

@@ -318,11 +318,12 @@
             <version>${logstash-logback.version}</version>
         </dependency>
         <!--TODO temporary manual upgrade of Logback-->
-        <dependency>       <dependency>
+        <dependency>
             <groupId>com.okina</groupId>
             <artifactId>netex-java-model</artifactId>
             <version>${netex-java-model.version}</version>
         </dependency>
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>

@@ -183,8 +183,12 @@ public class QuayMerger {
 
     private Optional<Quay> findMatchOnOriginalId(Quay incomingQuay, Set<Quay> result) {
         for (Quay alreadyAdded : result) {
-            if (originalIdMatcher.matchesOnOriginalId(incomingQuay, alreadyAdded)) {
-                return Optional.of(alreadyAdded);
+            for(String originalIdAlreadyExisting : alreadyAdded.getOriginalIds()){
+                for(String newOriginalId : incomingQuay.getOriginalIds()){
+                    if(newOriginalId.equals(originalIdAlreadyExisting)){
+                        return Optional.of(alreadyAdded);
+                    }
+                }
             }
         }
         return Optional.empty();

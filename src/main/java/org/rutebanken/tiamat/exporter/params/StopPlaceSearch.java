@@ -278,10 +278,6 @@ public class StopPlaceSearch implements SearchObject {
         return pointInTime;
     }
 
-    public int getSize() {
-        return size;
-    }
-
     public ExportParams.VersionValidity getVersionValidity() {
         return versionValidity;
     }

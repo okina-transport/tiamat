@@ -59,7 +59,6 @@ public class NearbyStopPlaceQueryBuilder {
             parameters.put("namePattern", "%" + stopPlaceSearch.getQuery().toLowerCase() + "%");
         }
 
-        parameters.put("size", stopPlaceSearch.getSize());
 
         return parameters;
     }
@@ -98,7 +97,7 @@ public class NearbyStopPlaceQueryBuilder {
     private String generateOrderbyStatement() {
         return " \n" +
                 "                \n" +
-                "                group by netex_id limit :size) TMP_NETEX_VERS\n" +
+                "                group by netex_id) TMP_NETEX_VERS\n" +
                 "                where (s2.netex_id = TMP_NETEX_VERS.netex_id and s2.version = TMP_NETEX_VERS.max_vers)\n" +
                 "                order by s2.centroid,\n" +
                 "                s2.netex_id,\n" +

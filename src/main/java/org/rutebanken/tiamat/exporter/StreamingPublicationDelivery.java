@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.exporter;
 
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.EntityStructure;
 import org.rutebanken.netex.model.GeneralFrame;
 import org.rutebanken.netex.model.GeneralOrganisation;
@@ -47,7 +48,6 @@ import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.async.NetexMappingIterator;
 import org.rutebanken.tiamat.exporter.async.NetexMappingIteratorList;
 import org.rutebanken.tiamat.exporter.async.ParentStopFetchingIterator;
-import org.rutebanken.tiamat.exporter.eviction.EntitiesEvictor;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.model.PointOfInterestClassification;
@@ -95,7 +95,6 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -268,7 +267,7 @@ public class StreamingPublicationDelivery {
 
         }
 
-        desanitizeImportedIds(listMembers);
+        desanitizeImportedIds(listMembers, provider.getChouetteInfo().getNameNetexStop());
 
         logger.info("Preparing scrollable iterators");
         prepareTopographicPlaces(mappedTopographicPlacesCount, listMembers, exportJobId);
@@ -332,7 +331,7 @@ public class StreamingPublicationDelivery {
      * Read objects and replace sanitized code for : (##3A) by : character
      * @param listMembers
      */
-    private void desanitizeImportedIds( List <JAXBElement<? extends EntityStructure>> listMembers){
+    private void desanitizeImportedIds( List <JAXBElement<? extends EntityStructure>> listMembers, String prefix){
         for (JAXBElement<? extends EntityStructure> listMember : listMembers) {
             EntityStructure entity = listMember.getValue();
             if (entity instanceof Zone_VersionStructure){
@@ -344,6 +343,10 @@ public class StreamingPublicationDelivery {
                     for (KeyValueStructure structure : keyValue) {
                         if (structure != null && "imported-id".equals(structure.getKey())) {
                             structure.setValue(structure.getValue().replace("##3A##",":"));
+                            if(StringUtils.isNotBlank(prefix) && structure.getValue().contains(":")){
+                                String oldString = structure.getValue().split(":")[0];
+                                structure.setValue(structure.getValue().replace(oldString, prefix));
+                            }
                         }
                     }
                 }

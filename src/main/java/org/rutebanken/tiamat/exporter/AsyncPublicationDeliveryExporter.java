@@ -42,7 +42,6 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -127,11 +126,12 @@ public class AsyncPublicationDeliveryExporter {
                 String idSite = provider.getChouetteInfo().getCodeIdfm();
 
                 String nameSite = provider.name;
-                if(StringUtils.isNotBlank(provider.getChouetteInfo().getNameNetexStopIdfm())) {
-                    nameSite = provider.getChouetteInfo().getNameNetexStopIdfm();
+                boolean isPrefix = StringUtils.isNotBlank(provider.getChouetteInfo().getNameNetexStop());
+                if(isPrefix) {
+                    nameSite = provider.getChouetteInfo().getNameNetexStop();
                 }
 
-                String fileNameWithoutExtention = createFileNameWithoutExtention(idSite, nameSite, localDateTime);
+                String fileNameWithoutExtention = createFileNameWithoutExtention(idSite, nameSite, localDateTime,isPrefix);
 
                 String nameFileZip = null;
                 try {
@@ -175,8 +175,8 @@ public class AsyncPublicationDeliveryExporter {
                 String idSite = provider.getChouetteInfo().getCodeIdfm();
 
                 String nameSite = provider.name;
-                if(StringUtils.isNotBlank(provider.getChouetteInfo().getNameNetexStopIdfm())) {
-                    nameSite = provider.getChouetteInfo().getNameNetexStopIdfm();
+                if(StringUtils.isNotBlank(provider.getChouetteInfo().getNameNetexStop())) {
+                    nameSite = provider.getChouetteInfo().getNameNetexStop();
                 }
 
                 String fileNameWithoutExtention = createParkingsFileNameWithoutExtension(idSite, nameSite, localDateTime);
@@ -224,8 +224,8 @@ public class AsyncPublicationDeliveryExporter {
                 String idSite = provider.getChouetteInfo().getCodeIdfm();
 
                 String nameSite = provider.name;
-                if(StringUtils.isNotBlank(provider.getChouetteInfo().getNameNetexStopIdfm())) {
-                    nameSite = provider.getChouetteInfo().getNameNetexStopIdfm();
+                if(StringUtils.isNotBlank(provider.getChouetteInfo().getNameNetexStop())) {
+                    nameSite = provider.getChouetteInfo().getNameNetexStop();
                 }
 
                 String fileNameWithoutExtention = createPOIFileNameWithoutExtension(idSite, nameSite, localDateTime);
@@ -248,8 +248,12 @@ public class AsyncPublicationDeliveryExporter {
         return exportJob;
     }
 
-    public String createFileNameWithoutExtention(String idSite, String nameSite, LocalDateTime localDateTime) {
-        return "ARRET_" + idSite + "_" + nameSite + "_T_" + localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "T" + localDateTime.format(DateTimeFormatter.ofPattern("HHmmss")) + "Z";
+    public String createFileNameWithoutExtention(String idSite, String nameSite, LocalDateTime localDateTime, boolean isPrefix) {
+        if (isPrefix){
+            return "ARRET_" + nameSite + "_" + nameSite + "_T_" + localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "T" + localDateTime.format(DateTimeFormatter.ofPattern("HHmmss")) + "Z";
+        } else {
+            return "ARRET_" + idSite + "_" + nameSite + "_T_" + localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "T" + localDateTime.format(DateTimeFormatter.ofPattern("HHmmss")) + "Z";
+        }
     }
 
         public String createPOIFileNameWithoutExtension(String idSite, String nameSite, LocalDateTime localDateTime) {

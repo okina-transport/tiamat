@@ -208,6 +208,7 @@ public class QuayMerger {
         boolean wheelchairBoardingUpdated;
         boolean nameUpdated = false;
         boolean keyValueUpdated;
+        boolean accessibilityUpdated = false;
 
         quayAlone = checkNumberProducers(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
         idUpdated = alreadyAdded.getOriginalIds().addAll(incomingQuay.getOriginalIds());
@@ -227,10 +228,16 @@ public class QuayMerger {
             nameUpdated = updatePropName(alreadyAdded, incomingQuay);
         }
 
+        if (importParams.updateStopAccessibility){
+            accessibilityUpdated = updateAccessibility(alreadyAdded, incomingQuay);
+        }
+
+
+
         keyValueUpdated = keyValueListAppender.appendKeyValueExternalRef(NetexIdMapper.EXTERNAL_REF, incomingQuay, alreadyAdded);
 
-        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated ||  zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated || nameUpdated || keyValueUpdated) {
-            logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}, nameUpdated:{}, keyValueUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated, nameUpdated, keyValueUpdated);
+        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated ||  zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated || nameUpdated || keyValueUpdated || accessibilityUpdated) {
+            logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}, nameUpdated:{}, keyValueUpdated:{}, accessibilityUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated, nameUpdated, keyValueUpdated, accessibilityUpdated);
 
             alreadyAdded.setChanged(Instant.now());
             updatedQuaysCounter.incrementAndGet();
@@ -335,6 +342,59 @@ public class QuayMerger {
         }
 
         return codesUpdated;
+    }
+
+    /**
+     * Update wheelchair accessibility, if needed
+     * @param alreadyAdded
+     *  existing quay
+     * @param incomingQuay
+     *  incoming quay from user's file
+     * @return
+     *  true : quay has been updated
+     *  false : no update has been done on the quay
+     */
+    private boolean updateAccessibility(Quay alreadyAdded, Quay incomingQuay) {
+        boolean updated = false;
+
+        Optional<LimitationStatusEnumeration> existingWheelchairLimitationOpt = getWheelchairLimitation(alreadyAdded);
+        Optional<LimitationStatusEnumeration> incomingWheelchairLimitationOpt = getWheelchairLimitation(incomingQuay);
+
+
+        if (!existingWheelchairLimitationOpt.equals(incomingWheelchairLimitationOpt)){
+            updated = true;
+            updateWheelchairLimitation(alreadyAdded, incomingWheelchairLimitationOpt.get());
+        }
+
+        return updated;
+    }
+
+    /**
+     * Update wheelchair limitation in a quay
+     * @param quay
+     *  quay on which wheelchair limitation must be udpated
+     * @param wheelchairLimitation
+     *  new value for wheelchair limitation
+     */
+    private void updateWheelchairLimitation(Quay quay, LimitationStatusEnumeration wheelchairLimitation) {
+        AccessibilityAssessment assessmentToUpdate = quay.getAccessibilityAssessment() == null ? new AccessibilityAssessment() : quay.getAccessibilityAssessment();
+        List<AccessibilityLimitation> limitationsToUpdate = assessmentToUpdate.getLimitations() == null ? new ArrayList<>() : assessmentToUpdate.getLimitations();
+        limitationsToUpdate.get(0).setWheelchairAccess(wheelchairLimitation);
+    }
+
+    /**
+     * Read a quay and return the value for wheelchair limitation
+     * @param quay
+     * @return
+     *  wheelchair limitation of the quay
+     */
+    private Optional<LimitationStatusEnumeration> getWheelchairLimitation(Quay quay){
+        if (quay.getAccessibilityAssessment() == null || quay.getAccessibilityAssessment().getLimitations() == null
+                || quay.getAccessibilityAssessment().getLimitations().size() == 0){
+            return Optional.empty();
+        }
+        
+        return Optional.of(quay.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess());
     }
 
     private boolean updatePropName(Quay alreadyAdded, Quay incomingQuay) {

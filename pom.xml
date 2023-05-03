@@ -104,7 +104,7 @@
 
         <!-- NB: Concious choice of using snapshot version. This is to keep in
             sync, and fail fast if incompatibilities -->
-        <netex-java-model.version>2.0.4-NETEX-FR</netex-java-model.version>
+        <netex-java-model.version>2.0.5-NETEX-FR</netex-java-model.version>
         <okina-helper.version>1.0.24</okina-helper.version>
         <fabric8.version>2.3.7</fabric8.version>
         <metrics.version>3.2.3</metrics.version>

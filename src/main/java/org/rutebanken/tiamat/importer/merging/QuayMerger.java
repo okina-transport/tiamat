@@ -20,6 +20,7 @@ import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.operation.TransformException;
 import org.rutebanken.tiamat.importer.ImportParams;
+import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.matching.OriginalIdMatcher;
 import org.rutebanken.tiamat.model.AccessibilityAssessment;
@@ -357,45 +358,21 @@ public class QuayMerger {
     private boolean updateAccessibility(Quay alreadyAdded, Quay incomingQuay) {
         boolean updated = false;
 
-        Optional<LimitationStatusEnumeration> existingWheelchairLimitationOpt = getWheelchairLimitation(alreadyAdded);
-        Optional<LimitationStatusEnumeration> incomingWheelchairLimitationOpt = getWheelchairLimitation(incomingQuay);
+        Optional<LimitationStatusEnumeration> existingWheelchairLimitationOpt =  ImporterUtils.getWheelchairLimitation(alreadyAdded);
+        Optional<LimitationStatusEnumeration> incomingWheelchairLimitationOpt =  ImporterUtils.getWheelchairLimitation(incomingQuay);
 
 
         if (!existingWheelchairLimitationOpt.equals(incomingWheelchairLimitationOpt)){
             updated = true;
-            updateWheelchairLimitation(alreadyAdded, incomingWheelchairLimitationOpt.get());
+            ImporterUtils.updateWheelchairLimitation(alreadyAdded, incomingWheelchairLimitationOpt.get());
         }
 
         return updated;
     }
 
-    /**
-     * Update wheelchair limitation in a quay
-     * @param quay
-     *  quay on which wheelchair limitation must be udpated
-     * @param wheelchairLimitation
-     *  new value for wheelchair limitation
-     */
-    private void updateWheelchairLimitation(Quay quay, LimitationStatusEnumeration wheelchairLimitation) {
-        AccessibilityAssessment assessmentToUpdate = quay.getAccessibilityAssessment() == null ? new AccessibilityAssessment() : quay.getAccessibilityAssessment();
-        List<AccessibilityLimitation> limitationsToUpdate = assessmentToUpdate.getLimitations() == null ? new ArrayList<>() : assessmentToUpdate.getLimitations();
-        limitationsToUpdate.get(0).setWheelchairAccess(wheelchairLimitation);
-    }
 
-    /**
-     * Read a quay and return the value for wheelchair limitation
-     * @param quay
-     * @return
-     *  wheelchair limitation of the quay
-     */
-    private Optional<LimitationStatusEnumeration> getWheelchairLimitation(Quay quay){
-        if (quay.getAccessibilityAssessment() == null || quay.getAccessibilityAssessment().getLimitations() == null
-                || quay.getAccessibilityAssessment().getLimitations().size() == 0){
-            return Optional.empty();
-        }
-        
-        return Optional.of(quay.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess());
-    }
+
+
 
     private boolean updatePropName(Quay alreadyAdded, Quay incomingQuay) {
 

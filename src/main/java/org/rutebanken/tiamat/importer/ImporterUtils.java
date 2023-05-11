@@ -4,6 +4,7 @@ package org.rutebanken.tiamat.importer;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import org.rutebanken.tiamat.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
@@ -12,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -108,5 +111,33 @@ public class ImporterUtils {
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * Update wheelchair limitation in a quay
+     * @param siteElement
+     *  quay on which wheelchair limitation must be udpated
+     * @param wheelchairLimitation
+     *  new value for wheelchair limitation
+     */
+    public static void updateWheelchairLimitation(SiteElement siteElement, LimitationStatusEnumeration wheelchairLimitation) {
+        AccessibilityAssessment assessmentToUpdate = siteElement.getAccessibilityAssessment() == null ? new AccessibilityAssessment() : siteElement.getAccessibilityAssessment();
+        List<AccessibilityLimitation> limitationsToUpdate = assessmentToUpdate.getLimitations() == null ? new ArrayList<>() : assessmentToUpdate.getLimitations();
+        limitationsToUpdate.get(0).setWheelchairAccess(wheelchairLimitation);
+    }
+
+    /**
+     * Read a siteElement/stopPlace and return the value for wheelchair limitation
+     * @param siteElement
+     * @return
+     *  wheelchair limitation of the siteElement
+     */
+    public static Optional<LimitationStatusEnumeration> getWheelchairLimitation(SiteElement siteElement){
+        if (siteElement.getAccessibilityAssessment() == null || siteElement.getAccessibilityAssessment().getLimitations() == null
+                || siteElement.getAccessibilityAssessment().getLimitations().size() == 0){
+            return Optional.empty();
+        }
+
+        return Optional.of(siteElement.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess());
     }
 }

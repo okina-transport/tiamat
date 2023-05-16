@@ -20,6 +20,7 @@ import org.locationtech.jts.geom.Point;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDtoCsvMapper;
+import org.rutebanken.tiamat.exporter.PublicationDeliveryExporter;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
@@ -41,7 +43,9 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @Api(tags = {"Stop place resource"}, produces = "text/plain")
@@ -62,6 +66,9 @@ public class DtoStopPlaceResource {
 
     @Autowired
     private NetexMapper netexMapper;
+
+    @Autowired
+    private PublicationDeliveryExporter publicationDeliveryExporter;
 
 
     private final QuayRepository quayRepository;
@@ -141,6 +148,50 @@ public class DtoStopPlaceResource {
 
         org.rutebanken.netex.model.StopPlace lightNetex = convertToLightNetex(stopPlace);
         return netexObjectFactory.createStopPlace(lightNetex);
+    }
+
+    @GET
+    @Path("/stop_places")
+    @Produces("application/xml")
+    public JAXBElement<PublicationDeliveryStructure> getKeyValueStopPlace(@QueryParam(value = "key") String key, @QueryParam(value = "value") String value) {
+
+        List<StopPlace> stopPlaces;
+        if(StringUtils.hasLength(key)){
+            stopPlaces = stopPlaceRepository.findAllFromKeyValue(key, value);
+        } else {
+            stopPlaces = stopPlaceRepository.findAll();
+        }
+
+        //tiamat.StopPlace to netex.StopPlace to List<JAXBElement<? extends EntityStructure>>
+        List<JAXBElement<? extends EntityStructure>> netexStopPlaces = stopPlaces.stream()
+                .map(stopPlace -> netexMapper.mapToNetexModel(stopPlace))
+                .map(netexStopPlace -> netexObjectFactory.createStopPlace(netexStopPlace)).collect(Collectors.toList());
+
+        //creating GeneralFrame
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = new org.rutebanken.tiamat.model.GeneralFrame();
+        String localDateTimeString = LocalDateTime.now() + "Z";
+        localDateTimeString = localDateTimeString.replace("-", "");
+        localDateTimeString = localDateTimeString.replace(":", "");
+        generalFrame.setModification(org.rutebanken.tiamat.model.ModificationEnumeration.REVISE);
+        generalFrame.setVersion(1L);
+        generalFrame.setNetexId("GeneralFrame:NETEX_ARRET_" + localDateTimeString + ":LOC");
+        org.rutebanken.tiamat.model.TypeOfFrameRefStructure typeOfFrameRefStructure = new org.rutebanken.tiamat.model.TypeOfFrameRefStructure();
+        typeOfFrameRefStructure.setRef("FR:TypeOfFrame:NETEX_ARRET");
+        typeOfFrameRefStructure.setValue("version=\"1.1:FR-NETEX_ARRET-2.2\"");
+        generalFrame.setTypeOfFrameRef(typeOfFrameRefStructure);
+
+        org.rutebanken.netex.model.GeneralFrame netexGeneralFrame = netexMapper.mapToNetexModel(generalFrame);
+
+        //adding members to the frame
+        General_VersionFrameStructure.Members general_VersionFrameStructure = netexObjectFactory.createGeneral_VersionFrameStructureMembers();
+        general_VersionFrameStructure.withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(netexStopPlaces);
+        netexGeneralFrame.withMembers(general_VersionFrameStructure);
+
+        //creating publicationDelivery
+        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame,"idSite", LocalDateTime.now());
+        JAXBElement<PublicationDeliveryStructure> publicationDelivery =netexObjectFactory.createPublicationDelivery(publicationDeliveryStructure);
+
+        return publicationDelivery;
     }
 
 

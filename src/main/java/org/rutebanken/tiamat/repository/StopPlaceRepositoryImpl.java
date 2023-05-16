@@ -49,6 +49,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import javax.persistence.EntityGraph;
 import javax.persistence.EntityManager;
@@ -586,19 +587,31 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     }
 
     @Override
-    public List<StopPlace> findAllFromImportedId(String importedId) {
-        String sql = "SELECT DISTINCT s.* " +
-                " FROM stop_place s " +
-                "  INNER JOIN stop_place_key_values spkv " +
-                "    ON s.id = spkv.stop_place_id AND spkv.key_values_key = 'imported-id' " +
-                "  INNER JOIN value_items vi " +
-                "    ON vi.value_id = spkv.key_values_id " +
-                " WHERE upper(vi.items)  = UPPER(:importedId) ";
+    public List<StopPlace> findAllFromKeyValue(String key, String value) {
+
+        String sql;
+        if (StringUtils.hasLength(value)){
+            sql = "SELECT DISTINCT s.* " +
+                    " FROM stop_place s " +
+                    "  INNER JOIN stop_place_key_values spkv " +
+                    "    ON s.id = spkv.stop_place_id AND spkv.key_values_key = :key" +
+                    "  INNER JOIN value_items vi " +
+                    "    ON vi.value_id = spkv.key_values_id " +
+                    " WHERE upper(vi.items)  = UPPER(:value) ";
+        } else {
+            sql = "SELECT DISTINCT s.* " +
+                    " FROM stop_place s " +
+                    "  INNER JOIN stop_place_key_values spkv " +
+                    "    ON s.id = spkv.stop_place_id AND spkv.key_values_key = :key";
+        }
 
         Query query = entityManager.createNativeQuery(sql, StopPlace.class);
 
 
-        query.setParameter("importedId", importedId);
+        query.setParameter("key", key);
+        if(StringUtils.hasLength(value)) {
+            query.setParameter("value", value);
+        }
 
         try {
             @SuppressWarnings("unchecked")
@@ -606,15 +619,16 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
             if (results.isEmpty()) {
                 return new ArrayList<>();
             } else {
+                results.stream().forEach(stopPlace -> {
+                        Hibernate.initialize(stopPlace.getKeyValues());
+                        stopPlace.getKeyValues().values().forEach(value1 -> Hibernate.initialize(value1.getItems()));
+                });
                 return results;
             }
         } catch (NoResultException noResultException) {
             return null;
         }
     }
-
-
-
 
     @Override
     public Map<String, Set<String>> listStopPlaceIdsAndQuayIds(Instant validFrom, Instant validTo) {

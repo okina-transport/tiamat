@@ -171,7 +171,7 @@ public class ExportResource {
                 resultViews.addAll(stopPlaceViews);
             }
 
-        List<StopPlace> stopPlaces = stopPlaceRepository.findAllFromImportedId(referential + ":StopPlace:" +importedId);
+        List<StopPlace> stopPlaces = stopPlaceRepository.findAllFromKeyValue("imported-id", referential + ":StopPlace:" +importedId);
 
         if (stopPlaces.size() > 0 ){
             List<StopPlaceView> stopPlaceViews = stopPlaces.stream()

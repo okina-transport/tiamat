@@ -46,9 +46,10 @@ public class DtoStopPlaceResourceTest {
     private QuayRepository quayPlaceRepository = mock(QuayRepository.class);
     private DtoStopPlaceResource dtoStopPlaceResource;
     private Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+
     @Before
     public void setUp() {
-        dtoStopPlaceResource = new DtoStopPlaceResource(stopPlaceRepository, mock(DtoMappingSemaphore.class), new IdMappingDtoCsvMapper(new ExportTimeZone()),quayPlaceRepository);
+        dtoStopPlaceResource = new DtoStopPlaceResource(stopPlaceRepository, mock(DtoMappingSemaphore.class), new IdMappingDtoCsvMapper(new ExportTimeZone()), quayPlaceRepository);
     }
 
     @Test

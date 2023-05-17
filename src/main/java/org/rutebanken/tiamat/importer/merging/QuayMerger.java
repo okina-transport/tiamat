@@ -20,6 +20,7 @@ import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.operation.TransformException;
 import org.rutebanken.tiamat.importer.ImportParams;
+import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.matching.OriginalIdMatcher;
 import org.rutebanken.tiamat.model.AccessibilityAssessment;
@@ -208,6 +209,7 @@ public class QuayMerger {
         boolean wheelchairBoardingUpdated;
         boolean nameUpdated = false;
         boolean keyValueUpdated;
+        boolean accessibilityUpdated = false;
 
         quayAlone = checkNumberProducers(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
         idUpdated = alreadyAdded.getOriginalIds().addAll(incomingQuay.getOriginalIds());
@@ -227,10 +229,16 @@ public class QuayMerger {
             nameUpdated = updatePropName(alreadyAdded, incomingQuay);
         }
 
+        if (importParams.updateStopAccessibility){
+            accessibilityUpdated = updateAccessibility(alreadyAdded, incomingQuay);
+        }
+
+
+
         keyValueUpdated = keyValueListAppender.appendKeyValueExternalRef(NetexIdMapper.EXTERNAL_REF, incomingQuay, alreadyAdded);
 
-        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated ||  zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated || nameUpdated || keyValueUpdated) {
-            logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}, nameUpdated:{}, keyValueUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated, nameUpdated, keyValueUpdated);
+        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated ||  zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated || nameUpdated || keyValueUpdated || accessibilityUpdated) {
+            logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}, nameUpdated:{}, keyValueUpdated:{}, accessibilityUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated, nameUpdated, keyValueUpdated, accessibilityUpdated);
 
             alreadyAdded.setChanged(Instant.now());
             updatedQuaysCounter.incrementAndGet();
@@ -336,6 +344,35 @@ public class QuayMerger {
 
         return codesUpdated;
     }
+
+    /**
+     * Update wheelchair accessibility, if needed
+     * @param alreadyAdded
+     *  existing quay
+     * @param incomingQuay
+     *  incoming quay from user's file
+     * @return
+     *  true : quay has been updated
+     *  false : no update has been done on the quay
+     */
+    private boolean updateAccessibility(Quay alreadyAdded, Quay incomingQuay) {
+        boolean updated = false;
+
+        Optional<LimitationStatusEnumeration> existingWheelchairLimitationOpt =  ImporterUtils.getWheelchairLimitation(alreadyAdded);
+        Optional<LimitationStatusEnumeration> incomingWheelchairLimitationOpt =  ImporterUtils.getWheelchairLimitation(incomingQuay);
+
+
+        if (!existingWheelchairLimitationOpt.equals(incomingWheelchairLimitationOpt)){
+            updated = true;
+            ImporterUtils.updateWheelchairLimitation(alreadyAdded, incomingWheelchairLimitationOpt.get());
+        }
+
+        return updated;
+    }
+
+
+
+
 
     private boolean updatePropName(Quay alreadyAdded, Quay incomingQuay) {
 

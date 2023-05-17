@@ -18,16 +18,14 @@ package org.rutebanken.tiamat.importer.matching;
 import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
 import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
-import org.rutebanken.tiamat.importer.AlternativeStopTypes;
-import org.rutebanken.tiamat.importer.ImportParams;
-import org.rutebanken.tiamat.importer.KeyValueListAppender;
-import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
+import org.rutebanken.tiamat.importer.*;
 import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.SimpleNearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByIdFinder;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
 import org.rutebanken.tiamat.importer.merging.QuayMerger;
 import org.rutebanken.tiamat.model.DataManagedObjectStructure;
+import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
@@ -216,6 +214,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 }
 
                 boolean nameChanged = false;
+                boolean wheelChairChanged = false;
 
                 if (incomingStopPlace.getTariffZones() != null) {
                     if (copy.getTariffZones() == null) {
@@ -229,12 +228,16 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                     copy.setName(incomingStopPlace.getName());
                 }
 
+                if (importParams.updateStopAccessibility ){
+                    wheelChairChanged = updateWheelchairIfNeeded(copy, incomingStopPlace);
+                }
+
                 boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS, importParams);
 
                 boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
 
 
-                if (quayChanged || keyValuesChanged || centroidChanged || nameChanged ) {
+                if (quayChanged || keyValuesChanged || centroidChanged || nameChanged || wheelChairChanged) {
                     if (existingStopPlace.getParentSiteRef() != null && !existingStopPlace.isParentStopPlace()) {
                         org.rutebanken.tiamat.model.StopPlace existingParentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingStopPlace.getParentSiteRef().getRef());
                         org.rutebanken.tiamat.model.StopPlace copyParentStopPlace = versionCreator.createCopy(existingParentStopPlace, org.rutebanken.tiamat.model.StopPlace.class);
@@ -259,6 +262,19 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             }
         }
+    }
+
+
+    private boolean updateWheelchairIfNeeded(org.rutebanken.tiamat.model.StopPlace existingStopPlace, org.rutebanken.tiamat.model.StopPlace incomingStopPlace){
+        Optional<LimitationStatusEnumeration> existingWheelchairLimitationOpt =  ImporterUtils.getWheelchairLimitation(existingStopPlace);
+        Optional<LimitationStatusEnumeration> incomingWheelchairLimitationOpt =  ImporterUtils.getWheelchairLimitation(incomingStopPlace);
+        boolean updated = false;
+
+        if (!existingWheelchairLimitationOpt.equals(incomingWheelchairLimitationOpt) && incomingWheelchairLimitationOpt.isPresent()){
+            updated = true;
+            ImporterUtils.updateWheelchairLimitation(existingStopPlace, incomingWheelchairLimitationOpt.get());
+        }
+        return updated;
     }
 
     /**

@@ -27,9 +27,10 @@ import org.rutebanken.tiamat.importer.ImportParams;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -94,7 +95,9 @@ public class PathLinkImportTest extends TiamatIntegrationTest {
                                 9.5,
                                 74.1));
 
-        Duration duration = Duration.ofMillis(10000);
+
+
+        Duration duration = DatatypeFactory.newInstance().newDuration("P10S");
 
         PathLink netexPathLink = new PathLink()
                 .withId("NRI:ConnectionLink:762130479_762130479")

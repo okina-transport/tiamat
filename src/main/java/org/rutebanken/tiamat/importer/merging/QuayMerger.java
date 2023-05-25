@@ -208,7 +208,8 @@ public class QuayMerger {
         boolean descUpdated;
         boolean wheelchairBoardingUpdated;
         boolean nameUpdated = false;
-        boolean keyValueUpdated;
+        boolean keyValueExternalRefUpdated;
+        boolean keyValueFareZoneUpdated;
         boolean accessibilityUpdated = false;
 
         quayAlone = checkNumberProducers(alreadyAdded.getKeyValues(), incomingQuay.getKeyValues());
@@ -233,12 +234,12 @@ public class QuayMerger {
             accessibilityUpdated = updateAccessibility(alreadyAdded, incomingQuay);
         }
 
+        keyValueExternalRefUpdated = keyValueListAppender.appendKeyValue(NetexIdMapper.EXTERNAL_REF, incomingQuay, alreadyAdded);
 
+        keyValueFareZoneUpdated = keyValueListAppender.appendKeyValue(NetexIdMapper.FARE_ZONE, incomingQuay, alreadyAdded);
 
-        keyValueUpdated = keyValueListAppender.appendKeyValueExternalRef(NetexIdMapper.EXTERNAL_REF, incomingQuay, alreadyAdded);
-
-        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated ||  zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated || nameUpdated || keyValueUpdated || accessibilityUpdated) {
-            logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}, nameUpdated:{}, keyValueUpdated:{}, accessibilityUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated, nameUpdated, keyValueUpdated, accessibilityUpdated);
+        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated ||  zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated || nameUpdated || keyValueExternalRefUpdated || accessibilityUpdated || keyValueFareZoneUpdated) {
+            logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}, nameUpdated:{}, keyValueExternalRefUpdated:{}, accessibilityUpdated:{}, keyValueFareZoneUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated, nameUpdated, keyValueExternalRefUpdated, accessibilityUpdated, keyValueFareZoneUpdated);
 
             alreadyAdded.setChanged(Instant.now());
             updatedQuaysCounter.incrementAndGet();

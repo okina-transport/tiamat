@@ -209,7 +209,10 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 if(keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_STOPCODE_KEY, incomingStopPlace, copy)){
                     keyValuesChanged = true;
                 }
-                if(keyValueListAppender.appendKeyValueExternalRef(NetexIdMapper.EXTERNAL_REF, incomingStopPlace, copy)){
+                if(keyValueListAppender.appendKeyValue(NetexIdMapper.EXTERNAL_REF, incomingStopPlace, copy)){
+                    keyValuesChanged = true;
+                }
+                if(keyValueListAppender.appendKeyValue(NetexIdMapper.FARE_ZONE, incomingStopPlace, copy)){
                     keyValuesChanged = true;
                 }
 

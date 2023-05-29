@@ -43,7 +43,8 @@ public class KeyValueListAppender {
         return changed;
     }
 
-    public boolean appendKeyValueExternalRef(String key, DataManagedObjectStructure newObject, DataManagedObjectStructure existingObject) {
+
+    public boolean appendKeyValue(String key, DataManagedObjectStructure newObject, DataManagedObjectStructure existingObject) {
         Set<String> existingObjectIds = existingObject.getOrCreateValues(key);
         Set<String> newObjectIds = newObject.getOrCreateValues(key);
 

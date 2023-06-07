@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -196,7 +197,8 @@ public class TadCSVHelper {
         stopPlace.setName(quay.getName());
         stopPlace.setAccessibilityAssessment(createDefaultAccessibilityAssessment());
         stopPlace.setCentroid(quay.getCentroid());
-        stopPlace.getKeyValues().put(ORIGINAL_ID_KEY, new Value("COM_" + originalId));
+        //COM_ for stopPlace automatically generated
+        stopPlace.getKeyValues().put(ORIGINAL_ID_KEY, new Value(createStopPlaceImportedId("COM_" + originalId)));
         stopPlace.getKeyValues().put("zonalStopPlace", new Value("yes"));
         if(quay.getKeyValues().get("TAD:TarrifZone:" + originalId) != null)
             stopPlace.getKeyValues().put("TAD:TarrifZone:" + originalId, quay.getKeyValues().get("TAD:TarrifZone:" + originalId));
@@ -251,6 +253,7 @@ public class TadCSVHelper {
 
     private boolean populateTAD(StopPlace existingStopPlace, StopPlace newStopPlace) {
         boolean updated = false;
+        AtomicBoolean updatedQuay = new AtomicBoolean(false);
 
         String originalId = "";
         List<String[]> id = newStopPlace.getOrCreateValues(ORIGINAL_ID_KEY).stream().map(value -> value.split(":")).collect(Collectors.toList());
@@ -263,22 +266,39 @@ public class TadCSVHelper {
             existingStopPlace.getOrCreateValues("TAD:TarrifZone:"+originalId).add(zoneId.get(0));
             updated = true;
         }
-        List<Quay> newQuays =  new ArrayList<>(newStopPlace.getQuays());
-        List<Quay> existingQuays =  new ArrayList<>(existingStopPlace.getQuays());
-        newStopPlace.getQuays().addAll(newQuays.stream().map(newQuay -> {
-            existingQuays.stream().map(quay -> {
-                String originalQuayId = "";
-                List<String[]> quayId = quay.getOrCreateValues(ORIGINAL_ID_KEY).stream().map(value -> value.split(":")).collect(Collectors.toList());
-                if(quayId.get(0) != null) {
-                    originalQuayId = quayId.get(0)[quayId.get(0).length - 1];
-                }
-                List<String> zoneQuayId = new ArrayList<>(quay.getKeyValues().get("TAD:TarrifZone:" + originalQuayId).getItems());
-                quay.getOrCreateValues("TAD:TarrifZone:"+originalQuayId).add(zoneQuayId.get(0));
-                return quay;
-            });
-            return newQuay;
-        }).collect(Collectors.toList()));
+        List<Quay> newQuays = new ArrayList<>(newStopPlace.getQuays());
+        Set<Quay> existingQuays = existingStopPlace.getQuays();
 
+        //update quay with new version
+        existingQuays.stream().forEach(quay -> {
+            Set<String> importedQuayId = quay.getOriginalIds();
+            Optional<Quay> matchingQuay = newQuays.stream()
+                    .filter(newQuay -> newQuay.getOriginalIds().equals(importedQuayId))
+                    .findFirst();
+            if(matchingQuay.isPresent()){
+                Quay newQuay = matchingQuay.get();
+                String originalQuayId = importedQuayId.iterator().next().split(":")[2];
+                List<String> zoneQuayId = new ArrayList<>(newQuay.getKeyValues().get("TAD:TarrifZone:" + originalQuayId).getItems());
+                quay.getOrCreateValues("TAD:TarrifZone:" + originalQuayId).add(zoneQuayId.get(0));
+                updatedQuay.set(true);
+            }
+        });
+
+        //add eventual new Quays
+        newQuays.forEach(newQuay -> {
+            boolean isMatched = existingQuays.stream()
+                    .anyMatch(quay -> quay.getOriginalIds().equals(newQuay.getOriginalIds()));
+
+            if (!isMatched) {
+                existingQuays.add(newQuay);
+                updatedQuay.set(true);
+            }
+        });
+
+        if(updatedQuay.get()){
+            updated = true;
+            existingStopPlace.setQuays(existingQuays);
+        }
         return updated;
     }
 

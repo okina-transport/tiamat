@@ -49,8 +49,10 @@ public class NetexIdMapper {
     public static final String ORIGINAL_ID_KEY = "imported-id";
     public static final String ORIGINAL_NAME_KEY = "imported-name";
     public static final String ORIGINAL_STOPCODE_KEY = "imported-stopcode";
+
     public static final String MERGED_ID_KEY = "merged-id";
     public static final String EXTERNAL_REF = "external-ref";
+    public static final String FARE_ZONE = "fare-zone";
 
     private static final List<String> IGNORE_KEYS = Arrays.asList(CHANGED_BY, VERSION_COMMENT, IS_PARENT_STOP_PLACE);
 

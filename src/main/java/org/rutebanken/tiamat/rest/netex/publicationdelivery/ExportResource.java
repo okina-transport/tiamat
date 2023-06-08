@@ -32,14 +32,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.xml.sax.SAXException;
 
 import javax.transaction.Transactional;
-import javax.ws.rs.BeanParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -189,11 +186,11 @@ public class ExportResource {
 
     }
 
-    @GET
+    @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Path("getTADStopPlaces")
     @Transactional
-    public Response getTADStopsInArea(@QueryParam("area")String area){
+    public Response getTADStopsInArea(@RequestBody String area){
 
         List<StopPlace> stopPlaces = stopPlaceRepository.findTADStopPlacesForArea(area);
 

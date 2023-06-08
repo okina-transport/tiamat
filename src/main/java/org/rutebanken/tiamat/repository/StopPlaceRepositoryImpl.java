@@ -725,38 +725,8 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         q.setHint("javax.persistence.fetchgraph", graph);
         List<StopPlace> results = q.getResultList();
 
-        results.forEach(stopPlace-> {
+        results.forEach(this::initializeStopPlace);
 
-            Hibernate.initialize(stopPlace.getKeyValues());
-            stopPlace.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
-            Hibernate.initialize(stopPlace.getAccessibilityAssessment());
-            if (stopPlace.getAccessibilityAssessment() != null){
-                Hibernate.initialize(stopPlace.getAccessibilityAssessment().getLimitations());
-            }
-            Hibernate.initialize(stopPlace.getAlternativeNames());
-            Hibernate.initialize(stopPlace.getPolygon());
-            Hibernate.initialize(stopPlace.getTariffZones());
-            Hibernate.initialize(stopPlace.getPlaceEquipments());
-
-            Hibernate.initialize(stopPlace.getTopographicPlace());
-
-            if (stopPlace.getPlaceEquipments() != null){
-                Hibernate.initialize(stopPlace.getPlaceEquipments().getInstalledEquipment());
-            }
-
-
-            stopPlace.getQuays().forEach(quay->{
-                Hibernate.initialize(quay.getKeyValues());
-                quay.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
-                Hibernate.initialize(quay.getAlternativeNames());
-                Hibernate.initialize(quay.getPolygon());
-                Hibernate.initialize(quay.getPlaceEquipments());
-                if (quay.getPlaceEquipments() != null){
-                    Hibernate.initialize(quay.getPlaceEquipments().getInstalledEquipment());
-                }
-            });
-
-        });
         return results;
     }
 
@@ -1234,50 +1204,51 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         List<StopPlace> results = stopPlaceTypedQuery.getResultList();
 
-        results.forEach(stopPlace-> {
+        results.forEach(this::initializeStopPlace);
 
-            Hibernate.initialize(stopPlace.getKeyValues());
-            stopPlace.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
-            Hibernate.initialize(stopPlace.getAccessibilityAssessment());
-            if (stopPlace.getAccessibilityAssessment() != null){
-                Hibernate.initialize(stopPlace.getAccessibilityAssessment().getLimitations());
-            }
-            Hibernate.initialize(stopPlace.getAlternativeNames());
-            Hibernate.initialize(stopPlace.getPolygon());
-            Hibernate.initialize(stopPlace.getTariffZones());
-            Hibernate.initialize(stopPlace.getPlaceEquipments());
-            Hibernate.initialize(stopPlace.getEquipmentPlaces());
-            Hibernate.initialize(stopPlace.getAccessSpaces());
-
-            Hibernate.initialize(stopPlace.getChildren());
-
-            Hibernate.initialize(stopPlace.getTopographicPlace());
-
-            if (stopPlace.getPlaceEquipments() != null){
-                Hibernate.initialize(stopPlace.getPlaceEquipments().getInstalledEquipment());
-            }
-
-
-            stopPlace.getQuays().forEach(quay->{
-                Hibernate.initialize(quay.getKeyValues());
-                quay.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
-                Hibernate.initialize(quay.getAlternativeNames());
-                Hibernate.initialize(quay.getPolygon());
-                Hibernate.initialize(quay.getPlaceEquipments());
-                if (quay.getPlaceEquipments() != null){
-                    Hibernate.initialize(quay.getPlaceEquipments().getInstalledEquipment());
-                }
-                Hibernate.initialize(quay.getBoardingPositions());
-                Hibernate.initialize(quay.getEquipmentPlaces());
-                Hibernate.initialize(quay.getCheckConstraints());
-                Hibernate.initialize(quay.getAccessibilityAssessment());
-                if (quay.getAccessibilityAssessment() != null){
-                    Hibernate.initialize(quay.getAccessibilityAssessment().getLimitations());
-                }
-            });
-
-        });
         return results.isEmpty() ? null : results.get(0);
+    }
+
+    private void initializeStopPlace(StopPlace stopPlace){
+        Hibernate.initialize(stopPlace.getKeyValues());
+        stopPlace.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+        Hibernate.initialize(stopPlace.getAccessibilityAssessment());
+        if (stopPlace.getAccessibilityAssessment() != null){
+            Hibernate.initialize(stopPlace.getAccessibilityAssessment().getLimitations());
+        }
+        Hibernate.initialize(stopPlace.getAlternativeNames());
+        Hibernate.initialize(stopPlace.getPolygon());
+        Hibernate.initialize(stopPlace.getTariffZones());
+        Hibernate.initialize(stopPlace.getPlaceEquipments());
+        Hibernate.initialize(stopPlace.getEquipmentPlaces());
+        Hibernate.initialize(stopPlace.getAccessSpaces());
+
+        Hibernate.initialize(stopPlace.getChildren());
+
+        Hibernate.initialize(stopPlace.getTopographicPlace());
+
+        if (stopPlace.getPlaceEquipments() != null){
+            Hibernate.initialize(stopPlace.getPlaceEquipments().getInstalledEquipment());
+        }
+
+
+        stopPlace.getQuays().forEach(quay->{
+            Hibernate.initialize(quay.getKeyValues());
+            quay.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+            Hibernate.initialize(quay.getAlternativeNames());
+            Hibernate.initialize(quay.getPolygon());
+            Hibernate.initialize(quay.getPlaceEquipments());
+            if (quay.getPlaceEquipments() != null){
+                Hibernate.initialize(quay.getPlaceEquipments().getInstalledEquipment());
+            }
+            Hibernate.initialize(quay.getBoardingPositions());
+            Hibernate.initialize(quay.getEquipmentPlaces());
+            Hibernate.initialize(quay.getCheckConstraints());
+            Hibernate.initialize(quay.getAccessibilityAssessment());
+            if (quay.getAccessibilityAssessment() != null){
+                Hibernate.initialize(quay.getAccessibilityAssessment().getLimitations());
+            }
+        });
     }
 
 

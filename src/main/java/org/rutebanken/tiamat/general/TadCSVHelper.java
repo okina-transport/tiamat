@@ -44,8 +44,6 @@ public class TadCSVHelper {
 
     private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
-    private ApiProxyService apiProxyService = new ApiProxyService();
-
     private final static Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
 
     /**

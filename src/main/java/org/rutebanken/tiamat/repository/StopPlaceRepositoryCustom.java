@@ -107,7 +107,9 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     boolean deleteAllStopPlacesQuaysByOrganisation(String organisation);
 
-
     List<StopPlace> findTADStopPlacesForArea(String area);
+
+    StopPlace findFirstByNetexIdOrderByVersionDescAndInitialize(String netexId);
+
 
     }

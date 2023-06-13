@@ -150,10 +150,12 @@ public class NetexMapper {
                 .register();
 
         mapperFactory.classMap(SanitaryEquipment.class, org.rutebanken.tiamat.model.SanitaryEquipment.class)
+                .customize(new SanitaryEquipmentMapper())
                 .byDefault()
                 .register();
 
         mapperFactory.classMap(TicketingEquipment.class, org.rutebanken.tiamat.model.TicketingEquipment.class)
+                .customize(new TicketingEquipmentMapper())
                 .byDefault()
                 .register();
 

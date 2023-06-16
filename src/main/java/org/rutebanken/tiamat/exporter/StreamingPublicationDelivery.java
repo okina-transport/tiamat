@@ -387,27 +387,22 @@ public class StreamingPublicationDelivery {
     private void addPrivateStopCode(Quay quay) {
         PrivateCodeStructure privateCodeStructure = new PrivateCodeStructure();
 
-        if (quay.getPublicCode() != null) {
-            privateCodeStructure.setValue(quay.getPublicCode());
+        // Vérifier l'utilité de ce code, le stop code doit être déjà valorisé
+        // Modification probable à réaliser public code -> private code
+        String stopCode = quay
+                .getKeyList().getKeyValue()
+                .stream()
+                .filter(keyValueStructure -> keyValueStructure.getKey().equals(NetexIdMapper.ORIGINAL_ID_KEY))
+                .findFirst()
+                .map(KeyValueStructure::getValue)
+                .orElse(null);
+
+        if(stopCode != null && !stopCode.isEmpty()){
+            String[] splitStopCode = stopCode.split(":");
+            privateCodeStructure.setValue(splitStopCode[2]);
         }
         else{
-            // Vérifier l'utilité de ce code, le stop code doit être déjà valorisé
-            // Modification probable à réaliser public code -> private code
-            String stopCode = quay
-                    .getKeyList().getKeyValue()
-                    .stream()
-                    .filter(keyValueStructure -> keyValueStructure.getKey().equals(NetexIdMapper.ORIGINAL_ID_KEY))
-                    .findFirst()
-                    .map(KeyValueStructure::getValue)
-                    .orElse(null);
-
-            if(stopCode != null && !stopCode.isEmpty()){
-                String[] splitStopCode = stopCode.split(":");
-                privateCodeStructure.setValue(splitStopCode[2]);
-            }
-            else{
-                privateCodeStructure.setValue(null);
-            }
+            privateCodeStructure.setValue(null);
         }
 
         quay.setPrivateCode(privateCodeStructure);

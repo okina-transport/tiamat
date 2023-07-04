@@ -16,33 +16,7 @@
 package org.rutebanken.tiamat.exporter;
 
 import org.apache.commons.lang3.StringUtils;
-import org.rutebanken.netex.model.EntityStructure;
-import org.rutebanken.netex.model.GeneralFrame;
-import org.rutebanken.netex.model.GeneralOrganisation;
-import org.rutebanken.netex.model.General_VersionFrameStructure;
-import org.rutebanken.netex.model.KeyListStructure;
-import org.rutebanken.netex.model.KeyValueStructure;
-import org.rutebanken.netex.model.MultilingualString;
-import org.rutebanken.netex.model.ObjectFactory;
-import org.rutebanken.netex.model.OrganisationRefStructure;
-import org.rutebanken.netex.model.OrganisationTypeEnumeration;
-import org.rutebanken.netex.model.Parking;
-import org.rutebanken.netex.model.PointOfInterest;
-import org.rutebanken.netex.model.PointOfInterestClassificationsInFrame_RelStructure;
-import org.rutebanken.netex.model.PointsOfInterestInFrame_RelStructure;
-import org.rutebanken.netex.model.PublicationDeliveryStructure;
-import org.rutebanken.netex.model.Quay;
-import org.rutebanken.netex.model.QuayRefStructure;
-import org.rutebanken.netex.model.Quays_RelStructure;
-import org.rutebanken.netex.model.ResponsibilityRoleAssignment_VersionedChildStructure;
-import org.rutebanken.netex.model.ResponsibilityRoleAssignments_RelStructure;
-import org.rutebanken.netex.model.ResponsibilitySet;
-import org.rutebanken.netex.model.SiteFrame;
-import org.rutebanken.netex.model.Site_VersionFrameStructure;
-import org.rutebanken.netex.model.StakeholderRoleTypeEnumeration;
-import org.rutebanken.netex.model.StopPlace;
-import org.rutebanken.netex.model.TypeOfParking;
-import org.rutebanken.netex.model.Zone_VersionStructure;
+import org.rutebanken.netex.model.*;
 import org.rutebanken.netex.validation.NeTExValidator;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.async.NetexMappingIterator;
@@ -62,6 +36,7 @@ import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.repository.TariffZoneRepository;
 import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
+import org.rutebanken.tiamat.rest.graphql.helpers.AvailabilityConditionWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,10 +50,12 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.swing.text.AbstractDocument;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -101,6 +78,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static javax.xml.bind.JAXBContext.newInstance;
 
@@ -632,8 +610,15 @@ public class StreamingPublicationDelivery {
         if (poiCount > 0) {
             logger.info("POI count is {}, will create poi in publication delivery", poiCount);
             PointsOfInterestInFrame_RelStructure pointsOfInterestInFrame_relStructure = new PointsOfInterestInFrame_RelStructure();
-            List<PointOfInterest> pointsOfInterest = new NetexMappingIteratorList<>(() ->
-                    new NetexMappingIterator<>(netexMapper, pointOfInterestIterator, PointOfInterest.class, mappedPointOfInterestCount));
+            List<org.rutebanken.tiamat.model.PointOfInterest> poiList = new ArrayList<>();
+            pointOfInterestIterator.forEachRemaining(poiList::add);
+
+            List<PointOfInterest> pointsOfInterest = poiList.stream()
+                    .map(poiTiamat -> netexMapper.mapToNetexModel(poiTiamat))
+                    .collect(Collectors.toList());
+
+         //   List<PointOfInterest> pointsOfInterest = new NetexMappingIteratorList<>(() ->
+          //          new NetexMappingIterator<>(netexMapper, pointOfInterestIterator, PointOfInterest.class, mappedPointOfInterestCount));
 
             setField(PointsOfInterestInFrame_RelStructure.class, "pointOfInterest", pointsOfInterestInFrame_relStructure, pointsOfInterest);
             netexSiteFrame.setPointsOfInterest(pointsOfInterestInFrame_relStructure);
@@ -648,10 +633,16 @@ public class StreamingPublicationDelivery {
             logger.info("POI count is {}, will create poi classifications in publication delivery", poiClassificationCount);
 
             Site_VersionFrameStructure.PointOfInterestClassifications pointOfInterestClassificationsInFrame_relStructure = new Site_VersionFrameStructure.PointOfInterestClassifications();
-            List<org.rutebanken.netex.model.PointOfInterestClassification> pointOfInterestClassifications = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, pointOfInterestClassificationIterator,
-                    org.rutebanken.netex.model.PointOfInterestClassification.class, mappedPointOfInterestClassificationCount));
+//            List<org.rutebanken.netex.model.PointOfInterestClassification> pointOfInterestClassifications = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, pointOfInterestClassificationIterator,
+//                    org.rutebanken.netex.model.PointOfInterestClassification.class, mappedPointOfInterestClassificationCount));
+            List<org.rutebanken.tiamat.model.PointOfInterestClassification> pointsOfInterestClassificationTiamat = new ArrayList<>();
+            pointOfInterestClassificationIterator.forEachRemaining(pointsOfInterestClassificationTiamat::add);
 
-            setField(PointOfInterestClassificationsInFrame_RelStructure.class, "pointOfInterestClassification", pointOfInterestClassificationsInFrame_relStructure, pointOfInterestClassifications);
+            List<org.rutebanken.netex.model.PointOfInterestClassification> pointsOfInterestClassification = pointsOfInterestClassificationTiamat.stream()
+                    .map(pointOfInterestClassificationTiamat -> netexMapper.mapToNetexModel(pointOfInterestClassificationTiamat))
+                    .collect(Collectors.toList());
+
+            setField(PointOfInterestClassificationsInFrame_RelStructure.class, "pointOfInterestClassification", pointOfInterestClassificationsInFrame_relStructure, pointsOfInterestClassification);//pointOfInterestClassifications);
             netexSiteFrame.setPointOfInterestClassifications(pointOfInterestClassificationsInFrame_relStructure);
         } else {
             logger.info("No poi classifications to export");
@@ -907,6 +898,7 @@ public class StreamingPublicationDelivery {
 
         return marshaller;
     }
+
 
     /*
      * SI possible tout ça à mettre en amont de la génération du xml

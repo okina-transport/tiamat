@@ -1,0 +1,7 @@
+package org.rutebanken.tiamat.repository;
+
+import org.rutebanken.tiamat.model.PointOfInterestOpeningHours;
+
+public interface PointOfInterestOpeningHoursRepository extends PointOfInterestValidityConditionRepositoryCustom, EntityInVersionRepository<PointOfInterestOpeningHours>{
+}
+

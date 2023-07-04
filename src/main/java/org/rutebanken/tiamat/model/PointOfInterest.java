@@ -34,6 +34,10 @@ public class PointOfInterest extends PointOfInterest_VersionStructure {
     @JoinColumn(name = "point_of_interest_facility_set_id")
     private PointOfInterestFacilitySet pointOfInterestFacilitySet;
 
+        @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "point_of_interest_opening_hours_id")
+    private PointOfInterestOpeningHours pointOfInterestOpeningHours;
+
     public String getZipCode() {
         return zipCode;
     }
@@ -82,5 +86,13 @@ public class PointOfInterest extends PointOfInterest_VersionStructure {
 
     public void setPointOfInterestFacilitySet(PointOfInterestFacilitySet pointOfInterestFacilitySetId) {
         this.pointOfInterestFacilitySet = pointOfInterestFacilitySetId;
+    }
+
+    public PointOfInterestOpeningHours getPointOfInterestOpeningHours(){
+        return this.pointOfInterestOpeningHours;
+    }
+
+    public void setPointOfInterestOpeningHours(PointOfInterestOpeningHours pointOfInterestOpeningHours){
+        this.pointOfInterestOpeningHours = pointOfInterestOpeningHours;
     }
 }

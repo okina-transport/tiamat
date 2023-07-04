@@ -24,16 +24,11 @@ import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.externalapis.ApiProxyService;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.rutebanken.tiamat.model.*;
-import org.rutebanken.tiamat.netex.id.NetexIdHelper;
-import org.rutebanken.tiamat.repository.ParkingRepository;
-import org.rutebanken.tiamat.repository.PointOfInterestClassificationRepository;
-import org.rutebanken.tiamat.repository.PointOfInterestFacilitySetRepository;
-import org.rutebanken.tiamat.repository.PointOfInterestRepository;
+import org.rutebanken.tiamat.repository.*;
 import org.rutebanken.tiamat.rest.graphql.mappers.GeometryMapper;
 import org.rutebanken.tiamat.rest.graphql.mappers.GroupOfEntitiesMapper;
 import org.rutebanken.tiamat.rest.graphql.mappers.ValidBetweenMapper;
 import org.rutebanken.tiamat.versioning.VersionCreator;
-import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
 import org.rutebanken.tiamat.versioning.save.PointOfInterestVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +37,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -66,6 +61,9 @@ class PointOfInterestUpdater implements DataFetcher {
 
     @Autowired
     private PointOfInterestFacilitySetRepository pointOfInterestFacilitySetRepository;
+
+    @Autowired
+    private PointOfInterestOpeningHoursRepository pointOfInterestOpeningHoursRepository;
 
     @Autowired
     private GeometryMapper geometryMapper;
@@ -201,8 +199,57 @@ class PointOfInterestUpdater implements DataFetcher {
             updatedPointOfInterest.setClassifications(existingPointOfInterestClassifications);
         }
 
+        if (input.get(POI_OPENING_HOURS) != null) {
+            PointOfInterestOpeningHours pointOfInterestOpeningHours = mapPointOfInterestExistingHours((Map) input.get("pointOfInterestOpeningHours"));
+            updatedPointOfInterest.setPointOfInterestOpeningHours(pointOfInterestOpeningHours);
+            isUpdated = true;
+        }
+
         isUpdated = isUpdated | groupOfEntitiesMapper.populate(input, updatedPointOfInterest);
 
         return isUpdated;
+    }
+
+    private PointOfInterestOpeningHours mapPointOfInterestExistingHours(Map<String, Object> pointOfInterestValidityConditionSet) {
+
+        PointOfInterestOpeningHours pointOfInterestOpeningHours = new PointOfInterestOpeningHours();
+        Set<DayType> dayTypes = pointOfInterestValidityConditionSet.entrySet().stream()
+                .map(entry -> {
+                    DayType dayType = new DayType();
+                    Set<TimeBand> timeBands = new HashSet<>();
+                    dayType.setDays(DayOfWeekEnumeration.fromValue(entry.getKey()));
+                    String day = dayType.getDays().value();
+                    dayType.setNetexId("FR:DayType:" + day);
+                    Map<?,?> value = (Map<?, ?>) entry.getValue();
+                    if(value.get("facility").equals("Journée")){
+                        TimeBand timeBand = new TimeBand();
+                        timeBand.setEndTime(Instant.parse((CharSequence) value.get("endTime")));
+                        timeBand.setStartTime(Instant.parse((CharSequence) value.get("startTime")));
+                        timeBand.setNetexId(createTimeBandId(day, ""));
+                        timeBands.add(timeBand);
+                    } else if(value.get("facility").equals("Demi journée")){
+                        TimeBand timeBand = new TimeBand();
+                        timeBand.setEndTime(Instant.parse((CharSequence) value.get("endTimeAm")));
+                        timeBand.setStartTime(Instant.parse((CharSequence) value.get("startTimeAm")));
+                        timeBand.setNetexId(createTimeBandId(day, "_am"));
+                        timeBands.add(timeBand);
+
+                        TimeBand timeBand2 = new TimeBand();
+                        timeBand2.setEndTime(Instant.parse((CharSequence) value.get("endTimePm")));
+                        timeBand2.setStartTime(Instant.parse((CharSequence) value.get("startTimePm")));
+                        timeBand.setNetexId(createTimeBandId(day, "_pm"));
+                        timeBands.add(timeBand2);
+                    }
+
+                    dayType.setTimeBand(timeBands);
+                    return dayType;
+                }).collect(Collectors.toSet());
+
+        pointOfInterestOpeningHours.setDaysType(dayTypes);
+        return pointOfInterestOpeningHours;
+    }
+
+    private String createTimeBandId(String day, String suffix){
+        return "FR:TimeBand:" + day + suffix;
     }
 }

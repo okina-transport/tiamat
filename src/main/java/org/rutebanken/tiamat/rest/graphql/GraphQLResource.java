@@ -131,7 +131,7 @@ public class GraphQLResource {
      * NRP-1992
      */
     private Response getGraphQLResponseInTransaction(String query, Map<String, Object> variables) {
-        return (Response) transactionTemplate.execute((transactionStatus) -> getGraphQLResponse(query, variables, transactionStatus));
+         return (Response) transactionTemplate.execute((transactionStatus) -> getGraphQLResponse(query, variables, transactionStatus));
     }
 
     private Response getGraphQLResponse(String query, Map<String, Object> variables, TransactionStatus transactionStatus) {
@@ -141,7 +141,7 @@ public class GraphQLResource {
             final ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build();
             ExecutionResult executionResult = graphQL.execute(executionInput);
 
-            if (!executionResult.getErrors().isEmpty()) {
+             if (!executionResult.getErrors().isEmpty()) {
                 List<GraphQLError> errors = executionResult.getErrors();
 
                 Response.Status status = Response.Status.INTERNAL_SERVER_ERROR;

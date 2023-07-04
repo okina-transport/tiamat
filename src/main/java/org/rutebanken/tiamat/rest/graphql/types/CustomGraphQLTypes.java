@@ -24,7 +24,9 @@ import org.rutebanken.tiamat.rest.graphql.fetchers.PrivateCodeFetcher;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static graphql.Scalars.*;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
@@ -85,6 +87,8 @@ public class CustomGraphQLTypes {
     public static GraphQLEnumType typeOfParkingRefEnumeration = createCustomEnumType("TypeOfParkingRefEnumeration", TypeOfParkingRefEnumeration.class);
     public static GraphQLEnumType ticketingFacilityEnumeration = createCustomEnumType("TicketingFacilityEnumeration", TicketingFacilityEnumeration.class);
     public static GraphQLEnumType ticketingServiceFacilityEnumeration = createCustomEnumType("TicketingServiceFacilityEnumeration", TicketingServiceFacilityEnumeration.class);
+    public static GraphQLEnumType daysOfWeekEnumeration = createCustomEnumType("DaysOfWeekEnumeration", DayOfWeekEnumeration.class);
+
 
     public static GraphQLEnumType createCustomEnumType(String name, Class c) {
 
@@ -113,6 +117,31 @@ public class CustomGraphQLTypes {
         }
         return builder.build();
     }
+
+    public static GraphQLObjectType pointOfInterestValidityConditionDaySetObjectType = newObject()
+            .name(TYPE_POI_VALIDITY_CONDITION_DAY_SET)
+            .field(newFieldDefinition()
+                    .name(DAY_HALF_DAY)
+                    .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name(START_TIME)
+                    .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name(END_TIME)
+                    .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name(START_TIME_AM)
+                    .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name(END_TIME_AM)
+                    .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name(START_TIME_PM)
+                    .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name(END_TIME_PM)
+                    .type(GraphQLString))
+            .build();
 
     public static GraphQLObjectType geoJsonObjectType = newObject()
             .name(OUTPUT_TYPE_GEO_JSON)
@@ -761,6 +790,40 @@ public class CustomGraphQLTypes {
                     .type(specificParkingAreaUsageEnum))
             .build();
 
+    public static GraphQLObjectType timeBandObjectType = newObject()
+            .name(OUTPUT_TIME_BAND)
+            .field(newFieldDefinition()
+                    .name(START_TIME)
+                    .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name(END_TIME)
+                    .type(GraphQLString))
+            .build();
+
+    public static GraphQLObjectType dayTypeObjectType = newObject()
+            .name(OUTPUT_TYPE_POI_DAY_OBJECT_TYPE)
+            .field(newFieldDefinition()
+                    .name(ID)
+                    .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name(TIME_BAND)
+                    .type(new GraphQLList(timeBandObjectType)))
+            .field(newFieldDefinition()
+                    .name(DAY_OF_THE_WEEK)
+                    .type(daysOfWeekEnumeration))
+            .build();
+
+    public static GraphQLObjectType pointOfInterestValidityConditionSetObjectType = newObject()
+            .name(OUTPUT_TYPE_POI_OPENING_TYPE)
+            .field(newFieldDefinition()
+                    .name(ID)
+                    .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name(DAY_TYPE)
+                    .type(new GraphQLList(dayTypeObjectType)))
+            .build();
+
+
     public static GraphQLObjectType pointOfInterestFacilitySetObjectType = newObject()
             .name(OUTPUT_TYPE_POI_FACILITY_SET)
             .field(newFieldDefinition()
@@ -857,6 +920,60 @@ public class CustomGraphQLTypes {
                     .dataFetcher(env -> getValidSubmodes((String) env.getSource()))
             )
             .build();
+
+    public static GraphQLInputObjectType pointOfInterestValidityConditionDaySetInputObjectType = GraphQLInputObjectType.newInputObject()
+            .name(INPUT_TYPE_POI_VALIDITY_CONDITION_DAY_SET)
+            .field(newInputObjectField()
+                    .name(DAY_HALF_DAY)
+                    .type(GraphQLString))
+            .field(newInputObjectField()
+                    .name(START_TIME)
+                    .type(GraphQLString))
+            .field(newInputObjectField()
+                    .name(END_TIME)
+                    .type(GraphQLString))
+            .field(newInputObjectField()
+                    .name(START_TIME_AM)
+                    .type(GraphQLString))
+            .field(newInputObjectField()
+                    .name(END_TIME_AM)
+                    .type(GraphQLString))
+            .field(newInputObjectField()
+                    .name(START_TIME_PM)
+                    .type(GraphQLString))
+            .field(newInputObjectField()
+                    .name(END_TIME_PM)
+                    .type(GraphQLString))
+            .build();
+
+    public static GraphQLInputObjectType  pointOfInterestValidityConditionSetInputObjectType = GraphQLInputObjectType.newInputObject()
+            .name(INPUT_TYPE_POI_OPENING_HOURS)
+            .field(newInputObjectField()
+                    .name(ID)
+                    .type(GraphQLString))
+            .fields(createFieldForDay())
+            .field(newInputObjectField()
+                    .name(DAY_OF_THE_WEEK)
+                    .type(daysOfWeekEnumeration))
+            .build();
+
+    private static List<GraphQLInputObjectField> createFieldForDay() {
+
+        return Arrays.stream(DayOfWeekEnumeration.values()).map(day ->
+                GraphQLInputObjectField.newInputObjectField()
+                    .name(day.value())
+                    .type(pointOfInterestValidityConditionDaySetInputObjectType)
+                    .build()).collect(Collectors.toList());
+    }
+
+    private static List<GraphQLFieldDefinition> createDefinitionFieldForDay(){
+
+        return Arrays.stream(DayOfWeekEnumeration.values()).map(day ->
+                GraphQLFieldDefinition.newFieldDefinition()
+                        .name(day.value())
+                        .type(pointOfInterestValidityConditionDaySetObjectType)
+                        .build()).collect(Collectors.toList());
+    }
 
     public static GraphQLInputObjectType createParkingInputObjectType(List<GraphQLInputObjectField> commonInputFieldsList, GraphQLInputObjectType validBetweenInputObjectType) {
         return GraphQLInputObjectType.newInputObject()
@@ -971,6 +1088,9 @@ public class CustomGraphQLTypes {
                 .field(newInputObjectField()
                         .name(POI_FACILITY_SET)
                         .type(pointOfInterestFacilitySetInputObjectType))
+                .field(newInputObjectField()
+                        .name(POI_OPENING_HOURS)
+                        .type(pointOfInterestValidityConditionSetInputObjectType))
                 .field(newInputObjectField()
                         .name(POI_CLASSIFICATIONS)
                         .type(new GraphQLList(pointOfInterestClassificationInputObjectType)))

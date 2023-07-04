@@ -197,6 +197,16 @@ public class GraphQLNames {
 
     public static final String OUTPUT_TYPE_POI_CLASSIFICATION = "PointOfInterestClassification";
     public static final String INPUT_TYPE_POI_CLASSIFICATION = OUTPUT_TYPE_POI_CLASSIFICATION + INPUT_TYPE_POSTFIX;
+    public static final String OUTPUT_TYPE_POI_OPENING_HOURS_SET = OUTPUT_TYPE_POINT_OF_INTEREST + "ValidityCondition";
+    public static final String OUTPUT_TYPE_POI_DAY_TYPE = "DayTypeObject";
+    public static final String OUTPUT_TYPE_POI_OPENING_TYPE = OUTPUT_TYPE_POINT_OF_INTEREST + "OpeningHours";
+    public static final String OUTPUT_TYPE_POI_DAY_OBJECT_TYPE = OUTPUT_TYPE_POI_DAY_TYPE +"Type";
+    public static final String DAY_TYPE = "dayType";
+    public static final String OUTPUT_TIME_BAND = "timeBand";
+    public static final String INPUT_TYPE_POI_OPENING_HOURS = OUTPUT_TYPE_POI_OPENING_HOURS_SET + INPUT_TYPE_POSTFIX;
+    public static final String INPUT_TYPE_POI_VALIDITY_CONDITION_DAY_SET = OUTPUT_TYPE_POI_OPENING_HOURS_SET + "Day" + INPUT_TYPE_POSTFIX;
+
+    public static final String TYPE_POI_VALIDITY_CONDITION_DAY_SET = OUTPUT_TYPE_POI_OPENING_HOURS_SET + "Day";
 
     public static final String OUTPUT_TYPE_AUTHORIZATION_CHECK = "AuthorizationCheck";
     public static final String AUTHORIZATION_CHECK_DESCRIPTION = "Check if authorized for entity with role";
@@ -495,14 +505,26 @@ public class GraphQLNames {
     public static final String TICKETING_FACILITY = "ticketingFacility";
     public static final String TICKETING_SERVICE_FACILITY = "ticketingServiceFacility";
 
+    public static final String DAY_OF_THE_WEEK = "dayOfWeek";
+    public static final String TIME_BAND = "timeBand";
     public static final String ZIP_CODE = "zipCode";
     public static final String ADDRESS = "address";
     public static final String CITY = "city";
     public static final String POSTAL_CODE = "postalCode";
     public static final String POI_CLASSIFICATIONS = "classifications";
     public static final String POI_FACILITY_SET = "pointOfInterestFacilitySet";
+    public static final String POI_OPENING_HOURS = "pointOfInterestOpeningHours";
 
     public static final String POI_CLASSIFICATION_PARENT = "parent";
     public static final String POI_CLASSIFICATION_OSM = "osm";
     public static final String POI_CLASSIFICATION_ACTIVE = "active";
+
+    public static final String START_TIME = "startTime";
+    public static final String END_TIME = "endTime";
+    public static final String START_TIME_AM = "startTimeAm";
+    public static final String END_TIME_AM = "endTimeAm";
+    public static final String START_TIME_PM = "startTimePm";
+    public static final String END_TIME_PM = "endTimePm";
+    //todo changer le nom
+    public static final String DAY_HALF_DAY = "facility";
 }

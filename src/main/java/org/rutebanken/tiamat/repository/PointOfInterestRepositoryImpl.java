@@ -266,6 +266,23 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
 
             Hibernate.initialize(pointOfInterest.getKeyValues());
             pointOfInterest.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+
+            if (pointOfInterest.getPointOfInterestOpeningHours() != null){
+                Hibernate.initialize(pointOfInterest.getPointOfInterestOpeningHours());
+                if (pointOfInterest.getPointOfInterestOpeningHours().getDaysType() != null) {
+                    Hibernate.initialize(pointOfInterest.getPointOfInterestOpeningHours().getDaysType());
+                    pointOfInterest.getPointOfInterestOpeningHours().getDaysType().forEach(dayType -> {
+                        Hibernate.initialize(dayType.getDays());
+                        if (dayType.getTimeBand() != null){
+                            Hibernate.initialize(dayType.getTimeBand());
+                            dayType.getTimeBand().forEach(timeBand -> {
+                                Hibernate.initialize(timeBand.getEndTime());
+                                Hibernate.initialize(timeBand.getStartTime());
+                            });
+                        }
+                    });
+                }
+            }
         });
 
         return results;

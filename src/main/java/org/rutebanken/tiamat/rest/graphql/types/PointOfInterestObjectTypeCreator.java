@@ -59,6 +59,9 @@ public class PointOfInterestObjectTypeCreator {
                 .field(newFieldDefinition()
                         .name(POI_CLASSIFICATIONS)
                         .type(new GraphQLList(pointOfInterestClassificationObjectType)))
+                .field(newFieldDefinition()
+                        .name(POI_OPENING_HOURS)
+                        .type(pointOfInterestValidityConditionSetObjectType))
                 .build();
     }
 }

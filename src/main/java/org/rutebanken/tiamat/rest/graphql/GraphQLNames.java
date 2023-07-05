@@ -206,8 +206,6 @@ public class GraphQLNames {
     public static final String INPUT_TYPE_POI_OPENING_HOURS = OUTPUT_TYPE_POI_OPENING_HOURS_SET + INPUT_TYPE_POSTFIX;
     public static final String INPUT_TYPE_POI_VALIDITY_CONDITION_DAY_SET = OUTPUT_TYPE_POI_OPENING_HOURS_SET + "Day" + INPUT_TYPE_POSTFIX;
 
-    public static final String TYPE_POI_VALIDITY_CONDITION_DAY_SET = OUTPUT_TYPE_POI_OPENING_HOURS_SET + "Day";
-
     public static final String OUTPUT_TYPE_AUTHORIZATION_CHECK = "AuthorizationCheck";
     public static final String AUTHORIZATION_CHECK_DESCRIPTION = "Check if authorized for entity with role";
     public static final String AUTHORIZATION_CHECK_ROLES = "roles";

@@ -117,32 +117,6 @@ public class CustomGraphQLTypes {
         }
         return builder.build();
     }
-
-    public static GraphQLObjectType pointOfInterestValidityConditionDaySetObjectType = newObject()
-            .name(TYPE_POI_VALIDITY_CONDITION_DAY_SET)
-            .field(newFieldDefinition()
-                    .name(DAY_HALF_DAY)
-                    .type(GraphQLString))
-            .field(newFieldDefinition()
-                    .name(START_TIME)
-                    .type(GraphQLString))
-            .field(newFieldDefinition()
-                    .name(END_TIME)
-                    .type(GraphQLString))
-            .field(newFieldDefinition()
-                    .name(START_TIME_AM)
-                    .type(GraphQLString))
-            .field(newFieldDefinition()
-                    .name(END_TIME_AM)
-                    .type(GraphQLString))
-            .field(newFieldDefinition()
-                    .name(START_TIME_PM)
-                    .type(GraphQLString))
-            .field(newFieldDefinition()
-                    .name(END_TIME_PM)
-                    .type(GraphQLString))
-            .build();
-
     public static GraphQLObjectType geoJsonObjectType = newObject()
             .name(OUTPUT_TYPE_GEO_JSON)
             .description("Geometry-object as specified in the GeoJSON-standard (http://geojson.org/geojson-spec.html).")
@@ -964,15 +938,6 @@ public class CustomGraphQLTypes {
                     .name(day.value())
                     .type(pointOfInterestValidityConditionDaySetInputObjectType)
                     .build()).collect(Collectors.toList());
-    }
-
-    private static List<GraphQLFieldDefinition> createDefinitionFieldForDay(){
-
-        return Arrays.stream(DayOfWeekEnumeration.values()).map(day ->
-                GraphQLFieldDefinition.newFieldDefinition()
-                        .name(day.value())
-                        .type(pointOfInterestValidityConditionDaySetObjectType)
-                        .build()).collect(Collectors.toList());
     }
 
     public static GraphQLInputObjectType createParkingInputObjectType(List<GraphQLInputObjectField> commonInputFieldsList, GraphQLInputObjectType validBetweenInputObjectType) {

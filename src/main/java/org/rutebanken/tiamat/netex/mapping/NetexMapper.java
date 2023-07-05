@@ -362,6 +362,8 @@ public class NetexMapper {
         return facade.mapAsList(pointOfInterestClassifications, org.rutebanken.tiamat.model.PointOfInterestClassification.class);
     }
 
+
+
     public List<org.rutebanken.tiamat.model.PathLink> mapPathLinksToTiamatModel(List<PathLink> pathLinks) {
         return facade.mapAsList(pathLinks, org.rutebanken.tiamat.model.PathLink.class);
     }

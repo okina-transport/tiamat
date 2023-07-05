@@ -33,6 +33,9 @@ public class TiamatGeneralFrameExporter {
         if (ExportTypeEnumeration.PARKING.equals(exportType)) {
             generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_PARKING_" + localDateTimeString + ":LOC");
             setFramesParking(generalFrame);
+        } else if (ExportTypeEnumeration.POI.equals(exportType)) {
+            generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_POI_" + localDateTimeString + ":LOC");
+            setFramesPOI(generalFrame);
         } else {
             generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_ARRET_" + localDateTimeString + ":LOC");
             setFramesDefault(generalFrame);
@@ -40,6 +43,23 @@ public class TiamatGeneralFrameExporter {
         logger.info("Adding {} generalFrame", generalFrame);
         return generalFrame;
     }
+
+    private void setFramesPOI(GeneralFrame generalFrame) {
+        // Frame <TypeOfFrameRef>
+        TypeOfFrameRefStructure typeOfFrameRefStructure = new TypeOfFrameRefStructure();
+        typeOfFrameRefStructure.setRef("FR:TypeOfFrame:NETEX_POI");
+        typeOfFrameRefStructure.setValue("version=\"1.1:FR-NETEX_POI-2.2\"");
+        generalFrame.setTypeOfFrameRef(typeOfFrameRefStructure);
+
+        logger.info("Adding {} typeOfFrameRefStructure in generalFrame", typeOfFrameRefStructure);
+
+        // Frame <members>
+        Members members = new Members();
+        generalFrame.setMembers(members);
+
+        logger.info("Adding {} members in generalFrame", members);
+    }
+
 
     public void setFramesDefault(GeneralFrame generalFrame) {
         // Frame <TypeOfFrameRef>

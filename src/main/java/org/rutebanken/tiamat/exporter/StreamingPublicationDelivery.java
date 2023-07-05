@@ -29,14 +29,7 @@ import org.rutebanken.tiamat.model.TariffZone;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
-import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
-import org.rutebanken.tiamat.repository.ParkingRepository;
-import org.rutebanken.tiamat.repository.PointOfInterestClassificationRepository;
-import org.rutebanken.tiamat.repository.PointOfInterestRepository;
-import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.repository.TariffZoneRepository;
-import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
-import org.rutebanken.tiamat.rest.graphql.helpers.AvailabilityConditionWrapper;
+import org.rutebanken.tiamat.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,12 +43,10 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.swing.text.AbstractDocument;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
-import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -63,20 +54,10 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -448,6 +429,20 @@ public class StreamingPublicationDelivery {
         logger.info("Mapped {} points of interest to netex", mappedPointOfInterestCount);
     }
 
+    private CompositeFrame createCompositeFrame(SiteFrame siteFrame, GeneralFrame generalFrame) {
+
+        JAXBElement<org.rutebanken.netex.model.SiteFrame> serviceFrameJAXBElement = new ObjectFactory().createSiteFrame(siteFrame);
+        JAXBElement<org.rutebanken.netex.model.GeneralFrame> fareFrameJAXBElement = new ObjectFactory().createGeneralFrame(generalFrame);
+
+        CompositeFrame compositeFrame = new CompositeFrame();
+        compositeFrame.setVersion("1");
+        compositeFrame.setId("MOBIFARE:CompositeFrame:1:LOC");
+        compositeFrame.setFrames(new Frames_RelStructure());
+        compositeFrame.getFrames().withCommonFrame(serviceFrameJAXBElement, fareFrameJAXBElement);
+
+        return compositeFrame;
+    }
+
     /**
      * Moche Workaround : les ns sont générés bizarrement
      *
@@ -610,15 +605,9 @@ public class StreamingPublicationDelivery {
         if (poiCount > 0) {
             logger.info("POI count is {}, will create poi in publication delivery", poiCount);
             PointsOfInterestInFrame_RelStructure pointsOfInterestInFrame_relStructure = new PointsOfInterestInFrame_RelStructure();
-            List<org.rutebanken.tiamat.model.PointOfInterest> poiList = new ArrayList<>();
-            pointOfInterestIterator.forEachRemaining(poiList::add);
 
-            List<PointOfInterest> pointsOfInterest = poiList.stream()
-                    .map(poiTiamat -> netexMapper.mapToNetexModel(poiTiamat))
-                    .collect(Collectors.toList());
-
-         //   List<PointOfInterest> pointsOfInterest = new NetexMappingIteratorList<>(() ->
-          //          new NetexMappingIterator<>(netexMapper, pointOfInterestIterator, PointOfInterest.class, mappedPointOfInterestCount));
+            List<PointOfInterest> pointsOfInterest = new NetexMappingIteratorList<>(() ->
+                    new NetexMappingIterator<>(netexMapper, pointOfInterestIterator, PointOfInterest.class, mappedPointOfInterestCount));
 
             setField(PointsOfInterestInFrame_RelStructure.class, "pointOfInterest", pointsOfInterestInFrame_relStructure, pointsOfInterest);
             netexSiteFrame.setPointsOfInterest(pointsOfInterestInFrame_relStructure);
@@ -627,22 +616,17 @@ public class StreamingPublicationDelivery {
         }
     }
 
+
     private void preparePointsOfInterestClassification(AtomicInteger mappedPointOfInterestClassificationCount, SiteFrame netexSiteFrame, Iterator<org.rutebanken.tiamat.model.PointOfInterestClassification> pointOfInterestClassificationIterator) {
         int poiClassificationCount = pointOfInterestClassificationRepository.countResult();
         if (poiClassificationCount > 0) {
             logger.info("POI count is {}, will create poi classifications in publication delivery", poiClassificationCount);
 
             Site_VersionFrameStructure.PointOfInterestClassifications pointOfInterestClassificationsInFrame_relStructure = new Site_VersionFrameStructure.PointOfInterestClassifications();
-//            List<org.rutebanken.netex.model.PointOfInterestClassification> pointOfInterestClassifications = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, pointOfInterestClassificationIterator,
-//                    org.rutebanken.netex.model.PointOfInterestClassification.class, mappedPointOfInterestClassificationCount));
-            List<org.rutebanken.tiamat.model.PointOfInterestClassification> pointsOfInterestClassificationTiamat = new ArrayList<>();
-            pointOfInterestClassificationIterator.forEachRemaining(pointsOfInterestClassificationTiamat::add);
+            List<org.rutebanken.netex.model.PointOfInterestClassification> pointOfInterestClassifications = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, pointOfInterestClassificationIterator,
+                    org.rutebanken.netex.model.PointOfInterestClassification.class, mappedPointOfInterestClassificationCount));
 
-            List<org.rutebanken.netex.model.PointOfInterestClassification> pointsOfInterestClassification = pointsOfInterestClassificationTiamat.stream()
-                    .map(pointOfInterestClassificationTiamat -> netexMapper.mapToNetexModel(pointOfInterestClassificationTiamat))
-                    .collect(Collectors.toList());
-
-            setField(PointOfInterestClassificationsInFrame_RelStructure.class, "pointOfInterestClassification", pointOfInterestClassificationsInFrame_relStructure, pointsOfInterestClassification);//pointOfInterestClassifications);
+            setField(PointOfInterestClassificationsInFrame_RelStructure.class, "pointOfInterestClassification", pointOfInterestClassificationsInFrame_relStructure, pointOfInterestClassifications);//pointsOfInterestClassification);
             netexSiteFrame.setPointOfInterestClassifications(pointOfInterestClassificationsInFrame_relStructure);
         } else {
             logger.info("No poi classifications to export");

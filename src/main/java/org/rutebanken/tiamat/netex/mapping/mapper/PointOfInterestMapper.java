@@ -5,19 +5,12 @@ import ma.glasnost.orika.MappingContext;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.PointOfInterestFacilitySet;
 import org.rutebanken.tiamat.model.PointOfInterestOpeningHours;
-import org.rutebanken.tiamat.repository.PointOfInterestRepository;
-import org.rutebanken.tiamat.rest.graphql.helpers.AvailabilityConditionWrapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.xml.bind.JAXBElement;
-import java.lang.reflect.Field;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -89,11 +82,40 @@ public class PointOfInterestMapper extends CustomMapper<PointOfInterest, org.rut
             dayTypes_relStructure.setId(createDayTypesId(pointOfInterest.getNetexId()));
 
             ArrayList<org.rutebanken.tiamat.model.DayType> dayTypeListTiamat = new ArrayList<>(pointOfInterestOpeningHours.getDaysType());
-            dayTypes_relStructure.withDayTypeRefOrDayType_(dayTypeListTiamat.stream().map(dayType -> {
-                DayTypeRefStructure dayType1 = new DayTypeRefStructure();
-                dayType1.setRef(dayType.getNetexId());
-                return objectFactory.createDayTypeRef(dayType1);
-            }).collect(Collectors.toList()));
+
+            List<JAXBElement<? extends DayType_VersionStructure>> jaxbElements = dayTypeListTiamat.stream().map(dayType -> {
+
+                DayType dayType2 = objectFactory.createDayType();
+                dayType2.setVersion("any");
+
+
+                dayType2.setId(dayType.getNetexId());
+
+
+                PropertiesOfDay_RelStructure propertiesOfDayRelStructure = new PropertiesOfDay_RelStructure();
+                PropertyOfDay propertyOfDay = new PropertyOfDay();
+                propertyOfDay.withDaysOfWeek(DayOfWeekEnumeration.fromValue(dayType.getDays().value()));
+                propertiesOfDayRelStructure.getPropertyOfDay().add(propertyOfDay);
+                dayType2.setProperties(propertiesOfDayRelStructure);
+
+                Timebands_RelStructure timebands_relStructure = objectFactory.createTimebands_RelStructure();
+                timebands_relStructure.setId("FR:timebands:" + pointOfInterest.getNetexId().split(":")[2]);
+
+                dayType.getTimeBand().forEach(timeBand -> {
+                            Timeband_VersionedChildStructure timebandVersionedChildStructure = objectFactory.createTimeband_VersionedChildStructure();
+
+                            timebandVersionedChildStructure.setId(timeBand.getNetexId());
+                            timebandVersionedChildStructure.setVersion("any");
+
+                            timebandVersionedChildStructure.setStartTime(LocalDateTime.ofInstant(timeBand.getStartTime(), ZoneId.of("Europe/Paris")).toLocalTime());
+                            timebandVersionedChildStructure.setEndTime(LocalDateTime.ofInstant(timeBand.getEndTime(), ZoneId.of("Europe/Paris")).toLocalTime());
+                            timebands_relStructure.withTimebandRefOrTimeband(timebandVersionedChildStructure);
+                        });
+                dayType2.withTimebands(timebands_relStructure);
+                return objectFactory.createDayType(dayType2);
+            }).collect(Collectors.toList());
+
+            dayTypes_relStructure.getDayTypeRefOrDayType_().addAll(jaxbElements);
 
             availabilityCondition.withDayTypes(dayTypes_relStructure);
 
@@ -104,7 +126,7 @@ public class PointOfInterestMapper extends CustomMapper<PointOfInterest, org.rut
     }
 
     private String createDayTypesId(String netexId) {
-        String poiId = netexId.split(":")[1];
+        String poiId = netexId.split(":")[2];
         return "FR:DayTypes:"+poiId;
     }
 }

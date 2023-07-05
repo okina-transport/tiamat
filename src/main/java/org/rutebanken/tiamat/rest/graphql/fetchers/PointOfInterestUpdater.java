@@ -63,9 +63,6 @@ class PointOfInterestUpdater implements DataFetcher {
     private PointOfInterestFacilitySetRepository pointOfInterestFacilitySetRepository;
 
     @Autowired
-    private PointOfInterestOpeningHoursRepository pointOfInterestOpeningHoursRepository;
-
-    @Autowired
     private GeometryMapper geometryMapper;
 
     @Autowired
@@ -200,7 +197,7 @@ class PointOfInterestUpdater implements DataFetcher {
         }
 
         if (input.get(POI_OPENING_HOURS) != null) {
-            PointOfInterestOpeningHours pointOfInterestOpeningHours = mapPointOfInterestExistingHours((Map) input.get("pointOfInterestOpeningHours"));
+            PointOfInterestOpeningHours pointOfInterestOpeningHours = mapPointOfInterestExistingHours((Map) input.get("pointOfInterestOpeningHours"),(String) input.get("id"));
             updatedPointOfInterest.setPointOfInterestOpeningHours(pointOfInterestOpeningHours);
             isUpdated = true;
         }
@@ -210,7 +207,9 @@ class PointOfInterestUpdater implements DataFetcher {
         return isUpdated;
     }
 
-    private PointOfInterestOpeningHours mapPointOfInterestExistingHours(Map<String, Object> pointOfInterestValidityConditionSet) {
+    private PointOfInterestOpeningHours mapPointOfInterestExistingHours(Map<String, Object> pointOfInterestValidityConditionSet, String poiId) {
+
+        String poiNetexId = poiId.trim().split(":")[2];
 
         PointOfInterestOpeningHours pointOfInterestOpeningHours = new PointOfInterestOpeningHours();
         Set<DayType> dayTypes = pointOfInterestValidityConditionSet.entrySet().stream()
@@ -219,25 +218,25 @@ class PointOfInterestUpdater implements DataFetcher {
                     Set<TimeBand> timeBands = new HashSet<>();
                     dayType.setDays(DayOfWeekEnumeration.fromValue(entry.getKey()));
                     String day = dayType.getDays().value();
-                    dayType.setNetexId("FR:DayType:" + day);
+                    dayType.setNetexId("FR:DayType:" + day + "_" + poiNetexId);
                     Map<?,?> value = (Map<?, ?>) entry.getValue();
                     if(value.get("facility").equals("Journée")){
                         TimeBand timeBand = new TimeBand();
                         timeBand.setEndTime(Instant.parse((CharSequence) value.get("endTime")));
                         timeBand.setStartTime(Instant.parse((CharSequence) value.get("startTime")));
-                        timeBand.setNetexId(createTimeBandId(day, ""));
+                        timeBand.setNetexId(createTimeBandId(day, "", poiNetexId));
                         timeBands.add(timeBand);
                     } else if(value.get("facility").equals("Demi journée")){
                         TimeBand timeBand = new TimeBand();
                         timeBand.setEndTime(Instant.parse((CharSequence) value.get("endTimeAm")));
                         timeBand.setStartTime(Instant.parse((CharSequence) value.get("startTimeAm")));
-                        timeBand.setNetexId(createTimeBandId(day, "_am"));
+                        timeBand.setNetexId(createTimeBandId(day, "_am", poiNetexId));
                         timeBands.add(timeBand);
 
                         TimeBand timeBand2 = new TimeBand();
                         timeBand2.setEndTime(Instant.parse((CharSequence) value.get("endTimePm")));
                         timeBand2.setStartTime(Instant.parse((CharSequence) value.get("startTimePm")));
-                        timeBand.setNetexId(createTimeBandId(day, "_pm"));
+                        timeBand2.setNetexId(createTimeBandId(day, "_pm", poiNetexId));
                         timeBands.add(timeBand2);
                     }
 
@@ -249,7 +248,7 @@ class PointOfInterestUpdater implements DataFetcher {
         return pointOfInterestOpeningHours;
     }
 
-    private String createTimeBandId(String day, String suffix){
-        return "FR:TimeBand:" + day + suffix;
+    private String createTimeBandId(String day, String suffix, String poiNetexId){
+        return "FR:TimeBand:" + day + suffix + "_" + poiNetexId;
     }
 }

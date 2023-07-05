@@ -177,18 +177,6 @@ public class PublicationDeliveryExporter {
         return publicationDeliveryStructure;
     }
 
-    public PublicationDeliveryStructure createPublicationDelivery(org.rutebanken.netex.model.CompositeFrame compositeFrame, String idSite, LocalDateTime localDateTime) {
-        PublicationDeliveryStructure publicationDeliveryStructure = createPublicationDelivery(idSite, localDateTime);
-
-        publicationDeliveryStructure.withDataObjects(
-                new PublicationDeliveryStructure.DataObjects()
-                        .withCompositeFrameOrCommonFrame(new ObjectFactory().createCompositeFrame(compositeFrame)));
-
-        logger.info("Returning publication delivery {} with general frame", publicationDeliveryStructure);
-        return publicationDeliveryStructure;
-    }
-
-
     /**
      *
      * @param stopPlaces

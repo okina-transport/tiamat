@@ -429,20 +429,6 @@ public class StreamingPublicationDelivery {
         logger.info("Mapped {} points of interest to netex", mappedPointOfInterestCount);
     }
 
-    private CompositeFrame createCompositeFrame(SiteFrame siteFrame, GeneralFrame generalFrame) {
-
-        JAXBElement<org.rutebanken.netex.model.SiteFrame> serviceFrameJAXBElement = new ObjectFactory().createSiteFrame(siteFrame);
-        JAXBElement<org.rutebanken.netex.model.GeneralFrame> fareFrameJAXBElement = new ObjectFactory().createGeneralFrame(generalFrame);
-
-        CompositeFrame compositeFrame = new CompositeFrame();
-        compositeFrame.setVersion("1");
-        compositeFrame.setId("MOBIFARE:CompositeFrame:1:LOC");
-        compositeFrame.setFrames(new Frames_RelStructure());
-        compositeFrame.getFrames().withCommonFrame(serviceFrameJAXBElement, fareFrameJAXBElement);
-
-        return compositeFrame;
-    }
-
     /**
      * Moche Workaround : les ns sont générés bizarrement
      *

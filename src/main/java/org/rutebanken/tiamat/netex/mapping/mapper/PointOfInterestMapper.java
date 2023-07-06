@@ -9,7 +9,9 @@ import org.springframework.stereotype.Component;
 
 import javax.xml.bind.JAXBElement;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -107,8 +109,15 @@ public class PointOfInterestMapper extends CustomMapper<PointOfInterest, org.rut
                             timebandVersionedChildStructure.setId(timeBand.getNetexId());
                             timebandVersionedChildStructure.setVersion("any");
 
-                            timebandVersionedChildStructure.setStartTime(LocalDateTime.ofInstant(timeBand.getStartTime(), ZoneId.of("Europe/Paris")).toLocalTime());
-                            timebandVersionedChildStructure.setEndTime(LocalDateTime.ofInstant(timeBand.getEndTime(), ZoneId.of("Europe/Paris")).toLocalTime());
+                            LocalDateTime startTime = LocalDateTime.ofInstant(timeBand.getStartTime(), ZoneId.of("Europe/Paris"));
+                            int hours = startTime.getHour();
+                            int minutes = startTime.getMinute();
+                            timebandVersionedChildStructure.setStartTime(LocalTime.of(hours, minutes));
+
+                            LocalDateTime endTime = LocalDateTime.ofInstant(timeBand.getEndTime(), ZoneId.of("Europe/Paris"));
+                            int hoursEnd = endTime.getHour();
+                            int minutesEnd = endTime.getMinute();
+                            timebandVersionedChildStructure.setEndTime(LocalTime.of(hoursEnd, minutesEnd));
                             timebands_relStructure.withTimebandRefOrTimeband(timebandVersionedChildStructure);
                         });
                 dayType2.withTimebands(timebands_relStructure);

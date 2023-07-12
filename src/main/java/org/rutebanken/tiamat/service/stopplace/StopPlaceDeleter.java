@@ -70,11 +70,14 @@ public class StopPlaceDeleter {
 
             stopPlaceQuayDeleterToChouette.delete(stopPlaceNetexId);
 
-            if (stopPlaces.stream().anyMatch(stopPlace -> stopPlace.isParentStopPlace() || stopPlace.getParentSiteRef() != null)) {
+            StopPlace lastVersionStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceNetexId);
+            if (lastVersionStopPlace.isParentStopPlace() || lastVersionStopPlace.getParentSiteRef() != null) {
                 throw new IllegalArgumentException("Deleting parent stop place or childs of parent stop place is not allowed: " + stopPlaceNetexId);
             }
 
             authorizationService.assertAuthorized(ROLE_DELETE_STOPS, stopPlaces);
+
+            stopPlaceRepository.deleteStopPlaceChildrenByChildren(stopPlaces);
             stopPlaceRepository.deleteAll(stopPlaces);
 
 //            notifyDeleted(stopPlaces);

@@ -499,6 +499,7 @@ public class GraphQLNames {
     public static final String CREATE_MULTI_MODAL_STOPPLACE = "createMultiModalStopPlace";
     public static final String ADD_TO_MULTIMODAL_STOPPLACE = "addToMultiModalStopPlace";
     public static final String REMOVE_FROM_MULTIMODAL_STOPPLACE = "removeFromMultiModalStopPlace";
+    public static final String REMOVE_MULTIMODAL_STOPPLACE = "removeMultiModalStopPlace";
 
     public static final String TICKETING_FACILITY = "ticketingFacility";
     public static final String TICKETING_SERVICE_FACILITY = "ticketingServiceFacility";

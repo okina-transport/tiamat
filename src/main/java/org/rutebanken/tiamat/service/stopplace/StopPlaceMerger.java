@@ -26,7 +26,6 @@ import org.rutebanken.tiamat.service.Preconditions;
 import org.rutebanken.tiamat.service.merge.AlternativeNamesMerger;
 import org.rutebanken.tiamat.service.merge.KeyValuesMerger;
 import org.rutebanken.tiamat.service.merge.PlaceEquipmentMerger;
-import org.rutebanken.tiamat.versioning.ValidityUpdater;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.rutebanken.tiamat.versioning.util.CopiedEntity;
@@ -37,12 +36,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.MERGED_ID_KEY;
-import static org.rutebanken.tiamat.versioning.save.DefaultVersionedSaverService.MILLIS_BETWEEN_VERSIONS;
 
 @Service
 public class StopPlaceMerger {
@@ -76,9 +76,6 @@ public class StopPlaceMerger {
     private StopPlaceCopyHelper stopPlaceCopyHelper;
 
     @Autowired
-    private ValidityUpdater validityUpdater;
-
-    @Autowired
     private MutateLock mutateLock;
 
     @Autowired
@@ -104,12 +101,18 @@ public class StopPlaceMerger {
             executeMerge(fromStopPlaceToTerminate, mergedStopPlaceCopy.getCopiedEntity(), fromVersionComment, toVersionComment, Optional.ofNullable(mergedStopPlaceCopy.getCopiedParent()));
 
             if (!isDryRun) {
-                //Terminate validity of from-StopPlace
+                //Delete all versions from-StopPlace
+                List<StopPlace> stopPlaces = getAllVersionsOfStopPlace(fromStopPlaceId);
+
+                StopPlace lastVersionStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(fromStopPlaceId);
+
+                if (lastVersionStopPlace.isParentStopPlace() || lastVersionStopPlace.getParentSiteRef() != null) {
+                    throw new IllegalArgumentException("Deleting parent stop place or childs of parent stop place is not allowed: " + fromStopPlaceId);
+                }
+                stopPlaceRepository.deleteStopPlaceChildrenByChildren(stopPlaces);
+                stopPlaceRepository.deleteAll(stopPlaces);
+
                 Instant newVersionFromDate = Instant.now();
-                validityUpdater.terminateVersion(fromStopPlaceToTerminate, newVersionFromDate.minusMillis(MILLIS_BETWEEN_VERSIONS));
-
-                stopPlaceVersionedSaverService.saveNewVersion(fromStopPlace, fromStopPlaceToTerminate, newVersionFromDate);
-
 
                 if (mergedStopPlaceCopy.hasParent()) {
                     logger.info("Saving parent stop place {}. Returning parent of child: {}", mergedStopPlaceCopy.getCopiedParent().getNetexId(), mergedStopPlaceCopy.getCopiedEntity().getNetexId());
@@ -180,6 +183,18 @@ public class StopPlaceMerger {
     private void transferQuays(StopPlace fromStopPlaceToTerminate, StopPlace mergedStopPlace) {
         fromStopPlaceToTerminate.getQuays()
                 .forEach(quay -> mergedStopPlace.getQuays().add(versionCreator.createCopy(quay, Quay.class)));
+    }
+
+
+    private List<StopPlace> getAllVersionsOfStopPlace(String stopPlaceId) {
+        List<String> idList = new ArrayList<>();
+        idList.add(stopPlaceId);
+
+        List<StopPlace> stopPlaces = stopPlaceRepository.findAll(idList);
+
+        Preconditions.checkArgument((stopPlaces != null && !stopPlaces.isEmpty()), "Attempting to fetch StopPlace [id = %s], but StopPlace does not exist.", stopPlaceId);
+
+        return stopPlaces;
     }
 
 }

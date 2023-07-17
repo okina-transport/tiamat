@@ -71,7 +71,7 @@ public class StopPlaceDeleter {
             stopPlaceQuayDeleterToChouette.delete(stopPlaceNetexId);
 
             StopPlace lastVersionStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceNetexId);
-            if (lastVersionStopPlace.isParentStopPlace() || lastVersionStopPlace.getParentSiteRef() != null) {
+            if (lastVersionStopPlace != null && (lastVersionStopPlace.isParentStopPlace() || lastVersionStopPlace.getParentSiteRef() != null)) {
                 throw new IllegalArgumentException("Deleting parent stop place or childs of parent stop place is not allowed: " + stopPlaceNetexId);
             }
 

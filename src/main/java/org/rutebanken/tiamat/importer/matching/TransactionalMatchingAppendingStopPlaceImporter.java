@@ -215,6 +215,9 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 if(keyValueListAppender.appendKeyValue(NetexIdMapper.FARE_ZONE, incomingStopPlace, copy)){
                     keyValuesChanged = true;
                 }
+                if(keyValueListAppender.appendKeyValue(NetexIdMapper.RAIL_UIC_KEY, incomingStopPlace, copy)){
+                    keyValuesChanged = true;
+                }
 
                 boolean nameChanged = false;
                 boolean wheelChairChanged = false;

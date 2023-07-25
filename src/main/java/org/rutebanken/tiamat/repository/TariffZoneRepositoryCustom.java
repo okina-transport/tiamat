@@ -34,7 +34,9 @@ public interface TariffZoneRepositoryCustom extends DataManagedObjectStructureRe
 
     Iterator<TariffZone> scrollTariffZones();
 
-    void initExportJobTable( Long exportJobId);
+    void initExportJobTable( Long exportJobId, Set<Long> listeStopPlaces);
 
     List<TariffZone> getTariffZonesInitializedForExport(Set<Long> parkingIds) ;
+
+    String findFirstByKeyValue(String key, String value);
 }

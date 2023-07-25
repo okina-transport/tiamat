@@ -16,10 +16,12 @@
 package org.rutebanken.tiamat.netex.mapping;
 
 import org.rutebanken.netex.model.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.xml.bind.JAXBElement;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;

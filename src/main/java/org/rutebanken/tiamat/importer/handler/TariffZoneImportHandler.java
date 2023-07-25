@@ -47,14 +47,21 @@ package org.rutebanken.tiamat.importer.handler;
 
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.importer.*;
+import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
+import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.rutebanken.tiamat.repository.TariffZoneRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import javax.xml.bind.JAXBElement;
+import javax.xml.namespace.QName;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Component
 public class TariffZoneImportHandler {
@@ -67,6 +74,13 @@ public class TariffZoneImportHandler {
 
     private final TariffZoneImporter tariffZoneImporter;
 
+    @Autowired
+    private TariffZoneRepository tariffZoneRepository;
+
+    private QName qname = new QName("http://www.netex.org.uk/netex", "TariffZone_");
+
+    private ObjectFactory netexObectFactory = new ObjectFactory();
+
     public TariffZoneImportHandler(PublicationDeliveryHelper publicationDeliveryHelper, NetexMapper netexMapper, TariffZoneImporter tariffZoneImporter) {
         this.publicationDeliveryHelper = publicationDeliveryHelper;
         this.netexMapper = netexMapper;
@@ -76,15 +90,55 @@ public class TariffZoneImportHandler {
 
     public void handleTariffZones(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger tariffZoneImportedCounter, SiteFrame responseSiteframe) {
 
+        List<TariffZone> importedTariffZones = new ArrayList<>();
+
+        List<StopPlace> tiamatStops = hasStopsTariffZones(netexSiteFrame);
         if (publicationDeliveryHelper.hasTariffZones(netexSiteFrame) && importParams.importType != ImportType.ID_MATCH) {
             List<org.rutebanken.tiamat.model.TariffZone> tiamatTariffZones = netexMapper.getFacade().mapAsList(netexSiteFrame.getTariffZones().getTariffZone_(), org.rutebanken.tiamat.model.TariffZone.class);
             logger.debug("Mapped {} tariff zones from netex to internal model", tiamatTariffZones.size());
-            List<TariffZone> importedTariffZones = tariffZoneImporter.importTariffZones(tiamatTariffZones);
+            importedTariffZones.addAll(tariffZoneImporter.importTariffZones(tiamatTariffZones));
             logger.debug("Got {} imported tariffZones ", importedTariffZones.size());
-//            if (!importedTariffZones.isEmpty()) {
-//                responseSiteframe.withTariffZones(new TariffZonesInFrame_RelStructure().withTariffZone_(importedTariffZones));
-//            }
+        }
+        if (!tiamatStops.isEmpty() && importParams.importType != ImportType.ID_MATCH) {
+            List<org.rutebanken.tiamat.model.TariffZone> tiamatTariffZones = new ArrayList<>();
+            Set<String> addedKeys = new HashSet<>();
+            tiamatStops.forEach(stopPlace -> {
+                stopPlace.getTariffZones().getTariffZoneRef_().forEach( tariffZoneRef -> {
+                    String key = NetexIdMapper.FARE_ZONE;
+                    String value = tariffZoneRef.getValue().getRef();
+                    if (!addedKeys.contains(key + value) && tariffZoneRepository.findFirstByKeyValue(key, value) == null){
+                        org.rutebanken.tiamat.model.TariffZone tariffZone = new org.rutebanken.tiamat.model.TariffZone();
+                        tariffZone.getKeyValues().put(key, new Value(value));
+                        tariffZone.setVersion(1);
+                        tiamatTariffZones.add(tariffZone);
+                        addedKeys.add(key + value);
+                    }
+                });
+            });
+            importedTariffZones.addAll(tariffZoneImporter.importTariffZones(tiamatTariffZones));
+            logger.debug("Got {} created tariffZones ", importedTariffZones.size());
+        }
+        if (!importedTariffZones.isEmpty()) {
+            List<JAXBElement<? extends Zone_VersionStructure>> newTariffZone = importedTariffZones.stream()
+                    .map(tariffZone -> netexObectFactory.createTariffZone(tariffZone))
+                    .collect(Collectors.toList());
+
+            responseSiteframe.withTariffZones(netexObectFactory.createTariffZonesInFrame_RelStructure().withTariffZone_(newTariffZone));
         }
     }
 
+    private List<StopPlace> hasStopsTariffZones(SiteFrame netexSiteFrame) {
+        //We create TariffZone if there is zone id in StopPlace while there is no TariffZone in GTFS
+        if (publicationDeliveryHelper.hasStops(netexSiteFrame)){
+            List<StopPlace> netexStops = netexSiteFrame.getStopPlaces().getStopPlace_().stream()
+                    .map(JAXBElement::getValue)
+                    .map(sp -> (StopPlace)sp)
+                    .collect(Collectors.toList());
+
+            return netexStops.stream().filter(stopPlace -> stopPlace.getTariffZones() != null && stopPlace.getTariffZones().getTariffZoneRef_() != null
+                    && !stopPlace.getTariffZones().getTariffZoneRef_().isEmpty())
+                    .collect(Collectors.toList());
+        }
+        return Collections.emptyList();
+    }
 }

@@ -101,6 +101,7 @@ public class NetexMapper {
                 .register();
 
         mapperFactory.classMap(TariffZone.class, org.rutebanken.tiamat.model.TariffZone.class)
+                .customize(new TariffZoneMapper())
                 .byDefault()
                 .register();
 

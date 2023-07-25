@@ -24,13 +24,11 @@ import org.rutebanken.tiamat.importer.finder.SimpleNearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByIdFinder;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
 import org.rutebanken.tiamat.importer.merging.QuayMerger;
-import org.rutebanken.tiamat.model.DataManagedObjectStructure;
-import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
-import org.rutebanken.tiamat.model.Quay;
-import org.rutebanken.tiamat.model.StopTypeEnumeration;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.repository.TariffZoneRepository;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.rutebanken.tiamat.service.stopplace.StopPlaceDeleter;
 import org.rutebanken.tiamat.service.stopplace.StopPlaceQuayMover;
@@ -73,6 +71,9 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
     @Autowired
     private StopPlaceRepository stopPlaceRepository;
+
+    @Autowired
+    private TariffZoneRepository tariffZoneRepository;
 
     @Autowired
     private QuayMerger quayMerger;
@@ -218,12 +219,21 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
                 boolean nameChanged = false;
                 boolean wheelChairChanged = false;
+                boolean tariffZoneChanged = false;
 
                 if (incomingStopPlace.getTariffZones() != null) {
                     if (copy.getTariffZones() == null) {
                         copy.setTariffZones(new HashSet<>());
+                        tariffZoneChanged = true;
+                    } else {
+                        tariffZoneChanged = !incomingStopPlace.getTariffZones().equals(copy.getTariffZones());
+                        for (TariffZoneRef tariffZoneRef : incomingStopPlace.getTariffZones()){
+                            String netexId = tariffZoneRepository.findFirstByKeyValue(NetexIdMapper.FARE_ZONE, tariffZoneRef.getRef());
+                            tariffZoneRef.setRef(netexId);
+                            copy.getTariffZones().add(tariffZoneRef);
+                        }
                     }
-                    copy.getTariffZones().addAll(incomingStopPlace.getTariffZones());
+
                 }
 
                 if (!importParams.keepStopNames && !incomingStopPlace.getName().getValue().equals(copy.getName().getValue())){
@@ -240,7 +250,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
 
 
-                if (quayChanged || keyValuesChanged || centroidChanged || nameChanged || wheelChairChanged) {
+                if (quayChanged || keyValuesChanged || centroidChanged || nameChanged || wheelChairChanged || tariffZoneChanged) {
                     if (existingStopPlace.getParentSiteRef() != null && !existingStopPlace.isParentStopPlace()) {
                         org.rutebanken.tiamat.model.StopPlace existingParentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingStopPlace.getParentSiteRef().getRef());
                         org.rutebanken.tiamat.model.StopPlace copyParentStopPlace = versionCreator.createCopy(existingParentStopPlace, org.rutebanken.tiamat.model.StopPlace.class);
@@ -266,7 +276,6 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
             }
         }
     }
-
 
     private boolean updateWheelchairIfNeeded(org.rutebanken.tiamat.model.StopPlace existingStopPlace, org.rutebanken.tiamat.model.StopPlace incomingStopPlace){
         Optional<LimitationStatusEnumeration> existingWheelchairLimitationOpt =  ImporterUtils.getWheelchairLimitation(existingStopPlace);

@@ -23,7 +23,9 @@ import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
 import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByQuayOriginalIdFinder;
 import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.repository.TariffZoneRepository;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
 import org.rutebanken.tiamat.service.TariffZonesLookupService;
 import org.rutebanken.tiamat.service.TopographicPlaceLookupService;
@@ -65,6 +67,9 @@ public class StopPlaceVersionedSaverService {
     private StopPlaceRepository stopPlaceRepository;
 
     @Autowired
+    private TariffZoneRepository tariffZoneRepository;
+
+    @Autowired
     private AccessibilityAssessmentOptimizer accessibilityAssessmentOptimizer;
 
     @Autowired
@@ -81,9 +86,6 @@ public class StopPlaceVersionedSaverService {
 
     @Autowired
     private EntityChangedListener entityChangedListener;
-
-    @Autowired
-    private ReferenceResolver referenceResolver;
 
     @Autowired
     private SubmodeValidator submodeValidator;
@@ -137,12 +139,15 @@ public class StopPlaceVersionedSaverService {
         }
 
         if (newVersion.getTariffZones() != null) {
-            for (TariffZoneRef tariffZoneRef : newVersion.getTariffZones()) {
-                TariffZone tariffZone = referenceResolver.resolve(tariffZoneRef);
-                if (tariffZone == null) {
-                    throw new IllegalArgumentException("StopPlace refers to non existing tariff zone: " + tariffZoneRef);
-                }
-            }
+            newVersion.setTariffZones(newVersion.getTariffZones().stream()
+                    .map(tariffZoneRef -> {
+                        TariffZone tariffZone = resolve(tariffZoneRef);
+                        if (tariffZone == null) {
+                            throw new IllegalArgumentException("StopPlace refers to non-existing tariff zone: " + tariffZoneRef);
+                        }
+                        return new TariffZoneRef(tariffZone.getNetexId());
+                    })
+                    .collect(Collectors.toSet()));
         }
 
         validateAdjacentSites(newVersion);
@@ -216,6 +221,11 @@ public class StopPlaceVersionedSaverService {
         entityChangedListener.onChange(newVersion);
 
         return newVersion;
+    }
+
+    private TariffZone resolve(TariffZoneRef tariffZoneRef) {
+        String netexId = tariffZoneRepository.findFirstByKeyValue(NetexIdMapper.FARE_ZONE, tariffZoneRef.getRef());
+        return tariffZoneRef.getRef() != null ? tariffZoneRepository.findFirstByNetexIdOrderByVersionDesc(netexId) : null;
     }
 
 

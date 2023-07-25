@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.importer;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.netex.model.ServiceFrame;
 import org.rutebanken.netex.model.SiteFrame;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.PublicationDeliveryExporter;
@@ -139,6 +140,7 @@ public class PublicationDeliveryImporter {
 
         try {
             SiteFrame responseSiteframe = new SiteFrame();
+            ServiceFrame responseServiceframe = new ServiceFrame();
 
             MDC.put(IMPORT_CORRELATION_ID, requestId);
             logger.info("Publication delivery contains site frame created at {}", netexSiteFrame.getCreated());
@@ -155,6 +157,7 @@ public class PublicationDeliveryImporter {
                 backgroundJobs.triggerStopPlaceUpdate();
             }
             PublicationDeliveryStructure publicationDelivery = publicationDeliveryExporter.createPublicationDelivery(responseSiteframe);
+
             final String providerCode = importParams.providerCode;
             Provider provider = providerRepository.getByReferential(importParams.providerCode).orElseThrow(() -> new RuntimeException("Aucun provider correspondant au code " + providerCode));
             String idSite = provider.getChouetteInfo().getCodeIdfm();

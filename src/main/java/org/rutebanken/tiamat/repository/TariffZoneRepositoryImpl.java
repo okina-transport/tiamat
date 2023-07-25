@@ -43,13 +43,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
@@ -67,6 +61,15 @@ public class TariffZoneRepositoryImpl implements TariffZoneRepositoryCustom {
     @Autowired
     private TariffZoneQueryFromSearchBuilder tariffZoneQueryFromSearchBuilder;
 
+    protected static final String SQL_TARIFF_ZONE_KEY_VALUES = "SELECT tz.netex_id " +
+            "FROM tariff_zone tz " +
+            "INNER JOIN tariff_zone_key_values tzkv " +
+            "ON tzkv.tariff_zone_id = tz.id " +
+            "INNER JOIN value_items v " +
+            "ON tzkv.key_values_id = v.value_id " +
+            "WHERE tzkv.key_values_key = :key " +
+            "AND v.items = :item ";
+
     @Override
     public List<TariffZone> findTariffZones(TariffZoneSearch search) {
         Pair<String, Map<String, Object>> pair = tariffZoneQueryFromSearchBuilder.buildQueryFromSearch(search);
@@ -81,9 +84,17 @@ public class TariffZoneRepositoryImpl implements TariffZoneRepositoryCustom {
         return tariffZones;
     }
 
+
     @Override
-    public String findFirstByKeyValues(String key, Set<String> originalIds) {
-        throw new NotImplementedException("findFirstByKeyValues not implemented for " + this.getClass().getSimpleName());
+    public String findFirstByKeyValue(String key, String value) {
+        Query query = entityManager.createNativeQuery(SQL_TARIFF_ZONE_KEY_VALUES);
+
+        //todo la value vaut MOBIITI:Tz:1 c'est alors qu'on veut pas ça
+        query.setParameter("key", key);
+        query.setParameter("item", value);
+
+        List<String> results = query.getResultList();
+        return results.isEmpty() ? null : results.get(0);
     }
 
     @Override
@@ -160,19 +171,35 @@ public class TariffZoneRepositoryImpl implements TariffZoneRepositoryCustom {
      * @param exportJobId id of the export job
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void initExportJobTable(Long exportJobId) {
+    public void initExportJobTable(Long exportJobId, Set<Long> listStopPlaces) {
 
         Map<String, Object> parameters = new HashMap<>();
 
-        String queryStr = "INSERT INTO export_job_id_list \n" +
-                " SELECT :exportJobId, req1.tz_id     \n" +
-                " FROM ( \n" +
-                " SELECT MAX(tz.id) AS tz_id, MAX(tz.version) AS version FROM tariff_zone tz WHERE (tz.from_date <= :pointInTime OR tz.from_date IS NULL) \n" +
-                " AND (tz.to_date >= :pointInTime OR tz.to_date IS NULL) GROUP BY tz.netex_id) req1";
+//        String queryStr = "INSERT INTO export_job_id_list \n" +
+//                " SELECT :exportJobId, req1.tz_id     \n" +
+//                " FROM ( \n" +
+//                " SELECT MAX(tz.id) AS tz_id, MAX(tz.version) AS version FROM tariff_zone tz WHERE (tz.from_date <= :pointInTime OR tz.from_date IS NULL) \n" +
+//                " AND (tz.to_date >= :pointInTime OR tz.to_date IS NULL) \n" +
+//                " AND tz.netex_id IN (SELECT tzr.ref FROM tariff_zone_ref tzr)\n" +
+//                " GROUP BY tz.netex_id) req1";
+
+        String queryStr = "INSERT INTO export_job_id_list\n" +
+                "    SELECT :exportJobId, req1.tz_id     \n" +
+                "    FROM (\n" +
+                "        SELECT MAX(tz.id) AS tz_id, MAX(tz.version) AS version \n" +
+                "        FROM tariff_zone tz \n" +
+                "        INNER JOIN tariff_zone_ref tzr ON tz.netex_id = tzr.ref\n" +
+                "        INNER JOIN stop_place_tariff_zones tsp ON tzr.id = tsp.tariff_zones_id\n" +
+                "        WHERE (tz.from_date <= :pointInTime OR tz.from_date IS NULL) \n" +
+                "        AND (tz.to_date >= :pointInTime OR tz.to_date IS NULL) \n" +
+                "        AND tsp.stop_place_id IN (:listStopPlaces)\n" +
+                "        GROUP BY tz.netex_id\n" +
+                "    ) req1;\n";
 
 
         parameters.put("exportJobId", exportJobId);
         parameters.put("pointInTime", Date.from(Instant.now()));
+        parameters.put("listStopPlaces", listStopPlaces);
 
         Session session = entityManager.unwrap(Session.class);
         NativeQuery query = session.createNativeQuery(queryStr);
@@ -198,5 +225,10 @@ public class TariffZoneRepositoryImpl implements TariffZoneRepositoryCustom {
         });
 
         return results;
+    }
+
+    @Override
+    public String findFirstByKeyValues(String key, Set<String> originalIds) {
+        throw new NotImplementedException("findFirstByKeyValues not implemented for tariff zone");
     }
 }

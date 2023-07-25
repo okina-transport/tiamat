@@ -209,10 +209,12 @@ public class StreamingPublicationDelivery {
 
         boolean isDataToExport = true;
         int totalStopsProcessed = 0;
+        Set<Long> totalIdsToExport = new HashSet<>();
 
         while (isDataToExport){
 
             Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(exportJobId);
+            totalIdsToExport = batchIdsToExport.size() > totalIdsToExport.size() ? batchIdsToExport : totalIdsToExport;
             if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
                 logger.info("no more stops to export");
                 isDataToExport = false;
@@ -231,7 +233,7 @@ public class StreamingPublicationDelivery {
         logger.info("Preparing scrollable iterators");
         prepareTopographicPlaces(mappedTopographicPlacesCount, listMembers, exportJobId);
 
-        prepareTariffZones(mappedTariffZonesCount, listMembers, exportJobId);
+        prepareTariffZones(mappedTariffZonesCount, listMembers, exportJobId, totalIdsToExport);
 
         completeStreamingProcess(outputStream, mappedStopPlaceCount, mappedParkingCount, mappedTariffZonesCount, mappedTopographicPlacesCount, mappedGroupOfStopPlacesCount, netexGeneralFrame, listMembers);
     }
@@ -775,10 +777,10 @@ public class StreamingPublicationDelivery {
 
     }
 
-    private void prepareTariffZones(AtomicInteger mappedTariffZonesCount, List<JAXBElement<? extends EntityStructure>> listMembers, Long jobid) {
+    private void prepareTariffZones(AtomicInteger mappedTariffZonesCount, List<JAXBElement<? extends EntityStructure>> listMembers, Long jobid, Set<Long> listStopPlaces) {
         Iterator<org.rutebanken.tiamat.model.TariffZone> tariffZoneIterator;
 
-        tariffZoneIterator = prepareTariffZonesIteratorForExportJob(jobid);
+        tariffZoneIterator = prepareTariffZonesIteratorForExportJob(jobid, listStopPlaces);
 
         if (tariffZoneIterator.hasNext()) {
             NetexMappingIterator<org.rutebanken.tiamat.model.TariffZone, org.rutebanken.netex.model.TariffZone> tariffZoneMappingIterator =
@@ -796,9 +798,9 @@ public class StreamingPublicationDelivery {
         }
     }
 
-    private Iterator<TariffZone> prepareTariffZonesIteratorForExportJob(Long jobid) {
+    private Iterator<TariffZone> prepareTariffZonesIteratorForExportJob(Long jobid, Set<Long> listStopPlaces) {
 
-        tariffZoneRepository.initExportJobTable(jobid);
+        tariffZoneRepository.initExportJobTable(jobid, listStopPlaces);
 
         int totalNbOfTariffZones = stopPlaceRepository.countStopsInExport(jobid);
         logger.info("Total nb of tariff zones to export:" + totalNbOfTariffZones);

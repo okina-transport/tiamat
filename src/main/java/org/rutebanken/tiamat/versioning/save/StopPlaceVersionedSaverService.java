@@ -141,7 +141,10 @@ public class StopPlaceVersionedSaverService {
         if (newVersion.getTariffZones() != null) {
             newVersion.setTariffZones(newVersion.getTariffZones().stream()
                     .map(tariffZoneRef -> {
-                        TariffZone tariffZone = resolve(tariffZoneRef);
+                        TariffZone tariffZone = tariffZoneRepository.findFirstByNetexIdOrderByVersionDesc(tariffZoneRef.getRef());
+                        if(tariffZone == null){
+                            tariffZone = resolve(tariffZoneRef);
+                        }
                         if (tariffZone == null) {
                             throw new IllegalArgumentException("StopPlace refers to non-existing tariff zone: " + tariffZoneRef);
                         }

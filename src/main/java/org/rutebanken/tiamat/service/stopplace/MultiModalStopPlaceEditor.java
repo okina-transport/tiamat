@@ -22,6 +22,7 @@ import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.ValidBetween;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.lock.MutateLock;
+import org.rutebanken.tiamat.service.Preconditions;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.slf4j.Logger;
@@ -31,9 +32,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -190,6 +189,51 @@ public class MultiModalStopPlaceEditor {
         });
     }
 
+    public boolean removeMultiModalStopPlace(String parentStopPlaceId, List<String> childStopPlaceIds) {
+
+        return mutateLock.executeInLock(() -> {
+
+            logger.info("Remove last child: {} from parent stop place {} and deleting parent stop place", childStopPlaceIds, parentStopPlaceId);
+
+            StopPlace parentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(parentStopPlaceId);
+            authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Collections.singletonList(parentStopPlace));
+
+            if (parentStopPlace.getChildren().stream().noneMatch(stopPlace -> childStopPlaceIds.contains(stopPlace.getNetexId()))) {
+                throw new IllegalArgumentException("The specified list of IDs does not match the list of parent stop place's children" + parentStopPlaceId + ". Incoming child IDs: " + childStopPlaceIds);
+            }
+
+            if (parentStopPlace.getChildren().size() > 1) {
+                throw new IllegalArgumentException("The parent stop place " + parentStopPlaceId + " has more than one child.");
+            }
+
+            authorizationService.assertAuthorized(ROLE_EDIT_STOPS, parentStopPlace.getChildren());
+
+            Instant now = Instant.now();
+
+            StopPlace parentStopPlaceCopy = versionCreator.createCopy(parentStopPlace, StopPlace.class);
+
+            parentStopPlaceCopy.getChildren().forEach(stopToRemove -> {
+                if (childStopPlaceIds.contains(stopToRemove.getNetexId())) {
+                    logger.info("Removing child stop place {} from parent stop place {}", stopToRemove.getNetexId(), parentStopPlace.getNetexId());
+                    StopPlace stopToRemoveCopy = versionCreator.createCopy(stopToRemove, StopPlace.class);
+                    stopToRemoveCopy.setParentSiteRef(null);
+
+                    if (stopToRemoveCopy.getName() == null) {
+                        logger.info("Setting name for removed child to parent's name: {} ({})", parentStopPlace.getName(), stopToRemoveCopy.getNetexId());
+                        stopToRemoveCopy.setName(parentStopPlace.getName());
+                    }
+
+                    stopPlaceVersionedSaverService.saveNewVersion(stopToRemove, stopToRemoveCopy, now);
+                }
+            });
+
+            List<StopPlace> stopPlaces = getAllVersionsOfStopPlace(parentStopPlaceCopy.getNetexId());
+            stopPlaceRepository.deleteStopPlaceChildrenByParent(stopPlaces);
+            stopPlaceRepository.deleteAll(stopPlaces);
+            return true;
+        });
+    }
+
     private void verifyChildrenIdsNotNullOrEmpty(List<String> childStopPlaceIds) {
         if(childStopPlaceIds == null || childStopPlaceIds.isEmpty()) {
             throw new IllegalArgumentException("The list of child stop place IDs cannot be empty.");
@@ -263,5 +307,16 @@ public class MultiModalStopPlaceEditor {
         } else {
             return Instant.now();
         }
+    }
+
+    private List<StopPlace> getAllVersionsOfStopPlace(String stopPlaceId) {
+        List<String> idList = new ArrayList<>();
+        idList.add(stopPlaceId);
+
+        List<StopPlace> stopPlaces = stopPlaceRepository.findAll(idList);
+
+        Preconditions.checkArgument((stopPlaces != null && !stopPlaces.isEmpty()), "Attempting to fetch StopPlace [id = %s], but StopPlace does not exist.", stopPlaceId);
+
+        return stopPlaces;
     }
 }

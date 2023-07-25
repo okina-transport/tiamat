@@ -35,6 +35,7 @@ import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.EntityChangedListener;
 import org.rutebanken.tiamat.model.DataManagedObjectStructure;
+import org.rutebanken.tiamat.model.EntityInVersionStructure;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -109,6 +110,6 @@ public class PointOfInterestDeleter {
     }
 
     private void notifyDeleted(List<PointOfInterest> pointsOfInterest) {
-        entityChangedListener.onDelete(Collections.max(pointsOfInterest, Comparator.comparing(c -> c.getVersion())));
+        entityChangedListener.onDelete(Collections.max(pointsOfInterest, Comparator.comparing(EntityInVersionStructure::getVersion)));
     }
 }

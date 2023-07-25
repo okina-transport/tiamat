@@ -54,6 +54,8 @@ public class NetexIdMapper {
     public static final String EXTERNAL_REF = "external-ref";
     public static final String FARE_ZONE = "fare-zone";
 
+    public static final String RAIL_UIC_KEY = "RAIL-UIC";
+
     private static final List<String> IGNORE_KEYS = Arrays.asList(CHANGED_BY, VERSION_COMMENT, IS_PARENT_STOP_PLACE);
 
     @Autowired

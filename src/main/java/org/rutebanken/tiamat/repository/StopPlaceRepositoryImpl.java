@@ -1251,6 +1251,25 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         });
     }
 
+    @Override
+    public void deleteStopPlaceChildrenByChildren(List<StopPlace> stopPlaces){
+        for(StopPlace stopPlace : stopPlaces){
+            entityManager
+                    .createNativeQuery("DELETE FROM stop_place_children WHERE children_id = :stopPlaceId")
+                    .setParameter("stopPlaceId", stopPlace.getId())
+                    .executeUpdate();
+        }
+    }
+
+    @Override
+    public void deleteStopPlaceChildrenByParent(List<StopPlace> stopPlaces){
+        for(StopPlace stopPlace : stopPlaces){
+            entityManager
+                    .createNativeQuery("DELETE FROM stop_place_children WHERE stop_place_id = :stopPlaceId")
+                    .setParameter("stopPlaceId", stopPlace.getId())
+                    .executeUpdate();
+        }
+    }
 
 }
 

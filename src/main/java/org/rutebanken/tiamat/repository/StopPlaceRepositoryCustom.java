@@ -111,5 +111,8 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     StopPlace findFirstByNetexIdOrderByVersionDescAndInitialize(String netexId);
 
+    void deleteStopPlaceChildrenByChildren(List<StopPlace> stopPlaces);
 
-    }
+    void deleteStopPlaceChildrenByParent(List<StopPlace> stopPlaces);
+
+}

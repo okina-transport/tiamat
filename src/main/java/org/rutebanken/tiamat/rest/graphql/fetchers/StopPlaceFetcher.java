@@ -88,7 +88,6 @@ class StopPlaceFetcher implements DataFetcher {
         ExportParams.Builder exportParamsBuilder = newExportParamsBuilder();
         StopPlaceSearch.Builder stopPlaceSearchBuilder = newStopPlaceSearchBuilder();
         List<String> userOrgs = roleAssignmentExtractor.getRoleAssignmentsForUser().stream().map(RoleAssignment::getOrganisation).collect(Collectors.toList());
-        boolean isUserAdmin = roleAssignmentExtractor.getRoleAssignmentsForUser().stream().anyMatch(roleAssignment -> roleAssignment.getRole().startsWith(ROLE_ADMIN_PREFIX));
 
         Boolean ignoreStops = environment.getArgument(IGNORE_STOPS);
         if (ignoreStops != null && ignoreStops) { return new PageImpl<>(new ArrayList<>()); }
@@ -252,13 +251,6 @@ class StopPlaceFetcher implements DataFetcher {
                 stopPlacesPage = stopPlaceRepository.findStopPlace(exportParamsBuilder.setStopPlaceSearch(stopPlaceSearchBuilder.build()).build());
             }
         }
-
-        // Remove SP not belonging to user orgs
-        // TODO surement à revoir à tester
-//        if (!stopPlacesPage.getContent().isEmpty() && !isUserAdmin) {
-//            List<StopPlace> userOrgFilteredStopPlaces = stopPlacesPage.getContent().stream().filter(stopPlace -> userOrgs.contains(stopPlace.getProvider())).collect(Collectors.toList());
-//            stopPlacesPage = new PageImpl<>(userOrgFilteredStopPlaces, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), 1L);
-//        }
 
         final List<StopPlace> stopPlaces = stopPlacesPage.getContent();
         boolean onlyMonomodalStopplaces = false;

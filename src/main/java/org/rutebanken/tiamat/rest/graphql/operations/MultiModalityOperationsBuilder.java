@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
@@ -150,6 +151,15 @@ public class MultiModalityOperationsBuilder {
                 .argument(newArgument().name(PARENT_SITE_REF).type(new GraphQLNonNull(GraphQLString)))
                 .argument(newArgument().name(STOP_PLACE_ID).type(new GraphQLList(GraphQLString)))
                 .dataFetcher(environment -> parentStopPlaceEditor.removeFromMultiModalStopPlace(environment.getArgument(PARENT_SITE_REF), environment.getArgument(STOP_PLACE_ID)))
+                .build());
+
+        operations.add(newFieldDefinition()
+                .type(GraphQLBoolean)
+                .name(REMOVE_MULTIMODAL_STOPPLACE)
+                .description("Removes a ParentStopPlace")
+                .argument(newArgument().name(PARENT_SITE_REF).type(new GraphQLNonNull(GraphQLString)))
+                .argument(newArgument().name(STOP_PLACE_ID).type(new GraphQLList(GraphQLString)))
+                .dataFetcher(environment -> parentStopPlaceEditor.removeMultiModalStopPlace(environment.getArgument(PARENT_SITE_REF), environment.getArgument(STOP_PLACE_ID)))
                 .build());
 
         return operations;

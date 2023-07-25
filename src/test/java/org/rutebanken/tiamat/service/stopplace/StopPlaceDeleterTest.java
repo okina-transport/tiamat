@@ -49,7 +49,7 @@ public class StopPlaceDeleterTest {
 
     private StopPlaceDeleter stopPlaceDeleter = new StopPlaceDeleter(stopPlaceRepository, entityChangedListener, authorizationService, usernameFetcher, mutateLock, stopPlaceQuayDeleterToChouette);
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void doNotDeleteParent() {
         StopPlace parent = new StopPlace();
         parent.setParentStopPlace(true);
@@ -57,7 +57,11 @@ public class StopPlaceDeleterTest {
 
         when(stopPlaceRepository.findAll(anyListOf(String.class))).thenReturn(Arrays.asList(parent));
 
-        stopPlaceDeleter.deleteStopPlace(parent.getNetexId());
+        boolean deleted = stopPlaceDeleter.deleteStopPlace(parent.getNetexId());
+
+        assertThat(deleted).isTrue();
+
+        verify(stopPlaceRepository, times(1)).deleteAll(anyList());
     }
 
     @Test

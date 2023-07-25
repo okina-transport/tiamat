@@ -55,6 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
+import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.RAIL_UIC_KEY;
 
 @Component
 @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -216,7 +217,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 if(keyValueListAppender.appendKeyValue(NetexIdMapper.FARE_ZONE, incomingStopPlace, copy)){
                     keyValuesChanged = true;
                 }
-                if(keyValueListAppender.appendKeyValue(NetexIdMapper.RAIL_UIC_KEY, incomingStopPlace, copy)){
+                if(keyValueListAppender.appendKeyValue(RAIL_UIC_KEY, incomingStopPlace, copy)){
                     keyValuesChanged = true;
                 }
 
@@ -267,6 +268,8 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                         copy = stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, copy);
                     }
                 }
+
+                copyPropertiesToParentStopPlace(copy);
 
                 String netexId = copy.getNetexId();
 
@@ -333,6 +336,29 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                     + ") and stop places found in database:" + errorStopPlacesStr;
 
             throw new TiamatBusinessException(TiamatBusinessException.TRANSPORT_MODE_MISMATCH, errorMsg);
+        }
+
+    }
+
+    private void copyPropertiesToParentStopPlace(org.rutebanken.tiamat.model.StopPlace copy) {
+
+        if (copy.getKeyValues() == null || !copy.getKeyValues().containsKey(RAIL_UIC_KEY)){
+            return;
+        }
+
+
+
+        String netexId = copy.getNetexId();
+        org.rutebanken.tiamat.model.StopPlace importedStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(netexId);
+        if (importedStopPlace.getParentSiteRef() != null){
+            String railUIC = copy.getKeyValues().get(RAIL_UIC_KEY).getItems().stream().findFirst().get();
+            String parentNetexId = importedStopPlace.getParentSiteRef().getRef();
+            org.rutebanken.tiamat.model.StopPlace parentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(parentNetexId);
+
+            Set<String> parentRailUIC = parentStopPlace.getOrCreateValues(RAIL_UIC_KEY);
+            parentRailUIC.add(railUIC);
+            stopPlaceVersionedSaverService.saveNewVersion(parentStopPlace);
+
         }
 
     }

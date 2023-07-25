@@ -89,7 +89,6 @@ public class TariffZoneRepositoryImpl implements TariffZoneRepositoryCustom {
     public String findFirstByKeyValue(String key, String value) {
         Query query = entityManager.createNativeQuery(SQL_TARIFF_ZONE_KEY_VALUES);
 
-        //todo la value vaut MOBIITI:Tz:1 c'est alors qu'on veut pas ça
         query.setParameter("key", key);
         query.setParameter("item", value);
 
@@ -175,13 +174,6 @@ public class TariffZoneRepositoryImpl implements TariffZoneRepositoryCustom {
 
         Map<String, Object> parameters = new HashMap<>();
 
-//        String queryStr = "INSERT INTO export_job_id_list \n" +
-//                " SELECT :exportJobId, req1.tz_id     \n" +
-//                " FROM ( \n" +
-//                " SELECT MAX(tz.id) AS tz_id, MAX(tz.version) AS version FROM tariff_zone tz WHERE (tz.from_date <= :pointInTime OR tz.from_date IS NULL) \n" +
-//                " AND (tz.to_date >= :pointInTime OR tz.to_date IS NULL) \n" +
-//                " AND tz.netex_id IN (SELECT tzr.ref FROM tariff_zone_ref tzr)\n" +
-//                " GROUP BY tz.netex_id) req1";
 
         String queryStr = "INSERT INTO export_job_id_list\n" +
                 "    SELECT :exportJobId, req1.tz_id     \n" +

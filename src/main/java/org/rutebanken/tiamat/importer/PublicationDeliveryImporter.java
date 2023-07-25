@@ -140,7 +140,6 @@ public class PublicationDeliveryImporter {
 
         try {
             SiteFrame responseSiteframe = new SiteFrame();
-            ServiceFrame responseServiceframe = new ServiceFrame();
 
             MDC.put(IMPORT_CORRELATION_ID, requestId);
             logger.info("Publication delivery contains site frame created at {}", netexSiteFrame.getCreated());

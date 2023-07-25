@@ -46,7 +46,9 @@
 package org.rutebanken.tiamat.importer.handler;
 
 import org.rutebanken.netex.model.*;
-import org.rutebanken.tiamat.importer.*;
+import org.rutebanken.tiamat.importer.ImportParams;
+import org.rutebanken.tiamat.importer.ImportType;
+import org.rutebanken.tiamat.importer.TariffZoneImporter;
 import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
@@ -58,7 +60,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.xml.bind.JAXBElement;
-import javax.xml.namespace.QName;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -76,8 +77,6 @@ public class TariffZoneImportHandler {
 
     @Autowired
     private TariffZoneRepository tariffZoneRepository;
-
-    private QName qname = new QName("http://www.netex.org.uk/netex", "TariffZone_");
 
     private ObjectFactory netexObectFactory = new ObjectFactory();
 

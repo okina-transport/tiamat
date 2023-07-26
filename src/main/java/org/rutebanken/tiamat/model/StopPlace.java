@@ -278,7 +278,8 @@ public class StopPlace
     }
 
     public void setTariffZones(Set<TariffZoneRef> tariffZones) {
-        this.tariffZones = tariffZones;
+        this.tariffZones.clear();
+        this.tariffZones.addAll(tariffZones);
     }
 
     public boolean isParentStopPlace() {

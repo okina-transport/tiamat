@@ -278,7 +278,11 @@ public class StopPlace
     }
 
     public void setTariffZones(Set<TariffZoneRef> tariffZones) {
-        this.tariffZones.clear();
+        if (this.tariffZones == null){
+            this.tariffZones = new HashSet<>();
+        }else{
+            this.tariffZones.clear();
+        }
         this.tariffZones.addAll(tariffZones);
     }
 

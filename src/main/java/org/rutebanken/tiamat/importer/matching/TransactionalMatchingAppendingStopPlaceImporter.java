@@ -357,7 +357,6 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             Set<String> parentRailUIC = parentStopPlace.getOrCreateValues(RAIL_UIC_KEY);
             parentRailUIC.add(railUIC);
-            stopPlaceVersionedSaverService.saveNewVersion(parentStopPlace);
 
         }
 

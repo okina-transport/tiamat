@@ -341,16 +341,13 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     }
 
     private void copyPropertiesToParentStopPlace(org.rutebanken.tiamat.model.StopPlace copy) {
-
         if (copy.getKeyValues() == null || !copy.getKeyValues().containsKey(RAIL_UIC_KEY)){
             return;
         }
 
-
-
         String netexId = copy.getNetexId();
         org.rutebanken.tiamat.model.StopPlace importedStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(netexId);
-        if (importedStopPlace.getParentSiteRef() != null){
+        if (importedStopPlace.getParentSiteRef() != null && copy.getKeyValues().get(RAIL_UIC_KEY).getItems().stream().findFirst().isPresent()){
             String railUIC = copy.getKeyValues().get(RAIL_UIC_KEY).getItems().stream().findFirst().get();
             String parentNetexId = importedStopPlace.getParentSiteRef().getRef();
             org.rutebanken.tiamat.model.StopPlace parentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(parentNetexId);

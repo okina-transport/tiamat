@@ -38,6 +38,8 @@ public class BackgroundJobs {
 
     private final QuayIdMappingService quayIdMappingService;
 
+    private final StopPlaceIdMappingService stopPlaceIdMappingService;
+
     @Autowired
     private HazelcastInstance hazelcastInstance;
 
@@ -45,10 +47,12 @@ public class BackgroundJobs {
     private EntityManager entityManager;
 
     @Autowired
-    public BackgroundJobs(GaplessIdGeneratorService gaplessIdGeneratorService, StopPlaceRefUpdaterService stopPlaceRefUpdaterService, QuayIdMappingService quayIdMappingService) {
+    public BackgroundJobs(GaplessIdGeneratorService gaplessIdGeneratorService, StopPlaceRefUpdaterService stopPlaceRefUpdaterService, QuayIdMappingService quayIdMappingService,
+                          StopPlaceIdMappingService stopPlaceIdMappingService) {
         this.gaplessIdGeneratorService = gaplessIdGeneratorService;
         this.stopPlaceRefUpdaterService = stopPlaceRefUpdaterService;
         this.quayIdMappingService = quayIdMappingService;
+        this.stopPlaceIdMappingService = stopPlaceIdMappingService;
     }
 
     @PostConstruct
@@ -63,6 +67,9 @@ public class BackgroundJobs {
 
         logger.info("Scheduling background job for quay id mapping file creation");
         backgroundJobExecutor.scheduleAtFixedRate(quayIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
+
+        logger.info("Scheduling background job for stopPlace id mapping file creation");
+        backgroundJobExecutor.scheduleAtFixedRate(stopPlaceIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
         
         syncIdGenerator();
     }

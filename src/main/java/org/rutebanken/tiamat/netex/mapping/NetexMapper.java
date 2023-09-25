@@ -18,14 +18,12 @@ package org.rutebanken.tiamat.netex.mapping;
 import ma.glasnost.orika.*;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.rutebanken.netex.model.*;
-import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.tiamat.netex.mapping.mapper.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.xml.bind.JAXBElement;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -214,9 +212,41 @@ public class NetexMapper {
         return generalFrame;
     }
 
+    public AllVehicleModesOfTransportEnumeration mapTiamatTransportModeToNetex(org.rutebanken.tiamat.model.VehicleModeEnumeration transportMode) {
+        switch(transportMode) {
+            case AIR:
+                return AllVehicleModesOfTransportEnumeration.AIR;
+            case COACH:
+                return AllVehicleModesOfTransportEnumeration.COACH;
+            case FERRY:
+                return AllVehicleModesOfTransportEnumeration.FERRY;
+            case METRO:
+                return AllVehicleModesOfTransportEnumeration.METRO;
+            case RAIL:
+                return AllVehicleModesOfTransportEnumeration.RAIL;
+            case TROLLEY_BUS:
+                return AllVehicleModesOfTransportEnumeration.TROLLEY_BUS;
+            case TRAM:
+                return AllVehicleModesOfTransportEnumeration.TRAM;
+            case WATER:
+                return AllVehicleModesOfTransportEnumeration.WATER;
+            case CABLEWAY:
+                return AllVehicleModesOfTransportEnumeration.CABLEWAY;
+            case FUNICULAR:
+                return AllVehicleModesOfTransportEnumeration.FUNICULAR;
+            case LIFT:
+                return AllVehicleModesOfTransportEnumeration.LIFT;
+            case OTHER:
+                return AllVehicleModesOfTransportEnumeration.OTHER;
+            default:
+                // Unsupported transport modes, null values & BUS values are all mapped to BUS by default
+                return AllVehicleModesOfTransportEnumeration.BUS;
+        }
+    }
+
     public StopPlace mapToNetexModel(org.rutebanken.tiamat.model.StopPlace tiamatStopPlace) {
         StopPlace netexStopPlace = facade.map(tiamatStopPlace, StopPlace.class);
-        netexStopPlace.setTransportMode(AllVehicleModesOfTransportEnumeration.BUS);
+        netexStopPlace.setTransportMode(mapTiamatTransportModeToNetex(tiamatStopPlace.getTransportMode()));
         netexStopPlace.setWeighting(InterchangeWeightingEnumeration.INTERCHANGE_ALLOWED);
 
         initTypeOfPlace(netexStopPlace);
@@ -271,7 +301,7 @@ public class NetexMapper {
         typeOfPlace.withRef("monomodalStopPlace");
         placeRefs.withTypeOfPlaceRef(typeOfPlace);
         quay.setPlaceTypes(placeRefs);
-        quay.setTransportMode(AllVehicleModesOfTransportEnumeration.BUS);
+        quay.setTransportMode(stopPlace.getTransportMode());
         SiteRefStructure siteRef = new SiteRefStructure();
         siteRef.withRef(stopPlace.getId());
         quay.setSiteRef(siteRef);

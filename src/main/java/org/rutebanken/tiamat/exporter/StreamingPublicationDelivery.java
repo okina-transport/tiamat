@@ -711,8 +711,11 @@ public class StreamingPublicationDelivery {
     }
 
     private void addAdditionalInfo(org.rutebanken.tiamat.model.StopPlace stopPlace){
-        VehicleModeEnumeration transportMode = TiamatVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(stopPlace.getStopPlaceType());
-        stopPlace.setTransportMode(transportMode);
+        if(stopPlace.getTransportMode() == null) {
+            VehicleModeEnumeration transportMode = TiamatVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(stopPlace.getStopPlaceType());
+            stopPlace.setTransportMode(transportMode);
+        }
+
         for (org.rutebanken.tiamat.model.Quay quay : stopPlace.getQuays()) {
             if (quay.getSiteRef() == null) {
                 org.rutebanken.tiamat.model.SiteRefStructure siteRef = new org.rutebanken.tiamat.model.SiteRefStructure();
@@ -721,7 +724,7 @@ public class StreamingPublicationDelivery {
             }
 
             if (quay.getTransportMode() == null) {
-                quay.setTransportMode(transportMode);
+                quay.setTransportMode(stopPlace.getTransportMode());
             }
         }
     }

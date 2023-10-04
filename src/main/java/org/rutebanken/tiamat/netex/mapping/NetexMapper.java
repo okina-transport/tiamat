@@ -213,35 +213,36 @@ public class NetexMapper {
     }
 
     public AllVehicleModesOfTransportEnumeration mapTiamatTransportModeToNetex(org.rutebanken.tiamat.model.VehicleModeEnumeration transportMode) {
-        switch(transportMode) {
-            case AIR:
-                return AllVehicleModesOfTransportEnumeration.AIR;
-            case COACH:
-                return AllVehicleModesOfTransportEnumeration.COACH;
-            case FERRY:
-                return AllVehicleModesOfTransportEnumeration.FERRY;
-            case METRO:
-                return AllVehicleModesOfTransportEnumeration.METRO;
-            case RAIL:
-                return AllVehicleModesOfTransportEnumeration.RAIL;
-            case TROLLEY_BUS:
-                return AllVehicleModesOfTransportEnumeration.TROLLEY_BUS;
-            case TRAM:
-                return AllVehicleModesOfTransportEnumeration.TRAM;
-            case WATER:
-                return AllVehicleModesOfTransportEnumeration.WATER;
-            case CABLEWAY:
-                return AllVehicleModesOfTransportEnumeration.CABLEWAY;
-            case FUNICULAR:
-                return AllVehicleModesOfTransportEnumeration.FUNICULAR;
-            case LIFT:
-                return AllVehicleModesOfTransportEnumeration.LIFT;
-            case OTHER:
-                return AllVehicleModesOfTransportEnumeration.OTHER;
-            default:
-                // Unsupported transport modes, null values & BUS values are all mapped to BUS by default
-                return AllVehicleModesOfTransportEnumeration.BUS;
+        if(transportMode != null) {
+            switch (transportMode) {
+                case AIR:
+                    return AllVehicleModesOfTransportEnumeration.AIR;
+                case COACH:
+                    return AllVehicleModesOfTransportEnumeration.COACH;
+                case FERRY:
+                    return AllVehicleModesOfTransportEnumeration.FERRY;
+                case METRO:
+                    return AllVehicleModesOfTransportEnumeration.METRO;
+                case RAIL:
+                    return AllVehicleModesOfTransportEnumeration.RAIL;
+                case TROLLEY_BUS:
+                    return AllVehicleModesOfTransportEnumeration.TROLLEY_BUS;
+                case TRAM:
+                    return AllVehicleModesOfTransportEnumeration.TRAM;
+                case WATER:
+                    return AllVehicleModesOfTransportEnumeration.WATER;
+                case CABLEWAY:
+                    return AllVehicleModesOfTransportEnumeration.CABLEWAY;
+                case FUNICULAR:
+                    return AllVehicleModesOfTransportEnumeration.FUNICULAR;
+                case LIFT:
+                    return AllVehicleModesOfTransportEnumeration.LIFT;
+                case OTHER:
+                    return AllVehicleModesOfTransportEnumeration.OTHER;
+            }
         }
+
+        return AllVehicleModesOfTransportEnumeration.BUS;
     }
 
     public StopPlace mapToNetexModel(org.rutebanken.tiamat.model.StopPlace tiamatStopPlace) {

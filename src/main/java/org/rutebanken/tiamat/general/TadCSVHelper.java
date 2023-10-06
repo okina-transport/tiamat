@@ -163,6 +163,8 @@ public class TadCSVHelper {
                 .map(this::createStopPlaceForQuay)
                 .collect(Collectors.toList()));
 
+        stopsToPersist.forEach(this::addTransportMode);
+
         logger.info("Mapping completed. Starting to persist TADs");
 
         for (StopPlace stopPlace : stopsToPersist) {
@@ -177,6 +179,15 @@ public class TadCSVHelper {
             }
         }
 
+    }
+
+    /**
+     * Add BUS as default stop place type
+     * @param stopPlace
+     */
+    private void addTransportMode(StopPlace stopPlace) {
+        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        stopPlace.setTransportMode(VehicleModeEnumeration.BUS);
     }
 
     private StopPlace createStopPlaceForQuay(Quay quay) {

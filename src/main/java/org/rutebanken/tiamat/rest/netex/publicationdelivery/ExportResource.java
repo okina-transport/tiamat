@@ -40,7 +40,6 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.JAXBException;
@@ -48,6 +47,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -159,7 +159,7 @@ public class ExportResource {
         try{
             List<Quay> quays =   quayRepository.findAllByImportedId(referential + ":Quay:" + importedId);
 
-            if (quays.size() > 0){
+            if (!quays.isEmpty()){
                 List<StopPlace> stopPlaces = stopPlaceRepository.findStopPlaceByQuays(quays);
 
                 List<StopPlaceView> stopPlaceViews = stopPlaces.stream()
@@ -168,9 +168,11 @@ public class ExportResource {
                 resultViews.addAll(stopPlaceViews);
             }
 
-        List<StopPlace> stopPlaces = stopPlaceRepository.findAllFromKeyValue("imported-id", referential + ":StopPlace:" +importedId);
 
-        if (stopPlaces.size() > 0 ){
+        String value = referential + ":StopPlace:" + importedId;
+        List<StopPlace> stopPlaces = stopPlaceRepository.findAllFromKeyValue("imported-id", Collections.singleton(value.toUpperCase()));
+
+        if (!stopPlaces.isEmpty()){
             List<StopPlaceView> stopPlaceViews = stopPlaces.stream()
                                                             .map(StopPlaceView::new)
                                                             .collect(Collectors.toList());

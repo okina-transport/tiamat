@@ -95,7 +95,7 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     List<StopPlace> findStopPlaceByQuays(List<Quay> quays);
 
-    List<StopPlace> findAllFromKeyValue(String key, String value);
+    List<StopPlace> findAllFromKeyValue(String key, Set<String> values);
 
     void initExportJobTable(Provider provider, Long exportJobId);
 

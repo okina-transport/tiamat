@@ -598,12 +598,14 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                     "    ON s.id = spkv.stop_place_id AND spkv.key_values_key = :key" +
                     "  INNER JOIN value_items vi " +
                     "    ON vi.value_id = spkv.key_values_id " +
-                    " WHERE upper(vi.items)  = UPPER(:value) ";
+                    " WHERE upper(vi.items)  = UPPER(:value) " +
+                    " AND s.version = (select max(sv.version) from stop_place sv where sv.netex_id = s.netex_id)";
         } else {
             sql = "SELECT DISTINCT s.* " +
                     " FROM stop_place s " +
-                    "  INNER JOIN stop_place_key_values spkv " +
-                    "    ON s.id = spkv.stop_place_id AND spkv.key_values_key = :key";
+                    "   INNER JOIN stop_place_key_values spkv " +
+                    "     ON s.id = spkv.stop_place_id AND spkv.key_values_key = :key" +
+                    " WHERE s.version = (select max(sv.version) from stop_place sv where sv.netex_id = s.netex_id)";
         }
 
         Query query = entityManager.createNativeQuery(sql, StopPlace.class);

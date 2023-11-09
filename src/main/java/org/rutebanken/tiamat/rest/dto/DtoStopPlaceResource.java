@@ -165,7 +165,7 @@ public class DtoStopPlaceResource {
         //tiamat.StopPlace to netex.StopPlace to List<JAXBElement<? extends EntityStructure>>
         List<JAXBElement<? extends EntityStructure>> netexStopPlaces = stopPlaces.stream()
                 .map(stopPlace -> netexMapper.mapToNetexModel(stopPlace))
-                .map(netexStopPlace -> netexObjectFactory.createStopPlace(netexStopPlace)).collect(Collectors.toList());
+                .map(netexObjectFactory::createStopPlace).collect(Collectors.toList());
 
         //creating GeneralFrame
         org.rutebanken.tiamat.model.GeneralFrame generalFrame = new org.rutebanken.tiamat.model.GeneralFrame();
@@ -189,9 +189,8 @@ public class DtoStopPlaceResource {
 
         //creating publicationDelivery
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame,"idSite", LocalDateTime.now());
-        JAXBElement<PublicationDeliveryStructure> publicationDelivery =netexObjectFactory.createPublicationDelivery(publicationDeliveryStructure);
 
-        return publicationDelivery;
+        return netexObjectFactory.createPublicationDelivery(publicationDeliveryStructure);
     }
 
 

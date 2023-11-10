@@ -32,7 +32,6 @@ import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
-import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -50,7 +49,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import javax.persistence.EntityGraph;
 import javax.persistence.EntityManager;
@@ -588,17 +586,17 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     }
 
     @Override
-    public List<StopPlace> findAllFromKeyValue(String key, String value) {
+    public List<StopPlace> findAllFromKeyValue(String key, Set<String> values) {
 
         String sql;
-        if (StringUtils.hasLength(value)){
+        if (values != null && !values.isEmpty()){
             sql = "SELECT DISTINCT s.* " +
                     " FROM stop_place s " +
                     "  INNER JOIN stop_place_key_values spkv " +
                     "    ON s.id = spkv.stop_place_id AND spkv.key_values_key = :key" +
                     "  INNER JOIN value_items vi " +
                     "    ON vi.value_id = spkv.key_values_id " +
-                    " WHERE upper(vi.items)  = UPPER(:value) " +
+                    " WHERE upper(vi.items) IN (:values) " +
                     " AND s.version = (select max(sv.version) from stop_place sv where sv.netex_id = s.netex_id)";
         } else {
             sql = "SELECT DISTINCT s.* " +
@@ -612,8 +610,8 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
 
         query.setParameter("key", key);
-        if(StringUtils.hasLength(value)) {
-            query.setParameter("value", value);
+        if (values != null && !values.isEmpty()){
+            query.setParameter("values", values);
         }
 
         try {
@@ -622,7 +620,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
             if (results.isEmpty()) {
                 return new ArrayList<>();
             } else {
-                results.stream().forEach(stopPlace -> {
+                results.forEach(stopPlace -> {
                         Hibernate.initialize(stopPlace.getKeyValues());
                         stopPlace.getKeyValues().values().forEach(value1 -> Hibernate.initialize(value1.getItems()));
                 });

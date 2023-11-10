@@ -33,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
@@ -150,14 +151,14 @@ public class DtoStopPlaceResource {
         return netexObjectFactory.createStopPlace(lightNetex);
     }
 
-    @GET
+    @POST
     @Path("/stop_places")
     @Produces("application/xml")
-    public JAXBElement<PublicationDeliveryStructure> getKeyValueStopPlace(@QueryParam(value = "key") String key, @QueryParam(value = "value") String value) {
+    public JAXBElement<PublicationDeliveryStructure> getStopPlacesByKeyValues(@QueryParam(value = "key") String key, @RequestBody Set<String> values) {
 
         List<StopPlace> stopPlaces;
         if(StringUtils.hasLength(key)){
-            stopPlaces = stopPlaceRepository.findAllFromKeyValue(key, value);
+            stopPlaces = stopPlaceRepository.findAllFromKeyValue(key, values);
         } else {
             stopPlaces = stopPlaceRepository.findAll();
         }

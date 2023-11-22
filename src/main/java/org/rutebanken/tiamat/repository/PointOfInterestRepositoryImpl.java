@@ -199,6 +199,10 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
             Hibernate.initialize(pointOfInterest.getClassifications());
             Hibernate.initialize(pointOfInterest.getEquipmentPlaces());
             Hibernate.initialize(pointOfInterest.getPolygon());
+            Hibernate.initialize(pointOfInterest.getAccessibilityAssessment());
+            if (pointOfInterest.getAccessibilityAssessment() != null){
+                Hibernate.initialize(pointOfInterest.getAccessibilityAssessment().getLimitations());
+            }
 
             pointOfInterest.getClassifications().forEach(this::initializeRecursivelyClassification);
 

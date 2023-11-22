@@ -1,9 +1,11 @@
 package org.rutebanken.tiamat.importer;
 
 
+import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.rutebanken.tiamat.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,9 +29,14 @@ public class ImporterUtils {
     private final static String GEO_API_GOUV_ENDPOINT = "https://geo.api.gouv.fr/communes?lat=%s&lon=%s&fields=nom,code,codesPostaux&format=json";
 
     public static Optional<String> getInseeFromLatLng(double x, double y) {
-
         Optional<String> inseeOpt = getInseeFromOkinaAPI(x, y);
         return inseeOpt.isPresent() ? inseeOpt : getInseeFromGovAPI(x,y);
+    }
+
+    public static DtoGeocode getGeocodeDataByReverseGeocoding(double x, double y) {
+        DtoGeocode dtoGeocode = getGeocodeDataFromOkinaAPI(x, y);
+        getGeocodeDataFromGovAPI(x, y, dtoGeocode);
+        return dtoGeocode;
     }
 
 
@@ -140,4 +147,94 @@ public class ImporterUtils {
 
         return Optional.of(siteElement.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess());
     }
+
+    private static DtoGeocode getGeocodeDataFromOkinaAPI(double x, double y) {
+        final String okinaUrl = String.format(OKINA_ENDPOINT, x, y);
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        ResponseEntity response = null;
+
+        try {
+            response = restTemplate.exchange(okinaUrl, HttpMethod.GET, HttpEntity.EMPTY, String.class);
+            JSONObject body = new JSONObject(Objects.requireNonNull(response.getBody()).toString());
+
+            if (body.getJSONArray("features") != null && body.getJSONArray("features").length() > 0) {
+
+                JSONObject properties = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties");
+                String cityCode = properties.has("citycode") ? properties.getString("citycode") : "";
+                String postCode  = properties.has("postcode") ? properties.getString("postcode") : "";
+                String address = properties.has("name") ? properties.getString("name") : "";
+                String city = properties.has("city") ? properties.getString("city") : "";
+
+                DtoGeocode geocodeResult = new DtoGeocode();
+                if(StringUtils.isNumeric(cityCode)){
+                    geocodeResult.setCityCode(cityCode);
+                }
+                if(StringUtils.isNumeric(postCode)) {
+                    geocodeResult.setPostCode(postCode);
+                }
+                geocodeResult.setAddress(address);
+                geocodeResult.setCity(city);
+                return geocodeResult;
+            }
+        } catch (RestClientException | JSONException | IllegalArgumentException e) {
+            logger.error("Error on geocode recovering", e);
+            logger.error("okinaUrl : " + okinaUrl);
+            if (response != null && response.getBody() != null){
+                logger.error(response.getBody().toString());
+            }
+
+        }
+        return new DtoGeocode();
+    }
+
+    private static DtoGeocode getGeocodeDataFromGovAPI(double x, double y, DtoGeocode dtoGeocode) {
+        final String dataGouvUrl = String.format(DATA_GOUV_ENDPOINT, y, x);
+        RestTemplate restTemplate = new RestTemplate();
+
+        ResponseEntity response = null;
+
+        try {
+            response = restTemplate.exchange(dataGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, String.class);
+            JSONObject body = new JSONObject(Objects.requireNonNull(response.getBody()).toString());
+
+            if (body.getJSONArray("features") != null && body.getJSONArray("features").length() > 0) {
+
+                JSONObject properties = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties");
+                if(org.apache.commons.lang3.StringUtils.isEmpty(dtoGeocode.getCityCode())){
+                    String cityCode = properties.has("citycode") ? properties.getString("citycode") : "";
+                    if(StringUtils.isNumeric(cityCode)){
+                        dtoGeocode.setCityCode(cityCode);
+                    }
+                }
+                if(org.apache.commons.lang3.StringUtils.isEmpty(dtoGeocode.getPostCode())){
+                    String postCode = properties.has("postcode") ? properties.getString("postcode") : "";
+                    if(StringUtils.isNumeric(postCode)) {
+                        dtoGeocode.setPostCode(postCode);
+                    }
+                }
+                if(org.apache.commons.lang3.StringUtils.isEmpty(dtoGeocode.getAddress())){
+                    String address = properties.has("name") ? properties.getString("name") : "";
+                    dtoGeocode.setAddress(address);
+                }
+                if(org.apache.commons.lang3.StringUtils.isEmpty(dtoGeocode.getCity())){
+                    String city = properties.has("city") ? properties.getString("city") : "";
+                    dtoGeocode.setCity(city);
+                }
+
+                return dtoGeocode;
+            }
+        } catch (RestClientException | JSONException | IllegalArgumentException e) {
+            logger.error("Error on geocode recovering", e);
+            logger.error("dataGouvUrl : " + dataGouvUrl);
+            if (response != null && response.getBody() != null){
+                logger.error(response.getBody().toString());
+            }
+
+        }
+        return dtoGeocode;
+    }
+
+
 }

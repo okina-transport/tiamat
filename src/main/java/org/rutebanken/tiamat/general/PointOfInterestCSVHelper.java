@@ -8,6 +8,7 @@ import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.externalapis.ApiProxyService;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
+import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.PointOfInterestClassificationRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestFacilitySetRepository;
@@ -24,8 +25,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigDecimal;
-import java.math.MathContext;
 import java.time.Instant;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -258,7 +257,8 @@ public class PointOfInterestCSVHelper {
         newPointOfInterest.setName(new EmbeddableMultilingualString(dtoPoiCSV.getName(), "FR"));
         newPointOfInterest.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(dtoPoiCSV.getLongitude()), Double.parseDouble(dtoPoiCSV.getLatitude()))));
         try {
-            DtoGeocode geocodeData = apiProxyService.getGeocodeDataByReverseGeocoding(new BigDecimal(dtoPoiCSV.getLatitude(), MathContext.DECIMAL64), new BigDecimal(dtoPoiCSV.getLongitude(), MathContext.DECIMAL64));
+            logger.info("Geocode data recovering for POI : " + dtoPoiCSV.getId());
+            DtoGeocode geocodeData = ImporterUtils.getGeocodeDataByReverseGeocoding(Double.parseDouble(dtoPoiCSV.getLongitude()), Double.parseDouble(dtoPoiCSV.getLatitude()));
             newPointOfInterest.setZipCode(geocodeData.getCityCode());
             newPointOfInterest.setPostalCode(StringUtils.isEmpty(dtoPoiCSV.getPostCode()) ? geocodeData.getPostCode() : dtoPoiCSV.getPostCode());
             newPointOfInterest.setCity(dtoPoiCSV.getCity().isEmpty() ? geocodeData.getCity() : dtoPoiCSV.getCity());

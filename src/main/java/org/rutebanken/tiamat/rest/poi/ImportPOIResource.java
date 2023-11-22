@@ -54,6 +54,8 @@ public class ImportPOIResource {
             logger.error(e.getMessage(),e);
         }
 
+        logger.info("Import POI par " + user + " du fichier " + fileName + " terminé");
+
         return Response.status(200).build();
     }
 

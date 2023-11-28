@@ -233,7 +233,7 @@ public class StreamingPublicationDelivery {
         logger.info("Preparing scrollable iterators");
         prepareTopographicPlaces(mappedTopographicPlacesCount, listMembers, exportJobId);
 
-        prepareTariffZones(mappedTariffZonesCount, listMembers, exportJobId, totalIdsToExport);
+        prepareTariffZones(mappedTariffZonesCount, listMembers, exportJobId, totalIdsToExport, provider.getChouetteInfo().getNameNetexStop());
 
         completeStreamingProcess(outputStream, mappedStopPlaceCount, mappedParkingCount, mappedTariffZonesCount, mappedTopographicPlacesCount, mappedGroupOfStopPlacesCount, netexGeneralFrame, listMembers);
     }
@@ -302,7 +302,7 @@ public class StreamingPublicationDelivery {
                 if (keyList != null && keyList.getKeyValue() != null) {
                     List<KeyValueStructure> keyValue = keyList.getKeyValue();
                     for (KeyValueStructure structure : keyValue) {
-                        if (structure != null && "imported-id".equals(structure.getKey())) {
+                        if (structure != null && ("imported-id".equals(structure.getKey()) || "fare-zone".equals(structure.getKey()))) {
                             structure.setValue(structure.getValue().replace("##3A##",":"));
                             if(StringUtils.isNotBlank(prefix) && structure.getValue().contains(":")){
                                 String oldString = structure.getValue().split(":")[0];
@@ -780,7 +780,7 @@ public class StreamingPublicationDelivery {
 
     }
 
-    private void prepareTariffZones(AtomicInteger mappedTariffZonesCount, List<JAXBElement<? extends EntityStructure>> listMembers, Long jobid, Set<Long> listStopPlaces) {
+    private void prepareTariffZones(AtomicInteger mappedTariffZonesCount, List<JAXBElement<? extends EntityStructure>> listMembers, Long jobid, Set<Long> listStopPlaces, String prefix) {
         Iterator<org.rutebanken.tiamat.model.TariffZone> tariffZoneIterator;
 
         tariffZoneIterator = prepareTariffZonesIteratorForExportJob(jobid, listStopPlaces);
@@ -791,11 +791,13 @@ public class StreamingPublicationDelivery {
 
             List<org.rutebanken.netex.model.TariffZone> tariffZones = new ArrayList<>();
             tariffZoneMappingIterator.forEachRemaining(tariffZones::add);
-
+            List<JAXBElement<? extends EntityStructure>> jaxbElementList = new ArrayList<>();
             tariffZones.forEach(tariffZone -> {
                 JAXBElement<org.rutebanken.netex.model.TariffZone> jaxbElementTariffZone = netexObjectFactory.createTariffZone(tariffZone);
-                listMembers.add(jaxbElementTariffZone);
+                jaxbElementList.add(jaxbElementTariffZone);
             });
+            desanitizeImportedIds(jaxbElementList, prefix);
+            listMembers.addAll(jaxbElementList);
         } else {
             logger.info("No tariff zones to export");
         }

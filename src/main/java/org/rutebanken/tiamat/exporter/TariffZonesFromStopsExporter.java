@@ -20,8 +20,10 @@ import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.netex.model.TariffZone;
 import org.rutebanken.netex.model.TariffZonesInFrame_RelStructure;
 import org.rutebanken.netex.model.Zone_VersionStructure;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.TariffZoneRef;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
+import org.rutebanken.tiamat.repository.ProviderRepository;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,17 +61,16 @@ public class TariffZonesFromStopsExporter {
 
         Map<String, TariffZone> tariffZoneMap = new HashMap<>();
 
-        if(responseSiteFrame.getTariffZones() != null && responseSiteFrame.getTariffZones().getTariffZone_() != null) {
+        if (responseSiteFrame.getTariffZones() != null && responseSiteFrame.getTariffZones().getTariffZone_() != null) {
 
 
             List<org.rutebanken.netex.model.TariffZone> tarifZones = responseSiteFrame.getTariffZones().getTariffZone_()
-                                                                                    .stream()
-                                                                                    .map(jaxbElement -> (org.rutebanken.netex.model.TariffZone) jaxbElement.getValue())
-                                                                                    .collect(Collectors.toList());
+                    .stream()
+                    .map(jaxbElement -> (org.rutebanken.netex.model.TariffZone) jaxbElement.getValue())
+                    .collect(Collectors.toList());
 
-            tarifZones
-                    .forEach(tariffZone -> tariffZoneMap.put(key(tariffZone.getId(), tariffZone.getVersion()), tariffZone));
-    }
+            tarifZones.forEach(tariffZone -> tariffZoneMap.put(key(tariffZone.getId(), tariffZone.getVersion()), tariffZone));
+        }
 
         importedNetexStopPlaces.stream()
                 .filter(stopPlace -> stopPlace.getTariffZones() != null)
@@ -86,21 +87,45 @@ public class TariffZonesFromStopsExporter {
                 })
                 .filter(Objects::nonNull)
                 .peek(tiamatTariffZone -> logger.debug("Resolved tariffZone: {}", tiamatTariffZone))
+                //.map(this::resolveNetexId)
                 .map(tiamatTariffZone -> netexMapper.getFacade().map(tiamatTariffZone, TariffZone.class))
                 .forEach(tariffZone -> tariffZoneMap.put(key(tariffZone.getId(), tariffZone.getVersion()), tariffZone));
 
-        if(tariffZoneMap.values().isEmpty()) {
+        if (tariffZoneMap.values().isEmpty()) {
             logger.info("No relevant tariff zones to return");
             responseSiteFrame.withTariffZones(null);
         } else {
             logger.info("Adding {} tariff zones", tariffZoneMap.values().size());
             List<JAXBElement<? extends Zone_VersionStructure>> jaxbTariffZone = tariffZoneMap.values().stream()
-                                                                            .map(tariffZone -> new JAXBElement<TariffZone>(qname, TariffZone.class, tariffZone))
-                                                                            .collect(Collectors.toList());
+                    .map(tariffZone -> new JAXBElement<TariffZone>(qname, TariffZone.class, tariffZone))
+                    .collect(Collectors.toList());
 
             responseSiteFrame.withTariffZones(new TariffZonesInFrame_RelStructure().withTariffZone_(jaxbTariffZone));
         }
     }
+
+
+    /**
+     * Ce code permet de nettoyer les ref des tarifs zone, fait à l'occasion du ticket 18982
+     * //todo confirmer ou infirmer la necessité de réaliser le nettoyage ici
+     * @param id
+     * @param version
+     * @return
+     */
+//    private Object resolveNetexId(org.rutebanken.tiamat.model.TariffZone tiamatTariffZone) {
+//        tiamatTariffZone.setNetexId(tiamatTariffZone.getNetexId().replace("##3A##",":"));
+//        String providerName = tiamatTariffZone.getNetexId().split(":")[0];
+//        List<Provider> providers = providerRepository.getProviders().stream()
+//                .filter(provider -> providerName.equals(provider.chouetteInfo.referential))
+//                .filter(provider -> provider.chouetteInfo.nameNetexStop != null)
+//                .collect(Collectors.toList());
+//        if(!providers.isEmpty()){
+//            String prefix = providers.get(0).chouetteInfo.nameNetexStop;
+//            tiamatTariffZone.setNetexId(tiamatTariffZone.getNetexId().replace(providerName, prefix));
+//            return tiamatTariffZone;
+//        }
+//        return tiamatTariffZone;
+//    }
 
     private String key(String id, String version) {
         return id + "-" + version;

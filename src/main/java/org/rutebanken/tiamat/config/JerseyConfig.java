@@ -40,6 +40,7 @@ import org.rutebanken.tiamat.rest.parkings.ImportParkingsResource;
 import org.rutebanken.tiamat.rest.poi.ImportPOIResource;
 import org.rutebanken.tiamat.rest.parkings.ImportRentalBikeResource;
 import org.rutebanken.tiamat.rest.tad.ImportTADRessource;
+import org.rutebanken.tiamat.rest.tariffzone.TariffZoneRessource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
@@ -97,6 +98,7 @@ public class JerseyConfig {
         publicResources.add(ImportRentalBikeResource.class);
         publicResources.add(GraphQLResource.class);
         publicResources.add(DeleteRessource.class);
+        publicResources.add(TariffZoneRessource.class);
 
 
         publicResources.add(GeneralExceptionMapper.class);

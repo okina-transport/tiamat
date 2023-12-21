@@ -16,15 +16,9 @@
 package org.rutebanken.tiamat.versioning.save;
 
 
-import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
-import org.rutebanken.tiamat.model.DataManagedObjectStructure;
-import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.PointOfInterest;
-import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
-import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
 import org.rutebanken.tiamat.versioning.VersionIncrementor;
 import org.slf4j.Logger;
@@ -32,11 +26,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.util.Arrays;
-
-import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
 
 @Transactional
 @Service
@@ -51,16 +40,10 @@ public class PointOfInterestVersionedSaverService {
     private UsernameFetcher usernameFetcher;
 
     @Autowired
-    private ReferenceResolver referenceResolver;
-
-    @Autowired
     private VersionIncrementor versionIncrementor;
 
     @Autowired
     private MetricsService metricsService;
-
-    @Autowired
-    private ReflectionAuthorizationService reflectionAuthorizationService;
 
     public PointOfInterest saveNewVersion(PointOfInterest newVersion) {
 

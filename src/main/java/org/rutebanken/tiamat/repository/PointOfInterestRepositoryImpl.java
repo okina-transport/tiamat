@@ -412,4 +412,32 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
         }
     }
 
+    public List<PointOfInterest> getAllPOIWithoutPostcode() {
+        String sql = "SELECT poi.* FROM point_of_interest poi " +
+                     "WHERE poi.postal_code IS NULL " +
+                     "AND poi.version = (SELECT MAX(pi.version) FROM point_of_interest pi WHERE pi.netex_id = poi.netex_id) ";
+
+        Query pointOfInterestTypedQuery = entityManager.createNativeQuery(sql, PointOfInterest.class);
+
+        List<PointOfInterest> results = pointOfInterestTypedQuery.getResultList();
+
+        results.forEach(pointOfInterest -> {
+            Hibernate.initialize(pointOfInterest.getAlternativeNames());
+            Hibernate.initialize(pointOfInterest.getClassifications());
+            Hibernate.initialize(pointOfInterest.getEquipmentPlaces());
+            Hibernate.initialize(pointOfInterest.getPolygon());
+            Hibernate.initialize(pointOfInterest.getAccessibilityAssessment());
+            if (pointOfInterest.getAccessibilityAssessment() != null){
+                Hibernate.initialize(pointOfInterest.getAccessibilityAssessment().getLimitations());
+            }
+
+            pointOfInterest.getClassifications().forEach(this::initializeRecursivelyClassification);
+
+            Hibernate.initialize(pointOfInterest.getKeyValues());
+            pointOfInterest.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+        });
+
+        return results;
+    }
+
 }

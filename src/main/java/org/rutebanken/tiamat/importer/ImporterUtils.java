@@ -2,6 +2,7 @@ package org.rutebanken.tiamat.importer;
 
 
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -35,10 +36,10 @@ public class ImporterUtils {
 
     public static DtoGeocode getGeocodeDataByReverseGeocoding(double x, double y) {
         DtoGeocode dtoGeocode = getGeocodeDataFromOkinaAPI(x, y);
-        getGeocodeDataFromGovAPI(x, y, dtoGeocode);
+        getGeocodeDataFromDataGouvAPI(x, y, dtoGeocode);
+        getGeocodeDataFromGeoGouvAPI(x, y, dtoGeocode);
         return dtoGeocode;
     }
-
 
     private static Optional<String> getInseeFromOkinaAPI(double x, double y) {
         final String okinaUrl = String.format(OKINA_ENDPOINT, x,y);
@@ -189,7 +190,7 @@ public class ImporterUtils {
         return new DtoGeocode();
     }
 
-    private static DtoGeocode getGeocodeDataFromGovAPI(double x, double y, DtoGeocode dtoGeocode) {
+    private static DtoGeocode getGeocodeDataFromDataGouvAPI(double x, double y, DtoGeocode dtoGeocode) {
         final String dataGouvUrl = String.format(DATA_GOUV_ENDPOINT, y, x);
         RestTemplate restTemplate = new RestTemplate();
 
@@ -235,6 +236,40 @@ public class ImporterUtils {
         }
         return dtoGeocode;
     }
+
+    private static DtoGeocode getGeocodeDataFromGeoGouvAPI(double x, double y, DtoGeocode dtoGeocode) {
+        final String geoApiGouv = String.format(GEO_API_GOUV_ENDPOINT, y, x);
+        RestTemplate restTemplate = new RestTemplate();
+
+        ResponseEntity response = null;
+
+        try {
+            response = restTemplate.exchange(geoApiGouv, HttpMethod.GET, HttpEntity.EMPTY, String.class);
+            JSONArray body = new JSONArray(Objects.requireNonNull(response.getBody()).toString());
+
+            if (body.length() > 0 &&
+                    body.getJSONObject(0).getJSONArray("codesPostaux") != null &&
+                    body.getJSONObject(0).getJSONArray("codesPostaux").length() > 0) {
+                String postCode = (String) body.getJSONObject(0).getJSONArray("codesPostaux").get(0);
+                if(org.apache.commons.lang3.StringUtils.isEmpty(dtoGeocode.getPostCode())){
+                    if(StringUtils.isNumeric(postCode)) {
+                        dtoGeocode.setPostCode(postCode);
+                    }
+                }
+
+                return dtoGeocode;
+            }
+        } catch (RestClientException | JSONException | IllegalArgumentException e) {
+            logger.error("Error on geocode recovering", e);
+            logger.error("geoApiGouv : " + geoApiGouv);
+            if (response != null && response.getBody() != null){
+                logger.error(response.getBody().toString());
+            }
+
+        }
+        return dtoGeocode;
+    }
+
 
 
 }

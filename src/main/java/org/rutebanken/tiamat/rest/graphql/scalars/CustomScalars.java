@@ -46,12 +46,30 @@ public class CustomScalars {
 
         @Override
         public Coordinate[] parseValue(Object input) {
-            List<List<Double>> coordinateList = (List<List<Double>>) input;
+            List<List<Object>> coordinateList = (List<List<Object>>) input;
 
             Coordinate[] coordinates = new Coordinate[coordinateList.size()];
 
             for (int i = 0; i < coordinateList.size(); i++) {
-                coordinates[i] = new Coordinate(coordinateList.get(i).get(0), coordinateList.get(i).get(1));
+                Object coordXObj = coordinateList.get(i).get(0);
+                Object coordYObj = coordinateList.get(i).get(1);
+                double coordX;
+                double coordY;
+
+                if (coordXObj instanceof Integer){
+                    coordX = ((Integer) coordXObj).doubleValue();
+                }else{
+                    coordX = (double) coordXObj;
+                }
+
+                if (coordYObj instanceof Integer){
+                    coordY = ((Integer) coordYObj).doubleValue();
+                }else{
+                    coordY = (double) coordYObj;
+                }
+
+
+                coordinates[i] = new Coordinate(coordX, coordY);
             }
 
             return coordinates;

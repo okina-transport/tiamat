@@ -19,19 +19,23 @@ public class JbvCodeMappingDto {
     public String originalId;
     public String platform;
     public String netexId;
+    public String name;
 
     private static final String SEPARATOR = ",";
     private static final String CODE_PLATFORM_SEPARATOR = ":";
 
-    public JbvCodeMappingDto(String originalId, String platform, String netexId) {
+    public JbvCodeMappingDto(String originalId, String platform, String netexId, String name) {
         this.originalId = originalId;
         this.netexId = netexId;
         this.platform = platform;
+        this.name = name;
     }
 
     public String toCsvString() {
         if (platform != null) {
             return originalId + CODE_PLATFORM_SEPARATOR + platform + SEPARATOR + netexId;
+        } else if (name != null){
+            return originalId + SEPARATOR + netexId + SEPARATOR + name;
         } else {
             return originalId + SEPARATOR + netexId;
         }

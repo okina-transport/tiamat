@@ -1080,7 +1080,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         List<JbvCodeMappingDto> mappingResult = new ArrayList<>();
         for (Object[] row : result) {
-            mappingResult.add(new JbvCodeMappingDto(row[0].toString(), null, row[1].toString()));
+            mappingResult.add(new JbvCodeMappingDto(row[0].toString(), null, row[1].toString(), null));
         }
 
         return mappingResult;
@@ -1106,7 +1106,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         List<JbvCodeMappingDto> mappingResult = new ArrayList<>();
         for (Object[] row : result) {
-            mappingResult.add(new JbvCodeMappingDto(row[1].toString(), null, row[2].toString()));
+            mappingResult.add(new JbvCodeMappingDto(row[1].toString(), null, row[2].toString(), null));
         }
 
         return mappingResult;
@@ -1132,7 +1132,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         List<JbvCodeMappingDto> mappingResult = new ArrayList<>();
         for (Object[] row : result) {
-            mappingResult.add(new JbvCodeMappingDto(row[1].toString(), null, row[2].toString()));
+            mappingResult.add(new JbvCodeMappingDto(row[1].toString(), null, row[2].toString(), null));
         }
 
         return mappingResult;

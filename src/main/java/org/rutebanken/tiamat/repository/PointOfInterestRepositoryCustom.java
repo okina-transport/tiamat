@@ -46,4 +46,6 @@ public interface PointOfInterestRepositoryCustom extends DataManagedObjectStruct
 
     Page<PointOfInterest> findByClassifications(List<String> classifications, Pageable pageable);
 
+    List<PointOfInterest> getAllPOIWithoutPostcode();
+
 }

@@ -19,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 import org.rutebanken.tiamat.domain.Provider;
 
 import javax.persistence.*;
@@ -49,6 +51,7 @@ public class StopPlace
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private final List<AccessSpace> accessSpaces = new ArrayList<>();
     protected String publicCode;
+
     @Enumerated(EnumType.STRING)
     protected VehicleModeEnumeration transportMode;
     @Enumerated(EnumType.STRING)
@@ -69,9 +72,11 @@ public class StopPlace
     protected RailSubmodeEnumeration railSubmode;
     @Enumerated(EnumType.STRING)
     protected WaterSubmodeEnumeration waterSubmode;
+    @ElementCollection(targetClass = VehicleModeEnumeration.class)
+    @LazyCollection(LazyCollectionOption.FALSE)
     @Enumerated(EnumType.STRING)
-    @Transient
     protected List<VehicleModeEnumeration> otherTransportModes;
+
     @Enumerated(EnumType.STRING)
     protected StopTypeEnumeration stopPlaceType;
     protected Boolean borderCrossing;

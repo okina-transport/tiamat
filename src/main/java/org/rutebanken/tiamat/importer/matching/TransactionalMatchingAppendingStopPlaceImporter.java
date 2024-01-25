@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.importer.matching;
 
 import org.rutebanken.netex.model.StopPlace;
+import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
 import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
 import org.rutebanken.tiamat.importer.*;
@@ -200,24 +201,24 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 logger.debug("Found matching stop place {}", existingStopPlace);
 
 
-                boolean keyValuesChanged  = false;
+                boolean keyValuesChanged = false;
 
-                if(keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy)){
+                if (keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy)) {
                     keyValuesChanged = true;
                 }
-                if(keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy)){
+                if (keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy)) {
                     keyValuesChanged = true;
                 }
-                if(keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_STOPCODE_KEY, incomingStopPlace, copy)){
+                if (keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_STOPCODE_KEY, incomingStopPlace, copy)) {
                     keyValuesChanged = true;
                 }
-                if(keyValueListAppender.appendKeyValue(NetexIdMapper.EXTERNAL_REF, incomingStopPlace, copy)){
+                if (keyValueListAppender.appendKeyValue(NetexIdMapper.EXTERNAL_REF, incomingStopPlace, copy)) {
                     keyValuesChanged = true;
                 }
-                if(keyValueListAppender.appendKeyValue(NetexIdMapper.FARE_ZONE, incomingStopPlace, copy)){
+                if (keyValueListAppender.appendKeyValue(NetexIdMapper.FARE_ZONE, incomingStopPlace, copy)) {
                     keyValuesChanged = true;
                 }
-                if(keyValueListAppender.appendKeyValue(RAIL_UIC_KEY, incomingStopPlace, copy)){
+                if (keyValueListAppender.appendKeyValue(RAIL_UIC_KEY, incomingStopPlace, copy)) {
                     keyValuesChanged = true;
                 }
 
@@ -225,6 +226,11 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 boolean wheelChairChanged = false;
                 boolean tariffZoneChanged = false;
                 boolean privateCodeChanged = false;
+                boolean hasTransportModeChanged = false;
+
+
+                hasTransportModeChanged = updateTransportMode(incomingStopPlace, copy);
+
 
                 if (incomingStopPlace.getTariffZones() != null) {
                     if (copy.getTariffZones() == null) {
@@ -232,7 +238,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                         tariffZoneChanged = true;
                     } else {
                         tariffZoneChanged = !incomingStopPlace.getTariffZones().equals(copy.getTariffZones());
-                        for (TariffZoneRef tariffZoneRef : incomingStopPlace.getTariffZones()){
+                        for (TariffZoneRef tariffZoneRef : incomingStopPlace.getTariffZones()) {
                             String netexId = tariffZoneRepository.findFirstByKeyValue(NetexIdMapper.FARE_ZONE, tariffZoneRef.getRef());
                             tariffZoneRef.setRef(netexId);
                             copy.getTariffZones().add(tariffZoneRef);
@@ -241,16 +247,16 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
                 }
 
-                if (!importParams.keepStopNames && !incomingStopPlace.getName().getValue().equals(copy.getName().getValue())){
+                if (!importParams.keepStopNames && !incomingStopPlace.getName().getValue().equals(copy.getName().getValue())) {
                     nameChanged = true;
                     copy.setName(incomingStopPlace.getName());
                 }
 
-                if (importParams.updateStopAccessibility ){
+                if (importParams.updateStopAccessibility) {
                     wheelChairChanged = updateWheelchairIfNeeded(copy, incomingStopPlace);
                 }
 
-                if(incomingStopPlace.getPrivateCode() != null && !incomingStopPlace.getPrivateCode().equals(existingStopPlace.getPrivateCode())){
+                if (incomingStopPlace.getPrivateCode() != null && !incomingStopPlace.getPrivateCode().equals(existingStopPlace.getPrivateCode())) {
                     privateCodeChanged = true;
                     copy.setPrivateCode(incomingStopPlace.getPrivateCode());
                 }
@@ -260,7 +266,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
 
 
-                if (quayChanged || keyValuesChanged || centroidChanged || nameChanged || wheelChairChanged || tariffZoneChanged || privateCodeChanged) {
+                if (quayChanged || keyValuesChanged || centroidChanged || nameChanged || wheelChairChanged || tariffZoneChanged || privateCodeChanged || hasTransportModeChanged) {
                     if (existingStopPlace.getParentSiteRef() != null && !existingStopPlace.isParentStopPlace()) {
                         org.rutebanken.tiamat.model.StopPlace existingParentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingStopPlace.getParentSiteRef().getRef());
                         org.rutebanken.tiamat.model.StopPlace copyParentStopPlace = versionCreator.createCopy(existingParentStopPlace, org.rutebanken.tiamat.model.StopPlace.class);
@@ -269,8 +275,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                         copyParentStopPlace.getChildren().add(copy);
                         copyParentStopPlace = stopPlaceVersionedSaverService.saveNewVersion(existingParentStopPlace, copyParentStopPlace);
                         copy = copyParentStopPlace.getChildren().stream().filter(stopPlace -> stopPlace.getNetexId().equals(stopPlaceWithParentToCopy.getNetexId())).findFirst().get();
-                    }
-                    else{
+                    } else {
                         copy = stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, copy);
                     }
                 }
@@ -289,12 +294,143 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
         }
     }
 
-    private boolean updateWheelchairIfNeeded(org.rutebanken.tiamat.model.StopPlace existingStopPlace, org.rutebanken.tiamat.model.StopPlace incomingStopPlace){
-        Optional<LimitationStatusEnumeration> existingWheelchairLimitationOpt =  ImporterUtils.getWheelchairLimitation(existingStopPlace);
-        Optional<LimitationStatusEnumeration> incomingWheelchairLimitationOpt =  ImporterUtils.getWheelchairLimitation(incomingStopPlace);
+    private boolean updateTransportMode(org.rutebanken.tiamat.model.StopPlace incomingStopPlace, org.rutebanken.tiamat.model.StopPlace existingStopPlace) {
+
+        StopTypeEnumeration incomingStopPlaceType = incomingStopPlace.getStopPlaceType();
+        VehicleModeEnumeration incomingTransportMode = TiamatVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(incomingStopPlaceType);
+        if (isVehicleModeAlreadyExisting(existingStopPlace, incomingTransportMode)) {
+            return false;
+        }
+
+        if (existingStopPlace.getTransportMode() == null){
+            // to repair old data with no transport mode defined
+            fillEmptyTransportMode(existingStopPlace);
+        }
+
+        Set<VehicleModeEnumeration> completeTransportModeSet = new HashSet<>();
+        completeTransportModeSet.add(existingStopPlace.getTransportMode());
+        if (!existingStopPlace.getOtherTransportModes().isEmpty()){
+            completeTransportModeSet.addAll(existingStopPlace.getOtherTransportModes());
+        }
+        completeTransportModeSet.add(incomingTransportMode);
+
+        VehicleModeEnumeration primaryTransportMode = getPrimaryTransportMode(completeTransportModeSet);
+        existingStopPlace.setTransportMode(primaryTransportMode);
+
+        completeTransportModeSet.remove(primaryTransportMode);
+        existingStopPlace.getOtherTransportModes().clear();
+        existingStopPlace.getOtherTransportModes().addAll(completeTransportModeSet);
+
+        if (!isStopPlaceTypeMatchingPrimaryVehicleMode(existingStopPlace, primaryTransportMode)) {
+            existingStopPlace.setStopPlaceType(incomingStopPlace.getStopPlaceType());
+        }
+        return true;
+
+    }
+
+    private void fillEmptyTransportMode(org.rutebanken.tiamat.model.StopPlace existingStopPlace) {
+        if (StopTypeEnumeration.ONSTREET_BUS.equals(existingStopPlace.getStopPlaceType())){
+            existingStopPlace.setTransportMode(VehicleModeEnumeration.BUS);
+        }
+
+        if (StopTypeEnumeration.ONSTREET_TRAM.equals(existingStopPlace.getStopPlaceType()) || StopTypeEnumeration.METRO_STATION.equals(existingStopPlace.getStopPlaceType())){
+            existingStopPlace.setTransportMode(VehicleModeEnumeration.TRAM);
+        }
+
+        if (StopTypeEnumeration.FERRY_STOP.equals(existingStopPlace.getStopPlaceType())){
+            existingStopPlace.setTransportMode(VehicleModeEnumeration.FERRY);
+        }
+
+        if (StopTypeEnumeration.RAIL_STATION.equals(existingStopPlace.getStopPlaceType())){
+            existingStopPlace.setTransportMode(VehicleModeEnumeration.RAIL);
+        }
+
+        if (StopTypeEnumeration.METRO_STATION.equals(existingStopPlace.getStopPlaceType())){
+            existingStopPlace.setTransportMode(VehicleModeEnumeration.TRAM);
+        }
+    }
+
+    private boolean isStopPlaceTypeMatchingPrimaryVehicleMode(org.rutebanken.tiamat.model.StopPlace stopPlace, VehicleModeEnumeration primaryTransportMode) {
+        if (VehicleModeEnumeration.RAIL.equals(primaryTransportMode) &&
+                StopTypeEnumeration.RAIL_STATION.equals(stopPlace.getStopPlaceType())) {
+            return true;
+        }
+
+        if (VehicleModeEnumeration.BUS.equals(primaryTransportMode) &&
+                (StopTypeEnumeration.ONSTREET_BUS.equals(stopPlace.getStopPlaceType()) || StopTypeEnumeration.BUS_STATION.equals(stopPlace.getStopPlaceType()))) {
+            return true;
+        }
+
+        if (VehicleModeEnumeration.COACH.equals(primaryTransportMode) &&
+                StopTypeEnumeration.COACH_STATION.equals(stopPlace.getStopPlaceType())) {
+            return true;
+        }
+
+        if (VehicleModeEnumeration.TRAM.equals(primaryTransportMode) &&
+                (StopTypeEnumeration.ONSTREET_TRAM.equals(stopPlace.getStopPlaceType()) || StopTypeEnumeration.METRO_STATION.equals(stopPlace.getStopPlaceType()) || StopTypeEnumeration.TRAM_STATION.equals(stopPlace.getStopPlaceType()))) {
+            return true;
+        }
+
+        if (VehicleModeEnumeration.AIR.equals(primaryTransportMode) &&
+                StopTypeEnumeration.AIRPORT.equals(stopPlace.getStopPlaceType())) {
+            return true;
+        }
+
+        if (VehicleModeEnumeration.FERRY.equals(primaryTransportMode) &&
+                (StopTypeEnumeration.FERRY_STOP.equals(stopPlace.getStopPlaceType()) || StopTypeEnumeration.FERRY_PORT.equals(stopPlace.getStopPlaceType()))) {
+            return true;
+        }
+
+        if (VehicleModeEnumeration.WATER.equals(primaryTransportMode) &&
+                StopTypeEnumeration.HARBOUR_PORT.equals(stopPlace.getStopPlaceType())) {
+            return true;
+        }
+
+        if (VehicleModeEnumeration.CABLEWAY.equals(primaryTransportMode) &&
+                StopTypeEnumeration.LIFT_STATION.equals(stopPlace.getStopPlaceType())) {
+            return true;
+        }
+
+        if (VehicleModeEnumeration.OTHER.equals(primaryTransportMode) &&
+                StopTypeEnumeration.OTHER.equals(stopPlace.getStopPlaceType())) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private VehicleModeEnumeration getPrimaryTransportMode(Set<VehicleModeEnumeration> completeTransportModeSet) {
+
+        if (completeTransportModeSet.contains(VehicleModeEnumeration.RAIL)) {
+            return VehicleModeEnumeration.RAIL;
+        }
+
+        if (completeTransportModeSet.contains(VehicleModeEnumeration.BUS)) {
+            return VehicleModeEnumeration.BUS;
+        }
+
+        if (completeTransportModeSet.contains(VehicleModeEnumeration.COACH)) {
+            return VehicleModeEnumeration.COACH;
+        }
+
+        if (completeTransportModeSet.contains(VehicleModeEnumeration.TRAM)) {
+            return VehicleModeEnumeration.TRAM;
+        }
+        return new ArrayList<>(completeTransportModeSet).get(0);
+    }
+
+
+    private boolean isVehicleModeAlreadyExisting(org.rutebanken.tiamat.model.StopPlace stopPlace, VehicleModeEnumeration vehicleMode) {
+        return (stopPlace.getTransportMode() != null && stopPlace.getTransportMode().equals(vehicleMode)) ||
+                (stopPlace.getOtherTransportModes() != null && stopPlace.getOtherTransportModes().contains(vehicleMode));
+    }
+
+    private boolean updateWheelchairIfNeeded(org.rutebanken.tiamat.model.StopPlace existingStopPlace, org.rutebanken.tiamat.model.StopPlace incomingStopPlace) {
+        Optional<LimitationStatusEnumeration> existingWheelchairLimitationOpt = ImporterUtils.getWheelchairLimitation(existingStopPlace);
+        Optional<LimitationStatusEnumeration> incomingWheelchairLimitationOpt = ImporterUtils.getWheelchairLimitation(incomingStopPlace);
         boolean updated = false;
 
-        if (!existingWheelchairLimitationOpt.equals(incomingWheelchairLimitationOpt) && incomingWheelchairLimitationOpt.isPresent()){
+        if (!existingWheelchairLimitationOpt.equals(incomingWheelchairLimitationOpt) && incomingWheelchairLimitationOpt.isPresent()) {
             updated = true;
             ImporterUtils.updateWheelchairLimitation(existingStopPlace, incomingWheelchairLimitationOpt.get());
         }
@@ -303,57 +439,30 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
     /**
      * Launch quality checks on recovered data.
-     *  - If duplicate ids are found in db, an exception is raised
-     *  - if stop place type is inconsistent between incoming stop place and recovered stop place from database, an exception is raised
+     * - If duplicate ids are found in db, an exception is raised
+     * - if stop place type is inconsistent between incoming stop place and recovered stop place from database, an exception is raised
      *
-     * @param foundStopPlaces
-     *      List of stop places recovered from DB
-     * @param incomingStopPlace
-     *      New incoming stop place
+     * @param foundStopPlaces   List of stop places recovered from DB
+     * @param incomingStopPlace New incoming stop place
      */
-    private void executeQualityChecksOnRecoveredData( List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces, org.rutebanken.tiamat.model.StopPlace incomingStopPlace) throws TiamatBusinessException {
+    private void executeQualityChecksOnRecoveredData(List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces, org.rutebanken.tiamat.model.StopPlace incomingStopPlace) throws TiamatBusinessException {
 
         String errorMsg;
-        if (isDuplicateImportedIds(foundStopPlaces)){
+        if (isDuplicateImportedIds(foundStopPlaces)) {
             errorMsg = "Duplicate imported-id found. Process stopped. Please clean Stop database before importing again";
             logger.error(errorMsg);
             throw new TiamatBusinessException(TiamatBusinessException.DUPLICATE_IMPORTED_ID, errorMsg);
         }
-
-        List<org.rutebanken.tiamat.model.StopPlace> errorStopPlaces = new ArrayList<>();
-
-        for (org.rutebanken.tiamat.model.StopPlace foundStopPlace : foundStopPlaces) {
-            if (foundStopPlace.getStopPlaceType() != null && !foundStopPlace.getStopPlaceType().equals(incomingStopPlace.getStopPlaceType())){
-                logger.error("Transport mode mismatch between stop place in Database :" + foundStopPlace.getNetexId() + "(" + foundStopPlace.getStopPlaceType()
-                                        + "), and incoming stop place:" + incomingStopPlace.getNetexId() + "(" + incomingStopPlace.getStopPlaceType() + ")");
-                errorStopPlaces.add(foundStopPlace);
-            }
-        }
-
-
-        if (!errorStopPlaces.isEmpty()){
-            String errorStopPlacesStr = errorStopPlaces.stream()
-                    .map(org.rutebanken.tiamat.model.StopPlace::getNetexId)
-                    .collect(Collectors.joining(","));
-
-            String originalId = incomingStopPlace.getOriginalIds().stream().collect(Collectors.joining(","));
-
-            errorMsg = "Mismatch between incoming stop place " + originalId + " type (" + incomingStopPlace.getStopPlaceType()
-                    + ") and stop places found in database:" + errorStopPlacesStr;
-
-            throw new TiamatBusinessException(TiamatBusinessException.TRANSPORT_MODE_MISMATCH, errorMsg);
-        }
-
     }
 
     private void copyPropertiesToParentStopPlace(org.rutebanken.tiamat.model.StopPlace copy) {
-        if (copy.getKeyValues() == null || !copy.getKeyValues().containsKey(RAIL_UIC_KEY)){
+        if (copy.getKeyValues() == null || !copy.getKeyValues().containsKey(RAIL_UIC_KEY)) {
             return;
         }
 
         String netexId = copy.getNetexId();
         org.rutebanken.tiamat.model.StopPlace importedStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(netexId);
-        if (importedStopPlace.getParentSiteRef() != null && copy.getKeyValues().get(RAIL_UIC_KEY).getItems().stream().findFirst().isPresent()){
+        if (importedStopPlace.getParentSiteRef() != null && copy.getKeyValues().get(RAIL_UIC_KEY).getItems().stream().findFirst().isPresent()) {
             String railUIC = copy.getKeyValues().get(RAIL_UIC_KEY).getItems().stream().findFirst().get();
             String parentNetexId = importedStopPlace.getParentSiteRef().getRef();
             org.rutebanken.tiamat.model.StopPlace parentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(parentNetexId);
@@ -369,37 +478,37 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     /**
      * Read a list of stopPlaces and verify that each imported-id is only attached to a single netex id.
      * If not, error is logged
+     *
      * @param stopPlaceList
-     * @return
-     *  true : an imported-id is attached to 2 or more netex id
-     *  false : no duplicates detected
+     * @return true : an imported-id is attached to 2 or more netex id
+     * false : no duplicates detected
      */
-    private boolean isDuplicateImportedIds(List<org.rutebanken.tiamat.model.StopPlace>  stopPlaceList){
-        Map<String,String> importedIdMap = new HashMap<>();
+    private boolean isDuplicateImportedIds(List<org.rutebanken.tiamat.model.StopPlace> stopPlaceList) {
+        Map<String, String> importedIdMap = new HashMap<>();
         boolean isDuplicateImportedIds = false;
         for (org.rutebanken.tiamat.model.StopPlace stopPlace : stopPlaceList) {
 
-            isDuplicateImportedIds = isDuplicateImportedIds || isDuplicateImportIdInObject(stopPlace,importedIdMap);
+            isDuplicateImportedIds = isDuplicateImportedIds || isDuplicateImportIdInObject(stopPlace, importedIdMap);
 
             for (Quay quay : stopPlace.getQuays()) {
-                isDuplicateImportedIds = isDuplicateImportedIds || isDuplicateImportIdInObject(quay,importedIdMap);
+                isDuplicateImportedIds = isDuplicateImportedIds || isDuplicateImportIdInObject(quay, importedIdMap);
             }
 
         }
         return isDuplicateImportedIds;
     }
 
-    private boolean isDuplicateImportIdInObject(DataManagedObjectStructure dataObj, Map<String,String> importedIdMap ){
+    private boolean isDuplicateImportIdInObject(DataManagedObjectStructure dataObj, Map<String, String> importedIdMap) {
         String netexId = dataObj.getNetexId();
         boolean isDuplicateImportedIds = false;
 
         Set<String> importedIds = dataObj.getOrCreateValues(NetexIdMapper.ORIGINAL_ID_KEY);
         for (String importedId : importedIds) {
-            if (importedIdMap.containsKey(importedId) && importedIdMap.get(importedId) != netexId){
+            if (importedIdMap.containsKey(importedId) && importedIdMap.get(importedId) != netexId) {
                 logger.error("DUPLICATE USE OF IMPORTED-ID:" + importedId + " (" + netexId + "," + importedIdMap.get(importedId) + ")");
                 isDuplicateImportedIds = true;
-            }else{
-                importedIdMap.put(importedId,netexId);
+            } else {
+                importedIdMap.put(importedId, netexId);
             }
         }
         return isDuplicateImportedIds;

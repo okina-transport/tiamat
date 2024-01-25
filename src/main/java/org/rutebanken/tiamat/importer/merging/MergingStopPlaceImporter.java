@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.importer.merging;
 
+import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
 import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
@@ -22,6 +23,8 @@ import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.NearbyStopsWithSameTypeFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceFromOriginalIdFinder;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.StopTypeEnumeration;
+import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
@@ -149,6 +152,9 @@ public class MergingStopPlaceImporter {
         // Ignore incoming version. Always set version to 1 for new stop places.
         logger.debug("New stop place: {}. Setting version to \"1\"", incomingStopPlace.getName());
         versionCreator.createCopy(incomingStopPlace, StopPlace.class);
+        StopTypeEnumeration incomingStopPlaceType = incomingStopPlace.getStopPlaceType();
+        VehicleModeEnumeration incomingTransportMode = TiamatVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(incomingStopPlaceType);
+        incomingStopPlace.setTransportMode(incomingTransportMode);
 
         incomingStopPlace = stopPlaceVersionedSaverService.saveNewVersion(incomingStopPlace);
         return updateCache(incomingStopPlace);

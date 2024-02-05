@@ -808,8 +808,10 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                 "                 ( SELECT max(s1.id) FROM stop_place s1 ";
 
         if (provider != null && provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName)){
-            queryStr = queryStr + " WHERE s1.provider = :providerName \n";
-            parameters.put("providerName",  provider.getChouetteInfo().getReferential());
+            queryStr = queryStr + " JOIN stop_place_key_values spkv ON spkv.stop_place_id = s1.id\n" +
+                    "            JOIN value_items vi ON spkv.key_values_id = vi.value_id\n" +
+                    "            WHERE LOWER(vi.items) LIKE concat(:providerName, ':%') \n";
+            parameters.put("providerName",  provider.getChouetteInfo().getReferential().toLowerCase());
         }
 
         queryStr = queryStr + "  group by s1.netex_id  ) " +

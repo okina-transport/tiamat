@@ -1278,6 +1278,8 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         Hibernate.initialize(stopPlace.getAccessSpaces());
 
         Hibernate.initialize(stopPlace.getChildren());
+        Hibernate.initialize(stopPlace.getAdjacentSites());
+        Hibernate.initialize(stopPlace.getOtherTransportModes());
 
         Hibernate.initialize(stopPlace.getTopographicPlace());
 

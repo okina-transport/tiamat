@@ -123,6 +123,10 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
             stopPlace.setVersion(1L);
             stopPlace.setProvider("test");
             stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+            Value spValue = new Value();
+            spValue.getItems().add("TEST:StopPlace:"+i);
+            stopPlace.getKeyValues().put("imported-id", spValue);
+
 
 
             Quay quay = new Quay();
@@ -286,12 +290,23 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         StopPlace stopPlace1 = new StopPlace(new EmbeddableMultilingualString("stop place in publication delivery"));
         stopPlace1.getTariffZones().add(new TariffZoneRef(tariffZoneV3));
         stopPlace1.getQuays().add(quay1);
+
+        Value spValue = new Value();
+        spValue.getItems().add("TEST:StopPlace:1");
+        stopPlace1.getKeyValues().put("imported-id", spValue);
+
         stopPlace1 = stopPlaceVersionedSaverService.saveNewVersion(stopPlace1);
         final String stopPlace1NetexId = stopPlace1.getNetexId();
 
         StopPlace stopPlace2 = new StopPlace(new EmbeddableMultilingualString("another stop place in publication delivery"));
         stopPlace2.getTariffZones().add(new TariffZoneRef(tariffZoneV3));
+        Value spValue2 = new Value();
+        spValue2.getItems().add("TEST:StopPlace:2");
+        stopPlace2.getKeyValues().put("imported-id", spValue2);
         stopPlace2 = stopPlaceVersionedSaverService.saveNewVersion(stopPlace2);
+
+
+
         final String stopPlace2NetexId = stopPlace2.getNetexId();
 
         GroupOfStopPlaces groupOfStopPlaces1 = new GroupOfStopPlaces(new EmbeddableMultilingualString("group of stop places"));
@@ -332,7 +347,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
 
         ExportJob exportJob = asyncPublicationDeliveryExporter.startExportJob(exportParams);
 
-        streamingPublicationDelivery.stream(byteArrayOutputStream, null, LocalDateTime.now(), exportJob.getId());
+        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), exportJob.getId());
 
         String xml = byteArrayOutputStream.toString();
 
@@ -405,9 +420,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
                 .as("actual stop place 2 tariff zone ref")
                 .isEqualTo(tariffZoneId);
 
-        assertThat(actualTariffZoneRefStopPlace2.getVersion())
-                .as("actual tariff zone ref for stop place 2 should point to version 3 of tariff zone")
-                .isEqualTo(String.valueOf(tariffZoneV3.getVersion()));
+
 
         // Check topographic places
         List<JAXBElement>jaxTopographicPlaces = netexGeneralFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity()

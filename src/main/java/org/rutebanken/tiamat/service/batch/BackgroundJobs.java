@@ -5,6 +5,7 @@ import org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -46,6 +47,9 @@ public class BackgroundJobs {
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Value("${id.synchronization.enabled:true}") boolean shoundSyncIds;
+
+
     @Autowired
     public BackgroundJobs(GaplessIdGeneratorService gaplessIdGeneratorService, StopPlaceRefUpdaterService stopPlaceRefUpdaterService, QuayIdMappingService quayIdMappingService,
                           StopPlaceIdMappingService stopPlaceIdMappingService) {
@@ -70,8 +74,11 @@ public class BackgroundJobs {
 
         logger.info("Scheduling background job for stopPlace id mapping file creation");
         backgroundJobExecutor.scheduleAtFixedRate(stopPlaceIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
-        
-        syncIdGenerator();
+
+        if (shoundSyncIds){
+            syncIdGenerator();
+        }
+
     }
 
     /**

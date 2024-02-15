@@ -13,102 +13,107 @@
  * limitations under the Licence.
  */
 
-package org.rutebanken.tiamat.rest.graphql
+package org.rutebanken.tiamat.rest.graphql;
 
-import org.locationtech.jts.geom.Coordinate
-import org.junit.Test
-import org.rutebanken.tiamat.model.*
-import org.springframework.test.annotation.DirtiesContext
+import org.junit.Test;
+import org.locationtech.jts.geom.Coordinate;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
+import org.rutebanken.tiamat.model.SiteRefStructure;
+import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.StopTypeEnumeration;
 
-import static org.hamcrest.Matchers.*
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceIntegrationTest {
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
+
+public class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceIntegrationTest {
 
     @Test
-    void searchForParkingById() throws Exception {
+    public void searchForParkingById() throws Exception {
 
-        Parking parking = new Parking()
-        parking.setCentroid(geometryFactory.createPoint(new Coordinate(10.533212, 59.678080)))
-        parking.setParkingType(ParkingTypeEnumeration.PARK_AND_RIDE)
-        parking.setParentSiteRef(new SiteRefStructure(stopPlaceRepository.save(new StopPlace()).getNetexId()))
+        Parking parking = new Parking();
+        parking.setCentroid(geometryFactory.createPoint(new Coordinate(10.533212, 59.678080)));
+        parking.setParkingType(ParkingTypeEnumeration.PARK_AND_RIDE);
+        parking.setParentSiteRef(new SiteRefStructure(stopPlaceRepository.save(new StopPlace()).getNetexId()));
 
-        parkingVersionedSaverService.saveNewVersion(parking)
+        parkingVersionedSaverService.saveNewVersion(parking);
 
         String graphQlJsonQuery = "{" +
                 "\"query\":\"{" +
                 "  parking: " + GraphQLNames.FIND_PARKING + " (id:\\\"" + parking.getNetexId() + "\\\") { " +
                 "    id " +
-             //   "    parkingType " +
+                "    parkingType " +
                 "  } " +
                 "}\"," +
-                "\"variables\":\"\"}"
+                "\"variables\":\"\"}";
 
         executeGraphQL(graphQlJsonQuery)
                 .body("data.parking[0].id", equalTo(parking.getNetexId()))
-            //    .body("data.parking[0].parkingType", equalTo(parking.getParkingType().value()))
+                .body("data.parking[0].parkingType", equalTo(parking.getParkingType().value()));
 
     }
 
     @Test
-    void searchForParkingByIdAndVersion() throws Exception {
+    public void searchForParkingByIdAndVersion() throws Exception {
 
-        Parking parking = new Parking()
-        parking.setCentroid(geometryFactory.createPoint(new Coordinate(10.533212, 59.678080)))
-        ParkingTypeEnumeration originalParkingType = ParkingTypeEnumeration.PARK_AND_RIDE
-        parking.setParkingType(originalParkingType)
-        parking.setParentSiteRef(new SiteRefStructure(stopPlaceRepository.save(new StopPlace()).netexId))
+        Parking parking = new Parking();
+        parking.setCentroid(geometryFactory.createPoint(new Coordinate(10.533212, 59.678080)));
+        ParkingTypeEnumeration originalParkingType = ParkingTypeEnumeration.PARK_AND_RIDE;
+        parking.setParkingType(originalParkingType);
+        parking.setParentSiteRef(new SiteRefStructure(stopPlaceRepository.save(new StopPlace()).getNetexId()));
+        parking = parkingVersionedSaverService.saveNewVersion(parking);
 
-        parking = parkingVersionedSaverService.saveNewVersion(parking)
-
-        String netexId = parking.getNetexId()
+        String netexId = parking.getNetexId();
 
         String version_1_GraphQlJsonQuery = "{" +
                 "\"query\":\"{" +
                 "  parking: " + GraphQLNames.FIND_PARKING + " (id:\\\"" + netexId + "\\\", version:1 ) { " +
                 "    id " +
                 "    version " +
-              //  "    parkingType " +
+                "    parkingType " +
                 "  } " +
                 "}\"," +
-                "\"variables\":\"\"}"
+                "\"variables\":\"\"}";
 
         executeGraphQL(version_1_GraphQlJsonQuery)
                 .body("data.parking[0].id", equalTo(netexId))
                 .body("data.parking[0].version", equalTo(""+parking.getVersion()))
-              //  .body("data.parking[0].parkingType", equalTo(parking.getParkingType().value()))
+                .body("data.parking[0].parkingType", equalTo(parking.getParkingType().value()));
 
 
-        String updatedParkingTypeValue = ParkingTypeEnumeration.PARKING_ZONE.value()
+        String updatedParkingTypeValue = ParkingTypeEnumeration.PARKING_ZONE.value();
         String version_2_GraphQlJsonQuery = "{" +
                 "\"query\":\"mutation { " +
                 "  parking:" + GraphQLNames.MUTATE_PARKING + " (Parking: {" +
-                "        id:\\\"" + netexId + "\\\" ," +
-                "        covered: covered" +
+                "        id:\\\"" + netexId + "\\\" " +
+                "        parkingType: " + updatedParkingTypeValue +
                 "       }) { " +
                 "      id " +
                 "      version " +
-                "      covered " +
+                "      parkingType " +
                 "    } " +
                 "}\"," +
-                "\"variables\":\"\"}"
+                "\"variables\":\"\"}";
 
         executeGraphQL(version_2_GraphQlJsonQuery)
                 .body("data.parking[0].id", equalTo(netexId))
                 .body("data.parking[0].version", equalTo("2"))
-             //   .body("data.parking[0].parkingType", equalTo(updatedParkingTypeValue))
+                .body("data.parking[0].parkingType", equalTo(updatedParkingTypeValue));
 
     }
 
     @Test
-    void testMutateParkingWithParentSiteRef() throws Exception {
+    public void testMutateParkingWithParentSiteRef() throws Exception {
 
 
-        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Brummunddal"))
-        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS)
-        stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10, 59)))
-        stopPlace.setAllAreasWheelchairAccessible(false)
+        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Brummunddal"));
+        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10, 59)));
+        stopPlace.setAllAreasWheelchairAccessible(false);
 
-        stopPlace = stopPlaceVersionedSaverService.saveNewVersion(stopPlace)
+        stopPlace = stopPlaceVersionedSaverService.saveNewVersion(stopPlace);
 
         String graphQlQuery = "{\n" +
                 "\"query\": \"mutation { " +
@@ -124,17 +129,16 @@ class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceInteg
                 "    totalCapacity:1234, " +
                 "    parkingType:parkAndRide, " +
                 "    parkingVehicleTypes: [car, pedalCycle]" +
-                "    parentSiteRef:\\\"${stopPlace.netexId}\\\"" +
+                "    parentSiteRef:\\\"%s\\\"".formatted(stopPlace.getNetexId()) +
                 "    parkingLayout:covered " +
-             //   "    principalCapacity:22 " +
-             //   "    overnightParkingPermitted:true, " +
+                "    principalCapacity:22 " +
+                "    overnightParkingPermitted:true, " +
                 "    rechargingAvailable:false, " +
                 "    secure:false, " +
-               // "    realTimeOccupancyAvailable:false, " +
-         //       "    parkingReservation:reservationAllowed, " +
-          //      "    bookingUrl:\\\"https://www.rutebanken.org\\\", " +
-         //       "    freeParkingOutOfHours:true, " +
-                "    covered:covered, " +
+                "    realTimeOccupancyAvailable:false, " +
+                "    parkingReservation:reservationAllowed, " +
+                "    bookingUrl:\\\"https://www.rutebanken.org\\\", " +
+                "    freeParkingOutOfHours:true, " +
                 "    parkingProperties: {, " +
                 "      parkingUserTypes:all," +
                 "      spaces: [{" +
@@ -163,16 +167,15 @@ class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceInteg
                 "    parkingType," +
                 "    parkingVehicleTypes," +
                 "    parkingLayout," +
-             //   "    principalCapacity," +
+                "    principalCapacity," +
                 "    totalCapacity," +
-               // "    overnightParkingPermitted," +
+                "    overnightParkingPermitted," +
                 "    rechargingAvailable," +
                 "    secure," +
-             //   "    realTimeOccupancyAvailable," +
-            //    "    parkingReservation," +
-         //       "    bookingUrl," +
-             //   "    freeParkingOutOfHours," +
-                "    covered," +
+                "    realTimeOccupancyAvailable," +
+                "    parkingReservation," +
+                "    bookingUrl," +
+                "    freeParkingOutOfHours," +
                 "    parkingProperties {" +
                 "      parkingUserTypes," +
                 "      maximumStay," +
@@ -200,10 +203,10 @@ class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceInteg
                 "      coordinates" +
                 "    }" +
                 "  }" +
-                "}\",\"variables\": \"\"}"
+                "}\",\"variables\": \"\"}";
         executeGraphQL(graphQlQuery)
                 .body("data.parking", notNullValue())
-                .root("data.parking[0]")
+                .rootPath("data.parking[0]")
                     .body("id", notNullValue())
                     .body("version", notNullValue())
                     .body("name.value", notNullValue())
@@ -215,26 +218,26 @@ class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceInteg
                     .body("parkingVehicleTypes", notNullValue())
                     .body("parkingVehicleTypes", notNullValue())
                     .body("parkingLayout", notNullValue())
-                    //.body("principalCapacity", notNullValue())
+                    .body("principalCapacity", notNullValue())
                     .body("totalCapacity", notNullValue())
-                   // .body("overnightParkingPermitted", notNullValue())
+                    .body("overnightParkingPermitted", notNullValue())
                     .body("rechargingAvailable", notNullValue())
                     .body("secure", notNullValue())
-                  //  .body("realTimeOccupancyAvailable", notNullValue())
-                 //   .body("parkingReservation", notNullValue())
-                   // .body("bookingUrl", notNullValue())
+                    .body("realTimeOccupancyAvailable", notNullValue())
+                    .body("parkingReservation", notNullValue())
+                    .body("bookingUrl", notNullValue())
                     .body("parkingProperties.parkingUserTypes", notNullValue())
                     .body("parkingProperties.spaces", notNullValue())
                     .body("parkingAreas", notNullValue())
                     .body("parkingAreas.label.value", notNullValue())
                     .body("parkingAreas.totalCapacity", notNullValue())
-                    .body("parkingAreas.parkingProperties", notNullValue())
+                    .body("parkingAreas.parkingProperties", notNullValue());
 
     }
 
 
     @Test
-    void testMutateParkingWithoutParentSiteRef() throws Exception {
+    public void testMutateParkingWithoutParentSiteRef() throws Exception {
 
         StopPlace stopPlace = stopPlaceRepository.save(new StopPlace());
 
@@ -246,7 +249,7 @@ class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceInteg
                 "      value: \\\"Parking name\\\" " +
                 "      lang: \\\"no\\\" " +
                 "    }" +
-                "    parentSiteRef:\\\"${stopPlace.netexId}\\\"" +
+                "    parentSiteRef:\\\"%s\\\"".formatted(stopPlace.getNetexId()) +
                 "    geometry: { " +
                 "      type:Point " +
                 "      coordinates:[[59.0, 10.5]] " +
@@ -255,14 +258,14 @@ class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceInteg
                 "    parkingType:parkAndRide, " +
                 "    parkingVehicleTypes: [car, pedalCycle]" +
                 "    parkingLayout:covered " +
-              //  "    principalCapacity:22 " +
-               // "    overnightParkingPermitted:true, " +
+                "    principalCapacity:22 " +
+                "    overnightParkingPermitted:true, " +
                 "    rechargingAvailable:false, " +
                 "    secure:false, " +
-              //  "    realTimeOccupancyAvailable:false, " +
-              //  "    parkingReservation:reservationAllowed, " +
-              //  "    bookingUrl:\\\"https://www.rutebanken.org\\\", " +
-       //         "    freeParkingOutOfHours:true, " +
+                "    realTimeOccupancyAvailable:false, " +
+                "    parkingReservation:reservationAllowed, " +
+                "    bookingUrl:\\\"https://www.rutebanken.org\\\", " +
+                "    freeParkingOutOfHours:true, " +
                 "    parkingProperties: {, " +
                 "      parkingUserTypes:all," +
                 "      spaces: [{" +
@@ -291,15 +294,15 @@ class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceInteg
                 "    parkingType," +
                 "    parkingVehicleTypes," +
                 "    parkingLayout," +
-               // "    principalCapacity," +
+                "    principalCapacity," +
                 "    totalCapacity," +
-              //  "    overnightParkingPermitted," +
+                "    overnightParkingPermitted," +
                 "    rechargingAvailable," +
                 "    secure," +
-              //  "    realTimeOccupancyAvailable," +
-               // "    parkingReservation," +
-               // "    bookingUrl," +
-             //   "    freeParkingOutOfHours," +
+                "    realTimeOccupancyAvailable," +
+                "    parkingReservation," +
+                "    bookingUrl," +
+                "    freeParkingOutOfHours," +
                 "    parkingProperties {" +
                 "      parkingUserTypes," +
                 "      maximumStay," +
@@ -327,41 +330,41 @@ class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceInteg
                 "      coordinates" +
                 "    }" +
                 "  }" +
-                "}\",\"variables\": \"\"}"
+                "}\",\"variables\": \"\"}";
         executeGraphQL(graphQlQuery)
                 .body("data.parking", notNullValue())
-                .root("data.parking[0]")
+                .rootPath("data.parking[0]")
                     .body("id", notNullValue())
                     .body("version", notNullValue())
                     .body("name.value", notNullValue())
                     .body("name.lang", notNullValue())
                     .body("geometry.type", notNullValue())
                     .body("geometry.coordinates", notNullValue())
-                    .body("parentSiteRef", equalTo("SiteRefStructure{ref=" + stopPlace.getNetexId() + ", version=null}"))
+                    .body("parentSiteRef", equalTo(stopPlace.getNetexId()))
                     .body("parkingType", notNullValue())
                     .body("parkingVehicleTypes", notNullValue())
                     .body("parkingVehicleTypes", notNullValue())
                     .body("parkingLayout", notNullValue())
-                   // .body("principalCapacity", notNullValue())
+                    .body("principalCapacity", notNullValue())
                     .body("totalCapacity", notNullValue())
-                 //   .body("overnightParkingPermitted", notNullValue())
+                    .body("overnightParkingPermitted", notNullValue())
                     .body("rechargingAvailable", notNullValue())
                     .body("secure", notNullValue())
-                   // .body("realTimeOccupancyAvailable", notNullValue())
-                  //  .body("parkingReservation", notNullValue())
-                  //  .body("bookingUrl", notNullValue())
+                    .body("realTimeOccupancyAvailable", notNullValue())
+                    .body("parkingReservation", notNullValue())
+                    .body("bookingUrl", notNullValue())
                     .body("parkingProperties.parkingUserTypes", notNullValue())
                     .body("parkingProperties.spaces", notNullValue())
                     .body("parkingAreas", notNullValue())
                     .body("parkingAreas.label.value", notNullValue())
                     .body("parkingAreas.totalCapacity", notNullValue())
-                    .body("parkingAreas.parkingProperties", notNullValue())
+                    .body("parkingAreas.parkingProperties", notNullValue());
 
     }
 
 
     @Test
-    void testMutateMultipleParkings() throws Exception {
+    public void testMutateMultipleParkings() throws Exception {
 
         StopPlace stopPlace = stopPlaceRepository.save(new StopPlace());
 
@@ -372,7 +375,7 @@ class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceInteg
                 "      value: \\\"Parking name\\\" " +
                 "      lang: \\\"no\\\" " +
                 "    }" +
-                "    parentSiteRef:\\\"${stopPlace.netexId}\\\"" +
+                "    parentSiteRef:\\\"%s\\\"".formatted(stopPlace.getNetexId()) +
                 "    geometry: { " +
                 "      type:Point " +
                 "      coordinates:[[59.0, 10.5]] " +
@@ -382,7 +385,7 @@ class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceInteg
                 "      value: \\\"Parking name\\\" " +
                 "      lang: \\\"no\\\" " +
                 "    }" +
-                "    parentSiteRef:\\\"${stopPlace.netexId}\\\"" +
+                "    parentSiteRef:\\\"%s\\\"".formatted(stopPlace.getNetexId()) +
                 "    geometry: { " +
                 "      type:Point " +
                 "      coordinates:[[59.0, 10.5]] " +
@@ -392,11 +395,11 @@ class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceInteg
                 "    name {value lang}, " +
 
                 "  }" +
-                "}\",\"variables\": \"\"}"
+                "}\",\"variables\": \"\"}";
 
         executeGraphQL(graphQlQuery)
                 .body("data.parking", notNullValue())
-                .body("data.parking", hasSize(2))
+                .body("data.parking", hasSize(2));
 
 
     }

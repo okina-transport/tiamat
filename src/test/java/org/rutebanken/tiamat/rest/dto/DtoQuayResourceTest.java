@@ -34,7 +34,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static org.mockito.Matchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)

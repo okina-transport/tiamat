@@ -28,8 +28,8 @@ import java.util.Arrays;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
+import static org.mockito.ArgumentMatchers.anyList;
+
 import static org.mockito.Mockito.*;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StopPlaceDeleterTest {
@@ -55,7 +55,7 @@ public class StopPlaceDeleterTest {
         parent.setParentStopPlace(true);
         parent.setNetexId("NSR:StopPlace:1");
 
-        when(stopPlaceRepository.findAll(anyListOf(String.class))).thenReturn(Arrays.asList(parent));
+        when(stopPlaceRepository.findAll(anyList())).thenReturn(Arrays.asList(parent));
 
         boolean deleted = stopPlaceDeleter.deleteStopPlace(parent.getNetexId());
 
@@ -69,7 +69,7 @@ public class StopPlaceDeleterTest {
         StopPlace monoModalStopPlace = new StopPlace();
         monoModalStopPlace.setNetexId("NSR:StopPlace:");
 
-        when(stopPlaceRepository.findAll(anyListOf(String.class))).thenReturn(Arrays.asList(monoModalStopPlace));
+        when(stopPlaceRepository.findAll(anyList())).thenReturn(Arrays.asList(monoModalStopPlace));
         when(usernameFetcher.getUserNameForAuthenticatedUser()).thenReturn("Rambo");
 
         boolean deleted = stopPlaceDeleter.deleteStopPlace(monoModalStopPlace.getNetexId());

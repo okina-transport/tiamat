@@ -70,6 +70,7 @@ public abstract class TiamatIntegrationTest {
     @Autowired
     protected GroupOfStopPlacesRepository groupOfStopPlacesRepository;
 
+
     @Autowired
     protected GroupOfStopPlacesSaverService groupOfStopPlacesSaverService;
 

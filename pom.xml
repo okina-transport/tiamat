@@ -20,7 +20,7 @@
 
     <groupId>org.rutebanken</groupId>
     <artifactId>tiamat</artifactId>
-    <version>2.5.7-mobi-iti-SNAPSHOT</version>
+    <version>2.5.7-mobi-iti-SNAPSHOT-J17</version>
     <packaging>jar</packaging>
 
     <name>Tiamat</name>
@@ -58,43 +58,45 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>11</java.version>
-        <maven.compiler.target>11</maven.compiler.target>
-        <maven.compiler.source>11</maven.compiler.source>
+        <java.version>17</java.version>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
         <plexus.compiler.javac.version>2.8.5</plexus.compiler.javac.version>
         <docker.maven.plugin.version>0.21.0</docker.maven.plugin.version>
-        <spring-boot-plugin.version>2.4.13</spring-boot-plugin.version>
-        <spring-boot.version>2.4.13</spring-boot.version>
+        <spring-boot-plugin.version>2.7.18</spring-boot-plugin.version>
+        <spring-boot.version>2.7.18</spring-boot.version>
         <spring.security.version>5.3.5.RELEASE</spring.security.version>
-        <keycloak.version>4.7.0.Final</keycloak.version>
-        <postgresql.version>42.2.4</postgresql.version>
+        <keycloak.version>19.0.3</keycloak.version>
+        <postgresql.version>42.7.2</postgresql.version>
         <geodb.version>0.9</geodb.version>
-        <geotools.version>20.1</geotools.version>
-        <activemq-client.version>5.15.9</activemq-client.version>
+        <geotools.version>29.1</geotools.version>
+        <gt-jts-wrapper.version>24.4.01</gt-jts-wrapper.version>
+        <activemq-client.version>5.16.7</activemq-client.version>
         <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
         <flyway-core.version>8.5.10</flyway-core.version>
         <logstash-logback.version>5.2</logstash-logback.version>
         <kubernetes-client.version>4.1.1</kubernetes-client.version>
         <janino.version>3.0.8</janino.version>
         <assertj-core.version>3.10.0</assertj-core.version>
-        <rest-assured.version>3.1.0</rest-assured.version>
+        <rest-assured.version>4.5.1</rest-assured.version>
         <javax.el.version>3.0.0</javax.el.version>
-        <com.h2database.version>1.4.197</com.h2database.version>
+        <com.h2database.version>2.2.224</com.h2database.version>
         <hikariCP.version>3.2.0</hikariCP.version>
         <commons.lang3.version>3.7</commons.lang3.version>
         <orika-core.version>1.5.4</orika-core.version>
         <guava.version>30.1.1-jre</guava.version>
         <graphql-java.version>11.0</graphql-java.version>
-        <hazelcast.version>4.1.8</hazelcast.version>
 
-        <hazelcast-hibernate53.version>2.2.0</hazelcast-hibernate53.version>
-        <hibernate.version>5.4.0.Final</hibernate.version>
+        <hazelcast-hibernate53.version>5.1.0</hazelcast-hibernate53.version>
+        <hazelcast.version>5.2.4</hazelcast.version>
+
+        <hibernate.version>5.6.15.Final</hibernate.version>
         <hibernate-spatial.version>5.4.0.Final</hibernate-spatial.version>
         <groovy-all.version>3.0.9</groovy-all.version>
         <jaxb-version>2.3.0.1</jaxb-version>
         <swagger-jersey2.version>1.6.2</swagger-jersey2.version>
-        <jackson-version>2.11.3</jackson-version>
+        <jackson-version>2.13.5</jackson-version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
         <sonar-maven-plugin.version>3.9.1.2184</sonar-maven-plugin.version>
 
@@ -116,11 +118,11 @@
         <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
         <argLine></argLine>
         <!--TODO temporary manual upgrade of Logback-->
-        <logback.version>1.2.8</logback.version>
+        <logback.version>1.2.12</logback.version>
         <log4j2.version>2.17.1</log4j2.version>
 
         <sonar.projectKey>mobi-iti:tiamat</sonar.projectKey>
-
+        <maven.compiler.args>--add-opens java.base/java.lang=ALL-UNNAMED</maven.compiler.args>
     </properties>
 
     <!-- This repository list can be deleted, as it is now plied by rutebanken nexus.
@@ -143,6 +145,66 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-web</artifactId>
+                <version>6.1.4</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.hsqldb</groupId>
+                <artifactId>hsqldb</artifactId>
+                <version>2.7.2</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>rest-assured</artifactId>
+                <version>${rest-assured.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>1.11.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.dom4j</groupId>
+                <artifactId>dom4j</artifactId>
+                <version>2.1.4</version>
+            </dependency>
+
+
+            <dependency>
+                <groupId>jakarta.ws.rs</groupId>
+                <artifactId>jakarta.ws.rs-api</artifactId>
+                <version>2.1.6</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.hk2</groupId>
+                <artifactId>hk2-api</artifactId>
+                <version>2.6.1</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>json-path</artifactId>
+                <version>4.5.1</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.hk2</groupId>
+                <artifactId>hk2-locator</artifactId>
+                <version>2.6.1</version>
+            </dependency>
+
+
+
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -208,6 +270,34 @@
         </dependency>
 
         <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>json-path</artifactId>
+            <version>4.5.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>2.1.6</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-xjc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-jaxb</artifactId>
+            <version>2.19</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-bom</artifactId>
             <version>${log4j2.version}</version>
@@ -242,23 +332,6 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson-version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-            <version>${jaxb-version}</version>
-
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-core</artifactId>
-            <version>${jaxb-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-xjc</artifactId>
-            <version>${jaxb-version}</version>
         </dependency>
         <dependency>
             <groupId>javax.jms</groupId>
@@ -414,10 +487,19 @@
             </exclusions>
         </dependency>
 
+
         <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-multipart</artifactId>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <version>3.0.0</version>
+            <scope>runtime</scope>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.glassfish.jersey.media</groupId>-->
+<!--            <artifactId>jersey-media-jaxb</artifactId>-->
+<!--            <version>3.0.2</version>-->
+<!--        </dependency>-->
+
 
         <dependency>
             <groupId>org.springframework.security</groupId>
@@ -522,7 +604,7 @@
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-jts-wrapper</artifactId>
-            <version>${geotools.version}</version>
+            <version>${gt-jts-wrapper.version}</version>
         </dependency>
 
         <dependency>
@@ -626,7 +708,7 @@
         <dependency>
             <groupId>org.codehaus.jettison</groupId>
             <artifactId>jettison</artifactId>
-            <version>1.3.8</version>
+            <version>1.5.4</version>
         </dependency>
 
         <dependency>
@@ -667,8 +749,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.plugin.version}</version>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>17</source>
+                    <target>17</target>
                     <encoding>UTF-8</encoding>
                     <compilerArgs>
                         <!--arg>-Werror</arg-->
@@ -684,6 +766,7 @@
                 </dependencies>
             </plugin>
 
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -696,88 +779,62 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <excludes>
-                        <exclude>**/*IntegrationTest.java</exclude>
-                        <exclude>**/*ServiceTest.java</exclude>
-                        <exclude>**/*ExporterTest.java</exclude>
-                        <exclude>**/*ImporterTest.java</exclude>
-                        <exclude>**/*FinderTest.java</exclude>
-                        <exclude>**/*ImportTest.java</exclude>
-                        <exclude>**/*IsolatedModeTest.java</exclude>
-                        <exclude>**/*SharedModeTest.java</exclude>
-                        <exclude>**/*MoverTest.java</exclude>
-                        <exclude>**/*TimeLockTest.java</exclude>
-                        <exclude>**/*StopPlacesTest.java</exclude>
-                        <exclude>**/PathLinkTest.java</exclude>
-                        <exclude>**/QuayTest.java</exclude>
-                        <exclude>**/StopPlaceTest.java</exclude>
-                        <exclude>**/TagTest.java</exclude>
-                        <exclude>**/TopographicPlaceTest.java</exclude>
-                        <exclude>**/ExportJobTest.java</exclude>
-                        <exclude>**/NetexMapperTest.java</exclude>
-                        <exclude>**/NetexFranceComplianceTest.java</exclude>
-                        <exclude>**/repository/*</exclude>
-                        <exclude>**/*DateScalarTest.java</exclude>
-                        <exclude>**/*ExportResourceTest.java</exclude>
-                        <exclude>**/*ImportResourceTest.java</exclude>
-                        <exclude>**/OkinaStopPlaceManagementRulesTest.java</exclude>
-                        <exclude>**/*ImportTest.java</exclude>
-                        <exclude>**/StopPlaceMatchingTest.java</exclude>
-                        <exclude>**/*ComputerTest.java</exclude>
-                        <exclude>**/*ComputerTest.java</exclude>
-                        <exclude>**/PlaceEquipmentMergerTest.java</exclude>
-                        <exclude>**/ParkingDeleterTest.java</exclude>
-                        <exclude>**/StopPlaceMergerTest.java</exclude>
-                        <exclude>**/StopPlaceQuayDeleterTest.java</exclude>
-                        <exclude>**/StopPlaceQuayMergerTest.java</exclude>
-                        <exclude>**/StopPlaceQuayMoverTest.java</exclude>
-                        <exclude>**/StopPlaceRenamerTest.java</exclude>
-                        <exclude>**/StopPlaceReopenerTest.java</exclude>
-                        <exclude>**/StopPlaceTerminatorTest.java</exclude>
-                        <exclude>**/AccessibilityAssessmentOptimizerTest.java</exclude>
-                        <exclude>**/AccessibilityAssessmentVersioningTest.java</exclude>
-                        <exclude>**/ValidityUpdaterTest.java</exclude>
-                        <exclude>**/VersionCreatorTest.java</exclude>
-                        <exclude>**/MultiModalStopPlaceEditorTest.java</exclude>
-                        <exclude>**/QuayMergerTest.java</exclude>
-                        <exclude>**/ReferenceResolverTest.java</exclude>
-                        <exclude>**/GraphQLResourceStopPlaceMergerTest.java</exclude>
-                        <exclude>**/GraphQLResourceQuayMergerTest.java</exclude>
-                    </excludes>
-                    <argLine>@{argLine} -Xms500m -Xmx1000m -Xss256k</argLine>
+<!--                    <excludes>-->
+<!--                        <exclude>**/*IntegrationTest.java</exclude>-->
+<!--                        <exclude>**/*ServiceTest.java</exclude>-->
+<!--                        <exclude>**/*ExporterTest.java</exclude>-->
+<!--                        <exclude>**/*ImporterTest.java</exclude>-->
+<!--                        <exclude>**/*FinderTest.java</exclude>-->
+<!--                        <exclude>**/*ImportTest.java</exclude>-->
+<!--                        <exclude>**/*IsolatedModeTest.java</exclude>-->
+<!--                        <exclude>**/*SharedModeTest.java</exclude>-->
+<!--                        <exclude>**/*MoverTest.java</exclude>-->
+<!--                        <exclude>**/*TimeLockTest.java</exclude>-->
+<!--                        <exclude>**/*StopPlacesTest.java</exclude>-->
+<!--                        <exclude>**/PathLinkTest.java</exclude>-->
+<!--                        <exclude>**/QuayTest.java</exclude>-->
+<!--                        <exclude>**/StopPlaceTest.java</exclude>-->
+<!--                        <exclude>**/TagTest.java</exclude>-->
+<!--                        <exclude>**/TopographicPlaceTest.java</exclude>-->
+<!--                        <exclude>**/ExportJobTest.java</exclude>-->
+<!--                        <exclude>**/NetexMapperTest.java</exclude>-->
+<!--                        <exclude>**/NetexFranceComplianceTest.java</exclude>-->
+<!--                        <exclude>**/repository/*</exclude>-->
+<!--                        <exclude>**/*DateScalarTest.java</exclude>-->
+<!--                        <exclude>**/*ExportResourceTest.java</exclude>-->
+<!--                        <exclude>**/*ImportResourceTest.java</exclude>-->
+<!--                        <exclude>**/OkinaStopPlaceManagementRulesTest.java</exclude>-->
+<!--                        <exclude>**/*ImportTest.java</exclude>-->
+<!--                        <exclude>**/StopPlaceMatchingTest.java</exclude>-->
+<!--                        <exclude>**/*ComputerTest.java</exclude>-->
+<!--                        <exclude>**/*ComputerTest.java</exclude>-->
+<!--                        <exclude>**/PlaceEquipmentMergerTest.java</exclude>-->
+<!--                        <exclude>**/ParkingDeleterTest.java</exclude>-->
+<!--                        <exclude>**/StopPlaceMergerTest.java</exclude>-->
+<!--                        <exclude>**/StopPlaceQuayDeleterTest.java</exclude>-->
+<!--                        <exclude>**/StopPlaceQuayMergerTest.java</exclude>-->
+<!--                        <exclude>**/StopPlaceQuayMoverTest.java</exclude>-->
+<!--                        <exclude>**/StopPlaceRenamerTest.java</exclude>-->
+<!--                        <exclude>**/StopPlaceReopenerTest.java</exclude>-->
+<!--                        <exclude>**/StopPlaceTerminatorTest.java</exclude>-->
+<!--                        <exclude>**/AccessibilityAssessmentOptimizerTest.java</exclude>-->
+<!--                        <exclude>**/AccessibilityAssessmentVersioningTest.java</exclude>-->
+<!--                        <exclude>**/ValidityUpdaterTest.java</exclude>-->
+<!--                        <exclude>**/VersionCreatorTest.java</exclude>-->
+<!--                        <exclude>**/MultiModalStopPlaceEditorTest.java</exclude>-->
+<!--                        <exclude>**/QuayMergerTest.java</exclude>-->
+<!--                        <exclude>**/ReferenceResolverTest.java</exclude>-->
+<!--                        <exclude>**/GraphQLResourceStopPlaceMergerTest.java</exclude>-->
+<!--                        <exclude>**/GraphQLResourceQuayMergerTest.java</exclude>-->
+<!--                    </excludes>-->
+                    <argLine>@{argLine} -Xms500m -Xmx1000m -Xss256k --add-opens java.base/java.lang=ALL-UNNAMED -Dhazelcast.ignoreXxeProtectionFailures=true</argLine>
                     <runOrder>alphabetical</runOrder>
                 </configuration>
             </plugin>
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>${maven-antrun-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>test-compile</id>
-                        <phase>test-compile</phase>
-                        <configuration>
-                            <target>
-                                <mkdir dir="${basedir}/src/test/groovy"/>
-                                <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
-                                    <classpath refid="maven.test.classpath"/>
-                                </taskdef>
-                                <mkdir dir="${project.build.testOutputDirectory}"/>
-                                <groovyc destdir="${project.build.testOutputDirectory}"
-                                         srcdir="${basedir}/src/test/groovy/" listfiles="true">
-                                    <classpath refid="maven.test.classpath"/>
-                                </groovyc>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring-boot-plugin.version}</version>
                 <configuration>
                     <mainClass>org.rutebanken.tiamat.TiamatApplication</mainClass>
                 </configuration>

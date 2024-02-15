@@ -39,6 +39,8 @@ public class EntityChangedEvent {
 
     public CrudAction crudAction;
 
+    public Long entityChanged;
+
     public String toString() {
         try {
             ObjectMapper mapper = new ObjectMapper();

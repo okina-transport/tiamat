@@ -19,12 +19,15 @@ import org.rutebanken.tiamat.model.EntityInVersionStructure;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.QueryHints;
+
+
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.data.repository.NoRepositoryBean;
+import jakarta.persistence.QueryHint;
 
-import javax.persistence.QueryHint;
+
 import java.util.List;
 
 @NoRepositoryBean

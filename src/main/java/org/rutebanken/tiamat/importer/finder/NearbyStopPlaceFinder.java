@@ -17,10 +17,10 @@ package org.rutebanken.tiamat.importer.finder;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.vividsolutions.jts.geom.Envelope;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.Point;
-import org.apache.commons.lang.StringUtils;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.Point;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.general.PeriodicCacheLogger;
 import org.rutebanken.tiamat.importer.AlternativeStopTypes;
 import org.rutebanken.tiamat.domain.Provider;

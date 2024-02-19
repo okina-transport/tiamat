@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.rest.graphql.mappers;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.externalapis.ApiProxyService;
 import org.rutebanken.tiamat.model.PrivateCodeStructure;
 import org.rutebanken.tiamat.model.Quay;

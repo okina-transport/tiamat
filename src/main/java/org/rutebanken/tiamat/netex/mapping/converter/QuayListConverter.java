@@ -18,7 +18,7 @@ package org.rutebanken.tiamat.netex.mapping.converter;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.Quays_RelStructure;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.repository.QuayRepository;

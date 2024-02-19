@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.exporter.async;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.h2.util.IOUtils;
 import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
 import org.rutebanken.tiamat.domain.Provider;

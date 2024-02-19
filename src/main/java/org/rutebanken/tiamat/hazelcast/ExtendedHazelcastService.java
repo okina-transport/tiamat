@@ -22,11 +22,14 @@ import org.rutebanken.hazelcasthelper.service.KubernetesService;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static com.hazelcast.config.MaxSizePolicy.FREE_HEAP_PERCENTAGE;
 import static org.rutebanken.tiamat.netex.id.GeneratedIdState.LAST_IDS_FOR_ENTITY;
 
+@Service
 public class ExtendedHazelcastService extends HazelCastService {
 
     private static final Logger logger = LoggerFactory.getLogger(ExtendedHazelcastService.class);
@@ -40,8 +43,8 @@ public class ExtendedHazelcastService extends HazelCastService {
      */
     private static final int EVICT_WHEN_FREE_HEAP_PERCENTAGE_BELOW = 50;
 
-    public ExtendedHazelcastService(KubernetesService kubernetesService, String hazelcastManagementUrl) {
-        super(kubernetesService, hazelcastManagementUrl);
+    public ExtendedHazelcastService() {
+        super(null);
     }
 
     /**
@@ -52,6 +55,9 @@ public class ExtendedHazelcastService extends HazelCastService {
     public List<MapConfig> getAdditionalMapConfigurations() {
         List<MapConfig> mapConfigs = super.getAdditionalMapConfigurations();
 
+        EvictionConfig evictionConfig = new EvictionConfig();
+        evictionConfig.setEvictionPolicy(EvictionPolicy.NONE);
+
         mapConfigs.add(
                 // Configure map for last entity identificators
                 new MapConfig()
@@ -59,9 +65,17 @@ public class ExtendedHazelcastService extends HazelCastService {
                         .setBackupCount(DEFAULT_BACKUP_COUNT)
                         .setAsyncBackupCount(0)
                         .setTimeToLiveSeconds(0)
-                        .setEvictionPolicy(EvictionPolicy.NONE));
+                        .setEvictionConfig(evictionConfig));
+
 
         logger.info("Configured map for last ids for entities: {}", mapConfigs.get(0));
+
+
+        EvictionConfig evictionConfigLFU = new EvictionConfig();
+        evictionConfigLFU.setEvictionPolicy(EvictionPolicy.LFU);
+        evictionConfigLFU.setMaxSizePolicy(FREE_HEAP_PERCENTAGE);
+        evictionConfigLFU.setSize(EVICT_WHEN_FREE_HEAP_PERCENTAGE_BELOW);
+
 
         mapConfigs.add(
                 // Configure map for hibernate second level cache
@@ -70,10 +84,9 @@ public class ExtendedHazelcastService extends HazelCastService {
                         // No sync backup for hibernate cache
                         .setBackupCount(0)
                         .setAsyncBackupCount(2)
-                        .setEvictionPolicy(EvictionPolicy.LFU)
-                        .setTimeToLiveSeconds(604800)
-                        .setMaxSizeConfig(
-                                new MaxSizeConfig(EVICT_WHEN_FREE_HEAP_PERCENTAGE_BELOW, MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENTAGE)));
+                        .setEvictionConfig(evictionConfigLFU)
+                        .setTimeToLiveSeconds(604800));
+
 
         logger.info("Configured map for hibernate second level cache: {}", mapConfigs.get(1));
         return mapConfigs;

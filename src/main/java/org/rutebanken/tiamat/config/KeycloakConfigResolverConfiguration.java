@@ -11,24 +11,21 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Licence for the specific language governing permissions and
  * limitations under the Licence.
+ *
  */
 
 package org.rutebanken.tiamat.config;
 
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.PrecisionModel;
+import org.keycloak.adapters.KeycloakConfigResolver;
+import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class GeometryFactoryConfig {
-
-    private static final int SRID = 4326;
-
+public class KeycloakConfigResolverConfiguration {
     @Bean
-    public GeometryFactory geometryFactory() {
-
-        return new GeometryFactory(new PrecisionModel(), SRID);
-
+    public KeycloakConfigResolver KeycloakConfigResolver() {
+        return new KeycloakSpringBootConfigResolver();
     }
+
 }

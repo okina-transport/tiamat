@@ -16,8 +16,7 @@
 package org.rutebanken.tiamat;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import lombok.Getter;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -27,16 +26,7 @@ import org.rutebanken.tiamat.domain.ChouetteInfo;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.GeneratedIdState;
-import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
-import org.rutebanken.tiamat.repository.ParkingRepository;
-import org.rutebanken.tiamat.repository.PathJunctionRepository;
-import org.rutebanken.tiamat.repository.PathLinkRepository;
-import org.rutebanken.tiamat.repository.ProviderRepository;
-import org.rutebanken.tiamat.repository.QuayRepository;
-import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.repository.TagRepository;
-import org.rutebanken.tiamat.repository.TariffZoneRepository;
-import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
+import org.rutebanken.tiamat.repository.*;
 import org.rutebanken.tiamat.service.TariffZonesLookupService;
 import org.rutebanken.tiamat.service.TopographicPlaceLookupService;
 import org.rutebanken.tiamat.versioning.VersionCreator;
@@ -48,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -57,6 +48,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
@@ -130,8 +122,9 @@ public abstract class TiamatIntegrationTest {
     @Autowired
     protected RoleAssignmentExtractor roleAssignmentExtractor;
 
-    @Getter
-    ProviderRepository providerRepository = Mockito.mock(ProviderRepository.class);
+
+    @MockBean
+    protected CacheProviderRepository providerRepository ;
 
     @Value("${local.server.port}")
     protected int port;
@@ -158,6 +151,30 @@ public abstract class TiamatIntegrationTest {
 
         when(providerRepository.getProviders()).thenReturn(providers);
         when(providerRepository.getProvider(anyLong())).thenReturn(providers.get(0));
+
+        Provider prov1 = createProvider("PROV1", 2L);
+
+        when(providerRepository.getProviders()).thenReturn(providers);
+        when(providerRepository.getProvider(anyLong())).thenReturn(providers.get(0));
+        when(providerRepository.getByReferential("PROV1")).thenReturn(Optional.of(prov1));
+    }
+
+    private Provider createProvider(String providerName, long id){
+        ChouetteInfo chouetteInfo = new ChouetteInfo();
+        chouetteInfo.codeIdfm = providerName;
+        chouetteInfo.id = id;
+        chouetteInfo.xmlns = "xmlns";
+        chouetteInfo.xmlnsurl = "http://xmlns";
+        chouetteInfo.referential = providerName;
+        chouetteInfo.organisation = providerName;
+        chouetteInfo.idfm = true;
+        chouetteInfo.codeIdfm = providerName;
+
+        Provider provider = new Provider();
+        provider.id=id;
+        provider.name = providerName;
+        provider.chouetteInfo = chouetteInfo;
+        return provider;
     }
 
     @Before

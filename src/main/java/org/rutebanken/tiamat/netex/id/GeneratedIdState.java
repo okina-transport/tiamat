@@ -15,17 +15,15 @@
 
 package org.rutebanken.tiamat.netex.id;
 
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.collection.ISet;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentMap;
 
 import static org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService.INITIAL_LAST_ID;
 
@@ -44,7 +42,7 @@ public class GeneratedIdState implements Serializable{
     }
 
 
-    public IQueue<Long> getQueueForEntity(String entityTypeName) {
+    public IQueue getQueueForEntity(String entityTypeName) {
         hazelcastInstance.getSet(ENTITY_NAMES_REGISTERED).add(entityTypeName);
         return hazelcastInstance.getQueue(entityTypeName);
     }
@@ -70,7 +68,7 @@ public class GeneratedIdState implements Serializable{
         return lastIdMap.get(entityTypeName);
     }
 
-    public ISet<Long> getClaimedIdListForEntity(String entityTypeName) {
+    public ISet getClaimedIdListForEntity(String entityTypeName) {
         return hazelcastInstance.getSet(CLAIMED_IDS_FOR_ENTITY_PREFIX + "-" + entityTypeName);
     }
 }

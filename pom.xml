@@ -45,8 +45,9 @@
 
     <distributionManagement>
         <snapshotRepository>
-            <id>Nexus</id>
-            <url>https://nexus.rutebanken.org/content/repositories/snapshots</url>
+            <id>snapshots</id>
+            <name>entur2-snapshots</name>
+            <url>https://entur2.jfrog.io/entur2/libs-snapshot-local</url>
         </snapshotRepository>
     </distributionManagement>
 
@@ -57,72 +58,73 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.8</java.version>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
-
-        <!-- Docker & Fabric8 Configs -->
-        <docker.from>registry.okina.fr/okina/java-base-image</docker.from>
-        <docker.image>registry.okina.fr/mosaic/${project.artifactId}:${project.version}</docker.image>
-        <docker.cleanup>none</docker.cleanup>
-        <!--<docker.port.container.jolokia>8778</docker.port.container.jolokia>-->
-
-        <fabric8.dockerUser>carbon-1287/</fabric8.dockerUser>
-        <fabric8.service.name>springboot-webmvc</fabric8.service.name>
-        <fabric8.service.port>80</fabric8.service.port>
-        <fabric8.service.containerPort>8080</fabric8.service.containerPort>
-
-        <!-- fabric8.env.AB_JOLOKIA_AUTH_OPENSHIFT>true</fabric8.env.AB_JOLOKIA_AUTH_OPENSHIFT -->
-        <fabric8.label.component>${project.artifactId}</fabric8.label.component>
-        <fabric8.label.container>spring-boot</fabric8.label.container>
-        <fabric8.label.group>rutebanken</fabric8.label.group>
-        <fabric8.iconRef>spring-boot</fabric8.iconRef>
-
+        <java.version>17</java.version>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
+        <plexus.compiler.javac.version>2.8.5</plexus.compiler.javac.version>
         <docker.maven.plugin.version>0.21.0</docker.maven.plugin.version>
-        <spring-boot-plugin.version>2.0.3.RELEASE</spring-boot-plugin.version>
-        <spring-boot.version>2.0.3.RELEASE</spring-boot.version>
-        <spring.security.version>5.0.7.RELEASE</spring.security.version>
-        <keycloak.version>4.1.0.Final</keycloak.version>
+        <spring-boot-plugin.version>2.7.18</spring-boot-plugin.version>
+        <spring-boot.version>2.7.18</spring-boot.version>
+        <spring.security.version>5.3.5.RELEASE</spring.security.version>
+        <keycloak.version>19.0.3</keycloak.version>
         <postgresql.version>42.2.4</postgresql.version>
         <geodb.version>0.9</geodb.version>
-        <geotools.version>19.2</geotools.version>
-        <com.vividsolutions.version>1.13</com.vividsolutions.version>
-        <activemq-client.version>5.15.4</activemq-client.version>
+        <geotools.version>20.1</geotools.version>
+        <activemq-client.version>5.16.7</activemq-client.version>
         <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
-        <flyway-core.version>5.1.4</flyway-core.version>
+        <flyway-core.version>8.5.10</flyway-core.version>
         <logstash-logback.version>5.2</logstash-logback.version>
-        <kubernetes-client.version>4.0.3</kubernetes-client.version>
+        <kubernetes-client.version>4.1.1</kubernetes-client.version>
         <janino.version>3.0.8</janino.version>
         <assertj-core.version>3.10.0</assertj-core.version>
-        <rest-assured.version>3.1.0</rest-assured.version>
+        <rest-assured.version>4.5.1</rest-assured.version>
         <javax.el.version>3.0.0</javax.el.version>
-        <com.h2database.version>1.4.196</com.h2database.version>
+        <com.h2database.version>1.4.197</com.h2database.version>
         <hikariCP.version>3.2.0</hikariCP.version>
         <commons.lang3.version>3.7</commons.lang3.version>
-        <orika-core.version>1.5.2</orika-core.version>
-        <guava.version>26.0-jre</guava.version>
-        <graphql-java.version>9.2</graphql-java.version>
+        <orika-core.version>1.5.4</orika-core.version>
+        <guava.version>30.1.1-jre</guava.version>
+        <graphql-java.version>11.0</graphql-java.version>
 
-        <hazelcast-hibernate52.version>1.2.3</hazelcast-hibernate52.version>
-        <hibernate.version>5.2.17.Final</hibernate.version>
-        <hibernate-spatial.version>5.2.17.Final</hibernate-spatial.version>
+        <hazelcast-hibernate53.version>5.1.0</hazelcast-hibernate53.version>
+        <hazelcast.version>5.2.4</hazelcast.version>
 
-        <groovy-all.version>2.4.15</groovy-all.version>
+        <hibernate.version>5.6.15.Final</hibernate.version>
+        <hibernate-spatial.version>5.4.0.Final</hibernate-spatial.version>
+        <groovy-all.version>3.0.9</groovy-all.version>
         <jaxb-version>2.3.0.1</jaxb-version>
-        <swagger-jersey2.version>1.5.20</swagger-jersey2.version>
+        <swagger-jersey2.version>1.6.2</swagger-jersey2.version>
+        <jackson-version>2.13.5</jackson-version>
+        <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
+        <sonar-maven-plugin.version>3.9.1.2184</sonar-maven-plugin.version>
+
+        <!-- TODO supprimer ?-->
+        <jersey-media-multipart.version>2.35</jersey-media-multipart.version>
+
 
         <!-- NB: Concious choice of using snapshot version. This is to keep in
             sync, and fail fast if incompatibilities -->
         <netex-java-model.version>1.0.9-SNAPSHOT</netex-java-model.version>
-        <okina-helper.version>1.0.23-SNAPSHOT</okina-helper.version>
+        <okina-helper.version>1.0.24</okina-helper.version>
         <fabric8.version>2.3.7</fabric8.version>
         <metrics.version>3.2.3</metrics.version>
 
-        <version.lombok>1.16.4</version.lombok>
+        <javax-jms.version>2.0.1</javax-jms.version>
+        <jts-core.version>1.16.0</jts-core.version>
 
+        <maven-surefire-plugin.version>3.0.0-M6</maven-surefire-plugin.version>
+        <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
+        <argLine></argLine>
+        <!--TODO temporary manual upgrade of Logback-->
+        <logback.version>1.2.12</logback.version>
+        <log4j2.version>2.17.1</log4j2.version>
+
+        <sonar.projectKey>mobi-iti:tiamat</sonar.projectKey>
+        <maven.compiler.args>--add-opens java.base/java.lang=ALL-UNNAMED</maven.compiler.args>
     </properties>
 
-    <!-- This repository list can be deleted, as it is now supplied by rutebanken nexus.
+    <!-- This repository list can be deleted, as it is now plied by rutebanken nexus.
          But you have set up maven to use it as mirror in settings.xml
     -->
     <repositories>
@@ -138,16 +140,46 @@
             <snapshots><enabled>false</enabled></snapshots>
             <releases><enabled>true</enabled></releases>
         </repository>
-<!--        <repository>-->
-<!--            <id>repo.boundlessgeo.com-releases</id>-->
-<!--            <name>repo.boundlessgeo.com-releases</name>-->
-<!--            <url>http://repo.boundlessgeo.com/main</url>-->
-<!--            <layout>default</layout>-->
-<!--        </repository>-->
     </repositories>
 
     <dependencyManagement>
         <dependencies>
+
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>rest-assured</artifactId>
+                <version>${rest-assured.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+
+
+            <dependency>
+                <groupId>jakarta.ws.rs</groupId>
+                <artifactId>jakarta.ws.rs-api</artifactId>
+                <version>2.1.6</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.hk2</groupId>
+                <artifactId>hk2-api</artifactId>
+                <version>2.6.1</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>json-path</artifactId>
+                <version>4.5.1</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.hk2</groupId>
+                <artifactId>hk2-locator</artifactId>
+                <version>2.6.1</version>
+            </dependency>
+
+
+
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -156,19 +188,6 @@
                 <scope>import</scope>
             </dependency>
 
-            <dependency>
-                <groupId>io.fabric8</groupId>
-                <artifactId>fabric8-project</artifactId>
-                <version>${fabric8.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>com.okina.helpers</groupId>
-                <artifactId>hazelcast-helper</artifactId>
-                <version>${okina-helper.version}</version>
-            </dependency>
 
             <dependency>
                 <groupId>com.okina.helpers</groupId>
@@ -194,12 +213,71 @@
                 <version>${metrics.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${log4j2.version}</version>
+                <type>pom</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1652 -->
+                <artifactId>log4j-to-slf4j</artifactId>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1653 -->
+                <version>${log4j2.version}</version>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1654 -->
+            </dependency>
+
+            <dependency>
+                <groupId>com.hazelcast</groupId>
+                <artifactId>hazelcast</artifactId>
+                <version>${hazelcast.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
 
     <dependencies>
 
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${hazelcast.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>json-path</artifactId>
+            <version>4.5.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>2.1.6</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-xjc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-jaxb</artifactId>
+            <version>2.19</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-bom</artifactId>
+            <version>${log4j2.version}</version>
+            <type>pom</type>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -213,37 +291,28 @@
             <version>${flyway-core.version}</version>
         </dependency>
 
-
-        <!-- https://mvnrepository.com/artifact/com.vividsolutions/jts -->
-        <dependency>
-            <groupId>com.vividsolutions</groupId>
-            <artifactId>jts</artifactId>
-            <version>${com.vividsolutions.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-jersey2-jaxrs</artifactId>
             <version>${swagger-jersey2.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-            <version>${jaxb-version}</version>
-
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson-version}</version>
         </dependency>
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-core</artifactId>
-            <version>${jaxb-version}</version>
+            <groupId>javax.jms</groupId>
+            <artifactId>javax.jms-api</artifactId>
+            <version>${javax-jms.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-xjc</artifactId>
-            <version>${jaxb-version}</version>
-        </dependency>
-
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-graphite</artifactId>
@@ -252,18 +321,40 @@
 
         <dependency>
             <groupId>com.okina.helpers</groupId>
-            <artifactId>hazelcast-helper</artifactId>
+            <artifactId>hazelcast4-helper</artifactId>
+            <version>${okina-helper.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.hazelcast</groupId>
+                    <artifactId>hazelcast</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>com.okina.helpers</groupId>
             <artifactId>organisation</artifactId>
+            <version>${okina-helper.version}</version>
+        </dependency>
+
+
+
+        <dependency>
+            <groupId>com.okina.helpers</groupId>
+            <artifactId>organisation</artifactId>
+            <version>${okina-helper.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-hibernate52</artifactId>
-            <version>${hazelcast-hibernate52.version}</version>
+            <artifactId>hazelcast-hibernate53</artifactId>
+            <version>${hazelcast-hibernate53.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.hazelcast</groupId>
+                    <artifactId>hazelcast</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- Due to maven artifact cache, this dependency needs to be explicit -->
         <dependency>
@@ -282,6 +373,22 @@
             <artifactId>logstash-logback-encoder</artifactId>
             <version>${logstash-logback.version}</version>
         </dependency>
+        <!--TODO temporary manual upgrade of Logback-->
+        <dependency>
+            <groupId>org.entur</groupId>
+            <artifactId>netex-java-model</artifactId>
+            <version>${netex-java-model.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.codehaus.janino</groupId>
@@ -290,7 +397,7 @@
         </dependency>
 
         <dependency>
-            <groupId>org.entur</groupId>
+            <groupId>com.okina</groupId>
             <artifactId>netex-java-model</artifactId>
             <version>${netex-java-model.version}</version>
         </dependency>
@@ -363,6 +470,20 @@
             </exclusions>
         </dependency>
 
+
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <version>3.0.0</version>
+            <scope>runtime</scope>
+        </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>org.glassfish.jersey.media</groupId>-->
+        <!--            <artifactId>jersey-media-jaxb</artifactId>-->
+        <!--            <version>3.0.2</version>-->
+        <!--        </dependency>-->
+
+
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-config</artifactId>
@@ -397,6 +518,12 @@
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-spatial</artifactId>
             <version>${hibernate-spatial.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.vividsolutions</groupId>
+                    <artifactId>jts-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -442,6 +569,13 @@
                 https://issues.apache.org/jira/browse/XERCESJ-1276
             -->
             <version>2.11.0.SP6-RB</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.locationtech.jts</groupId>
+            <artifactId>jts-core</artifactId>
+            <version>${jts-core.version}</version>
         </dependency>
 
         <dependency>
@@ -491,6 +625,7 @@
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
             <version>${groovy-all.version}</version>
+            <type>pom</type>
             <scope>test</scope>
         </dependency>
 
@@ -556,17 +691,13 @@
         <dependency>
             <groupId>org.codehaus.jettison</groupId>
             <artifactId>jettison</artifactId>
+            <version>1.5.4</version>
         </dependency>
 
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${version.lombok}</version>
+            <version>2.7</version>
         </dependency>
 
         <dependency>
@@ -585,6 +716,11 @@
             <artifactId>resteasy-jackson2-provider</artifactId>
             <version>3.1.4.Final</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.9.0</version>
+        </dependency>
 
     </dependencies>
 
@@ -593,49 +729,97 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.19.1</version>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
                 <configuration>
-                    <argLine>-Xmx3G</argLine>
-                    <systemPropertyVariables combine.children="override">
-                        <spring.output.ansi.enabled>ALWAYS</spring.output.ansi.enabled>
-                        <env>dev</env>
-                    </systemPropertyVariables>
+                    <source>17</source>
+                    <target>17</target>
+                    <encoding>UTF-8</encoding>
+                    <compilerArgs>
+                        <!--arg>-Werror</arg-->
+                        <arg>-Xlint:all</arg>
+                    </compilerArgs>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.plexus</groupId>
+                        <artifactId>plexus-compiler-javac</artifactId>
+                        <version>${plexus.compiler.javac.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-junit4</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <!--                    <excludes>-->
+                    <!--                        <exclude>**/*IntegrationTest.java</exclude>-->
+                    <!--                        <exclude>**/*ServiceTest.java</exclude>-->
+                    <!--                        <exclude>**/*ExporterTest.java</exclude>-->
+                    <!--                        <exclude>**/*ImporterTest.java</exclude>-->
+                    <!--                        <exclude>**/*FinderTest.java</exclude>-->
+                    <!--                        <exclude>**/*ImportTest.java</exclude>-->
+                    <!--                        <exclude>**/*IsolatedModeTest.java</exclude>-->
+                    <!--                        <exclude>**/*SharedModeTest.java</exclude>-->
+                    <!--                        <exclude>**/*MoverTest.java</exclude>-->
+                    <!--                        <exclude>**/*TimeLockTest.java</exclude>-->
+                    <!--                        <exclude>**/*StopPlacesTest.java</exclude>-->
+                    <!--                        <exclude>**/PathLinkTest.java</exclude>-->
+                    <!--                        <exclude>**/QuayTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceTest.java</exclude>-->
+                    <!--                        <exclude>**/TagTest.java</exclude>-->
+                    <!--                        <exclude>**/TopographicPlaceTest.java</exclude>-->
+                    <!--                        <exclude>**/ExportJobTest.java</exclude>-->
+                    <!--                        <exclude>**/NetexMapperTest.java</exclude>-->
+                    <!--                        <exclude>**/NetexFranceComplianceTest.java</exclude>-->
+                    <!--                        <exclude>**/repository/*</exclude>-->
+                    <!--                        <exclude>**/*DateScalarTest.java</exclude>-->
+                    <!--                        <exclude>**/*ExportResourceTest.java</exclude>-->
+                    <!--                        <exclude>**/*ImportResourceTest.java</exclude>-->
+                    <!--                        <exclude>**/OkinaStopPlaceManagementRulesTest.java</exclude>-->
+                    <!--                        <exclude>**/*ImportTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceMatchingTest.java</exclude>-->
+                    <!--                        <exclude>**/*ComputerTest.java</exclude>-->
+                    <!--                        <exclude>**/*ComputerTest.java</exclude>-->
+                    <!--                        <exclude>**/PlaceEquipmentMergerTest.java</exclude>-->
+                    <!--                        <exclude>**/ParkingDeleterTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceMergerTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceQuayDeleterTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceQuayMergerTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceQuayMoverTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceRenamerTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceReopenerTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceTerminatorTest.java</exclude>-->
+                    <!--                        <exclude>**/AccessibilityAssessmentOptimizerTest.java</exclude>-->
+                    <!--                        <exclude>**/AccessibilityAssessmentVersioningTest.java</exclude>-->
+                    <!--                        <exclude>**/ValidityUpdaterTest.java</exclude>-->
+                    <!--                        <exclude>**/VersionCreatorTest.java</exclude>-->
+                    <!--                        <exclude>**/MultiModalStopPlaceEditorTest.java</exclude>-->
+                    <!--                        <exclude>**/QuayMergerTest.java</exclude>-->
+                    <!--                        <exclude>**/ReferenceResolverTest.java</exclude>-->
+                    <!--                        <exclude>**/GraphQLResourceStopPlaceMergerTest.java</exclude>-->
+                    <!--                        <exclude>**/GraphQLResourceQuayMergerTest.java</exclude>-->
+                    <!--                    </excludes>-->
+                    <argLine>@{argLine} -Xms500m -Xmx1000m -Xss256k --add-opens java.base/java.lang=ALL-UNNAMED -Dhazelcast.ignoreXxeProtectionFailures=true</argLine>
+                    <runOrder>alphabetical</runOrder>
                 </configuration>
             </plugin>
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.8</version>
-                <executions>
-                    <execution>
-                        <id>test-compile</id>
-                        <phase>test-compile</phase>
-                        <configuration>
-                            <tasks>
-                                <mkdir dir="${basedir}/src/test/groovy"/>
-                                <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
-                                    <classpath refid="maven.test.classpath"/>
-                                </taskdef>
-                                <mkdir dir="${project.build.testOutputDirectory}"/>
-                                <groovyc destdir="${project.build.testOutputDirectory}"
-                                         srcdir="${basedir}/src/test/groovy/" listfiles="true">
-                                    <classpath refid="maven.test.classpath"/>
-                                </groovyc>
-                            </tasks>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring-boot-plugin.version}</version>
                 <configuration>
                     <mainClass>org.rutebanken.tiamat.TiamatApplication</mainClass>
-                    <excludeDevtools>false</excludeDevtools>
                 </configuration>
                 <executions>
                     <execution>
@@ -645,58 +829,19 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>io.fabric8</groupId>
-                <artifactId>fabric8-maven-plugin</artifactId>
-                <version>${fabric8.version}</version>
-                <executions>
-                    <execution>
-                        <id>json</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>json</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>attach</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>attach</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>io.fabric8</groupId>
-                <artifactId>docker-maven-plugin</artifactId>
-                <version>${docker.maven.plugin.version}</version>
-                <configuration>
-                    <images>
-                        <image>
-                            <name>${docker.image}</name>
-                            <build>
-                                <from>${docker.from}</from>
-                                <cleanup>${docker.cleanup}</cleanup>
-                                <assembly>
-                                    <basedir>/deployments</basedir>
-                                    <descriptorRef>artifact</descriptorRef>
-                                </assembly>
-                                <env>
-                                    <JAVA_APP_JAR>${project.build.finalName}.jar</JAVA_APP_JAR>
-                                </env>
-                                <runCmds>
-                                    <runCmd>mkdir /deployments/data</runCmd>
-                                    <runCmd>chown -R jboss:jboss /deployments/data</runCmd>
-                                </runCmds>
-                            </build>
-                        </image>
-                    </images>
-                </configuration>
-            </plugin>
+
             <plugin>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
-                <version>${flyway-core.version}</version>
+                <version>6.0.1</version>
+                <configuration>
+                    <url>jdbc:postgresql://localhost:5432/tiamat</url>
+                    <user>tiamat</user>
+                    <password>tiamat</password>
+                    <schemas>
+                        <schema>tiamat</schema>
+                    </schemas>
+                </configuration>
             </plugin>
 
 
@@ -727,51 +872,51 @@
      -->
 
     <profiles>
+
         <profile>
-            <id>rutebanken</id>
+            <id>sonar</id>
             <properties>
-                <fabric8.imagePullPolicySnapshot>Always</fabric8.imagePullPolicySnapshot>
-                <fabric8.recreate>true</fabric8.recreate>
+                <sonar.dependencyCheck.jsonReportPath>target/dependency-check-report.json</sonar.dependencyCheck.jsonReportPath>
+                <sonar.dependencyCheck.htmlReportPath>target/dependency-check-report.html</sonar.dependencyCheck.htmlReportPath>
+                <sonar.dependencyCheck.securityHotspot>true</sonar.dependencyCheck.securityHotspot>
+                <sonar.dependencyCheck.summarize>true</sonar.dependencyCheck.summarize>
             </properties>
             <build>
-                <!-- Missing fabric8:apply, as this crashed (probably due to missing fabric8) -->
-                <defaultGoal>clean install docker:build docker:push fabric8:json</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${jacoco-maven-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>default-prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>default-report</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>default-check</id>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <configuration>
+                                    <rules />
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
-        <profile>
-            <id>f8-build</id>
-            <build>
-                <defaultGoal>clean install docker:build fabric8:json</defaultGoal>
-            </build>
-        </profile>
-        <profile>
-            <id>f8-deploy</id>
-            <properties>
-                <fabric8.imagePullPolicySnapshot>Always</fabric8.imagePullPolicySnapshot>
-                <fabric8.recreate>true</fabric8.recreate>
-            </properties>
-            <build>
-                <defaultGoal>clean install docker:build docker:push fabric8:json fabric8:apply</defaultGoal>
-            </build>
-        </profile>
-        <profile>
-            <id>f8-local-deploy</id>
-            <properties>
-                <fabric8.recreate>true</fabric8.recreate>
-            </properties>
-            <build>
-                <defaultGoal>clean install docker:build fabric8:json fabric8:apply</defaultGoal>
-            </build>
-        </profile>
-        <profile>
-            <id>local-docker</id>
-            <properties>
-                <fabric8.recreate>true</fabric8.recreate>
-            </properties>
-            <build>
-                <defaultGoal>clean install docker:build</defaultGoal>
-            </build>
-        </profile>
+
     </profiles>
 
 </project>
+

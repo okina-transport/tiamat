@@ -15,8 +15,8 @@
 
 package org.rutebanken.tiamat.importer.finder;
 
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.junit.Test;
 import org.rutebanken.tiamat.general.PeriodicCacheLogger;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.anyOf;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -78,14 +78,14 @@ public class NearbyStopPlaceFinderTest {
         stopPlace.setStopPlaceType(StopTypeEnumeration.BUS_STATION);
         stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(9, 40)));
 
-        com.vividsolutions.jts.geom.Geometry envelope = (com.vividsolutions.jts.geom.Geometry) stopPlace.getCentroid().getEnvelope().clone();
+        org.locationtech.jts.geom.Geometry envelope = (org.locationtech.jts.geom.Geometry) stopPlace.getCentroid().getEnvelope().clone();
 
 
         when(stopPlaceRepository.findNearbyStopPlace(any(), any(), any())).thenReturn(stopPlaceId);
         when(stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceId)).thenReturn(stopPlace);
 
         StopPlace actual = nearbyStopPlaceFinder.find(stopPlace);
-        com.vividsolutions.jts.geom.Geometry actualEnvelope = (com.vividsolutions.jts.geom.Geometry) actual.getCentroid().getEnvelope().clone();
+        org.locationtech.jts.geom.Geometry actualEnvelope = (org.locationtech.jts.geom.Geometry) actual.getCentroid().getEnvelope().clone();
 
         assertThat(actualEnvelope).isEqualTo(envelope);
     }

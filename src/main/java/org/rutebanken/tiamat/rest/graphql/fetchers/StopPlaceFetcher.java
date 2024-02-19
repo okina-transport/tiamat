@@ -156,7 +156,7 @@ class StopPlaceFetcher implements DataFetcher {
                 List<StopPlace> stopPlace;
                 if (version != null && version > 0) {
                     stopPlace = Arrays.asList(stopPlaceRepository.findFirstByNetexIdAndVersion(netexId, version));
-                    stopPlacesPage = new PageImpl<>(stopPlace, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), 1L);
+                    stopPlacesPage = getStopPlaces(environment, stopPlace, 1L);
                 } else {
                     stopPlaceSearchBuilder.setNetexIdList(Arrays.asList(netexId));
                     stopPlacesPage = stopPlaceRepository.findStopPlace(exportParamsBuilder.setStopPlaceSearch(stopPlaceSearchBuilder.build()).build());
@@ -251,8 +251,9 @@ class StopPlaceFetcher implements DataFetcher {
                 if (environment.getArgument(INCLUDE_EXPIRED)) {
                     pointInTime = null;
                 }
+
                 stopPlacesPage = stopPlaceRepository.findStopPlacesWithin(boundingBox.xMin, boundingBox.yMin, boundingBox.xMax,
-                        boundingBox.yMax, ignoreStopPlaceId, pointInTime, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)));
+                        boundingBox.yMax, ignoreStopPlaceId, pointInTime, PageRequest.of(environment.getArgument(PAGE), environment.getArgument(SIZE)));
             } else {
                 stopPlacesPage = stopPlaceRepository.findStopPlace(exportParamsBuilder.setStopPlaceSearch(stopPlaceSearchBuilder.build()).build());
             }
@@ -262,11 +263,15 @@ class StopPlaceFetcher implements DataFetcher {
         if (!stopPlacesPage.getContent().isEmpty() && !isUserAdmin) {
             // TODO surement à revoir à tester
             List<StopPlace> userOrgFilteredStopPlaces = stopPlacesPage.getContent().stream().filter(stopPlace -> userOrgs.contains(stopPlace.getProvider())).collect(Collectors.toList());
-            stopPlacesPage = new PageImpl<>(userOrgFilteredStopPlaces, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), 1L);
+            stopPlacesPage = new PageImpl<>(userOrgFilteredStopPlaces,PageRequest.of(environment.getArgument(PAGE), environment.getArgument(SIZE)), 1L);
         }
 
         List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(stopPlacesPage.getContent(), KEEP_CHILDS);
-        return new PageImpl<>(parentsResolved, new PageRequest(environment.getArgument(PAGE), environment.getArgument(SIZE)), parentsResolved.size());
+        return new PageImpl<>(parentsResolved, PageRequest.of(environment.getArgument(PAGE), environment.getArgument(SIZE)), parentsResolved.size());
+    }
+
+    private PageImpl<StopPlace> getStopPlaces(DataFetchingEnvironment environment, List<StopPlace> stopPlaces, long size) {
+        return new PageImpl<>(stopPlaces, PageRequest.of(environment.getArgument(PAGE), environment.getArgument(SIZE)), size);
     }
 
     private <T> T setIfNonNull(DataFetchingEnvironment environment, String argumentName, Consumer<T> consumer) {

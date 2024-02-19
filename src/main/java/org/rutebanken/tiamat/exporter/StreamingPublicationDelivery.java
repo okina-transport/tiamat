@@ -16,7 +16,7 @@
 package org.rutebanken.tiamat.exporter;
 
 import net.opengis.gml._3.DirectPositionType;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
 import org.rutebanken.netex.model.AccessibilityAssessment;
@@ -447,7 +447,8 @@ public class StreamingPublicationDelivery {
             accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.UNKNOWN);
             AccessibilityLimitations_RelStructure accessibilityLimitations_relStructure = new AccessibilityLimitations_RelStructure();
             AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
-            accessibilityLimitations_relStructure.setAccessibilityLimitation(accessibilityLimitation);
+            accessibilityLimitations_relStructure.withAccessibilityLimitation(accessibilityLimitation);
+
             accessibilityAssessment.setLimitations(accessibilityLimitations_relStructure);
             quay.setAccessibilityAssessment(accessibilityAssessment);
         } else {

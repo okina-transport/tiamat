@@ -16,7 +16,7 @@
 package org.rutebanken.tiamat.importer.handler;
 
 import com.hazelcast.core.HazelcastInstance;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.rutebanken.netex.model.SiteFrame;
 import org.rutebanken.netex.model.StopPlacesInFrame_RelStructure;
 import org.rutebanken.netex.model.TopographicPlace;
@@ -183,7 +183,7 @@ public class StopPlaceImportHandler {
             if (importParams.importType != null && importParams.importType.equals(ImportType.ID_MATCH)) {
                 importedOrMatchedNetexStopPlaces = stopPlaceIdMatcher.matchStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated);
             } else {
-                final Lock lock = hazelcastInstance.getLock(STOP_PLACE_IMPORT_LOCK_KEY);
+                final Lock lock = hazelcastInstance.getCPSubsystem().getLock(STOP_PLACE_IMPORT_LOCK_KEY);
                 lock.lock();
                 try {
                     if (importParams.importType == null || importParams.importType.equals(ImportType.MERGE)) {

@@ -1,7 +1,7 @@
 package org.rutebanken.tiamat.geo.geo;
 
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -296,7 +296,7 @@ public class Lambert {
     public static LambertPoint convertToLambertByAlg003(double latitude, double longitude, LambertZone zone) throws NotImplementedException {
 
         if (zone == Lambert93) {
-            throw new NotImplementedException();
+            throw new NotImplementedException("Not Implemented");
         } else {
             LambertPoint pt1 = geographicToCartesian(longitude - LON_MERID_GREENWICH, latitude, 0, A_WGS84, E_WGS84);
 

@@ -20,7 +20,7 @@
 
     <groupId>org.rutebanken</groupId>
     <artifactId>tiamat</artifactId>
-    <version>2.5.7-mobi-iti-SNAPSHOT-J17</version>
+    <version>2.5.8-mobi-iti-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Tiamat</name>
@@ -494,11 +494,11 @@
             <version>3.0.0</version>
             <scope>runtime</scope>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.glassfish.jersey.media</groupId>-->
-<!--            <artifactId>jersey-media-jaxb</artifactId>-->
-<!--            <version>3.0.2</version>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.glassfish.jersey.media</groupId>-->
+        <!--            <artifactId>jersey-media-jaxb</artifactId>-->
+        <!--            <version>3.0.2</version>-->
+        <!--        </dependency>-->
 
 
         <dependency>
@@ -779,54 +779,54 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-<!--                    <excludes>-->
-<!--                        <exclude>**/*IntegrationTest.java</exclude>-->
-<!--                        <exclude>**/*ServiceTest.java</exclude>-->
-<!--                        <exclude>**/*ExporterTest.java</exclude>-->
-<!--                        <exclude>**/*ImporterTest.java</exclude>-->
-<!--                        <exclude>**/*FinderTest.java</exclude>-->
-<!--                        <exclude>**/*ImportTest.java</exclude>-->
-<!--                        <exclude>**/*IsolatedModeTest.java</exclude>-->
-<!--                        <exclude>**/*SharedModeTest.java</exclude>-->
-<!--                        <exclude>**/*MoverTest.java</exclude>-->
-<!--                        <exclude>**/*TimeLockTest.java</exclude>-->
-<!--                        <exclude>**/*StopPlacesTest.java</exclude>-->
-<!--                        <exclude>**/PathLinkTest.java</exclude>-->
-<!--                        <exclude>**/QuayTest.java</exclude>-->
-<!--                        <exclude>**/StopPlaceTest.java</exclude>-->
-<!--                        <exclude>**/TagTest.java</exclude>-->
-<!--                        <exclude>**/TopographicPlaceTest.java</exclude>-->
-<!--                        <exclude>**/ExportJobTest.java</exclude>-->
-<!--                        <exclude>**/NetexMapperTest.java</exclude>-->
-<!--                        <exclude>**/NetexFranceComplianceTest.java</exclude>-->
-<!--                        <exclude>**/repository/*</exclude>-->
-<!--                        <exclude>**/*DateScalarTest.java</exclude>-->
-<!--                        <exclude>**/*ExportResourceTest.java</exclude>-->
-<!--                        <exclude>**/*ImportResourceTest.java</exclude>-->
-<!--                        <exclude>**/OkinaStopPlaceManagementRulesTest.java</exclude>-->
-<!--                        <exclude>**/*ImportTest.java</exclude>-->
-<!--                        <exclude>**/StopPlaceMatchingTest.java</exclude>-->
-<!--                        <exclude>**/*ComputerTest.java</exclude>-->
-<!--                        <exclude>**/*ComputerTest.java</exclude>-->
-<!--                        <exclude>**/PlaceEquipmentMergerTest.java</exclude>-->
-<!--                        <exclude>**/ParkingDeleterTest.java</exclude>-->
-<!--                        <exclude>**/StopPlaceMergerTest.java</exclude>-->
-<!--                        <exclude>**/StopPlaceQuayDeleterTest.java</exclude>-->
-<!--                        <exclude>**/StopPlaceQuayMergerTest.java</exclude>-->
-<!--                        <exclude>**/StopPlaceQuayMoverTest.java</exclude>-->
-<!--                        <exclude>**/StopPlaceRenamerTest.java</exclude>-->
-<!--                        <exclude>**/StopPlaceReopenerTest.java</exclude>-->
-<!--                        <exclude>**/StopPlaceTerminatorTest.java</exclude>-->
-<!--                        <exclude>**/AccessibilityAssessmentOptimizerTest.java</exclude>-->
-<!--                        <exclude>**/AccessibilityAssessmentVersioningTest.java</exclude>-->
-<!--                        <exclude>**/ValidityUpdaterTest.java</exclude>-->
-<!--                        <exclude>**/VersionCreatorTest.java</exclude>-->
-<!--                        <exclude>**/MultiModalStopPlaceEditorTest.java</exclude>-->
-<!--                        <exclude>**/QuayMergerTest.java</exclude>-->
-<!--                        <exclude>**/ReferenceResolverTest.java</exclude>-->
-<!--                        <exclude>**/GraphQLResourceStopPlaceMergerTest.java</exclude>-->
-<!--                        <exclude>**/GraphQLResourceQuayMergerTest.java</exclude>-->
-<!--                    </excludes>-->
+                    <!--                    <excludes>-->
+                    <!--                        <exclude>**/*IntegrationTest.java</exclude>-->
+                    <!--                        <exclude>**/*ServiceTest.java</exclude>-->
+                    <!--                        <exclude>**/*ExporterTest.java</exclude>-->
+                    <!--                        <exclude>**/*ImporterTest.java</exclude>-->
+                    <!--                        <exclude>**/*FinderTest.java</exclude>-->
+                    <!--                        <exclude>**/*ImportTest.java</exclude>-->
+                    <!--                        <exclude>**/*IsolatedModeTest.java</exclude>-->
+                    <!--                        <exclude>**/*SharedModeTest.java</exclude>-->
+                    <!--                        <exclude>**/*MoverTest.java</exclude>-->
+                    <!--                        <exclude>**/*TimeLockTest.java</exclude>-->
+                    <!--                        <exclude>**/*StopPlacesTest.java</exclude>-->
+                    <!--                        <exclude>**/PathLinkTest.java</exclude>-->
+                    <!--                        <exclude>**/QuayTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceTest.java</exclude>-->
+                    <!--                        <exclude>**/TagTest.java</exclude>-->
+                    <!--                        <exclude>**/TopographicPlaceTest.java</exclude>-->
+                    <!--                        <exclude>**/ExportJobTest.java</exclude>-->
+                    <!--                        <exclude>**/NetexMapperTest.java</exclude>-->
+                    <!--                        <exclude>**/NetexFranceComplianceTest.java</exclude>-->
+                    <!--                        <exclude>**/repository/*</exclude>-->
+                    <!--                        <exclude>**/*DateScalarTest.java</exclude>-->
+                    <!--                        <exclude>**/*ExportResourceTest.java</exclude>-->
+                    <!--                        <exclude>**/*ImportResourceTest.java</exclude>-->
+                    <!--                        <exclude>**/OkinaStopPlaceManagementRulesTest.java</exclude>-->
+                    <!--                        <exclude>**/*ImportTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceMatchingTest.java</exclude>-->
+                    <!--                        <exclude>**/*ComputerTest.java</exclude>-->
+                    <!--                        <exclude>**/*ComputerTest.java</exclude>-->
+                    <!--                        <exclude>**/PlaceEquipmentMergerTest.java</exclude>-->
+                    <!--                        <exclude>**/ParkingDeleterTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceMergerTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceQuayDeleterTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceQuayMergerTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceQuayMoverTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceRenamerTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceReopenerTest.java</exclude>-->
+                    <!--                        <exclude>**/StopPlaceTerminatorTest.java</exclude>-->
+                    <!--                        <exclude>**/AccessibilityAssessmentOptimizerTest.java</exclude>-->
+                    <!--                        <exclude>**/AccessibilityAssessmentVersioningTest.java</exclude>-->
+                    <!--                        <exclude>**/ValidityUpdaterTest.java</exclude>-->
+                    <!--                        <exclude>**/VersionCreatorTest.java</exclude>-->
+                    <!--                        <exclude>**/MultiModalStopPlaceEditorTest.java</exclude>-->
+                    <!--                        <exclude>**/QuayMergerTest.java</exclude>-->
+                    <!--                        <exclude>**/ReferenceResolverTest.java</exclude>-->
+                    <!--                        <exclude>**/GraphQLResourceStopPlaceMergerTest.java</exclude>-->
+                    <!--                        <exclude>**/GraphQLResourceQuayMergerTest.java</exclude>-->
+                    <!--                    </excludes>-->
                     <argLine>@{argLine} -Xms500m -Xmx1000m -Xss256k --add-opens java.base/java.lang=ALL-UNNAMED -Dhazelcast.ignoreXxeProtectionFailures=true</argLine>
                     <runOrder>alphabetical</runOrder>
                 </configuration>
@@ -903,7 +903,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${jacoco-maven-plugin.version}</version>
+                        <version>${jacoco-maven-plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>default-prepare-agent</id>
@@ -912,20 +912,20 @@
                                 </goals>
                             </execution>
                             <execution>
-                        <id>default-report</id>
-                        <phase>prepare-package</phase>
+                                <id>default-report</id>
+                                <phase>prepare-package</phase>
                                 <goals>
                                     <goal>report</goal>
                                 </goals>
                             </execution>
                             <execution>
-                        <id>default-check</id>
+                                <id>default-check</id>
                                 <goals>
-                            <goal>check</goal>
+                                    <goal>check</goal>
                                 </goals>
-                        <configuration>
-                            <rules />
-                        </configuration>
+                                <configuration>
+                                    <rules />
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

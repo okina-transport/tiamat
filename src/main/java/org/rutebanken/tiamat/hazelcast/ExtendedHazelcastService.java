@@ -57,6 +57,7 @@ public class ExtendedHazelcastService extends HazelCastService {
 
         EvictionConfig evictionConfig = new EvictionConfig();
         evictionConfig.setEvictionPolicy(EvictionPolicy.LRU);
+        evictionConfig.setMaxSizePolicy(FREE_HEAP_PERCENTAGE);
 
         mapConfigs.add(
                 // Configure map for last entity identificators

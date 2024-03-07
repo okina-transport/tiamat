@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService.INITIAL_LAST_ID;
@@ -37,6 +38,8 @@ public class GeneratedIdState implements Serializable{
     public static final String LAST_IDS_FOR_ENTITY = "lastIdsForEntities";
     public static final String CLAIMED_IDS_FOR_ENTITY_PREFIX = "claimedIdsForEntities";
     public static final String ENTITY_NAMES_REGISTERED = "entityNamesRegistered";
+
+    ConcurrentMap<String, Long> lastIdMap = new ConcurrentHashMap<>();
 
     private final HazelcastInstance hazelcastInstance;
 
@@ -52,7 +55,7 @@ public class GeneratedIdState implements Serializable{
     }
 
     public void setLastIdForEntity(String entityTypeName, long lastId) {
-        hazelcastInstance.getMap(LAST_IDS_FOR_ENTITY).put(entityTypeName, lastId);
+        lastIdMap.put(entityTypeName, lastId);
     }
 
     public Set<String> getRegisteredEntityNames() {
@@ -67,7 +70,6 @@ public class GeneratedIdState implements Serializable{
      * @return the last generated id.
      */
     public long getLastIdForEntity(String entityTypeName) {
-        ConcurrentMap<String, Long> lastIdMap = hazelcastInstance.getMap(LAST_IDS_FOR_ENTITY);
 
         if (!lastIdMap.containsKey(entityTypeName)){
             lastIdMap.put(entityTypeName, INITIAL_LAST_ID);

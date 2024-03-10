@@ -21,6 +21,8 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.geotools.referencing.GeodeticCalculator;
 import org.junit.Test;
+import org.rutebanken.tiamat.TiamatIntegrationTest;
+import org.rutebanken.tiamat.TiamatTestApplication;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.matching.OriginalIdMatcher;
@@ -30,7 +32,9 @@ import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.rutebanken.tiamat.netex.id.ValidPrefixList;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.awt.geom.Point2D;
 import java.util.*;
@@ -39,8 +43,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SpringBootTest(webEnvironment= SpringBootTest.WebEnvironment.RANDOM_PORT, classes = TiamatTestApplication.class)
+@ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-public class QuayMergerTest {
+public class QuayMergerTest extends TiamatIntegrationTest {
 
     private GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 

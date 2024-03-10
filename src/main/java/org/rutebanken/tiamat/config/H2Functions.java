@@ -35,7 +35,7 @@ import java.util.Set;
  * Create funciton in database for generating IDs
  * See https://rutebanken.atlassian.net/browse/NRP-23 for liquibase implementation.
  */
-@Configuration
+//@Configuration
 public class H2Functions implements InitializingBean {
 
     private static final Logger logger = LoggerFactory.getLogger(H2Functions.class);

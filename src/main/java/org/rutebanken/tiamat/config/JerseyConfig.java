@@ -23,6 +23,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.rutebanken.tiamat.filter.LoggingFilter;
 import org.rutebanken.tiamat.jersey.JerseyJava8TimeConverterProvider;
+import org.rutebanken.tiamat.rest.accessibility.ImportAccessibilityResource;
 import org.rutebanken.tiamat.rest.delete.DeleteRessource;
 import org.rutebanken.tiamat.rest.dto.DtoJbvCodeMappingResource;
 import org.rutebanken.tiamat.rest.dto.DtoQuayResource;
@@ -92,6 +93,7 @@ public class JerseyConfig {
         publicResources.add(ImportResource.class);
         publicResources.add(AsyncExportResource.class);
         publicResources.add(ExportResource.class);
+        publicResources.add(ImportAccessibilityResource.class);
         publicResources.add(ImportParkingsResource.class);
         publicResources.add(ImportBikeParkingsResource.class);
         publicResources.add(ImportPOIResource.class);

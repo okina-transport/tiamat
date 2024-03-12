@@ -1,13 +1,10 @@
 package org.rutebanken.tiamat.rest.accessibility;
 
 import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.rutebanken.tiamat.general.AccessibilityCSVHelperQuay;
-import org.rutebanken.tiamat.general.AccessibilityCSVHelperStopPlace;
+import org.rutebanken.tiamat.general.AccessibilityCSVHelper;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.rest.dto.DtoAccessibilityQuay;
-import org.rutebanken.tiamat.rest.dto.DtoAccessibilityStopPlace;
+import org.rutebanken.tiamat.rest.dto.DtoAccessibility;
 import org.rutebanken.tiamat.service.accessibility.AccessibilityImportedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,11 +14,8 @@ import org.springframework.stereotype.Component;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 
 @Component
@@ -46,9 +40,9 @@ public class ImportAccessibilityResource {
                                                @FormDataParam("user") String user) {
         logger.info("Import Accessibility Quay by : " + user + " of the file : " + fileName);
         try {
-            List<DtoAccessibilityQuay> dtoAccessibilityQuay = AccessibilityCSVHelperQuay.parseDocument(inputStream);
-            AccessibilityCSVHelperQuay.checkDuplicatedQuays(dtoAccessibilityQuay);
-            List<Quay> quayList = AccessibilityCSVHelperQuay.mapFromDtoToEntity(dtoAccessibilityQuay);
+            List<DtoAccessibility> dtoAccessibility = AccessibilityCSVHelper.parseDocument(inputStream);
+            AccessibilityCSVHelper.checkDuplicatedQuays(dtoAccessibility);
+            List<Quay> quayList = AccessibilityCSVHelper.mapFromDtoToQuayEntity(dtoAccessibility);
             List<Quay> result = accessibilityImportedService.updateAccessibilityQuays(quayList);
             accessibilityImportedService.findAndUpdateAccessibilityStopPlacesToQuays(result);
 
@@ -78,9 +72,9 @@ public class ImportAccessibilityResource {
                                                          @FormDataParam("user") String user) {
         logger.info("Import Accessibility Stop Place by : " + user + " of the file : " + fileName);
         try {
-            List<DtoAccessibilityStopPlace> dtoAccessibilityStopPlaces = AccessibilityCSVHelperStopPlace.parseDocument(inputStream);
-            AccessibilityCSVHelperStopPlace.checkDuplicatedQuays(dtoAccessibilityStopPlaces);
-            List<StopPlace> stopPlaceList = AccessibilityCSVHelperStopPlace.mapFromDtoToEntity(dtoAccessibilityStopPlaces);
+            List<DtoAccessibility> dtoAccessibilities = AccessibilityCSVHelper.parseDocument(inputStream);
+            AccessibilityCSVHelper.checkDuplicatedQuays(dtoAccessibilities);
+            List<StopPlace> stopPlaceList = AccessibilityCSVHelper.mapFromDtoToStopPlaceEntity(dtoAccessibilities);
             List<StopPlace> result = accessibilityImportedService.updateAccessibilityStopPlaces(stopPlaceList);
             accessibilityImportedService.findAndUpdateAccessibilityQuaysToStopPlaces(result);
 

@@ -1,9 +1,10 @@
 package org.rutebanken.tiamat.rest.dto;
 
-public class DtoAccessibilityQuay {
+public class DtoAccessibility {
     private final String id;
     private final String name;
     private final String insee;
+    private final String city;
     private final String idPoint;
     private final String direction;
     private final String line;
@@ -19,12 +20,13 @@ public class DtoAccessibilityQuay {
     private final String visualSignsAvailable;
 
 
-    public DtoAccessibilityQuay(String id, String name, String insee, String idPoint, String direction, String line,
-                                String lineDirection, String longitude, String latitude, String url, String wheelchairAccess, String stepFreeAccess,
-                                String escalatorFreeAccess, String liftFreeAccess, String audibleSignalsAvailable, String visualSignsAvailable) {
+    public DtoAccessibility(String id, String name, String insee, String city, String idPoint, String direction, String line,
+                            String lineDirection, String longitude, String latitude, String url, String wheelchairAccess, String stepFreeAccess,
+                            String escalatorFreeAccess, String liftFreeAccess, String audibleSignalsAvailable, String visualSignsAvailable) {
         this.id = id;
         this.name = name;
         this.insee = insee;
+        this.city = city;
         this.idPoint = idPoint;
         this.direction = direction;
         this.line = line;
@@ -43,6 +45,7 @@ public class DtoAccessibilityQuay {
     public String getId() { return id; }
     public String getName() { return name; }
     public String getInsee() { return insee; }
+    public String getCity() { return city; }
     public String getIdPoint() { return idPoint; }
     public String getDirection() { return direction; }
     public String getLine() { return line; }

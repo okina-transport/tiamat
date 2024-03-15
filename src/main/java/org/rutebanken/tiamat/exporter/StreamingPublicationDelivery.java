@@ -491,7 +491,7 @@ public class StreamingPublicationDelivery {
     private EntitiesEvictor instantiateEvictor() {
         if (entityManager != null) {
             Session currentSession = entityManager.unwrap(Session.class);
-            return new SessionEntitiesEvictor((SessionImpl) currentSession);
+            return new SessionEntitiesEvictor((SessionImpl) currentSession.getSession());
         } else {
             return new EntitiesEvictor() {
                 @Override

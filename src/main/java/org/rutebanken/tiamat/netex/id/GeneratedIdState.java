@@ -18,11 +18,14 @@ package org.rutebanken.tiamat.netex.id;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.core.HazelcastInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService.INITIAL_LAST_ID;
@@ -30,9 +33,13 @@ import static org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService.INITIAL_L
 @Service
 public class GeneratedIdState implements Serializable{
 
+    private static final Logger logger = LoggerFactory.getLogger(GeneratedIdState.class);
+
     public static final String LAST_IDS_FOR_ENTITY = "lastIdsForEntities";
     public static final String CLAIMED_IDS_FOR_ENTITY_PREFIX = "claimedIdsForEntities";
     public static final String ENTITY_NAMES_REGISTERED = "entityNamesRegistered";
+
+    ConcurrentMap<String, Long> lastIdMap = new ConcurrentHashMap<>();
 
     private final HazelcastInstance hazelcastInstance;
 
@@ -48,7 +55,7 @@ public class GeneratedIdState implements Serializable{
     }
 
     public void setLastIdForEntity(String entityTypeName, long lastId) {
-        hazelcastInstance.getMap(LAST_IDS_FOR_ENTITY).put(entityTypeName, lastId);
+        lastIdMap.put(entityTypeName, lastId);
     }
 
     public Set<String> getRegisteredEntityNames() {
@@ -63,8 +70,11 @@ public class GeneratedIdState implements Serializable{
      * @return the last generated id.
      */
     public long getLastIdForEntity(String entityTypeName) {
-        ConcurrentMap<String, Long> lastIdMap = hazelcastInstance.getMap(LAST_IDS_FOR_ENTITY);
-        lastIdMap.putIfAbsent(entityTypeName, INITIAL_LAST_ID);
+
+        if (!lastIdMap.containsKey(entityTypeName)){
+            lastIdMap.put(entityTypeName, INITIAL_LAST_ID);
+            logger.info("lastIdMap initialisation:" + entityTypeName );
+        }
         return lastIdMap.get(entityTypeName);
     }
 

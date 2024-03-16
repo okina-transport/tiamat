@@ -112,7 +112,7 @@
         <metrics.version>3.2.3</metrics.version>
 
         <javax-jms.version>2.0.1</javax-jms.version>
-        <jts-core.version>1.16.0</jts-core.version>
+        <jts-core.version>1.19.0</jts-core.version>
 
         <maven-surefire-plugin.version>3.0.0-M6</maven-surefire-plugin.version>
         <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>

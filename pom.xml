@@ -81,7 +81,7 @@
         <assertj-core.version>3.10.0</assertj-core.version>
         <rest-assured.version>4.5.1</rest-assured.version>
         <javax.el.version>3.0.0</javax.el.version>
-        <com.h2database.version>2.2.224</com.h2database.version>
+
         <hikariCP.version>3.2.0</hikariCP.version>
         <commons.lang3.version>3.7</commons.lang3.version>
         <orika-core.version>1.5.4</orika-core.version>
@@ -548,11 +548,6 @@
             <version>${hibernate.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <version>${com.h2database.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>com.zaxxer</groupId>

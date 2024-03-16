@@ -22,7 +22,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
-import org.rutebanken.tiamat.config.H2Functions;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
@@ -371,14 +370,14 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
         stopPlaceRepository.save(stopPlace);
 
-        H2Functions.setSimilarityOveridden(0.61);
+     //   H2Functions.setSimilarityOveridden(0.61);
         Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
 
         String result = stopPlaceRepository.findNearbyStopPlace(envelope, "Nesbru N", StopTypeEnumeration.ONSTREET_BUS, null);
         assertThat(result).isNotNull();
         StopPlace actual = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(result);
         assertThat(actual.getName().getValue()).isEqualTo(stopPlace.getName().getValue());
-        H2Functions.setSimilarityOveridden(1);
+       // H2Functions.setSimilarityOveridden(1);
     }
 
     @Test
@@ -403,13 +402,13 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
         stopPlaceRepository.save(stopPlace);
 
-        H2Functions.setSimilarityOveridden(0.1);
+       // H2Functions.setSimilarityOveridden(0.1);
         // Stop place coordinates within envelope
         Envelope envelope = new Envelope(14, 16, 50, 70);
 
         String result = stopPlaceRepository.findNearbyStopPlace(envelope, "Another stop place which does not exist", StopTypeEnumeration.ONSTREET_BUS, null);
         assertThat(result).isNull();
-        H2Functions.setSimilarityOveridden(1);
+       // H2Functions.setSimilarityOveridden(1);
     }
 
     @Test

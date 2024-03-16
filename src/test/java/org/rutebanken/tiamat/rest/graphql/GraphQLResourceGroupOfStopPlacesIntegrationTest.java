@@ -28,7 +28,7 @@ import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.MUTATE_GROUP_OF_ST
 
 public class GraphQLResourceGroupOfStopPlacesIntegrationTest extends AbstractGraphQLResourceIntegrationTest {
 
-
+    @Test
     public void create_new_group_of_stop_places() {
         var purposeOfGrouping = new PurposeOfGrouping();
         purposeOfGrouping.setNetexId("NSR:PurposeOfGrouping:1");

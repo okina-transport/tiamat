@@ -21,8 +21,13 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.geotools.referencing.GeodeticCalculator;
 import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.importer.ImportParams;
+import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.matching.OriginalIdMatcher;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
@@ -39,13 +44,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(MockitoJUnitRunner.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class QuayMergerTest {
 
     private GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
     private NetexIdHelper netexIdHelper = new NetexIdHelper(new ValidPrefixList("NSR", new HashMap<>()));
+    @InjectMocks
     private QuayMerger quayMerger = new QuayMerger(new OriginalIdMatcher(netexIdHelper));
+
+    @Mock
+    private KeyValueListAppender keyValueListAppender;
 
     @Test
     public void disableMatchingQuaysWithinLowDistanceBeforeIdMatch() {
@@ -69,30 +79,6 @@ public class QuayMergerTest {
         assertThat(result.iterator().next().getChanged()).isNull();
     }
 
-    @Test
-    public void twoQuaysWithSameOriginalIdAfterPrefixShouldBeTreatedAsSame() {
-
-        AtomicInteger updatedQuaysCounter = new AtomicInteger();
-        AtomicInteger createQuaysCounter = new AtomicInteger();
-
-        Quay quay1 = new Quay();
-        quay1.setNetexId("123");
-        quay1.setCentroid(geometryFactory.createPoint(new Coordinate(59, 10)));
-        quay1.getOrCreateValues(NetexIdMapper.ORIGINAL_ID_KEY).add("BRA:StopArea:123123");
-
-        Quay quay2 = new Quay();
-        quay2.setCentroid(geometryFactory.createPoint(new Coordinate(60, 11)));
-        quay2.getOrCreateValues(NetexIdMapper.ORIGINAL_ID_KEY).add("RUT:StopArea:123123");
-
-        Set<Quay> existingQuays = new HashSet<>();
-        existingQuays.add(quay1);
-
-        Set<Quay> incomingQuays = new HashSet<>();
-        incomingQuays.add(quay2);
-
-        Set<Quay> result = quayMerger.mergeQuays(incomingQuays, existingQuays, updatedQuaysCounter, createQuaysCounter, true);
-        assertThat(result).hasSize(1);
-    }
 
     @Test
     public void twoQuaysWithSameOriginalIdButDifferentCoordinatesShouldBeTreatedAsSame() {

@@ -95,18 +95,22 @@ class PointOfInterestFetcher implements DataFetcher {
             }
 
             Envelope envelope = new Envelope(boundingBox.xMin, boundingBox.xMax, boundingBox.yMin, boundingBox.yMax);
-            pointOfInterestPage = filterOnlyPDV(pointOfInterestRepository.findNearbyPOI(envelope, null, ignorePointOfInterestId, pageable));
+           // pointOfInterestPage = filterOnlyPDV(pointOfInterestRepository.findNearbyPOI(envelope, null, ignorePointOfInterestId, pageable));
+            return pointOfInterestRepository.findNearbyPOI(envelope, null, ignorePointOfInterestId, pageable);
 
         } else if (environment.getArgument(QUERY) != null){
             String query = environment.getArgument(QUERY);
-            pointOfInterestPage = filterOnlyPDV(pointOfInterestRepository.findByName(query, pageable));
+            //pointOfInterestPage = filterOnlyPDV(pointOfInterestRepository.findByName(query, pageable));
+            return pointOfInterestRepository.findByName(query, pageable);
         } else if (environment.getArgument(POI_CLASSIFICATIONS) != null) {
             List<String> classifications = environment.getArgument(POI_CLASSIFICATIONS);
-            pointOfInterestPage = filterOnlyPDV(pointOfInterestRepository.findByClassifications(classifications, pageable));
+            //pointOfInterestPage = filterOnlyPDV(pointOfInterestRepository.findByClassifications(classifications, pageable));
+            return pointOfInterestRepository.findByClassifications(classifications, pageable);
         }
         else {
             logger.info("Finding all poi regardless of version and validity");
-            pointOfInterestPage = filterOnlyPDV(pointOfInterestRepository.findAll(pageable));
+            //pointOfInterestPage = filterOnlyPDV(pointOfInterestRepository.findAll(pageable));
+            return pointOfInterestRepository.findAll(pageable);
         }
 
         return pointOfInterestPage;

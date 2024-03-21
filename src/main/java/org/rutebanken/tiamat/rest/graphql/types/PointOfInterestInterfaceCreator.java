@@ -15,10 +15,7 @@
 
 package org.rutebanken.tiamat.rest.graphql.types;
 
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.TypeResolver;
+import graphql.schema.*;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -29,11 +26,12 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
 
+
 @Component
 public class PointOfInterestInterfaceCreator {
 
     public List<GraphQLFieldDefinition> createCommonInterfaceFields(GraphQLObjectType topographicPlaceObjectType,
-                                                                    GraphQLObjectType validBetweenObjectType) {
+                                                                    GraphQLObjectType validBetweenObjectType,  GraphQLObjectType poiClassification) {
         List<GraphQLFieldDefinition> pointOfInterestInterfaceFields = new ArrayList<>();
         pointOfInterestInterfaceFields.add(newFieldDefinition()
                 .name(VERSION_COMMENT)
@@ -50,6 +48,10 @@ public class PointOfInterestInterfaceCreator {
         pointOfInterestInterfaceFields.add(newFieldDefinition()
                 .name(VALID_BETWEEN)
                 .type(validBetweenObjectType)
+                .build());
+        pointOfInterestInterfaceFields.add(newFieldDefinition()
+                .name(POI_CLASSIFICATIONS)
+                .type(new GraphQLList(poiClassification))
                 .build());
         return pointOfInterestInterfaceFields;
     }

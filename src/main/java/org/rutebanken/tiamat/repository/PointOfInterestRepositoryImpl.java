@@ -384,7 +384,22 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
         query.setFirstResult(Math.toIntExact(pageable.getOffset()));
         query.setMaxResults(pageable.getPageSize());
         List<PointOfInterest> pointsOfInterest = query.getResultList();
+        for (PointOfInterest pointOfInterest : pointsOfInterest) {
+            if (pointOfInterest.getClassifications() != null){
+                Hibernate.initialize(pointOfInterest.getClassifications());
+                for (PointOfInterestClassification classification : pointOfInterest.getClassifications()) {
+                    initializeClassification(classification);
+                }
+            }
+        }
         return new PageImpl<>(pointsOfInterest, pageable, pointsOfInterest.size());
+    }
+
+    private void initializeClassification(PointOfInterestClassification classification){
+        if (classification.getParent() != null){
+            Hibernate.initialize(classification.getParent());
+            initializeClassification(classification.getParent());
+        }
     }
 
     @Override

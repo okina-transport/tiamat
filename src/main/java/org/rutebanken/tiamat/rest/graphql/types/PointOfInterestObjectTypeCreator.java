@@ -15,10 +15,7 @@
 
 package org.rutebanken.tiamat.rest.graphql.types;
 
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLObjectType;
+import graphql.schema.*;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

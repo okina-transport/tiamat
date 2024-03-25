@@ -845,11 +845,11 @@
                 <artifactId>flyway-maven-plugin</artifactId>
                 <version>6.0.1</version>
                 <configuration>
-                    <url>jdbc:postgresql://localhost:5432/tiamat</url>
+                    <url>jdbc:postgresql://localhost:5432/tiamat_test</url>
                     <user>tiamat</user>
                     <password>tiamat</password>
                     <schemas>
-                        <schema>tiamat</schema>
+                        <schema>tiamat_test</schema>
                     </schemas>
                 </configuration>
             </plugin>

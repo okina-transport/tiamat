@@ -93,6 +93,10 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     Set<Long> addParentIds(Set<Long> stopPlaceDbIds);
 
+    Map<StopPlace, List<Quay>> findStopPlacesToQuays(List<Quay> quays);
+
+    Map<Quay, List<StopPlace>> findQuaysToStopPlaces(List<StopPlace> stopPlaces);
+
     List<StopPlace> findStopPlaceByQuays(List<Quay> quays);
 
     List<StopPlace> findAllFromKeyValue(String key, Set<String> values);

@@ -60,16 +60,7 @@ import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
@@ -961,11 +952,40 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         queryWithParams.getSecond().forEach(nativeQuery::setParameter);
         long firstResult = exportParams.getStopPlaceSearch().getPageable().getOffset();
         nativeQuery.setFirstResult(Math.toIntExact(firstResult));
-        nativeQuery.setMaxResults(exportParams.getStopPlaceSearch().getPageable().getPageSize());
-
         List<StopPlace> stopPlaces = nativeQuery.getResultList();
+        stopPlaces = keepLastVersions(stopPlaces, 10);
         return new PageImpl<>(stopPlaces, exportParams.getStopPlaceSearch().getPageable(), stopPlaces.size());
 
+    }
+    
+    private List<StopPlace> keepLastVersions(List<StopPlace> rawList, int nbOfVersionsToKeep){
+        Map<String, Long> maxVersionsMap = new HashMap<>();
+
+        for (StopPlace stopPlace : rawList) {
+            if (!maxVersionsMap.containsKey(stopPlace.getNetexId())){
+                maxVersionsMap.put(stopPlace.getNetexId(), stopPlace.getVersion());
+                continue;
+            }
+            
+            Long currentMax = maxVersionsMap.get(stopPlace.getNetexId());
+            if (currentMax.compareTo(stopPlace.getVersion()) < 0){
+                maxVersionsMap.put(stopPlace.getNetexId(), stopPlace.getVersion());
+            }
+        }
+
+        List<StopPlace> results = new ArrayList<>();
+
+        for (StopPlace stopPlace : rawList) {
+            Long max = maxVersionsMap.get(stopPlace.getNetexId());
+
+            //we only keep the n max versions
+            if (  stopPlace.getVersion() >= max - nbOfVersionsToKeep){
+                results.add(stopPlace);
+            }
+        }
+
+        return results;
+        
     }
 
     @Override
@@ -985,6 +1005,76 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         return stopPlaces;
 
+    }
+
+    /**
+     * Trouve et associe les arrêts commerciaux ({@link StopPlace}) aux quais ({@link Quay}) fournis.
+     * Cette méthode recherche dans la base de données les arrêts commerciaux correspondant aux ID des quais donnés,
+     * puis crée une carte associant chaque arrêt commercial à la liste de ses quais.
+     *
+     * @param quays La liste des quais pour lesquels trouver les arrêts commerciaux associés.
+     * @return Une carte associant chaque arrêt commercial trouvé à une liste de quais correspondants.
+     */
+    @Override
+    public Map<StopPlace, List<Quay>> findStopPlacesToQuays(List<Quay> quays) {
+        Map<StopPlace, List<Quay>> stopPlaceWithQuays = new HashMap<>();
+
+        for (Quay quay: quays) {
+            // pour chaque quai on recherche le stopPlace associé
+            final String queryString = "SELECT sp FROM StopPlace sp JOIN sp.quays quay " +
+                    "WHERE quay.id = :quayId";
+
+            List<StopPlace> stopPlaces = entityManager.createQuery(queryString, StopPlace.class)
+                    .setParameter("quayId", quay.getId())
+                    .getResultList();
+
+            // pour chaque stopPlace récupéré on regarde si il y a plusieurs quays
+            stopPlaces.forEach(sp -> {
+                List<Quay> associatedQuays = sp.getQuays().stream()
+                        .filter(q -> quay.getId().equals(q.getId()))
+                        .collect(Collectors.toList());
+                // on construit notre liste à retourner
+                stopPlaceWithQuays.put(sp, associatedQuays);
+            });
+        }
+        return stopPlaceWithQuays;
+    }
+
+    /**
+     * Trouve et associe les quais ({@link Quay}) aux arrêts commerciaux ({@link StopPlace}) fournis.
+     * Pour chaque arrêt commercial donné, cette méthode recherche dans la base de données les quais associés,
+     * puis crée une carte associant chaque quai aux arrêts commerciaux correspondants.
+     *
+     * @param stopPlaces La liste des arrêts commerciaux pour lesquels trouver les quais associés.
+     * @return Une carte associant chaque quai trouvé à une liste d'arrêts commerciaux correspondants.
+     */
+    @Override
+    public Map<Quay, List<StopPlace>> findQuaysToStopPlaces(List<StopPlace> stopPlaces) {
+        Map<Quay, List<StopPlace>> quayWithStopPlaces = new HashMap<>();
+
+        for (StopPlace sp: stopPlaces) {
+            // pour chaque stopPlace on recherche le quai associé
+            String sql = "SELECT q.* " +
+                    "FROM quay q " +
+                    "INNER JOIN stop_place_quays spq ON q.id = spq.quays_id " +
+                    "WHERE spq.stop_place_id = :spId";
+
+            Query query = entityManager.createNativeQuery(sql, Quay.class);
+            query.setParameter("spId", sp.getId());
+            Quay quay = (Quay) query.getSingleResult();
+
+            // pour chaque quai récupéré on regarde si il y a plusieurs stopPlaces
+            final String queryString = "SELECT sp FROM StopPlace sp JOIN sp.quays quay " +
+                    "WHERE quay.id IN :quaysId";
+
+            List<StopPlace> stopPlacesList = entityManager.createQuery(queryString, StopPlace.class)
+                    .setParameter("quaysId", quay.getId())
+                    .getResultList();
+
+            // on construit notre liste à retourner
+            quayWithStopPlaces.put(quay, stopPlacesList);
+        }
+        return quayWithStopPlaces;
     }
 
     @Override

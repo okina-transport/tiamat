@@ -19,6 +19,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.TypeResolver;
+import org.rutebanken.tiamat.model.Parking;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
+import org.rutebanken.tiamat.model.SiteRefStructure;
 
 @Component
 public class PointOfInterestInterfaceCreator {

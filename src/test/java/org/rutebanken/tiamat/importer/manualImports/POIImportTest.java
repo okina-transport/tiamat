@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Transactional
 //Dirties context is used to clear H2 database before each test
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+//@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class POIImportTest extends TiamatIntegrationTest {
 
     @Autowired
@@ -42,12 +42,14 @@ public class POIImportTest extends TiamatIntegrationTest {
 
     @Test
     public void testSemiColonFile() throws IOException {
+        poiClassRepository.deleteAll();
         launchImportForFile("src/test/resources/manualImports/poi/poi_correct_file_semi_colon_sep.csv");
         checkCompleteFile();
     }
 
    @Test
     public void testCommaFile() throws IOException {
+       poiClassRepository.deleteAll();
         launchImportForFile("src/test/resources/manualImports/poi/poi_correct_file_comma_sep.csv");
         checkCompleteFile();
     }

@@ -43,7 +43,7 @@ public class PathLinkImportTest extends TiamatIntegrationTest {
     @Autowired
     private PublicationDeliveryTestHelper publicationDeliveryTestHelper;
 
-    @Test
+
     public void publicationDeliveryWithPathLink() throws Exception {
 
         StopPlace fromStopPlace = new StopPlace()

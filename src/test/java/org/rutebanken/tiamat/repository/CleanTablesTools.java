@@ -31,4 +31,22 @@ public class CleanTablesTools {
         entityManager.close();
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void cleanStopPlacesAndQuays(){
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityTransaction transaction = entityManager.getTransaction();
+        transaction.begin();
+
+        Query query = entityManager.createNativeQuery("DELETE FROM stop_place_quays");
+        query.executeUpdate();
+        Query query2 = entityManager.createNativeQuery("DELETE FROM quay");
+        query2.executeUpdate();
+        Query query3 = entityManager.createNativeQuery("DELETE FROM stop_place");
+        query3.executeUpdate();
+
+
+        transaction.commit();
+        entityManager.close();
+    }
+
 }

@@ -41,6 +41,7 @@ public class ImportPOIResource {
     public Response importPOIFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
 
         logger.info("Import POI par " + user + " du fichier " + fileName);
+        poiHelper.clearClassificationCache();
 
         List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
         PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);

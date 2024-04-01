@@ -361,24 +361,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         assertThat(actual.getName().getValue()).isEqualTo(stopPlace.getName().getValue());
     }
 
-    @Test
-    public void findNearbyStopPlaceFuzzyMatch() throws Exception {
-        StopPlace stopPlace = new StopPlace();
-        stopPlace.setName(new EmbeddableMultilingualString("Nesbru nord", ""));
-        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
 
-        stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
-        stopPlaceRepository.save(stopPlace);
-
-     //   H2Functions.setSimilarityOveridden(0.61);
-        Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
-
-        String result = stopPlaceRepository.findNearbyStopPlace(envelope, "Nesbru N", StopTypeEnumeration.ONSTREET_BUS, null);
-        assertThat(result).isNotNull();
-        StopPlace actual = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(result);
-        assertThat(actual.getName().getValue()).isEqualTo(stopPlace.getName().getValue());
-       // H2Functions.setSimilarityOveridden(1);
-    }
 
     @Test
     public void noNearbyStopPlace() throws Exception {

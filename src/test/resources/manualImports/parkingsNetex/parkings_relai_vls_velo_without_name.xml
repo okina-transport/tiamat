@@ -1,0 +1,1094 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><PublicationDelivery xmlns="http://www.netex.org.uk/netex" xmlns:acbs="http://www.ifopt.org.uk/acsb" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:ifopt="http://www.ifopt.org.uk/ifopt" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.1:FR-NETEX-2.2">
+    <PublicationTimestamp>2024-04-03T13:08:54.78Z</PublicationTimestamp>
+    <ParticipantRef>MOBIITI</ParticipantRef>
+    <dataObjects>
+        <GeneralFrame id="MOBI-ITI:GeneralFrame:NETEX_PARKING_20240403T130854Z:LOC" modification="revise" version="1">
+            <TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_PARKING">version="1.1:FR-NETEX_PARKING-2.2"</TypeOfFrameRef>
+            <members>
+                <Parking changed="2024-04-03T13:18:04.368" created="2024-04-03T12:13:43.094" id="MOBIITI:Parking:327" modification="new" version="2">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test Parc-relais Henri Dunant</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>63000-PRelais1</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.089807</Longitude>
+                            <Latitude>45.761526</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:5f7bfb29-d19f-4028-b1d9-cba37a384df9" version="any">
+                        <PostalRegion>63113</PostalRegion>
+                    </PostalAddress>
+                    <AllAreasWheelchairAccessible>false</AllAreasWheelchairAccessible>
+                    <ParkingType>parkAndRide</ParkingType>
+                    <ParkingVehicleTypes/>
+                    <TotalCapacity>472</TotalCapacity>
+                    <ParkingPaymentProcess>payAndDisplay payByPrepaidToken payByMobileDevice</ParkingPaymentProcess>
+                    <BookingUrl>https://www.clermontmetropole.eu/fr/habiter-se-deplacer/deplacement-et-mobilite/en-voiture/stationnement/</BookingUrl>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:331" version="0">
+                            <ParkingUserTypes>all</ParkingUserTypes>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:429" version="0">
+    <ParkingUserType>registeredDisabled</ParkingUserType>
+    <NumberOfSpaces>22</NumberOfSpaces>
+</ParkingCapacity>
+<ParkingCapacity id="MOBIITI:ParkingCapacity:430" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>450</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                    <parkingAreas>
+                        <ParkingArea id="MOBIITI:ParkingArea:260" modification="new" version="1">
+                            <placeTypes>
+<TypeOfPlaceRef ref="parkAndRide"/>
+                            </placeTypes>
+                            <PublicUse>all</PublicUse>
+                            <SiteRef ref="MOBIITI:Parking:327"/>
+                            <TotalCapacity>1</TotalCapacity>
+                        </ParkingArea>
+                        <ParkingArea id="MOBIITI:ParkingArea:261" modification="new" version="1">
+                            <PublicUse>all</PublicUse>
+                            <SiteRef ref="MOBIITI:Parking:327"/>
+                            <MaximumHeight>180</MaximumHeight>
+                            <TotalCapacity>22</TotalCapacity>
+                        </ParkingArea>
+                        <ParkingArea id="MOBIITI:ParkingArea:262" modification="new" version="1">
+                            <PublicUse>all</PublicUse>
+                            <SiteRef ref="MOBIITI:Parking:327"/>
+                            <MaximumHeight>180</MaximumHeight>
+                            <TotalCapacity>450</TotalCapacity>
+                        </ParkingArea>
+                    </parkingAreas>
+                </Parking>
+                <Parking changed="2024-04-03T13:18:04.589" created="2024-04-03T12:13:43.504" id="MOBIITI:Parking:328" modification="new" version="2">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test Parc de Proximité Margeride</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>63000-PProxim2</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.120760</Longitude>
+                            <Latitude>45.760445</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:2d195901-52dd-4671-b917-8d60d27e9aff" version="any">
+                        <PostalRegion>63113</PostalRegion>
+                    </PostalAddress>
+                    <AllAreasWheelchairAccessible>false</AllAreasWheelchairAccessible>
+                    <ParkingType>parkingZone</ParkingType>
+                    <ParkingVehicleTypes/>
+                    <TotalCapacity>114</TotalCapacity>
+                    <ParkingPaymentProcess>free</ParkingPaymentProcess>
+                    <BookingUrl>https://www.clermontmetropole.eu/fr/habiter-se-deplacer/deplacement-et-mobilite/en-voiture/stationnement/</BookingUrl>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:332" version="0">
+                            <ParkingUserTypes>all</ParkingUserTypes>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:431" version="0">
+    <ParkingUserType>registeredDisabled</ParkingUserType>
+    <NumberOfSpaces>4</NumberOfSpaces>
+</ParkingCapacity>
+<ParkingCapacity id="MOBIITI:ParkingCapacity:432" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>110</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                    <parkingAreas>
+                        <ParkingArea id="MOBIITI:ParkingArea:263" modification="new" version="1">
+                            <PublicUse>all</PublicUse>
+                            <SiteRef ref="MOBIITI:Parking:328"/>
+                            <MaximumHeight>180</MaximumHeight>
+                            <TotalCapacity>4</TotalCapacity>
+                        </ParkingArea>
+                        <ParkingArea id="MOBIITI:ParkingArea:264" modification="new" version="1">
+                            <PublicUse>all</PublicUse>
+                            <SiteRef ref="MOBIITI:Parking:328"/>
+                            <MaximumHeight>180</MaximumHeight>
+                            <TotalCapacity>110</TotalCapacity>
+                        </ParkingArea>
+                    </parkingAreas>
+                </Parking>
+                <GeneralOrganisation id="MOBIITI:Organisation:fdf92ff5-ae63-42fb-b787-8bcf25e196c1" version="any">
+                    <CompanyNumber>1</CompanyNumber>
+                    <OrganisationType>other</OrganisationType>
+                </GeneralOrganisation>
+                <ResponsibilitySet id="MOBIITI:ResponsibilitySet:7466f2b5-88ee-48a7-88e0-6e0df43bdce0" version="any">
+                    <roles>
+                        <ResponsibilityRoleAssignment id="MOBIITI:ResponsibilityRoleAssignment:0ba24020-5e2f-45b0-add9-da04db8bf677" version="any">
+                            <StakeholderRoleType>EntityLegalOwnership</StakeholderRoleType>
+                            <ResponsibleOrganisationRef ref="MOBIITI:Organisation:fdf92ff5-ae63-42fb-b787-8bcf25e196c1"/>
+                        </ResponsibilityRoleAssignment>
+                    </roles>
+                </ResponsibilitySet>
+                <Parking changed="2024-04-03T13:18:04.672" created="2024-04-03T12:13:43.527" id="MOBIITI:Parking:329" modification="new" responsibilitySetRef="MOBIITI:ResponsibilitySet:7466f2b5-88ee-48a7-88e0-6e0df43bdce0" version="2">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test auto-partage CITIZ Saint-Jean - Lyon 5ème</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>ci3_533</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Centroid>
+                        <Location>
+                            <Longitude>4.829403</Longitude>
+                            <Latitude>45.762501</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:c994ddd4-3149-4419-a896-ead847118407" version="any">
+                        <PostalRegion>69385</PostalRegion>
+                    </PostalAddress>
+                    <AllAreasWheelchairAccessible>false</AllAreasWheelchairAccessible>
+                    <ParkingType>parkingZone</ParkingType>
+                    <ParkingVehicleTypes/>
+                    <TotalCapacity>4</TotalCapacity>
+                    <ParkingPaymentProcess>payAndDisplay payByPrepaidToken payByMobileDevice</ParkingPaymentProcess>
+                    <BookingUrl>https://lpa.citiz.coop/</BookingUrl>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:333" version="0">
+                            <ParkingUserTypes>all</ParkingUserTypes>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:433" version="0">
+    <ParkingUserType>registeredDisabled</ParkingUserType>
+</ParkingCapacity>
+<ParkingCapacity id="MOBIITI:ParkingCapacity:434" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>4</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                    <parkingAreas>
+                        <VehicleSharingParkingArea id="MOBIITI:ParkingArea:265" modification="new" version="1">
+                            <PublicUse>all</PublicUse>
+                            <SiteRef ref="MOBIITI:Parking:329"/>
+                            <MaximumHeight>300</MaximumHeight>
+                            <TotalCapacity>4</TotalCapacity>
+                        </VehicleSharingParkingArea>
+                        <ParkingArea id="MOBIITI:ParkingArea:266" modification="new" version="1">
+                            <PublicUse>all</PublicUse>
+                            <SiteRef ref="MOBIITI:Parking:329"/>
+                            <MaximumHeight>300</MaximumHeight>
+                            <TotalCapacity>4</TotalCapacity>
+                        </ParkingArea>
+                    </parkingAreas>
+                </Parking>
+                <GeneralOrganisation id="MOBIITI:Organisation:4145946e-fb50-47ac-899e-0955c6b541f6" version="any">
+                    <CompanyNumber>810157982</CompanyNumber>
+                    <OrganisationType>other</OrganisationType>
+                </GeneralOrganisation>
+                <ResponsibilitySet id="MOBIITI:ResponsibilitySet:48a4eb8a-071b-46c8-a57d-d8ecc7515d58" version="any">
+                    <roles>
+                        <ResponsibilityRoleAssignment id="MOBIITI:ResponsibilityRoleAssignment:1c993cc7-d6f2-45c5-8c15-142239e763c3" version="any">
+                            <StakeholderRoleType>EntityLegalOwnership</StakeholderRoleType>
+                            <ResponsibleOrganisationRef ref="MOBIITI:Organisation:4145946e-fb50-47ac-899e-0955c6b541f6"/>
+                        </ResponsibilityRoleAssignment>
+                    </roles>
+                </ResponsibilitySet>
+                <Parking changed="2024-04-03T13:18:04.763" created="2024-04-03T12:13:43.572" id="MOBIITI:Parking:330" modification="new" responsibilitySetRef="MOBIITI:ResponsibilitySet:48a4eb8a-071b-46c8-a57d-d8ecc7515d58" version="2">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test covoiturage MJC Fontanes</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>AC-00001</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Centroid>
+                        <Location>
+                            <Longitude>4.437963</Longitude>
+                            <Latitude>45.548032</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:9cdb53b0-3cb8-41b7-ac95-c1ea1092dc54" version="any">
+                        <PostalRegion>42096</PostalRegion>
+                    </PostalAddress>
+                    <AllAreasWheelchairAccessible>false</AllAreasWheelchairAccessible>
+                    <ParkingType>parkingZone</ParkingType>
+                    <ParkingVehicleTypes/>
+                    <TotalCapacity>20</TotalCapacity>
+                    <ParkingPaymentProcess>free</ParkingPaymentProcess>
+                    <BookingUrl/>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:334" version="0">
+                            <ParkingUserTypes>all</ParkingUserTypes>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:435" version="0">
+    <ParkingUserType>registeredDisabled</ParkingUserType>
+    <NumberOfSpaces>0</NumberOfSpaces>
+</ParkingCapacity>
+<ParkingCapacity id="MOBIITI:ParkingCapacity:436" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>20</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                    <parkingAreas>
+                        <ParkingArea id="MOBIITI:ParkingArea:267" modification="new" version="1">
+                            <PublicUse>all</PublicUse>
+                            <SiteRef ref="MOBIITI:Parking:330"/>
+                            <MaximumHeight>300</MaximumHeight>
+                            <TotalCapacity>0</TotalCapacity>
+                        </ParkingArea>
+                        <VehiclePoolingParkingArea id="MOBIITI:ParkingArea:268" modification="new" version="1">
+                            <PublicUse>all</PublicUse>
+                            <SiteRef ref="MOBIITI:Parking:330"/>
+                            <MaximumHeight>300</MaximumHeight>
+                            <TotalCapacity>20</TotalCapacity>
+                        </VehiclePoolingParkingArea>
+                        <ParkingArea id="MOBIITI:ParkingArea:269" modification="new" version="1">
+                            <PublicUse>all</PublicUse>
+                            <SiteRef ref="MOBIITI:Parking:330"/>
+                            <MaximumHeight>300</MaximumHeight>
+                            <TotalCapacity>20</TotalCapacity>
+                        </ParkingArea>
+                    </parkingAreas>
+                </Parking>
+                <Parking created="2024-04-03T13:25:01.48" id="MOBIITI:Parking:331" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>proprietaire</Key>
+                            <Value>velivert</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>d_service</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>gestionnaire</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test Parking1 VLS</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>date_maj</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>id_local</Key>
+                            <Value>101</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>source</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>hook_type</Key>
+                            <Value>CADRE</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>101</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description/>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.093038</Longitude>
+                            <Latitude>45.033957</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:a74e151c-9a3a-4210-b7b3-6b99831268fb" version="any">
+                        <PostalRegion>15187</PostalRegion>
+                    </PostalAddress>
+                    <placeEquipments id="MOBIITI:PlaceEquipment:233">
+                        <CycleStorageEquipment id="473" modification="new" version="0">
+                            <NumberOfSpaces>32</NumberOfSpaces>
+                        </CycleStorageEquipment>
+                    </placeEquipments>
+                    <ParkingType>cycleRental</ParkingType>
+                    <TypeOfParkingRef ref="BikeParking" version="any"/>
+                    <ParkingVehicleTypes>pedalCycle</ParkingVehicleTypes>
+                    <TotalCapacity>32</TotalCapacity>
+                    <ParkingPaymentProcess>payAndDisplay payByPrepaidToken payByMobileDevice</ParkingPaymentProcess>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:335" version="0">
+                            <ParkingUserTypes/>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:437" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>32</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                </Parking>
+                <Parking created="2024-04-03T13:25:01.655" id="MOBIITI:Parking:332" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>proprietaire</Key>
+                            <Value>velivert</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>d_service</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>gestionnaire</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test Parking2 VLS</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>date_maj</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>id_local</Key>
+                            <Value>102</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>source</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>hook_type</Key>
+                            <Value>CADRE</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>102</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description/>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.092909</Longitude>
+                            <Latitude>45.032546</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:1eebc3da-b682-436e-82dd-ae2431b622a8" version="any">
+                        <PostalRegion>15187</PostalRegion>
+                    </PostalAddress>
+                    <placeEquipments id="MOBIITI:PlaceEquipment:234">
+                        <CycleStorageEquipment id="475" modification="new" version="0">
+                            <NumberOfSpaces>16</NumberOfSpaces>
+                        </CycleStorageEquipment>
+                    </placeEquipments>
+                    <ParkingType>cycleRental</ParkingType>
+                    <TypeOfParkingRef ref="BikeParking" version="any"/>
+                    <ParkingVehicleTypes>pedalCycle</ParkingVehicleTypes>
+                    <TotalCapacity>16</TotalCapacity>
+                    <ParkingPaymentProcess>payAndDisplay payByPrepaidToken payByMobileDevice</ParkingPaymentProcess>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:336" version="0">
+                            <ParkingUserTypes/>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:438" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>16</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                </Parking>
+                <Parking created="2024-04-03T13:25:01.682" id="MOBIITI:Parking:333" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>proprietaire</Key>
+                            <Value>velivert</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>d_service</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>gestionnaire</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test Parking3 VLS</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>date_maj</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>id_local</Key>
+                            <Value>103</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>source</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>hook_type</Key>
+                            <Value>CADRE</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>103</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description/>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.095999</Longitude>
+                            <Latitude>45.033335</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:19aed911-908a-4757-ae13-d553b7a00119" version="any">
+                        <PostalRegion>15187</PostalRegion>
+                    </PostalAddress>
+                    <placeEquipments id="MOBIITI:PlaceEquipment:235">
+                        <CycleStorageEquipment id="477" modification="new" version="0">
+                            <NumberOfSpaces>24</NumberOfSpaces>
+                        </CycleStorageEquipment>
+                    </placeEquipments>
+                    <ParkingType>cycleRental</ParkingType>
+                    <TypeOfParkingRef ref="BikeParking" version="any"/>
+                    <ParkingVehicleTypes>pedalCycle</ParkingVehicleTypes>
+                    <TotalCapacity>24</TotalCapacity>
+                    <ParkingPaymentProcess>payAndDisplay payByPrepaidToken payByMobileDevice</ParkingPaymentProcess>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:337" version="0">
+                            <ParkingUserTypes/>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:439" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>24</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                </Parking>
+                <Parking created="2024-04-03T13:25:01.711" id="MOBIITI:Parking:334" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>proprietaire</Key>
+                            <Value>velivert</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>d_service</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>gestionnaire</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test Parking4 VLS</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>date_maj</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>id_local</Key>
+                            <Value>104</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>source</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>hook_type</Key>
+                            <Value>CADRE</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>104</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description/>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.094143</Longitude>
+                            <Latitude>45.031189</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:5a8dc16b-830e-46ff-ba12-716e27d7b65a" version="any">
+                        <PostalRegion>15187</PostalRegion>
+                    </PostalAddress>
+                    <placeEquipments id="MOBIITI:PlaceEquipment:236">
+                        <CycleStorageEquipment id="479" modification="new" version="0">
+                            <NumberOfSpaces>17</NumberOfSpaces>
+                        </CycleStorageEquipment>
+                    </placeEquipments>
+                    <ParkingType>cycleRental</ParkingType>
+                    <TypeOfParkingRef ref="IndividualBox" version="any"/>
+                    <ParkingVehicleTypes>pedalCycle</ParkingVehicleTypes>
+                    <TotalCapacity>17</TotalCapacity>
+                    <ParkingPaymentProcess>payAndDisplay payByPrepaidToken payByMobileDevice</ParkingPaymentProcess>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:338" version="0">
+                            <ParkingUserTypes/>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:440" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>17</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                </Parking>
+                <Parking created="2024-04-03T13:25:01.737" id="MOBIITI:Parking:335" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>proprietaire</Key>
+                            <Value>velivert</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>d_service</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>gestionnaire</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test Parking5 VLS</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>date_maj</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>id_local</Key>
+                            <Value>105</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>source</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>hook_type</Key>
+                            <Value>CADRE</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>105</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description/>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.094851</Longitude>
+                            <Latitude>45.031371</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:e19d7543-6bf2-4295-a614-6d8941e676da" version="any">
+                        <PostalRegion>15187</PostalRegion>
+                    </PostalAddress>
+                    <placeEquipments id="MOBIITI:PlaceEquipment:237">
+                        <CycleStorageEquipment id="481" modification="new" version="0">
+                            <NumberOfSpaces>10</NumberOfSpaces>
+                        </CycleStorageEquipment>
+                    </placeEquipments>
+                    <ParkingType>cycleRental</ParkingType>
+                    <TypeOfParkingRef ref="SecureBikeParking" version="any"/>
+                    <ParkingVehicleTypes>pedalCycle</ParkingVehicleTypes>
+                    <TotalCapacity>10</TotalCapacity>
+                    <Secure>true</Secure>
+                    <ParkingPaymentProcess>payAndDisplay payByPrepaidToken payByMobileDevice</ParkingPaymentProcess>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:339" version="0">
+                            <ParkingUserTypes/>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:441" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>10</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                </Parking>
+                <Parking created="2024-04-03T13:25:01.763" id="MOBIITI:Parking:336" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>proprietaire</Key>
+                            <Value>velivert</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>d_service</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>gestionnaire</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test Parking6 VLS</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>date_maj</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>id_local</Key>
+                            <Value>106</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>source</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>hook_type</Key>
+                            <Value>CADRE</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>106</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description/>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.095666</Longitude>
+                            <Latitude>45.031462</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:445bc9c4-1e70-4648-987e-249f06dee6cf" version="any">
+                        <PostalRegion>15187</PostalRegion>
+                    </PostalAddress>
+                    <placeEquipments id="MOBIITI:PlaceEquipment:238">
+                        <CycleStorageEquipment id="483" modification="new" version="0">
+                            <NumberOfSpaces>10</NumberOfSpaces>
+                        </CycleStorageEquipment>
+                    </placeEquipments>
+                    <ParkingType>cycleRental</ParkingType>
+                    <TypeOfParkingRef ref="BikeParking" version="any"/>
+                    <ParkingVehicleTypes>pedalCycle</ParkingVehicleTypes>
+                    <TotalCapacity>10</TotalCapacity>
+                    <Secure>true</Secure>
+                    <ParkingPaymentProcess>payAndDisplay payByPrepaidToken payByMobileDevice</ParkingPaymentProcess>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:340" version="0">
+                            <ParkingUserTypes/>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:442" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>10</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                </Parking>
+                <Parking created="2024-04-03T15:08:50.178" id="MOBIITI:Parking:337" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>proprietaire</Key>
+                            <Value>Ville de Grenoble</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>d_service</Key>
+                            <Value>2017</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>gestionnaire</Key>
+                            <Value>Ville de Grenoble</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test1 Park velo</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>date_maj</Key>
+                            <Value>17/09/2020</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>id_local</Key>
+                            <Value>STSI01</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>source</Key>
+                            <Value>Grenoble Métropole</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>hook_type</Key>
+                            <Value>CADRE ET ROUE</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>id_osm</Key>
+                            <Value>n71729735</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>STSI01</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description>L’accès au parking vélo est au sous-sol de la gare</Description>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.089347</Longitude>
+                            <Latitude>45.033926</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:0e9d9616-b73f-40f3-876a-4a7ff0899b93" version="any">
+                        <PostalRegion>15187</PostalRegion>
+                    </PostalAddress>
+                    <Covered>covered</Covered>
+                    <placeEquipments id="MOBIITI:PlaceEquipment:239">
+                        <CycleStorageEquipment id="485" modification="new" version="0">
+                            <NumberOfSpaces>8</NumberOfSpaces>
+                            <CycleStorageType>railings</CycleStorageType>
+                        </CycleStorageEquipment>
+                    </placeEquipments>
+                    <ParkingType>cycleRental</ParkingType>
+                    <TypeOfParkingRef ref="BikeParking" version="any"/>
+                    <ParkingVehicleTypes>pedalCycle</ParkingVehicleTypes>
+                    <TotalCapacity>8</TotalCapacity>
+                    <Secure>true</Secure>
+                    <ParkingPaymentProcess>free</ParkingPaymentProcess>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:341" version="0">
+                            <ParkingUserTypes/>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:443" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>8</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                </Parking>
+                <Parking created="2024-04-03T15:08:50.239" id="MOBIITI:Parking:338" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>proprietaire</Key>
+                            <Value>SNCF TER</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>d_service</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>gestionnaire</Key>
+                            <Value>SNCF TER</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test2 Park velo</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>date_maj</Key>
+                            <Value>22/06/2022</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>id_local</Key>
+                            <Value>CCTER0001</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>source</Key>
+                            <Value>Région Auvergne-Rhône-Alpes</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>hook_type</Key>
+                            <Value>CADRE ET ROUE</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CCTER0001</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description/>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.088896</Longitude>
+                            <Latitude>45.033062</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:20e351b0-14e3-4c92-97e5-d8150912fd61" version="any">
+                        <PostalRegion>15187</PostalRegion>
+                    </PostalAddress>
+                    <Covered>covered</Covered>
+                    <placeEquipments id="MOBIITI:PlaceEquipment:240">
+                        <CycleStorageEquipment id="487" modification="new" version="0">
+                            <NumberOfSpaces>48</NumberOfSpaces>
+                            <CycleStorageType>railings</CycleStorageType>
+                        </CycleStorageEquipment>
+                    </placeEquipments>
+                    <ParkingType>cycleRental</ParkingType>
+                    <TypeOfParkingRef ref="SecureBikeParking" version="any"/>
+                    <ParkingVehicleTypes>pedalCycle</ParkingVehicleTypes>
+                    <TotalCapacity>48</TotalCapacity>
+                    <Secure>true</Secure>
+                    <ParkingPaymentProcess>payAndDisplay payByPrepaidToken payByMobileDevice</ParkingPaymentProcess>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:342" version="0">
+                            <ParkingUserTypes/>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:444" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>48</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                </Parking>
+                <Parking created="2024-04-03T15:08:50.276" id="MOBIITI:Parking:339" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>proprietaire</Key>
+                            <Value>SNCF TER</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>d_service</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>gestionnaire</Key>
+                            <Value>SNCF TER</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test3 Park velo</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>date_maj</Key>
+                            <Value>22/06/2022</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>id_local</Key>
+                            <Value>CCTER0002</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>source</Key>
+                            <Value>Région Auvergne-Rhône-Alpes</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>hook_type</Key>
+                            <Value>CADRE ET ROUE</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CCTER0002</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description/>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.087716</Longitude>
+                            <Latitude>45.033274</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:7ffdc2a3-1140-4028-b4e4-0e1c6c1114b6" version="any">
+                        <PostalRegion>15187</PostalRegion>
+                    </PostalAddress>
+                    <Covered>covered</Covered>
+                    <placeEquipments id="MOBIITI:PlaceEquipment:241">
+                        <CycleStorageEquipment id="489" modification="new" version="0">
+                            <NumberOfSpaces>48</NumberOfSpaces>
+                            <CycleStorageType>railings</CycleStorageType>
+                        </CycleStorageEquipment>
+                    </placeEquipments>
+                    <ParkingType>cycleRental</ParkingType>
+                    <TypeOfParkingRef ref="SecureBikeParking" version="any"/>
+                    <ParkingVehicleTypes>pedalCycle</ParkingVehicleTypes>
+                    <TotalCapacity>48</TotalCapacity>
+                    <Secure>true</Secure>
+                    <ParkingPaymentProcess>payAndDisplay payByPrepaidToken payByMobileDevice</ParkingPaymentProcess>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:343" version="0">
+                            <ParkingUserTypes/>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:445" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>48</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                </Parking>
+                <Parking created="2024-04-03T15:08:50.309" id="MOBIITI:Parking:340" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>proprietaire</Key>
+                            <Value>SNCF TER</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>d_service</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>gestionnaire</Key>
+                            <Value>SNCF TER</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test4 Park velo</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>date_maj</Key>
+                            <Value>22/06/2022</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>id_local</Key>
+                            <Value>CCTER0004</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>source</Key>
+                            <Value>Région Auvergne-Rhône-Alpes</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>hook_type</Key>
+                            <Value>CADRE ET ROUE</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CCTER0004</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description/>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.088059</Longitude>
+                            <Latitude>45.034237</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:6c12d66c-fba9-4ff6-ade6-b7aa57ac4262" version="any">
+                        <PostalRegion>15187</PostalRegion>
+                    </PostalAddress>
+                    <Covered>covered</Covered>
+                    <placeEquipments id="MOBIITI:PlaceEquipment:242">
+                        <CycleStorageEquipment id="491" modification="new" version="0">
+                            <NumberOfSpaces>10</NumberOfSpaces>
+                            <CycleStorageType>railings</CycleStorageType>
+                        </CycleStorageEquipment>
+                    </placeEquipments>
+                    <ParkingType>cycleRental</ParkingType>
+                    <TypeOfParkingRef ref="IndividualBox" version="any"/>
+                    <ParkingVehicleTypes>pedalCycle</ParkingVehicleTypes>
+                    <TotalCapacity>10</TotalCapacity>
+                    <ParkingPaymentProcess>payAndDisplay payByPrepaidToken payByMobileDevice</ParkingPaymentProcess>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:344" version="0">
+                            <ParkingUserTypes/>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:446" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>10</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                </Parking>
+                <Parking created="2024-04-03T15:08:50.335" id="MOBIITI:Parking:341" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>proprietaire</Key>
+                            <Value>SNCF TER</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>d_service</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>gestionnaire</Key>
+                            <Value>SNCF TER</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test5 Park velo</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>date_maj</Key>
+                            <Value>22/06/2022</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>id_local</Key>
+                            <Value>CCTER0005</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>source</Key>
+                            <Value>Région Auvergne-Rhône-Alpes</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>hook_type</Key>
+                            <Value>CADRE ET ROUE</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CCTER0005</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description/>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.088875</Longitude>
+                            <Latitude>45.034647</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:da52bbc9-65ec-4282-907c-c7094fa05981" version="any">
+                        <PostalRegion>15187</PostalRegion>
+                    </PostalAddress>
+                    <Covered>covered</Covered>
+                    <placeEquipments id="MOBIITI:PlaceEquipment:243">
+                        <CycleStorageEquipment id="493" modification="new" version="0">
+                            <NumberOfSpaces>15</NumberOfSpaces>
+                            <CycleStorageType>railings</CycleStorageType>
+                        </CycleStorageEquipment>
+                    </placeEquipments>
+                    <ParkingType>cycleRental</ParkingType>
+                    <TypeOfParkingRef ref="BikeParking" version="any"/>
+                    <ParkingVehicleTypes>pedalCycle</ParkingVehicleTypes>
+                    <TotalCapacity>15</TotalCapacity>
+                    <ParkingPaymentProcess>payAndDisplay payByPrepaidToken payByMobileDevice</ParkingPaymentProcess>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:345" version="0">
+                            <ParkingUserTypes/>
+                            <spaces modificationSet="all">
+<ParkingCapacity id="MOBIITI:ParkingCapacity:447" version="0">
+    <ParkingUserType>allUsers</ParkingUserType>
+    <NumberOfSpaces>15</NumberOfSpaces>
+</ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                </Parking>
+                <TypeOfParking id="BikeParking" version="any">
+                </TypeOfParking>
+                <TypeOfParking id="SecureBikeParking" version="any">
+                </TypeOfParking>
+                <TypeOfParking id="IndividualBox" version="any">
+                </TypeOfParking>
+            </members>
+        </GeneralFrame>
+    </dataObjects>
+</PublicationDelivery>

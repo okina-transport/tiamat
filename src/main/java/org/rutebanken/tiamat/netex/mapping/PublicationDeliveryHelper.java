@@ -136,4 +136,8 @@ public class PublicationDeliveryHelper {
                 .flatMap(values -> Stream.of(values))
                 .findFirst().orElse(null);
     }
+
+    public boolean hasParkingsGeneralFrame(GeneralFrame generalFrame) {
+        return generalFrame!= null;
+    }
 }

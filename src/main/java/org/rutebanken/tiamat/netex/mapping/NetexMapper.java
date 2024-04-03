@@ -126,6 +126,26 @@ public class NetexMapper {
 
         mapperFactory.classMap(ParkingArea.class, org.rutebanken.tiamat.model.ParkingArea.class)
                 .customize(new ParkingAreaMapper())
+                .fieldBToA("netexId", "id")
+                .byDefault()
+                .register();
+
+        mapperFactory.classMap(VehiclePoolingParkingArea.class, org.rutebanken.tiamat.model.ParkingArea.class)
+                .customize(new VehiclePoolingParkingAreaMapper())
+                .fieldBToA("netexId", "id")
+                .byDefault()
+                .register();
+
+        mapperFactory.classMap(VehicleSharingParkingArea.class, org.rutebanken.tiamat.model.ParkingArea.class)
+                .customize(new VehicleSharingParkingAreaMapper())
+                .fieldBToA("netexId", "id")
+                .byDefault()
+                .register();
+
+        mapperFactory.classMap(ParkingProperties.class, org.rutebanken.tiamat.model.ParkingProperties.class)
+                .exclude("spaces")
+                .customize(new ParkingPropertyMapper())
+                .fieldBToA("netexId", "id")
                 .byDefault()
                 .register();
 
@@ -421,6 +441,42 @@ public class NetexMapper {
 
     public org.rutebanken.tiamat.model.Parking mapToTiamatModel(Parking netexParking) {
         return facade.map(netexParking, org.rutebanken.tiamat.model.Parking.class);
+    }
+
+    public org.rutebanken.tiamat.model.ParkingProperties mapToNetexModel(ParkingProperties parkingProperties) {
+        return facade.map(parkingProperties, org.rutebanken.tiamat.model.ParkingProperties.class);
+    }
+
+    public org.rutebanken.tiamat.model.ParkingCapacity mapToNetexModel(Object parkingCapacity) {
+        return facade.map(parkingCapacity, org.rutebanken.tiamat.model.ParkingCapacity.class);
+    }
+
+    public org.rutebanken.tiamat.model.CycleStorageEquipment mapToNetexModel(CycleStorageEquipment parkingEquipment) {
+        return facade.map(parkingEquipment, org.rutebanken.tiamat.model.CycleStorageEquipment.class);
+    }
+
+    public org.rutebanken.tiamat.model.ParkingPaymentProcessEnumeration mapToNetexModel(ParkingPaymentProcessEnumeration parkingCapacity) {
+        return facade.map(parkingCapacity, org.rutebanken.tiamat.model.ParkingPaymentProcessEnumeration.class);
+    }
+
+    public org.rutebanken.tiamat.model.ParkingArea mapToNetexModel(ParkingArea area) {
+        return facade.map(area, org.rutebanken.tiamat.model.ParkingArea.class);
+    }
+
+    public org.rutebanken.tiamat.model.ParkingArea mapToNetexModel(VehiclePoolingParkingArea area) {
+        return facade.map(area, org.rutebanken.tiamat.model.ParkingArea.class);
+    }
+
+    public org.rutebanken.tiamat.model.ParkingArea mapToNetexModel(VehicleSharingParkingArea area) {
+        return facade.map(area, org.rutebanken.tiamat.model.ParkingArea.class);
+    }
+
+    public org.rutebanken.tiamat.model.TypeOfPlaceRefs_RelStructure mapToNetexModel(TypeOfPlaceRefs_RelStructure typeOfPlaceRefsRelStructure) {
+        return facade.map(typeOfPlaceRefsRelStructure, org.rutebanken.tiamat.model.TypeOfPlaceRefs_RelStructure.class);
+    }
+
+    public org.rutebanken.tiamat.model.SiteRefStructure mapToNetexModel(SiteRefStructure siteRefStructure) {
+        return facade.map(siteRefStructure, org.rutebanken.tiamat.model.SiteRefStructure.class);
     }
 
     public org.rutebanken.tiamat.model.PointOfInterest mapToTiamatModel(PointOfInterest netexPointOfInterest) {

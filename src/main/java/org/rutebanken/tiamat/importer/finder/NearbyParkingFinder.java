@@ -72,15 +72,19 @@ public class NearbyParkingFinder implements ParkingFinder {
 //        }
 
         try {
-            Optional<String> parkingNetexId = nearbyParkingCache.get(createKey(parking), () -> {
-                Envelope boundingBox = createBoundingBox(parking.getCentroid());
+            if (parking.getNetexId() == null) {
+                Optional<String> parkingNetexId = nearbyParkingCache.get(createKey(parking), () -> {
+                    Envelope boundingBox = createBoundingBox(parking.getCentroid());
 
-                String matchingParkingId = parkingRepository.findNearbyParking(boundingBox, parking.getName().getValue(), parking.getParkingType());
+                    String matchingParkingId = parkingRepository.findNearbyParking(boundingBox, parking.getName().getValue(), parking.getParkingType());
 
-                return Optional.ofNullable(matchingParkingId);
-            });
-            if(parkingNetexId.isPresent()) {
-                return parkingRepository.findFirstByNetexIdOrderByVersionDesc(parkingNetexId.get());
+                    return Optional.ofNullable(matchingParkingId);
+                });
+                if (parkingNetexId.isPresent()) {
+                    return parkingRepository.findFirstByNetexIdOrderByVersionDesc(parkingNetexId.get());
+                }
+            } else {
+                return parkingRepository.findFirstByNetexIdOrderByVersionDesc(parking.getNetexId());
             }
             return null;
         } catch (ExecutionException e) {

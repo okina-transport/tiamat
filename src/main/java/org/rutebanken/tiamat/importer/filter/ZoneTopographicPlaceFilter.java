@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.importer.filter;
 
+import org.rutebanken.netex.model.Parking;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.Zone_VersionStructure;
 import org.rutebanken.tiamat.service.TopographicPlaceLookupService;
@@ -41,6 +42,10 @@ public class ZoneTopographicPlaceFilter {
 
     public <T extends Zone_VersionStructure> List<T> filterByTopographicPlaceMatch(List<String> topographicPlaceReferences, List<T> zones) {
         return filterByTopographicPlaceMatch(topographicPlaceReferences, zones, false);
+    }
+
+    public <T extends Zone_VersionStructure> List<Parking> filterByTopographicPlaceMatchParking(List<String> topographicPlaceReferences, List<Parking> zones) {
+        return filterByTopographicPlaceMatchParking(topographicPlaceReferences, zones, false);
     }
 
     /**
@@ -73,6 +78,42 @@ public class ZoneTopographicPlaceFilter {
                 })
                 .filter(zone -> {
                     Optional<TopographicPlace> topographicPlace = topographicPlaceLookupService.findTopographicPlaceByReference(topographicPlaceReferences, zone.getCentroid());
+                    if(topographicPlace.isPresent()) {
+                        logger.debug("Found matching topographic place {} for zone {}. Negate: {}", topographicPlace.get().getNetexId(), zone, negate);
+                        return negate ? false : true;
+                    } else if(negate){
+                        logger.debug("Keeping {}. Negate: {}", zone, negate);
+                        return true;
+                    } else {
+                        logger.debug("Filtering out {}. Topographic references: {}. Negate: {}", zone, topographicPlaceReferences, negate);
+                        return false;
+                    }
+                })
+                .collect(toList());
+    }
+
+    public <T extends Zone_VersionStructure> List<Parking> filterByTopographicPlaceMatchParking(List<String> topographicPlaceReferences, List<Parking> zones, boolean negate) {
+
+        if(topographicPlaceReferences == null || topographicPlaceReferences.isEmpty()) {
+            logger.info("Cannot filter zones with empty topographic references: {}. Returning all zones.", topographicPlaceReferences);
+            return zones;
+        }
+
+        if(zones == null || zones.isEmpty()) {
+            logger.info("There are no zones to filter.");
+            return zones;
+        }
+
+        return zones.parallelStream()
+                .filter(zone -> {
+                    if(zone.getCentroid() == null) {
+                        logger.warn("Zone does not have centroid: {}", zone);
+                        return false;
+                    }
+                    return true;
+                })
+                .filter(zone -> {
+                    Optional<TopographicPlace> topographicPlace = topographicPlaceLookupService.findTopographicPlaceByReferenceParking(topographicPlaceReferences, zone.getCentroid());
                     if(topographicPlace.isPresent()) {
                         logger.debug("Found matching topographic place {} for zone {}. Negate: {}", topographicPlace.get().getNetexId(), zone, negate);
                         return negate ? false : true;

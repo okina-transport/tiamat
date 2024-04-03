@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.service;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.rutebanken.netex.model.SimplePoint_VersionStructure;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.TopographicPlaceSearch;
 import org.rutebanken.tiamat.general.ResettableMemoizer;
@@ -118,6 +119,15 @@ public class TopographicPlaceLookupService {
                 .stream()
                 .filter(triple -> topographicPlaceReferences.contains(triple.getLeft()))
                 .filter(triple -> point.coveredBy(triple.getRight()))
+                .map(triple -> topographicPlaceRepository.findFirstByNetexIdOrderByVersionDesc(triple.getLeft()))
+                .peek(topographicPlace -> logger.debug("Found topographic place match: {}", topographicPlace.getNetexId()))
+                .findAny();
+    }
+
+    public Optional<TopographicPlace> findTopographicPlaceByReferenceParking(List<String> topographicPlaceReferences, SimplePoint_VersionStructure point) {
+        return memoizedTopographicPlaces.get()
+                .stream()
+                .filter(triple -> topographicPlaceReferences.contains(triple.getLeft()))
                 .map(triple -> topographicPlaceRepository.findFirstByNetexIdOrderByVersionDesc(triple.getLeft()))
                 .peek(topographicPlace -> logger.debug("Found topographic place match: {}", topographicPlace.getNetexId()))
                 .findAny();

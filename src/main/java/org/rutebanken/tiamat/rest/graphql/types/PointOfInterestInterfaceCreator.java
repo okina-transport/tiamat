@@ -26,7 +26,6 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
 
-
 @Component
 public class PointOfInterestInterfaceCreator {
 

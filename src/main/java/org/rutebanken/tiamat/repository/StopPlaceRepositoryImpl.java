@@ -952,11 +952,40 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         queryWithParams.getSecond().forEach(nativeQuery::setParameter);
         long firstResult = exportParams.getStopPlaceSearch().getPageable().getOffset();
         nativeQuery.setFirstResult(Math.toIntExact(firstResult));
-        nativeQuery.setMaxResults(exportParams.getStopPlaceSearch().getPageable().getPageSize());
-
         List<StopPlace> stopPlaces = nativeQuery.getResultList();
+        stopPlaces = keepLastVersions(stopPlaces, 10);
         return new PageImpl<>(stopPlaces, exportParams.getStopPlaceSearch().getPageable(), stopPlaces.size());
 
+    }
+    
+    private List<StopPlace> keepLastVersions(List<StopPlace> rawList, int nbOfVersionsToKeep){
+        Map<String, Long> maxVersionsMap = new HashMap<>();
+
+        for (StopPlace stopPlace : rawList) {
+            if (!maxVersionsMap.containsKey(stopPlace.getNetexId())){
+                maxVersionsMap.put(stopPlace.getNetexId(), stopPlace.getVersion());
+                continue;
+            }
+            
+            Long currentMax = maxVersionsMap.get(stopPlace.getNetexId());
+            if (currentMax.compareTo(stopPlace.getVersion()) < 0){
+                maxVersionsMap.put(stopPlace.getNetexId(), stopPlace.getVersion());
+            }
+        }
+
+        List<StopPlace> results = new ArrayList<>();
+
+        for (StopPlace stopPlace : rawList) {
+            Long max = maxVersionsMap.get(stopPlace.getNetexId());
+
+            //we only keep the n max versions
+            if (  stopPlace.getVersion() >= max - nbOfVersionsToKeep){
+                results.add(stopPlace);
+            }
+        }
+
+        return results;
+        
     }
 
     @Override

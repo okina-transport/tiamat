@@ -1,8 +1,6 @@
 package org.rutebanken.tiamat.netex;
 
-import org.rutebanken.netex.model.Quay;
-import org.rutebanken.netex.model.Quays_RelStructure;
-import org.rutebanken.netex.model.StopPlace;
+import org.rutebanken.netex.model.*;
 
 import javax.xml.bind.JAXBElement;
 import java.util.ArrayList;
@@ -21,5 +19,17 @@ public class NetexUtils {
 
         }
         return quays;
+    }
+
+    public static <Parking> List<Parking> getMembers(Class<Parking> clazz, List<JAXBElement<? extends EntityStructure>> members) {
+        List<Parking> foundMembers = new ArrayList<>();
+
+        for (JAXBElement<? extends EntityStructure> member : members) {
+            if (member.getValue().getClass().equals(clazz)) {
+                foundMembers.add(clazz.cast(member.getValue()));
+            }
+        }
+
+        return foundMembers;
     }
 }

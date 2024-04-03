@@ -4,6 +4,7 @@ import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
 import org.rutebanken.netex.model.*;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.ParkingArea;
 import org.springframework.stereotype.Component;
 
@@ -32,6 +33,19 @@ public class VehiclePoolingParkingAreaConverter extends BidirectionalConverter<P
 
     @Override
     public ParkingArea convertFrom(VehiclePoolingParkingArea vehiclePoolingParkingArea, Type<ParkingArea> type, MappingContext mappingContext) {
-        return null;
+        if (vehiclePoolingParkingArea == null) {
+            return null;
+        }
+        ParkingArea parkingArea = new ParkingArea();
+        parkingArea.setNetexId(vehiclePoolingParkingArea.getId());
+        if (vehiclePoolingParkingArea.getName() != null ){
+            parkingArea.setName(new EmbeddableMultilingualString(vehiclePoolingParkingArea.getName().getValue()));
+        }
+        parkingArea.setMaximumHeight(vehiclePoolingParkingArea.getMaximumHeight());
+        parkingArea.setPublicUse(parkingArea.getPublicUse() != null ? org.rutebanken.tiamat.model.PublicUseEnumeration.fromValue(vehiclePoolingParkingArea.getPublicUse().value()) : org.rutebanken.tiamat.model.PublicUseEnumeration.ALL);
+        parkingArea.setVersion(Long.parseLong(vehiclePoolingParkingArea.getVersion()));
+        parkingArea.setTotalCapacity(netexObjectFactory.createParkingArea_VersionStructureTotalCapacity(parkingArea.getTotalCapacity()).getValue());
+        parkingArea.setModification(vehiclePoolingParkingArea.getModification() != null ? org.rutebanken.tiamat.model.ModificationEnumeration.fromValue(vehiclePoolingParkingArea.getModification().value()) : null);
+        return parkingArea;
     }
 }

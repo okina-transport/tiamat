@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.netex.mapping;
 
+import org.rutebanken.netex.model.GeneralFrame;
 import org.rutebanken.netex.model.LocaleStructure;
 import org.rutebanken.netex.model.SiteFrame;
 import org.rutebanken.netex.model.VersionFrameDefaultsStructure;
@@ -42,6 +43,19 @@ public class NetexMappingContextThreadLocal {
     public static void updateMappingContext(SiteFrame netexSiteFrame) {
         String timeZoneString = Optional.of(netexSiteFrame)
                 .map(SiteFrame::getFrameDefaults)
+                .map(VersionFrameDefaultsStructure::getDefaultLocale)
+                .map(LocaleStructure::getTimeZone)
+                .orElse("Europe/Paris");
+
+        NetexMappingContext netexMappingContext = new NetexMappingContext();
+        netexMappingContext.defaultTimeZone = ZoneId.of(timeZoneString);
+        NetexMappingContextThreadLocal.set(netexMappingContext);
+        logger.info("Setting default time zone for netex mapping context to {}", NetexMappingContextThreadLocal.get().defaultTimeZone);
+    }
+
+    public static void updateMappingGeneralFrameContext(GeneralFrame generalFrame) {
+        String timeZoneString = Optional.of(generalFrame)
+                .map(GeneralFrame::getFrameDefaults)
                 .map(VersionFrameDefaultsStructure::getDefaultLocale)
                 .map(LocaleStructure::getTimeZone)
                 .orElse("Europe/Paris");

@@ -18,12 +18,11 @@ package org.rutebanken.tiamat.importer.merging;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.finder.NearbyParkingFinder;
 import org.rutebanken.tiamat.importer.finder.ParkingFromOriginalIdFinder;
-import org.rutebanken.tiamat.model.DataManagedObjectStructure;
-import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
-import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
+import org.rutebanken.tiamat.versioning.save.*;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +32,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @Component
@@ -50,6 +52,14 @@ public class MergingParkingImporter {
 
     private final ParkingVersionedSaverService parkingVersionedSaverService;
 
+    private final ParkingPropertiesVersionedSaverService parkingPropertiesVersionedSaverService;
+
+    private final ParkingAreasVersionedSaverService parkingAreasVersionedSaverService;
+
+    private final ParkingPlaceEquipmentsVersionedSaverService parkingPlaceEquipmentsVersionedSaverService;
+
+    private final ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService;
+
     private final ParkingFromOriginalIdFinder parkingFromOriginalIdFinder;
 
     private final ReferenceResolver referenceResolver;
@@ -60,13 +70,22 @@ public class MergingParkingImporter {
     public MergingParkingImporter(ParkingFromOriginalIdFinder parkingFromOriginalIdFinder,
                                   NearbyParkingFinder nearbyParkingFinder, ReferenceResolver referenceResolver,
                                   KeyValueListAppender keyValueListAppender, NetexMapper netexMapper,
-                                  ParkingVersionedSaverService parkingVersionedSaverService, VersionCreator versionCreator) {
+                                  ParkingVersionedSaverService parkingVersionedSaverService,
+                                  ParkingPropertiesVersionedSaverService parkingPropertiesVersionedSaverService,
+                                  ParkingAreasVersionedSaverService parkingAreasVersionedSaverService,
+                                  ParkingPlaceEquipmentsVersionedSaverService parkingPlaceEquipmentsVersionedSaverService,
+                                  ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService,
+                                  VersionCreator versionCreator) {
         this.parkingFromOriginalIdFinder = parkingFromOriginalIdFinder;
         this.nearbyParkingFinder = nearbyParkingFinder;
         this.referenceResolver = referenceResolver;
         this.keyValueListAppender = keyValueListAppender;
         this.netexMapper = netexMapper;
         this.parkingVersionedSaverService = parkingVersionedSaverService;
+        this.parkingPropertiesVersionedSaverService = parkingPropertiesVersionedSaverService;
+        this.parkingAreasVersionedSaverService = parkingAreasVersionedSaverService;
+        this.parkingPlaceEquipmentsVersionedSaverService = parkingPlaceEquipmentsVersionedSaverService;
+        this.parkingInstalledEquipmentsVersionedSaverService = parkingInstalledEquipmentsVersionedSaverService;
         this.versionCreator = versionCreator;
     }
 
@@ -115,14 +134,6 @@ public class MergingParkingImporter {
 
 
     public Parking handleCompletelyNewParking(Parking incomingParking) throws ExecutionException {
-
-        if (incomingParking.getNetexId() != null) {
-            // This should not be necessary.
-            // Because this is a completely new parking.
-            // And original netex ID should have been moved to key values.
-            incomingParking.setNetexId(null);
-        }
-
         // Ignore incoming version. Always set version to 1 for new parkings.
         logger.debug("New parking: {}. Setting version to \"1\"", incomingParking.getName());
         // versionCreator.createCopy(incomingParking, Parking.class);
@@ -134,35 +145,123 @@ public class MergingParkingImporter {
     public Parking handleAlreadyExistingParking(Parking existingParking, Parking incomingParking) {
         logger.debug("Found existing parking {} from incoming {}", existingParking, incomingParking);
 
-        Parking copy = versionCreator.createCopy(existingParking, Parking.class);
+        Parking copyParking = versionCreator.createCopy(existingParking, Parking.class);
 
-        boolean keyValuesChanged = keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingParking, copy);
-        boolean centroidChanged = (copy.getCentroid() != null && incomingParking.getCentroid() != null && !copy.getCentroid().equals(incomingParking.getCentroid()));
+        boolean keyValuesChanged = keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingParking, copyParking);
+        boolean centroidChanged = (copyParking.getCentroid() != null && incomingParking.getCentroid() != null && !copyParking.getCentroid().equals(incomingParking.getCentroid()));
+
+        boolean allAreasWheelchairAccessibleChanged = false;
+        if ((copyParking.isAllAreasWheelchairAccessible() == null && incomingParking.isAllAreasWheelchairAccessible() != null) ||
+                (copyParking.isAllAreasWheelchairAccessible() != null && incomingParking.isAllAreasWheelchairAccessible() != null
+                        && !copyParking.isAllAreasWheelchairAccessible().equals(incomingParking.isAllAreasWheelchairAccessible()))) {
+
+            copyParking.setAllAreasWheelchairAccessible(incomingParking.isAllAreasWheelchairAccessible());
+            logger.info("Updated allAreasWheelchairAccessible value to {} for parking {}", copyParking.isAllAreasWheelchairAccessible(), copyParking);
+            allAreasWheelchairAccessibleChanged = true;
+        }
 
         boolean typeChanged = false;
-        if ((copy.getParkingType() == null && incomingParking.getParkingType() != null) ||
-            (copy.getParkingType() != null && incomingParking.getParkingType() != null
-                    && !copy.getParkingType().equals(incomingParking.getParkingType()))) {
+        if ((copyParking.getParkingType() == null && incomingParking.getParkingType() != null) ||
+            (copyParking.getParkingType() != null && incomingParking.getParkingType() != null
+                    && !copyParking.getParkingType().equals(incomingParking.getParkingType()))) {
 
-            copy.setParkingType(incomingParking.getParkingType());
-            logger.info("Updated parking type to {} for parking {}", copy.getParkingType(), copy);
+            copyParking.setParkingType(incomingParking.getParkingType());
+            logger.info("Updated parking type to {} for parking {}", copyParking.getParkingType(), copyParking);
             typeChanged = true;
         }
 
         boolean vehicleType = false;
-        if (!copy.getParkingVehicleTypes().containsAll(incomingParking.getParkingVehicleTypes()) ||
-                        !incomingParking.getParkingVehicleTypes().containsAll(copy.getParkingVehicleTypes()) ) {
-            copy.getParkingVehicleTypes().clear();
-            copy.getParkingVehicleTypes().addAll(incomingParking.getParkingVehicleTypes());
-            logger.info("Updated parkingVehicleTypes to {} for parking {}", copy.getParkingVehicleTypes(), copy);
+        if (!copyParking.getParkingVehicleTypes().containsAll(incomingParking.getParkingVehicleTypes()) ||
+                        !incomingParking.getParkingVehicleTypes().containsAll(copyParking.getParkingVehicleTypes()) ) {
+
+            copyParking.getParkingVehicleTypes().clear();
+            copyParking.getParkingVehicleTypes().addAll(incomingParking.getParkingVehicleTypes());
+            logger.info("Updated parking vehicle types to {} for parking {}", copyParking.getParkingVehicleTypes(), copyParking);
             vehicleType = true;
         }
 
+        boolean totalCapacityChanged = false;
+        if ((copyParking.getTotalCapacity() == null && incomingParking.getTotalCapacity() != null) ||
+                (copyParking.getTotalCapacity() != null && incomingParking.getTotalCapacity() != null
+                        && !copyParking.getTotalCapacity().equals(incomingParking.getTotalCapacity()))) {
 
-        if (keyValuesChanged || typeChanged || centroidChanged || vehicleType) {
-            logger.info("Updated existing parking {}. ", copy);
-            copy = parkingVersionedSaverService.saveNewVersion(copy);
-            return updateCache(copy);
+            copyParking.setTotalCapacity(incomingParking.getTotalCapacity());
+            logger.info("Updated total capacity type to {} for parking {}", copyParking.getTotalCapacity(), copyParking);
+            totalCapacityChanged = true;
+        }
+
+        boolean rechargingAvailableChanged = false;
+        if ((copyParking.isRechargingAvailable() == null && incomingParking.isRechargingAvailable() != null) ||
+                (copyParking.isRechargingAvailable() != null && incomingParking.isRechargingAvailable() != null
+                        && !copyParking.isRechargingAvailable().equals(incomingParking.isRechargingAvailable()))) {
+
+            copyParking.setRechargingAvailable(incomingParking.isRechargingAvailable());
+            logger.info("Updated recharging available type to {} for parking {}", copyParking.isRechargingAvailable(), copyParking);
+            rechargingAvailableChanged = true;
+        }
+
+        boolean bookingUrlChanged = false;
+        if ((copyParking.getBookingUrl() == null && incomingParking.getBookingUrl() != null) ||
+                (copyParking.getBookingUrl() != null && incomingParking.getBookingUrl() != null
+                        && !copyParking.getBookingUrl().equals(incomingParking.getBookingUrl()))) {
+
+            copyParking.setBookingUrl(incomingParking.getBookingUrl());
+            logger.info("Updated booking url type to {} for parking {}", copyParking.getBookingUrl(), copyParking);
+            bookingUrlChanged = true;
+        }
+
+        boolean propertiesChanged = false;
+        List<ParkingProperties> copyParkingProperty = new ArrayList<>();
+        if (incomingParking.getParkingProperties() != null && (!new HashSet<>(copyParking.getParkingProperties()).containsAll(incomingParking.getParkingProperties()) ||
+                !new HashSet<>(incomingParking.getParkingProperties()).containsAll(copyParking.getParkingProperties()))) {
+
+            copyParking.getParkingProperties().clear();
+            for (ParkingProperties property : incomingParking.getParkingProperties()) {
+                copyParkingProperty.add(parkingPropertiesVersionedSaverService.saveNewVersion(property));
+            }
+            copyParking.getParkingProperties().addAll(copyParkingProperty);
+            logger.info("Updated parking properties to {} for parking {}", copyParking.getParkingProperties(), copyParking);
+            propertiesChanged = true;
+        }
+
+        boolean areasChanged = false;
+        List<ParkingArea> copyParkingAreas = new ArrayList<>();
+        if (incomingParking.getParkingAreas()!= null && (!new HashSet<>(copyParking.getParkingAreas()).containsAll(incomingParking.getParkingAreas()) ||
+                !new HashSet<>(incomingParking.getParkingAreas()).containsAll(copyParking.getParkingAreas()))) {
+
+            copyParking.getParkingAreas().clear();
+            for (ParkingArea area : incomingParking.getParkingAreas()) {
+                copyParkingAreas.add(parkingAreasVersionedSaverService.saveNewVersion(area));
+            }
+            copyParking.getParkingAreas().addAll(copyParkingAreas);
+            logger.info("Updated areas to {} for parking {}", copyParking.getParkingAreas(), copyParking);
+            areasChanged = true;
+        }
+
+        boolean equipmentChanged = false;
+        List<InstalledEquipment_VersionStructure> copyEquipments = new ArrayList<>();
+        if (incomingParking.getPlaceEquipments() != null &&
+                (!new HashSet<>(copyParking.getPlaceEquipments().getInstalledEquipment()).containsAll(incomingParking.getPlaceEquipments().getInstalledEquipment()) ||
+                !new HashSet<>(incomingParking.getPlaceEquipments().getInstalledEquipment()).containsAll(copyParking.getPlaceEquipments().getInstalledEquipment()))) {
+
+            for (InstalledEquipment_VersionStructure cycleStorageEquipment : incomingParking.getPlaceEquipments().getInstalledEquipment()) {
+                copyEquipments.add(parkingInstalledEquipmentsVersionedSaverService.saveNewVersion(cycleStorageEquipment));
+            }
+            copyParking.getPlaceEquipments().getInstalledEquipment().clear();
+            for (InstalledEquipment_VersionStructure equip : copyEquipments) {
+                copyParking.getPlaceEquipments().getInstalledEquipment().add(equip);
+            }
+
+            copyParking.setPlaceEquipments(parkingPlaceEquipmentsVersionedSaverService.saveNewVersion(copyParking.getPlaceEquipments()));
+            logger.info("Updated equipments to {} for parking {}", copyParking.getPlaceEquipments(), copyParking);
+            equipmentChanged = true;
+        }
+
+        if (keyValuesChanged || allAreasWheelchairAccessibleChanged || typeChanged || centroidChanged || vehicleType || totalCapacityChanged ||
+                rechargingAvailableChanged || bookingUrlChanged || propertiesChanged || areasChanged || equipmentChanged) {
+            logger.info("Updated existing parking {}. ", copyParking);
+            copyParking = parkingVersionedSaverService.saveNewVersion(copyParking);
+            return updateCache(copyParking);
         }
 
         logger.debug("No changes. Returning existing parking {}", existingParking);

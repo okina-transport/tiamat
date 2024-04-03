@@ -18,7 +18,6 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
 import org.rutebanken.netex.model.InstalledEquipment_VersionStructure;
-import org.rutebanken.netex.model.ShelterEquipment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -38,6 +38,7 @@ import org.rutebanken.tiamat.rest.netex.publicationdelivery.ExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ImportResource;
 import org.rutebanken.tiamat.rest.parkings.ImportBikeParkingsResource;
 import org.rutebanken.tiamat.rest.parkings.ImportParkingsResource;
+import org.rutebanken.tiamat.rest.parkingsNetex.ImportParkingsNetexResource;
 import org.rutebanken.tiamat.rest.poi.ImportPOIResource;
 import org.rutebanken.tiamat.rest.parkings.ImportRentalBikeResource;
 import org.rutebanken.tiamat.rest.postcode.PostcodeResource;
@@ -103,6 +104,7 @@ public class JerseyConfig {
         publicResources.add(DeleteRessource.class);
         publicResources.add(TariffZoneRessource.class);
         publicResources.add(PostcodeResource.class);
+        publicResources.add(ImportParkingsNetexResource.class);
 
 
         publicResources.add(GeneralExceptionMapper.class);

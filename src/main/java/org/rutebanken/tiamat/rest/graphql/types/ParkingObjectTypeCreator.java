@@ -19,6 +19,8 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
+import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.SiteRefStructure;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -97,7 +99,15 @@ public class ParkingObjectTypeCreator {
                         .type(new GraphQLList(parkingAreaObjectType)))
                 .field(newFieldDefinition()
                         .name(PARENT_SITE_REF)
-                        .type(GraphQLString))
+                        .type(GraphQLString)
+                        .dataFetcher(env -> {
+                            SiteRefStructure parentSiteRef = ((Parking) env.getSource()).getParentSiteRef();
+                            if (parentSiteRef != null) {
+                                return parentSiteRef.getRef();
+                            }
+                            return null;
+                        })
+                )
                 .build();
     }
 }

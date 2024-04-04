@@ -41,12 +41,14 @@ public class ShopImportTest extends TiamatIntegrationTest {
 
     @Test
     public void testSemiColonFile() throws IOException {
+        poiClassRepository.deleteAll();
         launchImportForFile("src/test/resources/manualImports/shop/poi_pdv_correct_sep_semi_colon.csv");
         checkCompleteFile();
     }
 
    @Test
     public void testCommaFile() throws IOException {
+       poiClassRepository.deleteAll();
         launchImportForFile("src/test/resources/manualImports/shop/poi_pdv_correct_sep_comma.csv");
         checkCompleteFile();
     }

@@ -50,11 +50,16 @@ import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.model.WaitingRoomEquipment;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.rutebanken.tiamat.repository.CleanTablesTools;
 import org.rutebanken.tiamat.service.stopplace.MultiModalStopPlaceEditor;
 import org.rutebanken.tiamat.time.ExportTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -86,6 +91,14 @@ public class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLReso
     private ExportTimeZone exportTimeZone;
 
     private Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Autowired
+    private CleanTablesTools cleanTableTools;
+
+
 
     @Before
     public void cleanReceivedJMS(){
@@ -135,9 +148,12 @@ public class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLReso
     @Test
     public void mutateStopPlaceWithPlaceEquipmentOnQuay() {
 
+        cleanTableTools.cleanInstalledEquipments();
+
         var quay = new Quay();
         var firstQuayName = "quay to add place equipment on";
         quay.setName(new EmbeddableMultilingualString(firstQuayName));
+        quay.setCentroid(geometryFactory.createPoint(new Coordinate(10, 59)));
 
         var stopPlaceName = "StopPlace";
         var stopPlace = new StopPlace(new EmbeddableMultilingualString(stopPlaceName));
@@ -1875,6 +1891,8 @@ public class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLReso
 
     @Test
     public void testSimpleMutatePlaceEquipmentSignPrivateCode() throws Exception {
+
+        cleanTableTools.cleanInstalledEquipments();
 
         StopPlace stopPlace = new StopPlace();
         stopPlace.setName(new EmbeddableMultilingualString("Name"));

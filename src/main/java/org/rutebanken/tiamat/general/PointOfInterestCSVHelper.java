@@ -465,4 +465,9 @@ public class PointOfInterestCSVHelper {
         return parentClassification;
 
     }
+
+    public void clearClassificationCache(){
+        parentClassificationCache.clear();
+        childClassificationCache.clear();
+    }
 }

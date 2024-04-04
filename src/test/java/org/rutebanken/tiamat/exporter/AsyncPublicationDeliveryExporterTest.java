@@ -44,6 +44,7 @@ import org.rutebanken.tiamat.model.job.ExportJob;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
+import org.rutebanken.tiamat.repository.CleanTablesTools;
 import org.rutebanken.tiamat.repository.ExportJobRepository;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryTestHelper;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
@@ -108,6 +109,9 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Autowired
+    private CleanTablesTools cleanTablesTools;
+
     @Test
     public void test() throws InterruptedException, JAXBException, IOException, SAXException {
 
@@ -135,6 +139,9 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
             quay.setPublicCode("quay" + i);
             quay.setCentroid(geometryFactory.createPoint(new Coordinate(48, 2)));
             quay.setZipCode("75000");
+            Value qValue = new Value();
+            qValue.getItems().add("TEST:Quay:"+i);
+            quay.getKeyValues().put("imported-id", qValue);
 
             stopPlace.getQuays().add(quay);
 
@@ -286,6 +293,9 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         quay1.setNetexId(quayNetexId);
         quay1.setVersion(1L);
         quay1.setTransportMode(org.rutebanken.tiamat.model.VehicleModeEnumeration.BUS);
+        Value qValue = new Value();
+        qValue.getItems().add("TEST:Quay:1");
+        quay1.getKeyValues().put("imported-id", qValue);
 
         StopPlace stopPlace1 = new StopPlace(new EmbeddableMultilingualString("stop place in publication delivery"));
         stopPlace1.getTariffZones().add(new TariffZoneRef(tariffZoneV3));

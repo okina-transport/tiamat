@@ -232,13 +232,15 @@ public class StopPlaceRegisterGraphQLSchema {
 
         GraphQLObjectType tariffZoneObjectType = tariffZoneObjectTypeCreator.create(zoneCommandFieldList);
 
+        GraphQLObjectType poiClassification = CustomGraphQLTypes.pointOfInterestClassificationObjectType;
+
         MutableTypeResolver stopPlaceTypeResolver = new MutableTypeResolver();
         MutableTypeResolver parkingTypeResolver = new MutableTypeResolver();
         MutableTypeResolver pointOfInterestTypeResolver = new MutableTypeResolver();
 
         List<GraphQLFieldDefinition> stopPlaceInterfaceFields = stopPlaceInterfaceCreator.createCommonInterfaceFields(tariffZoneObjectType, topographicPlaceObjectType, validBetweenObjectType);
         List<GraphQLFieldDefinition> parkingInterfaceFields = parkingInterfaceCreator.createCommonInterfaceFields(topographicPlaceObjectType, validBetweenObjectType);
-        List<GraphQLFieldDefinition> pointOfInterestInterfaceFields = pointOfInterestInterfaceCreator.createCommonInterfaceFields(topographicPlaceObjectType, validBetweenObjectType);
+        List<GraphQLFieldDefinition> pointOfInterestInterfaceFields = pointOfInterestInterfaceCreator.createCommonInterfaceFields(topographicPlaceObjectType, validBetweenObjectType, poiClassification);
 
         GraphQLInterfaceType stopPlaceInterface = stopPlaceInterfaceCreator.createInterface(stopPlaceInterfaceFields, commonFieldsList, stopPlaceTypeResolver);
         GraphQLInterfaceType parkingInterface = parkingInterfaceCreator.createInterface(parkingInterfaceFields, commonFieldsList, parkingTypeResolver);

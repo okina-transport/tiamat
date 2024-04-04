@@ -33,6 +33,7 @@ import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.model.job.ExportJob;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.repository.ExportJobRepository;
+import org.rutebanken.tiamat.model.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXException;
@@ -212,6 +213,9 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
             stopPlace.setProvider("test");
             stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
 
+            Value spValue = new Value();
+            spValue.getItems().add("TEST:StopPlace:"+i);
+            stopPlace.getKeyValues().put("imported-id", spValue);
 
             Quay quay = new Quay();
             quay.setNetexId("NSR:Quay:" + i);
@@ -219,6 +223,10 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
             quay.setPublicCode("quay" + i);
             quay.setCentroid(geometryFactory.createPoint(new Coordinate(48, 2)));
             quay.setZipCode("75000");
+
+            Value qValue = new Value();
+            qValue.getItems().add("TEST:Quay:"+i);
+            quay.getKeyValues().put("imported-id", qValue);
 
             stopPlace.getQuays().add(quay);
 

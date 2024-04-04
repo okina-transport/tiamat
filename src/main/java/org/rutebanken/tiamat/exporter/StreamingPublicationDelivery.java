@@ -304,13 +304,18 @@ public class StreamingPublicationDelivery {
                 KeyListStructure keyList = zone.getKeyList();
                 if (keyList != null && keyList.getKeyValue() != null) {
                     List<KeyValueStructure> keyValue = keyList.getKeyValue();
-                    for (KeyValueStructure structure : keyValue) {
+                    Iterator<KeyValueStructure> iterator = keyValue.iterator();
+                    while (iterator.hasNext()) {
+                        KeyValueStructure structure = iterator.next();
                         if (structure != null && ("imported-id".equals(structure.getKey()) || "fare-zone".equals(structure.getKey()))) {
-                            structure.setValue(structure.getValue().replace("##3A##",":"));
-                            if(StringUtils.isNotBlank(prefix) && structure.getValue().contains(":")){
+                            structure.setValue(structure.getValue().replace("##3A##", ":"));
+                            if (StringUtils.isNotBlank(prefix) && structure.getValue().contains(":")) {
                                 String oldString = structure.getValue().split(":")[0];
                                 structure.setValue(structure.getValue().replace(oldString, prefix));
                             }
+                        }
+                        if (structure != null && StringUtils.isEmpty(structure.getValue())){
+                            iterator.remove();
                         }
                     }
                 }

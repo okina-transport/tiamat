@@ -19,19 +19,19 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.TypeResolver;
+import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.SiteRefStructure;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static graphql.Scalars.GraphQLString;
+import static graphql.Scalars.*;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CHANGED_BY;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.OUTPUT_TYPE_PARKING_INTERFACE;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.TOPOGRAPHIC_PLACE;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.VALID_BETWEEN;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.VERSION_COMMENT;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.parkingReservationEnum;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.parkingTypeEnum;
 
 @Component
 public class ParkingInterfaceCreator {
@@ -52,6 +52,39 @@ public class ParkingInterfaceCreator {
         parkingInterfaceFields.add(newFieldDefinition()
                 .name(VALID_BETWEEN)
                 .type(validBetweenObjectType).build());
+        parkingInterfaceFields.add(newFieldDefinition()
+                .name(PRINCIPAL_CAPACITY)
+                .type(GraphQLBigInteger).build());
+        parkingInterfaceFields.add(newFieldDefinition()
+                .name(PARKING_TYPE)
+                .type(parkingTypeEnum).build());
+        parkingInterfaceFields.add(newFieldDefinition()
+                .name(OVERNIGHT_PARKING_PERMITTED)
+                .type(GraphQLBoolean).build());
+        parkingInterfaceFields.add(newFieldDefinition()
+                .name(REAL_TIME_OCCUPANCY_AVAILABLE)
+                .type(GraphQLBoolean).build());
+        parkingInterfaceFields.add(newFieldDefinition()
+                .name(PARKING_RESERVATION)
+                .type(parkingReservationEnum).build());
+        parkingInterfaceFields.add(newFieldDefinition()
+                .name(BOOKING_URL)
+                .type(GraphQLString).build());
+        parkingInterfaceFields.add(newFieldDefinition()
+                .name(FREE_PARKING_OUT_OF_HOURS)
+                .type(GraphQLBoolean).build());
+        parkingInterfaceFields.add(newFieldDefinition()
+                .name(PARENT_SITE_REF)
+                .type(GraphQLString)
+                .dataFetcher(env -> {
+                    SiteRefStructure parentSiteRef = ((Parking) env.getSource()).getParentSiteRef();
+                    if (parentSiteRef != null) {
+                        return parentSiteRef.getRef();
+                    }
+                    return null;
+                })
+
+                .build());
         return parkingInterfaceFields;
     }
 

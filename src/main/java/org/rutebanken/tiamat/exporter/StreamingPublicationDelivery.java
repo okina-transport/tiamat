@@ -59,7 +59,6 @@ import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static javax.xml.bind.JAXBContext.newInstance;
 
@@ -127,6 +126,7 @@ public class StreamingPublicationDelivery {
 
     /**
      * Do the last steps at the end of the export
+     *
      * @param outputStream
      * @param mappedStopPlaceCount
      * @param mappedParkingCount
@@ -135,13 +135,14 @@ public class StreamingPublicationDelivery {
      * @param mappedGroupOfStopPlacesCount
      * @param netexGeneralFrame
      * @param listMembers
+     * @param nameNetexStop
      * @throws JAXBException
      * @throws IOException
      * @throws SAXException
      */
     private void completeStreamingProcess(OutputStream outputStream, AtomicInteger mappedStopPlaceCount, AtomicInteger mappedParkingCount, AtomicInteger mappedTariffZonesCount,
                                           AtomicInteger mappedTopographicPlacesCount, AtomicInteger mappedGroupOfStopPlacesCount,
-                                          GeneralFrame netexGeneralFrame, List<JAXBElement<? extends EntityStructure>> listMembers) throws JAXBException, IOException, SAXException {
+                                          GeneralFrame netexGeneralFrame, List<JAXBElement<? extends EntityStructure>> listMembers, String nameNetexStop) throws JAXBException, IOException, SAXException {
 
 
         List<JAXBElement<? extends EntityStructure>> filteredListMembers = filterDuplicates(listMembers);
@@ -153,7 +154,7 @@ public class StreamingPublicationDelivery {
         general_VersionFrameStructure.withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(filteredListMembers);
         netexGeneralFrame.withMembers(general_VersionFrameStructure);
 
-        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame,"idSite", LocalDateTime.now());
+        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame,StringUtils.isNotEmpty(nameNetexStop) ? nameNetexStop : "MOBIITI", LocalDateTime.now());
 
         Marshaller marshaller = createMarshaller();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -185,7 +186,9 @@ public class StreamingPublicationDelivery {
      * @throws SAXException
      */
     public void streamForAsyncExportJob(OutputStream outputStream, Provider provider, LocalDateTime localDateTime, Long exportJobId) throws JAXBException, IOException, SAXException {
-        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime, ExportTypeEnumeration.STOP_PLACE);
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame =
+                tiamatGeneralFrameExporter.createTiamatGeneralFrame(StringUtils.isNotEmpty(provider.getChouetteInfo().getNameNetexStop()) ? provider.getChouetteInfo().getNameNetexStop() : "MOBI-ITI",
+                        localDateTime, ExportTypeEnumeration.STOP_PLACE);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
         AtomicInteger mappedParkingCount = new AtomicInteger();
@@ -235,7 +238,7 @@ public class StreamingPublicationDelivery {
 
         prepareTariffZones(mappedTariffZonesCount, listMembers, exportJobId, totalIdsToExport, provider.getChouetteInfo().getNameNetexStop());
 
-        completeStreamingProcess(outputStream, mappedStopPlaceCount, mappedParkingCount, mappedTariffZonesCount, mappedTopographicPlacesCount, mappedGroupOfStopPlacesCount, netexGeneralFrame, listMembers);
+        completeStreamingProcess(outputStream, mappedStopPlaceCount, mappedParkingCount, mappedTariffZonesCount, mappedTopographicPlacesCount, mappedGroupOfStopPlacesCount, netexGeneralFrame, listMembers, provider.getChouetteInfo().getNameNetexStop());
     }
 
     /**

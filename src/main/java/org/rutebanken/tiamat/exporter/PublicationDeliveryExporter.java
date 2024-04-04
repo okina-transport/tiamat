@@ -17,7 +17,6 @@ package org.rutebanken.tiamat.exporter;
 
 import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
-import org.rutebanken.netex.model.SiteRefStructure;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -151,8 +150,7 @@ public class PublicationDeliveryExporter {
         return new PublicationDeliveryStructure()
                 .withVersion("1.1:FR-NETEX-2.2")
                 .withPublicationTimestamp(localDateTime)
-                .withParticipantRef(idSite)
-                .withParticipantRef("MOBIITI");
+                .withParticipantRef(idSite);
     }
 
     @SuppressWarnings("unchecked")

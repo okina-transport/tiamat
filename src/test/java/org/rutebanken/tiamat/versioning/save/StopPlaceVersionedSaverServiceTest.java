@@ -21,6 +21,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.repository.CleanTablesTools;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.TestingAuthenticationToken;
@@ -49,9 +50,13 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
     @Autowired
     private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
 
+    @Autowired
+    private CleanTablesTools cleanTableTools;
+
 
     @Test
     public void saveStopPlaceWithInstalledEquipment() {
+        cleanTableTools.cleanInstalledEquipments();
         Quay quay = new Quay();
         quay.setName(new EmbeddableMultilingualString("quay with place equipments"));
         PlaceEquipment quayPlaceEquipment = new PlaceEquipment();
@@ -502,6 +507,8 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
 
     @Test
     public void createNewVersionOfStopWithPlaceEquipment() {
+
+        cleanTableTools.cleanInstalledEquipments();
 
 
         StopPlace stopPlace = new StopPlace();

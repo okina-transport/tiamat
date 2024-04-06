@@ -30,6 +30,7 @@ import org.rutebanken.tiamat.repository.*;
 import org.rutebanken.tiamat.service.BlobStoreService;
 import org.rutebanken.tiamat.service.TariffZonesLookupService;
 import org.rutebanken.tiamat.service.TopographicPlaceLookupService;
+import org.rutebanken.tiamat.service.stopplace.StopPlaceQuayDeleterToChouette;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.GroupOfStopPlacesSaverService;
 import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
@@ -137,6 +138,9 @@ public abstract class TiamatIntegrationTest {
     @MockBean
     protected BlobStoreService blobStoreService ;
 
+    @MockBean
+    protected StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
+
     @Autowired
     protected ReflectionAuthorizationService reflectionAuthorizationService;
 
@@ -156,6 +160,7 @@ public abstract class TiamatIntegrationTest {
         when(providerRepository.getProviders()).thenReturn(providers);
         when(providerRepository.getProvider(anyLong())).thenReturn(providers.get(0));
         when(providerRepository.getByReferential("PROV1")).thenReturn(Optional.of(prov1));
+        when(stopPlaceQuayDeleterToChouette.delete(any())).thenReturn("");
 
       //  when(reflectionAuthorizationService.isAuthorized(eq(ROLE_EDIT_STOPS),any())).thenReturn(true);
 

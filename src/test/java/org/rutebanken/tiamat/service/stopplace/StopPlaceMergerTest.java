@@ -34,6 +34,7 @@ import org.rutebanken.tiamat.model.TariffZoneRef;
 import org.rutebanken.tiamat.model.ValidBetween;
 import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.model.VehicleModeEnumeration;
+import org.rutebanken.tiamat.repository.CleanTablesTools;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 
@@ -58,11 +59,16 @@ public class StopPlaceMergerTest extends TiamatIntegrationTest {
     @Autowired
     private MultiModalStopPlaceEditor multiModalStopPlaceEditor;
 
+    @Autowired
+    private CleanTablesTools cleanTableTools;
+
     private Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 
     @Test
     @Transactional
     public void testMergeStopPlaces() {
+
+        cleanTableTools.cleanInstalledEquipments();
 
         Instant atTestStart = now;
 

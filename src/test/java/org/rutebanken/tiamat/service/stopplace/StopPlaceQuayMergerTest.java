@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.rutebanken.tiamat.repository.CleanTablesTools;
 import org.rutebanken.tiamat.service.stopplace.StopPlaceQuayMerger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
@@ -43,6 +44,9 @@ public class StopPlaceQuayMergerTest extends TiamatIntegrationTest {
 
     @Autowired
     private MultiModalStopPlaceEditor multiModalStopPlaceEditor;
+
+    @Autowired
+    private CleanTablesTools cleanTableTools;
 
     /**
      * Test added to reproduce/verify NRP-1791
@@ -87,6 +91,8 @@ public class StopPlaceQuayMergerTest extends TiamatIntegrationTest {
     @Test
     @Transactional
     public void testMergeQuays() {
+
+        cleanTableTools.cleanInstalledEquipments();
 
         StopPlace fromStopPlace = new StopPlace();
         fromStopPlace.setName(new EmbeddableMultilingualString("Name"));
@@ -180,6 +186,8 @@ public class StopPlaceQuayMergerTest extends TiamatIntegrationTest {
     @Test
     @Transactional
     public void testMergeQuaysOfChildStop() {
+
+        cleanTableTools.cleanInstalledEquipments();
 
         StopPlace stopPlace = new StopPlace();
         stopPlace.setVersion(1L);

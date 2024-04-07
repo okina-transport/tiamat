@@ -68,7 +68,7 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
         }
 
         if (quay.getPrivateCode() != null && quay.getPrivateCode().getValue() != null) {
-            quay2.setPrivateCode(new org.rutebanken.tiamat.model.PrivateCodeStructure(quay.getPrivateCode().getValue(), null));
+            quay2.setPrivateCode(new org.rutebanken.tiamat.model.PrivateCodeStructure(quay.getPrivateCode().getValue(), quay.getPrivateCode().getType()));
         }
     }
 

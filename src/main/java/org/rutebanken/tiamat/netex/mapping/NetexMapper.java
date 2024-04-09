@@ -17,14 +17,21 @@ package org.rutebanken.tiamat.netex.mapping;
 
 import ma.glasnost.orika.*;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.netex.model.*;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.PlaceEquipment;
 import org.rutebanken.tiamat.netex.mapping.mapper.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.xml.bind.JAXBElement;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,6 +43,10 @@ public class NetexMapper {
     private static final Logger logger = LoggerFactory.getLogger(NetexMapper.class);
 
     private final MapperFacade facade;
+
+    @Autowired
+    private GeometryFactory geometryFactory;
+
 
     @Autowired
     public NetexMapper(List<Converter> converters, KeyListToKeyValuesMapMapper keyListToKeyValuesMapMapper,
@@ -119,6 +130,7 @@ public class NetexMapper {
                 .exclude("cardsAccepted")
                 .exclude("currenciesAccepted")
                 .exclude("accessModes")
+//                .exclude("parkingProperties")
                 .fieldBToA("netexId", "id")
                 .customize(new ParkingMapper())
                 .byDefault()
@@ -145,6 +157,11 @@ public class NetexMapper {
         mapperFactory.classMap(ParkingProperties.class, org.rutebanken.tiamat.model.ParkingProperties.class)
                 .exclude("spaces")
                 .customize(new ParkingPropertyMapper())
+                .fieldBToA("netexId", "id")
+                .byDefault()
+                .register();
+
+        mapperFactory.classMap(ParkingCapacity.class, org.rutebanken.tiamat.model.ParkingCapacity.class)
                 .fieldBToA("netexId", "id")
                 .byDefault()
                 .register();
@@ -184,6 +201,7 @@ public class NetexMapper {
                 .register();
 
         mapperFactory.classMap(CycleStorageEquipment.class, org.rutebanken.tiamat.model.CycleStorageEquipment.class)
+                .fieldBToA("netexId", "id")
                 .byDefault()
                 .register();
 
@@ -379,9 +397,97 @@ public class NetexMapper {
         return Optional.empty();
     }
 
+    public void parseToSetParkingGlobalInformations(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {
+        if (netexParking.getId() != null) parking.setNetexId(netexParking.getId());
+
+        parking.setChanged(Instant.from(LocalDateTime.now().atZone(ZoneId.of("Europe/Paris")).toInstant()));
+
+        if (netexParking.getCreated() != null) parking.setCreated(Instant.from(netexParking.getCreated().atZone(ZoneId.of("Europe/Paris")).toInstant()));
+        if (netexParking.getVersion() != null) parking.setVersion(Long.parseLong(netexParking.getVersion()));
+        if (netexParking.getName() != null) parking.setName(new EmbeddableMultilingualString(netexParking.getName().getValue()));
+        if (netexParking.getCentroid().getLocation() != null) parking.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(String.valueOf(netexParking.getCentroid().getLocation().getLongitude())), Double.parseDouble(String.valueOf(netexParking.getCentroid().getLocation().getLatitude())))));
+        if (netexParking.getDescription() != null) parking.setDescription(new EmbeddableMultilingualString(netexParking.getDescription().getValue()));
+        if (netexParking.getBookingUrl() != null) parking.setBookingUrl(netexParking.getBookingUrl());
+        if (netexParking.getPostalAddress() != null) parking.setInsee(netexParking.getPostalAddress().getPostalRegion());
+        if (netexParking.isAllAreasWheelchairAccessible() != null) parking.setAllAreasWheelchairAccessible(netexParking.isAllAreasWheelchairAccessible());
+        if (netexParking.getParkingType() != null) parking.setParkingType(org.rutebanken.tiamat.model.ParkingTypeEnumeration.valueOf(netexParking.getParkingType().name()));
+        if (netexParking.getTotalCapacity() != null) parking.setTotalCapacity(netexParking.getTotalCapacity());
+        if (netexParking.isRechargingAvailable() != null) parking.setRechargingAvailable(netexParking.isRechargingAvailable());
+        if (netexParking.getParentSiteRef() != null) parking.setParentSiteRef(mapToNetexModel(netexParking.getParentSiteRef()));
+    }
+
+    public void parseToSetPlaceEquipments(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {
+        PlaceEquipment placeEquipment = new PlaceEquipment();
+
+        for (JAXBElement<?> parkingEquipmentElement : netexParking.getPlaceEquipments().getInstalledEquipmentRefOrInstalledEquipment()) {
+            if (parkingEquipmentElement.getValue() instanceof CycleStorageEquipment) {
+                CycleStorageEquipment equipment = (CycleStorageEquipment) parkingEquipmentElement.getValue();
+                org.rutebanken.tiamat.model.CycleStorageEquipment cycleStorageEquipment = mapToNetexModel((CycleStorageEquipment) parkingEquipmentElement.getValue());
+
+                if (netexParking.getPlaceEquipments() != null) cycleStorageEquipment.setNetexId(netexParking.getPlaceEquipments().getId());
+                if (equipment.getNumberOfSpaces() != null) cycleStorageEquipment.setNumberOfSpaces(equipment.getNumberOfSpaces());
+                if (equipment.getCycleStorageType() != null) cycleStorageEquipment.setCycleStorageType(org.rutebanken.tiamat.model.CycleStorageEnumeration.fromValue(equipment.getCycleStorageType().value()));
+
+                placeEquipment.setNetexId(null);
+                placeEquipment.getInstalledEquipment().add(cycleStorageEquipment);
+                parking.setPlaceEquipments(placeEquipment);
+            }
+        }
+        parking.setPlaceEquipments(placeEquipment);
+    }
+
+    public void parseToSetParkingAreas(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {
+        List<org.rutebanken.tiamat.model.ParkingArea> parkingAreas = new ArrayList<>();
+
+        for (JAXBElement<?> parkingAreaElement : netexParking.getParkingAreas().getParkingAreaRefOrParkingArea_()) {
+            if (parkingAreaElement.getValue() instanceof ParkingArea) {
+                org.rutebanken.tiamat.model.ParkingArea tiamatArea = mapToNetexModel((ParkingArea) parkingAreaElement.getValue());
+                parkingAreas.add(tiamatArea);
+            }
+            if (parkingAreaElement.getValue() instanceof VehiclePoolingParkingArea) {
+                org.rutebanken.tiamat.model.ParkingArea tiamatArea = mapToNetexModel((VehiclePoolingParkingArea) parkingAreaElement.getValue());
+                parkingAreas.add(tiamatArea);
+            }
+            if (parkingAreaElement.getValue() instanceof VehicleSharingParkingArea) {
+                org.rutebanken.tiamat.model.ParkingArea tiamatArea = mapToNetexModel((VehicleSharingParkingArea) parkingAreaElement.getValue());
+                parkingAreas.add(tiamatArea);
+            }
+        }
+        parking.setParkingAreas(parkingAreas);
+    }
+
+    public void parseToSetParkingProperties(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {
+        List<org.rutebanken.tiamat.model.ParkingProperties> parkingPropertiesList = new ArrayList<>();
+
+        for (ParkingProperties parkingPropertiesElement : netexParking.getParkingProperties().getParkingProperties()) {
+            List<Object> modifiedCapacityList = new ArrayList<>();
+
+            for (Object parkingCapacityElement : parkingPropertiesElement.getSpaces().getParkingCapacityRefOrParkingCapacity()) {
+                modifiedCapacityList.add(mapToNetexModel(parkingCapacityElement));
+            }
+            parkingPropertiesElement.getSpaces().getParkingCapacityRefOrParkingCapacity().clear();
+            parkingPropertiesElement.getSpaces().withParkingCapacityRefOrParkingCapacity(modifiedCapacityList.toArray());
+            parkingPropertiesList.add(mapToNetexModel(parkingPropertiesElement));
+        }
+        parking.setParkingProperties(parkingPropertiesList);
+    }
+
+    public void parseToSetParkingPaymentProcess(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {
+        List<org.rutebanken.tiamat.model.ParkingPaymentProcessEnumeration> paymentProcesses = new ArrayList<>();
+
+        for (ParkingPaymentProcessEnumeration payment : netexParking.getParkingPaymentProcess()) {
+            paymentProcesses.add(mapToNetexModel(payment));
+        }
+
+        parking.getParkingPaymentProcess().addAll(paymentProcesses);
+    }
 
     public Parking mapToNetexModel(org.rutebanken.tiamat.model.Parking tiamatParking) {
         return facade.map(tiamatParking, Parking.class);
+    }
+
+    public org.rutebanken.tiamat.model.Parking mapToNetexModel(Parking netexParking) {
+        return facade.map(netexParking, org.rutebanken.tiamat.model.Parking.class);
     }
 
     public PointOfInterest mapToNetexModel(org.rutebanken.tiamat.model.PointOfInterest tiamatPointOfInterest) {
@@ -449,6 +555,10 @@ public class NetexMapper {
 
     public org.rutebanken.tiamat.model.ParkingCapacity mapToNetexModel(Object parkingCapacity) {
         return facade.map(parkingCapacity, org.rutebanken.tiamat.model.ParkingCapacity.class);
+    }
+
+    public org.rutebanken.tiamat.model.PlaceEquipment mapToNetexModel(PlaceEquipments_RelStructure parkingEquipment) {
+        return facade.map(parkingEquipment, org.rutebanken.tiamat.model.PlaceEquipment.class);
     }
 
     public org.rutebanken.tiamat.model.CycleStorageEquipment mapToNetexModel(CycleStorageEquipment parkingEquipment) {

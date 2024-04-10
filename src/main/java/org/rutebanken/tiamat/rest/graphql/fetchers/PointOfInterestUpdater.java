@@ -167,20 +167,24 @@ class PointOfInterestUpdater implements DataFetcher {
 
         if (input.get(POI_FACILITY_SET) != null) {
             Map facilitySet = (Map) input.get(POI_FACILITY_SET);
-            TicketingFacilityEnumeration ticketingFacility = (TicketingFacilityEnumeration) facilitySet.get("ticketingFacility");
-            TicketingServiceFacilityEnumeration ticketingServiceFacility = (TicketingServiceFacilityEnumeration) facilitySet.get("ticketingServiceFacility");
-            PointOfInterestFacilitySet existingFacilitySet = pointOfInterestFacilitySetRepository.findFirstByNetexIdOrderByVersionDesc(updatedPointOfInterest.getPointOfInterestFacilitySet().getNetexId());
 
-            if (existingFacilitySet != null && !existingFacilitySet.getTicketingFacility().equals(ticketingFacility)) {
-                existingFacilitySet.setTicketingFacility(ticketingFacility);
-                isUpdated = true;
+            if (facilitySet.containsKey("ticketingFacility")){
+                TicketingFacilityEnumeration ticketingFacility = (TicketingFacilityEnumeration) facilitySet.get("ticketingFacility");
+                TicketingServiceFacilityEnumeration ticketingServiceFacility = (TicketingServiceFacilityEnumeration) facilitySet.get("ticketingServiceFacility");
+                PointOfInterestFacilitySet existingFacilitySet = pointOfInterestFacilitySetRepository.findFirstByNetexIdOrderByVersionDesc(updatedPointOfInterest.getPointOfInterestFacilitySet().getNetexId());
+
+                if (existingFacilitySet != null && !existingFacilitySet.getTicketingFacility().equals(ticketingFacility)) {
+                    existingFacilitySet.setTicketingFacility(ticketingFacility);
+                    isUpdated = true;
+                }
+
+                if (existingFacilitySet != null && !existingFacilitySet.getTicketingServiceFacility().equals(ticketingServiceFacility)) {
+                    existingFacilitySet.setTicketingServiceFacility(ticketingServiceFacility);
+                    isUpdated = true;
+                }
+                updatedPointOfInterest.setPointOfInterestFacilitySet(existingFacilitySet);
             }
 
-            if (existingFacilitySet != null && !existingFacilitySet.getTicketingServiceFacility().equals(ticketingServiceFacility)) {
-                existingFacilitySet.setTicketingServiceFacility(ticketingServiceFacility);
-                isUpdated = true;
-            }
-            updatedPointOfInterest.setPointOfInterestFacilitySet(existingFacilitySet);
         }
 
         if (input.get(POI_CLASSIFICATIONS) != null) {

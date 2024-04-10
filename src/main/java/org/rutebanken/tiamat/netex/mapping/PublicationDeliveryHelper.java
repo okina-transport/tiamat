@@ -58,6 +58,10 @@ public class PublicationDeliveryHelper {
         return siteFrame.getParkings() != null && siteFrame.getParkings().getParking() != null;
     }
 
+    public boolean hasPointOfInterests(SiteFrame siteFrame) {
+        return siteFrame.getPointsOfInterest() != null && siteFrame.getPointsOfInterest().getPointOfInterest() != null;
+    }
+
     public int numberOfStops(SiteFrame netexSiteFrame) {
         return hasStops(netexSiteFrame) ? netexSiteFrame.getStopPlaces().getStopPlace_().size() : 0;
     }

@@ -15,8 +15,6 @@
 
 package org.rutebanken.tiamat.versioning.save;
 
-
-import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
@@ -26,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 
 @Transactional
 @Service
@@ -37,9 +37,6 @@ public class PointOfInterestVersionedSaverService {
     private PointOfInterestRepository poiRepository;
 
     @Autowired
-    private UsernameFetcher usernameFetcher;
-
-    @Autowired
     private VersionIncrementor versionIncrementor;
 
     @Autowired
@@ -47,14 +44,29 @@ public class PointOfInterestVersionedSaverService {
 
     public PointOfInterest saveNewVersion(PointOfInterest newVersion) {
 
+        PointOfInterest existing = poiRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
+
         PointOfInterest result;
+        if (existing != null) {
+            logger.trace("existing: {}", existing);
+            logger.trace("new: {}", newVersion);
+
+            newVersion.setCreated(existing.getCreated());
+            newVersion.setChanged(Instant.now());
+            newVersion.setVersion(existing.getVersion());
+
+            poiRepository.delete(existing);
+        } else {
+            newVersion.setCreated(Instant.now());
+        }
+
+
         newVersion.setValidBetween(null);
         versionIncrementor.initiateOrIncrement(newVersion);
-        versionIncrementor.initiateOrIncrementAccessibilityAssesmentVersion(newVersion);
-        newVersion.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
+
         result = poiRepository.save(newVersion);
 
-        logger.info("Saved POI {}, version {}, name {}", result.getNetexId(), result.getVersion(), result.getName());
+        logger.info("Saved point of interest property {}, version {}", result.getNetexId(), result.getVersion());
 
         metricsService.registerEntitySaved(newVersion.getClass());
         return result;

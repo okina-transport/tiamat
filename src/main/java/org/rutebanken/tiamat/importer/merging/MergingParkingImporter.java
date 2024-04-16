@@ -35,6 +35,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 @Component
@@ -147,8 +148,23 @@ public class MergingParkingImporter {
 
         Parking copyParking = versionCreator.createCopy(existingParking, Parking.class);
 
-        boolean keyValuesChanged = keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingParking, copyParking);
-        boolean centroidChanged = (copyParking.getCentroid() != null && incomingParking.getCentroid() != null && !copyParking.getCentroid().equals(incomingParking.getCentroid()));
+        boolean keyValuesChanged = false;
+        if ((copyParking.getKeyValues() == null && incomingParking.getKeyValues() != null) ||
+                (copyParking.getKeyValues() != null && incomingParking.getKeyValues() != null
+                        && !copyParking.getKeyValues().equals(incomingParking.getKeyValues()))) {
+            for (Map.Entry<String, Value> entry : incomingParking.getKeyValues().entrySet()) {
+                keyValueListAppender.appendKeyValue(entry.getKey(), incomingParking, copyParking);
+            }
+            keyValuesChanged = true;
+        }
+
+        boolean centroidChanged = false;
+        if ((copyParking.getCentroid() == null && incomingParking.getCentroid() != null) ||
+                (copyParking.getCentroid() != null && incomingParking.getCentroid() != null
+                        && !copyParking.getCentroid().equals(incomingParking.getCentroid()))) {
+            copyParking.setCentroid(incomingParking.getCentroid());
+            centroidChanged = true;
+        }
 
         boolean allAreasWheelchairAccessibleChanged = false;
         if ((copyParking.isAllAreasWheelchairAccessible() == null && incomingParking.isAllAreasWheelchairAccessible() != null) ||

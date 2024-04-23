@@ -1,0 +1,920 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><PublicationDelivery xmlns="http://www.netex.org.uk/netex" xmlns:acbs="http://www.ifopt.org.uk/acsb" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:ifopt="http://www.ifopt.org.uk/ifopt" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.1:FR-NETEX-2.2">
+    <PublicationTimestamp>2024-04-08T08:58:14Z</PublicationTimestamp>
+    <ParticipantRef>MOBIITI</ParticipantRef>
+    <dataObjects>
+        <SiteFrame id="MOBIITI:SiteFrame:312944401" modification="new" version="1">
+            <Description>Site frame ExportParams{topographicPlaceExportMode=RELEVANT, municipalityReferences=[], countyReferences=[], countryReferences=[], stopPlaceSearch=StopPlaceSearch{stopPlaceType=[], netexIdList=[], allVersions=false, withoutLocationOnly=false, withoutQuaysOnly=false, withDuplicatedQuayImportedIds=false, stopPlacesWithoutQuay=false, stopPlacesWithMultipleProducers=false, quaysWithMultipleProducers=false, nearbyStopPlaces=false, nearbyRadius=0, detectMultiModalPoints=false, withDistantQuays=false, withTags=[], tags=[], page=0, size=20}, tariffZoneExportMode=RELEVANT, providerId=1}</Description>
+            <FrameDefaults>
+                <DefaultLocale>
+                    <TimeZone>Europe/Paris</TimeZone>
+                </DefaultLocale>
+            </FrameDefaults>
+            <pointsOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:70" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>11091600256</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Cinéma des Écrins</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>6.077261</Longitude>
+                            <Latitude>45.055200</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:1" version="0">
+                        <AddressLine1>Residence les Martagons 222</AddressLine1>
+                        <Town>Auris</Town>
+                        <PostCode>38020</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:15.426" id="MOBIITI:AccessibilityAssessment:8054" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:15.426" id="8772" modification="new" version="1">
+<WheelchairAccess>true</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:4"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:71" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>11178198637</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Le mont veyrier</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>6.148593</Longitude>
+                            <Latitude>45.947981</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:2" version="0">
+                        <AddressLine1>475 Route des menthonnex</AddressLine1>
+                        <Town>Argonay</Town>
+                        <PostCode>74019</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:15.651" id="MOBIITI:AccessibilityAssessment:8055" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:15.651" id="8773" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:5"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:72" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>2181674851</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Comité Départemental d'Hygiène Sociale</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>4.841975</Longitude>
+                            <Latitude>45.754475</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:3" version="0">
+                        <AddressLine1>2 Rue de Marseille</AddressLine1>
+                        <Town>Lyon</Town>
+                        <PostCode>69387</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:16.075" id="MOBIITI:AccessibilityAssessment:8056" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:16.075" id="8774" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:5"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:73" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>11189752688</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Maison des associations</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>5.164041</Longitude>
+                            <Latitude>45.536960</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:4" version="0">
+                        <AddressLine1>185 Rue du Métras</AddressLine1>
+                        <Town>Artas</Town>
+                        <PostCode>38015</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:16.48" id="MOBIITI:AccessibilityAssessment:8057" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:16.48" id="8775" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:16"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:74" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>4352241897</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Pompes Funèbres Berger</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>5.631663</Longitude>
+                            <Latitude>45.600271</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:5" version="0">
+                        <AddressLine1>53 Rue du couvent</AddressLine1>
+                        <Town>Saint-Genix-sur-Guiers</Town>
+                        <PostCode>73236</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:17.005" id="MOBIITI:AccessibilityAssessment:8058" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:17.005" id="8776" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:17"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:75" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>11036138156</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Maison médicale de garde</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>5.911949</Longitude>
+                            <Latitude>45.564306</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:6" version="0">
+                        <AddressLine1>400 Faubourg mache</AddressLine1>
+                        <Town>Chambéry</Town>
+                        <PostCode>73065</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:17.261" id="MOBIITI:AccessibilityAssessment:8059" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:17.261" id="8777" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:18"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:76" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>11189799888</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Pages &amp; Partage</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>5.581620</Longitude>
+                            <Latitude>45.341735</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:7" version="0">
+                        <AddressLine1>Rue du 8 Mai 1945</AddressLine1>
+                        <Town>Saint-Jean-de-Moirans</Town>
+                        <PostCode>38400</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:17.674" id="MOBIITI:AccessibilityAssessment:8060" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:17.674" id="8778" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:23"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:77" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>11135125788</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Agence postale communale de La Charce</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>5.451631</Longitude>
+                            <Latitude>44.470638</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:8" version="0">
+                        <AddressLine1>100 Rue du Chateau</AddressLine1>
+                        <Town>La Charce</Town>
+                        <PostCode>26075</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:18.094" id="MOBIITI:AccessibilityAssessment:8061" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:18.094" id="8779" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:24"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:78" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>3647452566</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Caborne de Pierre</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>4.808543</Longitude>
+                            <Latitude>45.831965</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:9" version="0">
+                        <AddressLine1>101 Route des Crêtes</AddressLine1>
+                        <Town>Saint-Cyr-au-Mont-d'Or</Town>
+                        <PostCode>69191</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:18.6" id="MOBIITI:AccessibilityAssessment:8062" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:18.6" id="8780" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:25"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:79" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>11183709517</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Salle de Spectacles</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>4.394845</Longitude>
+                            <Latitude>45.282276</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:10" version="0">
+                        <AddressLine1>5a Route de Riotord</AddressLine1>
+                        <Town>Marlhes</Town>
+                        <PostCode>42139</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:19.321" id="MOBIITI:AccessibilityAssessment:8063" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:19.321" id="8781" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:26"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:80" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>11186485748</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Ruines du Château de Verneaux</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>5.347457</Longitude>
+                            <Latitude>45.935450</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:11" version="0">
+                        <AddressLine1>20 Chemin de Buya</AddressLine1>
+                        <Town>Ambutrix</Town>
+                        <PostCode>01008</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:19.509" id="MOBIITI:AccessibilityAssessment:8064" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:19.509" id="8782" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:28"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:81" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>11186114293</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Croix commémorative des enfants de la Thivillière</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>4.352883</Longitude>
+                            <Latitude>45.616558</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:12" version="0">
+                        <AddressLine1>48 Impasse de la Thivilliere</AddressLine1>
+                        <Town>Chazelles-sur-Lyon</Town>
+                        <PostCode>42059</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:19.804" id="MOBIITI:AccessibilityAssessment:8065" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:19.804" id="8783" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:29"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:82" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>11172692638</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Ancienne galerie vicat</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>5.722058</Longitude>
+                            <Latitude>45.208079</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:13" version="0">
+                        <AddressLine1>1777 Route de Clémencières</AddressLine1>
+                        <Town>Saint-Martin-le-Vinoux</Town>
+                        <PostCode>38423</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:19.965" id="MOBIITI:AccessibilityAssessment:8066" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:19.965" id="8784" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:30"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:83" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>11124010227</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Croix du clos du pin</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>6.499536</Longitude>
+                            <Latitude>45.942746</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:14" version="0">
+                        <AddressLine1>1515 Route de lormay</AddressLine1>
+                        <Town>Le Grand-Bornand</Town>
+                        <PostCode>74136</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:20.146" id="MOBIITI:AccessibilityAssessment:8067" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:20.146" id="8785" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:31"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:84" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>10013352246</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Fort de Loyasse</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>4.808998</Longitude>
+                            <Latitude>45.765592</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:15" version="0">
+                        <AddressLine1>87 Montée de l'Observance</AddressLine1>
+                        <Town>Lyon</Town>
+                        <PostCode>69389</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:20.329" id="MOBIITI:AccessibilityAssessment:8068" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:20.329" id="8786" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:32"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:85" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>8710929478</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Caves</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.198965</Longitude>
+                            <Latitude>45.548590</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:16" version="0">
+                        <AddressLine1>3 Rue de la Baricoune</AddressLine1>
+                        <Town>Perrier</Town>
+                        <PostCode>63275</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:20.54" id="MOBIITI:AccessibilityAssessment:8069" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:20.54" id="8787" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:33"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:86" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>1834679605</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Tour de la Mal-Coiffée</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.330836</Longitude>
+                            <Latitude>46.566391</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:17" version="0">
+                        <AddressLine1>7 Place de la Déportation</AddressLine1>
+                        <Town>Moulins</Town>
+                        <PostCode>03190</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:21.306" id="MOBIITI:AccessibilityAssessment:8070" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:21.306" id="8788" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:34"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:87" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>1803211150</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">Ferme à toit de chaume dite Ferme Perrel</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>4.101686</Longitude>
+                            <Latitude>44.955735</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:18" version="0">
+                        <AddressLine1>Moudeyres</AddressLine1>
+                        <Town>Moudeyres</Town>
+                        <PostCode>43144</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:21.492" id="MOBIITI:AccessibilityAssessment:8071" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:21.492" id="8789" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:35"/>
+                    </classifications>
+                </PointOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:88" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>1788408928</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>network</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="FR">La Maison du Terroir Beaujolais</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>4.586873</Longitude>
+                            <Latitude>46.154893</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:19" version="0">
+                        <AddressLine1>14 Allée du Terroir</AddressLine1>
+                        <Town>Beaujeu</Town>
+                        <PostCode>69018</PostCode>
+                    </PostalAddress>
+                    <AccessibilityAssessment created="2024-04-08T12:57:21.894" id="MOBIITI:AccessibilityAssessment:8072" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation created="2024-04-08T12:57:21.894" id="8790" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+<StepFreeAccess>unknown</StepFreeAccess>
+<EscalatorFreeAccess>unknown</EscalatorFreeAccess>
+<LiftFreeAccess>unknown</LiftFreeAccess>
+<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+<VisualSignsAvailable>unknown</VisualSignsAvailable>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <classifications>
+                        <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:37"/>
+                    </classifications>
+                </PointOfInterest>
+            </pointsOfInterest>
+            <pointOfInterestClassifications>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:3" modification="new" version="any">
+                    <Name>amenity</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:4" modification="new" version="any">
+                    <Name>cinema</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:5" modification="new" version="any">
+                    <Name>clinic</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:16" modification="new" version="any">
+                    <Name>community_centre</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:17" modification="new" version="any">
+                    <Name>crematorium</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:18" modification="new" version="any">
+                    <Name>hospital</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:23" modification="new" version="any">
+                    <Name>library</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:24" modification="new" version="any">
+                    <Name>post_office</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:25" modification="new" version="any">
+                    <Name>shelter</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:26" modification="new" version="any">
+                    <Name>theatre</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:27" modification="new" version="any">
+                    <Name>historic</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:28" modification="new" version="any">
+                    <Name>castle</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:29" modification="new" version="any">
+                    <Name>memorial</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:30" modification="new" version="any">
+                    <Name>ruins</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:31" modification="new" version="any">
+                    <Name>monument</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:32" modification="new" version="any">
+                    <Name>fort</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:33" modification="new" version="any">
+                    <Name>building</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:34" modification="new" version="any">
+                    <Name>tower</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:35" modification="new" version="any">
+                    <Name>farm</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:36" modification="new" version="any">
+                    <Name>tourism</Name>
+                </PointOfInterestClassification>
+                <PointOfInterestClassification id="MOBIITI:PointOfInterestClassification:37" modification="new" version="any">
+                    <Name>museum</Name>
+                </PointOfInterestClassification>
+            </pointOfInterestClassifications>
+            <pointOfInterestClassificationHierarchies>
+                <PointOfInterestClassificationHierarchy id="1" version="any">
+                    <Name>Main Hierarchy</Name>
+                    <members>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:3" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:4" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:3" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:5" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:3" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:16" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:3" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:17" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:3" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:18" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:3" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:23" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:3" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:24" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:3" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:25" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:3" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:26" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:27" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:28" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:27" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:29" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:27" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:30" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:27" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:31" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:27" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:32" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:27" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:33" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:27" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:34" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:27" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:35" version="any"/>
+                        </ClassificationHierarchyMember>
+                        <ClassificationHierarchyMember>
+                            <ParentClassificationRef ref="MOBIITI:PointOfInterestClassification:36" version="any"/>
+                            <PointOfInterestClassificationRef ref="MOBIITI:PointOfInterestClassification:37" version="any"/>
+                        </ClassificationHierarchyMember>
+                    </members>
+                </PointOfInterestClassificationHierarchy>
+            </pointOfInterestClassificationHierarchies>
+        </SiteFrame>
+    </dataObjects>
+</PublicationDelivery>

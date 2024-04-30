@@ -21,18 +21,18 @@ import org.locationtech.jts.geom.Coordinate;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.exporter.ExportTypeEnumeration;
+import org.rutebanken.tiamat.exporter.TypeEnumeration;
 import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
-import org.rutebanken.tiamat.exporter.async.ExportJobWorker;
+import org.rutebanken.tiamat.general.JobWorker;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
-import org.rutebanken.tiamat.model.job.ExportJob;
+import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobStatus;
-import org.rutebanken.tiamat.repository.ExportJobRepository;
+import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.model.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
@@ -62,7 +62,7 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
     StreamingPublicationDelivery streamingPublicationDelivery;
 
     @Autowired
-    ExportJobRepository exportJobRepository;
+    JobRepository jobRepository;
 
     @Autowired
     NetexXmlReferenceValidator netexXmlReferenceValidator;
@@ -81,9 +81,9 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
         File testPathFile = new File(testPath);
         testPathFile.mkdirs();
 
-        ExportJob exportJob = new ExportJob(JobStatus.PROCESSING);
-        exportJob.setFileName(fileNameWithoutExtention);
-        exportJob.setId(1L);
+        Job job = new Job(JobStatus.PROCESSING);
+        job.setFileName(fileNameWithoutExtention);
+        job.setId(1L);
         ExportParams exportParams = ExportParams.newExportParamsBuilder()
                                                 .setStopPlaceSearch(
                                                         StopPlaceSearch
@@ -92,16 +92,16 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
                                                                 .build())
                                                 .setProviderId(1L)
                                                 .build();
-        exportJob.setExportParams(exportParams);
+        job.setExportParams(exportParams);
 
         Provider provider = Collections.singletonList(providerRepository.getProvider(1L)).get(0);
         LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
 
 
-       ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, testPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, ExportTypeEnumeration.STOP_PLACE);
-       exportJobWorker.run();
+       JobWorker jobWorker = new JobWorker(job, streamingPublicationDelivery, testPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.STOP_PLACE);
+       jobWorker.run();
 
-       if (exportJob.getStatus().equals(JobStatus.FAILED)){
+       if (job.getStatus().equals(JobStatus.FAILED)){
            Assert.fail("Failure in Netex France generation");
        }
 

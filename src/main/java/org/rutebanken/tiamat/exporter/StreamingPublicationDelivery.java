@@ -188,7 +188,7 @@ public class StreamingPublicationDelivery {
     public void streamForAsyncExportJob(OutputStream outputStream, Provider provider, LocalDateTime localDateTime, Long exportJobId) throws JAXBException, IOException, SAXException {
         org.rutebanken.tiamat.model.GeneralFrame generalFrame =
                 tiamatGeneralFrameExporter.createTiamatGeneralFrame(StringUtils.isNotEmpty(provider.getChouetteInfo().getNameNetexStop()) ? provider.getChouetteInfo().getNameNetexStop() : "MOBI-ITI",
-                        localDateTime, ExportTypeEnumeration.STOP_PLACE);
+                        localDateTime, TypeEnumeration.STOP_PLACE);
 
         AtomicInteger mappedStopPlaceCount = new AtomicInteger();
         AtomicInteger mappedParkingCount = new AtomicInteger();
@@ -251,7 +251,7 @@ public class StreamingPublicationDelivery {
      * @throws SAXException
      */
     public void streamParkings(OutputStream outputStream, LocalDateTime localDateTime, Long exportJobId) throws JAXBException, IOException, SAXException {
-        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime, ExportTypeEnumeration.PARKING);
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime, TypeEnumeration.PARKING);
 
         AtomicInteger mappedParkingCount = new AtomicInteger();
 

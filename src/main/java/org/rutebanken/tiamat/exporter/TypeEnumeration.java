@@ -1,20 +1,19 @@
 package org.rutebanken.tiamat.exporter;
 
-import org.rutebanken.tiamat.model.AccessSpaceTypeEnumeration;
-
-public enum ExportTypeEnumeration {
+public enum TypeEnumeration {
 
     STOP_PLACE("stop place"),
     POI("point of interest"),
-    PARKING("parking");
+    PARKING("parking"),
+    IMPORT_PARKING("import_parking");
     private final String value;
 
-    ExportTypeEnumeration(String v) {
+    TypeEnumeration(String v) {
         value = v;
     }
 
-    public static ExportTypeEnumeration fromValue(String v) {
-        for (ExportTypeEnumeration c : ExportTypeEnumeration.values()) {
+    public static TypeEnumeration fromValue(String v) {
+        for (TypeEnumeration c : TypeEnumeration.values()) {
             if (c.value.equals(v)) {
                 return c;
             }

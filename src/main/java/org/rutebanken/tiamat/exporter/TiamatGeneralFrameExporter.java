@@ -20,7 +20,7 @@ public class TiamatGeneralFrameExporter {
     public TiamatGeneralFrameExporter(){
     }
 
-    public org.rutebanken.tiamat.model.GeneralFrame createTiamatGeneralFrame(String siteName, LocalDateTime localDateTime, ExportTypeEnumeration exportType) {
+    public org.rutebanken.tiamat.model.GeneralFrame createTiamatGeneralFrame(String siteName, LocalDateTime localDateTime, TypeEnumeration exportType) {
         // Frame <GeneralFrame>
         org.rutebanken.tiamat.model.GeneralFrame generalFrame = new org.rutebanken.tiamat.model.GeneralFrame();
         String localDateTimeString = localDateTime + "Z";
@@ -30,7 +30,7 @@ public class TiamatGeneralFrameExporter {
         generalFrame.setVersion(1L);
 
 
-        if (ExportTypeEnumeration.PARKING.equals(exportType)) {
+        if (TypeEnumeration.PARKING.equals(exportType)) {
             generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_PARKING_" + localDateTimeString + ":LOC");
             setFramesParking(generalFrame);
         } else {

@@ -18,7 +18,6 @@ package org.rutebanken.tiamat.repository;
 import org.rutebanken.tiamat.domain.Provider;
 
 import java.util.Collection;
-import java.util.List;
 
 public interface ProviderRepository {
 

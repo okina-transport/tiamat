@@ -13,66 +13,67 @@
  * limitations under the Licence.
  */
 
-package org.rutebanken.tiamat.exporter.async;
+package org.rutebanken.tiamat.general;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.h2.util.IOUtils;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.exporter.ExportTypeEnumeration;
+import org.rutebanken.tiamat.exporter.TypeEnumeration;
 import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
-import org.rutebanken.tiamat.model.job.ExportJob;
+import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
-import org.rutebanken.tiamat.repository.ExportJobRepository;
+import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.service.BlobStoreService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class ExportJobWorker implements Runnable {
+public class JobWorker implements Runnable {
 
-    private static final Logger logger = LoggerFactory.getLogger(ExportJobWorker.class);
+    private static final Logger logger = LoggerFactory.getLogger(JobWorker.class);
+    private static final ExecutorService exportService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
+            .setNameFormat("exporter-%d").build());
 
-    private final ExportJob exportJob;
-    private final StreamingPublicationDelivery streamingPublicationDelivery;
-    private final String localExportPath;
+    private final Job job;
+    private static StreamingPublicationDelivery streamingPublicationDelivery;
+    private static String localExportPath;
     private final String fileNameWithoutExtention;
-    private final BlobStoreService blobStoreService;
-    private final ExportJobRepository exportJobRepository;
-    private final NetexXmlReferenceValidator netexXmlReferenceValidator;
+    private static BlobStoreService blobStoreService;
+    private static JobRepository jobRepository;
+    private static NetexXmlReferenceValidator netexXmlReferenceValidator;
     private final Provider provider;
     private LocalDateTime localDateTime; // ne peut pas être final. Vu qu'on ne le bouge pas, pas gênant mais dommage
-    private final String tiamatExportDestination;
-    private final ExportTypeEnumeration exportType;
+    private static String tiamatExportDestination;
+    private final TypeEnumeration exportType;
 
-    public ExportJobWorker(ExportJob exportJob,
-                           StreamingPublicationDelivery streamingPublicationDelivery,
-                           String localExportPath,
-                           String fileNameWithoutExtention,
-                           BlobStoreService blobStoreService,
-                           ExportJobRepository exportJobRepository,
-                           NetexXmlReferenceValidator netexXmlReferenceValidator,
-                           Provider provider,
-                           LocalDateTime localDateTime,
-                           String tiamatExportDestination,
-                           ExportTypeEnumeration exportType) {
-        this.exportJob = exportJob;
+    public JobWorker(Job job,
+                     StreamingPublicationDelivery streamingPublicationDelivery,
+                     String localExportPath,
+                     String fileNameWithoutExtention,
+                     BlobStoreService blobStoreService,
+                     JobRepository jobRepository,
+                     NetexXmlReferenceValidator netexXmlReferenceValidator,
+                     Provider provider,
+                     LocalDateTime localDateTime,
+                     String tiamatExportDestination,
+                     TypeEnumeration exportType) {
+        this.job = job;
         this.streamingPublicationDelivery = streamingPublicationDelivery;
         this.localExportPath = localExportPath;
         this.fileNameWithoutExtention = fileNameWithoutExtention;
         this.blobStoreService = blobStoreService;
-        this.exportJobRepository = exportJobRepository;
+        this.jobRepository = jobRepository;
         this.netexXmlReferenceValidator = netexXmlReferenceValidator;
         this.provider = provider;
         this.localDateTime = localDateTime;
@@ -82,10 +83,10 @@ public class ExportJobWorker implements Runnable {
 
 
     public void run() {
-        logger.info("Started export job: {}", exportJob);
+        logger.info("Started export job: {}", job);
 
         File providerDir = new File(localExportPath + File.separator + provider.name);
-        final File localExportZipFile = new File(providerDir, File.separator+exportJob.getFileName());
+        final File localExportZipFile = new File(providerDir, File.separator+ job.getFileName());
         File localExportXmlFile = new File(localExportPath + File.separator + fileNameWithoutExtention + ".xml");
         try {
 
@@ -115,21 +116,21 @@ public class ExportJobWorker implements Runnable {
                 uploadToGcp(localExportZipFile);
             }
 
-            exportJob.setStatus(JobStatus.FINISHED);
-            exportJob.setFinished(Instant.now());
-            logger.info("Export job done: {}", exportJob);
+            job.setStatus(JobStatus.FINISHED);
+            job.setFinished(Instant.now());
+            logger.info("Export job done: {}", job);
 
         } catch (Exception e) {
-            exportJob.setStatus(JobStatus.FAILED);
-            String message = "Error executing export job " + exportJob.getId() + ". " + e.getClass().getSimpleName() + " - " + e.getMessage();
-            logger.error("{}.\nExport job was {}", message, exportJob, e);
-            exportJob.setMessage(message);
+            job.setStatus(JobStatus.FAILED);
+            String message = "Error executing export job " + job.getId() + ". " + e.getClass().getSimpleName() + " - " + e.getMessage();
+            logger.error("{}.\nExport job was {}", message, job, e);
+            job.setMessage(message);
             if (e instanceof InterruptedException) {
-                logger.info("The export job was interrupted: {}", exportJob);
+                logger.info("The export job was interrupted: {}", job);
                 Thread.currentThread().interrupt();
             }
         } finally {
-            exportJobRepository.save(exportJob);
+            jobRepository.save(job);
             logger.info("Removing local file: {}", localExportXmlFile);
             localExportXmlFile.delete();
         }
@@ -138,25 +139,25 @@ public class ExportJobWorker implements Runnable {
     private void exportToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime) throws IOException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.stream(fileOutputStream, provider, localDateTime, exportJob.getId());
+        streamingPublicationDelivery.stream(fileOutputStream, provider, localDateTime, job.getId());
         logger.info("export to local file completed");
     }
 
     private void exportPOIToLocalXmlFile(File localExportXmlFile) throws IOException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.streamPOI(exportJob.getExportParams(), fileOutputStream, exportJob.getId());
+        streamingPublicationDelivery.streamPOI(job.getExportParams(), fileOutputStream, job.getId());
     }
 
     private void exportParkingsToLocalXmlFile(File localExportXmlFile, LocalDateTime localDateTime) throws IOException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.streamParkings(fileOutputStream, localDateTime, exportJob.getId());
+        streamingPublicationDelivery.streamParkings(fileOutputStream, localDateTime, job.getId());
     }
 
     private void uploadToGcp(File localExportFile) {
-        logger.info("Uploading to gcp: {} in folder: {}", exportJob.getFileName(), exportJob.getSubFolder());
-        blobStoreService.upload(exportJob.getSubFolder() + "/" + exportJob.getFileName(), localExportFile);
+        logger.info("Uploading to gcp: {} in folder: {}", job.getFileName(), job.getSubFolder());
+        blobStoreService.upload(job.getSubFolder() + "/" + job.getFileName(), localExportFile);
     }
 
     private void exportToLocalZipFile(File localZipFile, File localExportZipFile) throws IOException {

@@ -18,12 +18,12 @@ package org.rutebanken.tiamat.exporter;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.exporter.async.ExportJobWorker;
+import org.rutebanken.tiamat.general.JobWorker;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
-import org.rutebanken.tiamat.model.job.ExportJob;
+import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
-import org.rutebanken.tiamat.repository.ExportJobRepository;
+import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.repository.ProviderRepository;
 import org.rutebanken.tiamat.service.BlobStoreService;
 import org.rutebanken.tiamat.time.ExportTimeZone;
@@ -59,7 +59,7 @@ public class AsyncPublicationDeliveryExporter {
     private static final ExecutorService exportService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("exporter-%d").build());
 
-    private final ExportJobRepository exportJobRepository;
+    private final JobRepository jobRepository;
 
     private final BlobStoreService blobStoreService;
 
@@ -74,13 +74,13 @@ public class AsyncPublicationDeliveryExporter {
     private final String tiamatExportDestination;
 
     @Autowired
-    public AsyncPublicationDeliveryExporter(ExportJobRepository exportJobRepository,
+    public AsyncPublicationDeliveryExporter(JobRepository jobRepository,
                                             BlobStoreService blobStoreService,
                                             @Qualifier("asyncStreamingPublicationDelivery") StreamingPublicationDelivery streamingPublicationDelivery,
                                             NetexXmlReferenceValidator netexXmlReferenceValidator, ExportTimeZone exportTimeZone,
                                             @Value("${async.export.path:/deployments/data/}") String localExportPath, ProviderRepository providerRepository,
                                             @Value("${tiamat.export.destination:both}") String tiamatExportDestination) {
-        this.exportJobRepository = exportJobRepository;
+        this.jobRepository = jobRepository;
         this.blobStoreService = blobStoreService;
         this.streamingPublicationDelivery = streamingPublicationDelivery;
         this.netexXmlReferenceValidator = netexXmlReferenceValidator;
@@ -106,23 +106,23 @@ public class AsyncPublicationDeliveryExporter {
      * @param exportParams search params for stops
      * @return export job with information about the started process
      */
-    public ExportJob startExportJob(ExportParams exportParams) {
+    public Job startExportJob(ExportParams exportParams) {
 
         Iterable<Provider> providers;
 
         providers = Collections.singletonList(providerRepository.getProvider(exportParams.getProviderId()));
 
-        ExportJob exportJob = new ExportJob(JobStatus.PROCESSING);
+        Job job = new Job(JobStatus.PROCESSING);
 
         providers.forEach(provider -> {
             if(provider != null) {
-                logger.info("Starting export {} for provider {}", exportJob.getId(), provider.id + "/" + provider.chouetteInfo.codeIdfm);
-                exportJob.setStarted(Instant.now());
-                exportJob.setExportParams(exportParams);
-                exportJob.setSubFolder(provider.name);
+                logger.info("Starting export {} for provider {}", job.getId(), provider.id + "/" + provider.chouetteInfo.codeIdfm);
+                job.setStarted(Instant.now());
+                job.setExportParams(exportParams);
+                job.setSubFolder(provider.name);
 
                 LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
-                exportJobRepository.save(exportJob);
+                jobRepository.save(job);
                 String idSite = provider.getChouetteInfo().getCodeIdfm();
 
                 String nameSite = provider.name;
@@ -139,16 +139,16 @@ public class AsyncPublicationDeliveryExporter {
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
-                exportJob.setFileName(nameFileZip + ".zip");
+                job.setFileName(nameFileZip + ".zip");
 
-                ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, ExportTypeEnumeration.STOP_PLACE);
-                exportService.submit(exportJobWorker);
-                logger.info("Returning started export job {}", exportJob);
-                setJobUrl(exportJob);
+                JobWorker jobWorker = new JobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.STOP_PLACE);
+                exportService.submit(jobWorker);
+                logger.info("Returning started export job {}", job);
+                setJobUrl(job);
             }
         });
 
-        return exportJob;
+        return job;
     }
 
     /**
@@ -157,21 +157,21 @@ public class AsyncPublicationDeliveryExporter {
      * @param exportParams search params for parkings
      * @return export job with information about the started process
      */
-    public ExportJob startParkingsExportJob(ExportParams exportParams) {
+    public Job startParkingsExportJob(ExportParams exportParams) {
         Iterable<Provider> providers;
         providers = Collections.singletonList(providerRepository.getProvider(exportParams.getProviderId()));
 
-        ExportJob exportJob = new ExportJob(JobStatus.PROCESSING);
+        Job job = new Job(JobStatus.PROCESSING);
 
         providers.forEach(provider -> {
             if(provider != null) {
-                logger.info("Starting parkings export {} for provider {}", exportJob.getId(), provider.id + "/" + provider.chouetteInfo.codeIdfm);
-                exportJob.setStarted(Instant.now());
-                exportJob.setExportParams(exportParams);
-                exportJob.setSubFolder(provider.name);
+                logger.info("Starting parkings export {} for provider {}", job.getId(), provider.id + "/" + provider.chouetteInfo.codeIdfm);
+                job.setStarted(Instant.now());
+                job.setExportParams(exportParams);
+                job.setSubFolder(provider.name);
 
                 LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
-                exportJobRepository.save(exportJob);
+                jobRepository.save(job);
                 String idSite = provider.getChouetteInfo().getCodeIdfm();
 
                 String nameSite = provider.name;
@@ -187,16 +187,16 @@ public class AsyncPublicationDeliveryExporter {
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
-                exportJob.setFileName(nameFileZip + ".zip");
+                job.setFileName(nameFileZip + ".zip");
 
-                ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, ExportTypeEnumeration.PARKING);
-                exportService.submit(exportJobWorker);
-                logger.info("Returning started parkings export job {}", exportJob);
-                setJobUrl(exportJob);
+                JobWorker jobWorker = new JobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.PARKING);
+                exportService.submit(jobWorker);
+                logger.info("Returning started parkings export job {}", job);
+                setJobUrl(job);
             }
         });
 
-        return exportJob;
+        return job;
     }
 
     /**
@@ -205,22 +205,22 @@ public class AsyncPublicationDeliveryExporter {
      * @param exportParams search params for points of interest
      * @return export job with information about the started process
      */
-    public ExportJob startPOIExportJob(ExportParams exportParams) {
+    public Job startPOIExportJob(ExportParams exportParams) {
 
         Iterable<Provider> providers;
         providers = Collections.singletonList(providerRepository.getProvider(exportParams.getProviderId()));
 
-        ExportJob exportJob = new ExportJob(JobStatus.PROCESSING);
+        Job job = new Job(JobStatus.PROCESSING);
 
         providers.forEach(provider -> {
             if(provider != null) {
-                logger.info("Starting poi export {} for provider {}", exportJob.getId(), provider.id + "/" + provider.chouetteInfo.codeIdfm);
-                exportJob.setStarted(Instant.now());
-                exportJob.setExportParams(exportParams);
-                exportJob.setSubFolder(provider.name);
+                logger.info("Starting poi export {} for provider {}", job.getId(), provider.id + "/" + provider.chouetteInfo.codeIdfm);
+                job.setStarted(Instant.now());
+                job.setExportParams(exportParams);
+                job.setSubFolder(provider.name);
 
                 LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
-                exportJobRepository.save(exportJob);
+                jobRepository.save(job);
                 String idSite = provider.getChouetteInfo().getCodeIdfm();
 
                 String nameSite = provider.name;
@@ -236,16 +236,16 @@ public class AsyncPublicationDeliveryExporter {
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
-                exportJob.setFileName(nameFileZip + ".zip");
+                job.setFileName(nameFileZip + ".zip");
 
-                ExportJobWorker exportJobWorker = new ExportJobWorker(exportJob, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, exportJobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, ExportTypeEnumeration.POI);
-                exportService.submit(exportJobWorker);
-                logger.info("Returning started POI export job {}", exportJob);
-                setJobUrl(exportJob);
+                JobWorker jobWorker = new JobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.POI);
+                exportService.submit(jobWorker);
+                logger.info("Returning started POI export job {}", job);
+                setJobUrl(job);
             }
         });
 
-        return exportJob;
+        return job;
     }
 
     public String createFileNameWithoutExtention(String idSite, String nameSite, LocalDateTime localDateTime, boolean isPrefix) {
@@ -264,17 +264,17 @@ public class AsyncPublicationDeliveryExporter {
         return "PARKING_" + idSite + "_" + nameSite + "_T_" + localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "T" + localDateTime.format(DateTimeFormatter.ofPattern("HHmmss")) + "Z";
     }
 
-    public ExportJob getExportJob(long exportJobId) {
+    public Job getExportJob(long exportJobId) {
 
-        Optional<ExportJob> exportJob = exportJobRepository.findById(exportJobId);
+        Optional<Job> exportJob = jobRepository.findById(exportJobId);
         if (exportJob.isPresent()) {
             return setJobUrl(exportJob.get());
         }
         return null;
     }
 
-    public InputStream getJobFileContent(ExportJob exportJob) {
-        return blobStoreService.download(exportJob.getSubFolder() + "/" + exportJob.getFileName());
+    public InputStream getJobFileContent(Job job) {
+        return blobStoreService.download(job.getSubFolder() + "/" + job.getFileName());
     }
 
     public File getJobFileContent(String providerName, String filePath) {
@@ -288,17 +288,17 @@ public class AsyncPublicationDeliveryExporter {
         }
     }
 
-    public Collection<ExportJob> getJobs() {
+    public Collection<Job> getJobs() {
 
-        return exportJobRepository.findAll()
+        return jobRepository.findAll()
                 .stream()
                 .map(this::setJobUrl)
                 .collect(toList());
     }
 
-    private ExportJob setJobUrl(ExportJob exportJobWithId) {
-        exportJobWithId.setJobUrl(ASYNC_JOB_PATH + "/" + exportJobWithId.getId());
-        return exportJobWithId;
+    private Job setJobUrl(Job jobWithId) {
+        jobWithId.setJobUrl(ASYNC_JOB_PATH + "/" + jobWithId.getId());
+        return jobWithId;
     }
 
     public List<String> getStopPlaceFileListByProviderName(String providerName, int maxNbResults){

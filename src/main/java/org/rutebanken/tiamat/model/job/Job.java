@@ -19,20 +19,26 @@ import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
+import org.rutebanken.tiamat.importer.ImportParams;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Transient;
+import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_JOB_PATH;
 
 @Entity
 @XmlRootElement
-@ApiModel(description = "Export job model")
-public class ExportJob {
+@ApiModel(description = "Job model")
+public class Job {
 
     @Id
     @GeneratedValue
@@ -60,10 +66,13 @@ public class ExportJob {
     @Transient
     private ExportParams exportParams;
 
-    public ExportJob() {
+    @Transient
+    private ImportParams importParams;
+
+    public Job() {
     }
 
-    public ExportJob(JobStatus jobStatus) {
+    public Job(JobStatus jobStatus) {
         status = jobStatus;
     }
 
@@ -146,11 +155,30 @@ public class ExportJob {
         this.exportParams = exportParams;
     }
 
+    public ImportParams getImportParams() {
+        return importParams;
+    }
+
+    public void setImportParams(ImportParams importParams) {
+        this.importParams = importParams;
+    }
+
     public String getSubFolder() {
         return subFolder;
     }
 
     public void setSubFolder(String subFolder) {
         this.subFolder = subFolder;
+    }
+
+    @XmlType
+    @XmlEnum(String.class)
+    public enum STATUS implements java.io.Serializable {
+        PROCESSING,
+        FINISHED,
+        FAILED;
+        public static List<STATUS> getCompletedStatuses() {
+            return Arrays.stream(STATUS.values()).filter(status -> status.ordinal() > PROCESSING.ordinal()).collect(Collectors.toList());
+        }
     }
 }

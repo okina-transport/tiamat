@@ -41,15 +41,16 @@ public class ImportParkingsNetexResource {
     @POST
     @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response importParkingsCsvFile(@FormDataParam("file") InputStream inputStream,
+    public Response importParkingsNetexFile(@FormDataParam("file") InputStream inputStream,
                                           @FormDataParam("file_name") String fileName,
-                                          @FormDataParam("user") String user)
+                                          @FormDataParam("user") String user,
+                                          @FormDataParam("provider") String provider)
             throws IOException, IllegalArgumentException, JAXBException, SAXException {
         logger.info("Received Netex publication delivery, starting to parse...");
         logger.info(".........................................................");
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         try {
-            parkingsImporter.importParkings(incomingPublicationDelivery, null);
+            parkingsImporter.importParkings(incomingPublicationDelivery, null, provider);
             return Response.ok().build();
         } catch (NotAuthenticatedException | NotAuthorizedException e) {
             logger.debug("Access denied for publication delivery: " + e.getMessage(), e);

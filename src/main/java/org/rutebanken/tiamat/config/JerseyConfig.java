@@ -33,6 +33,7 @@ import org.rutebanken.tiamat.rest.exception.GeneralExceptionMapper;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessExceptionMapper;
 import org.rutebanken.tiamat.rest.graphql.GraphQLResource;
 import org.rutebanken.tiamat.rest.health.HealthResource;
+import org.rutebanken.tiamat.rest.jobs.JobsResources;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ImportResource;
@@ -106,6 +107,7 @@ public class JerseyConfig {
         publicResources.add(TariffZoneRessource.class);
         publicResources.add(PostcodeResource.class);
         publicResources.add(ImportParkingsNetexResource.class);
+        publicResources.add(JobsResources.class);
         publicResources.add(ImportPointOfInterestsNetexResource.class);
 
 

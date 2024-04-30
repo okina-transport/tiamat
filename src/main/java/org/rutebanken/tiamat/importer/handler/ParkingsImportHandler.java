@@ -18,15 +18,20 @@ package org.rutebanken.tiamat.importer.handler;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
 import org.rutebanken.netex.model.*;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.ImportParams;
+import org.rutebanken.tiamat.importer.ParkingsImporter;
 import org.rutebanken.tiamat.importer.merging.TransactionalMergingParkingsImporter;
 import org.rutebanken.tiamat.importer.filter.ZoneTopographicPlaceFilter;
 import org.rutebanken.tiamat.importer.initial.ParallelInitialParkingImporter;
 import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.job.Job;
+import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.NetexUtils;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
+import org.rutebanken.tiamat.repository.JobRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +67,9 @@ public class ParkingsImportHandler {
 
     @Autowired
     private HazelcastInstance hazelcastInstance;
+
+    @Autowired
+    private JobRepository jobRepository;
 
     public void handleParkings(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger parkingsCreatedOrUpdated, SiteFrame responseSiteframe) {
 
@@ -110,7 +118,7 @@ public class ParkingsImportHandler {
         }
     }
 
-    public void handleParkingsGeneralFrame(GeneralFrame generalFrame, ImportParams importParams, AtomicInteger parkingsCreatedOrUpdated, GeneralFrame responseGeneralframe) throws Exception {
+    public void handleParkingsGeneralFrame(GeneralFrame generalFrame, ImportParams importParams, AtomicInteger parkingsCreatedOrUpdated, GeneralFrame responseGeneralframe, Provider provider, Job exportJob) throws Exception {
         if (publicationDeliveryHelper.hasParkingsGeneralFrame(generalFrame)) {
             List<JAXBElement<? extends EntityStructure>> members = generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity();
             List<org.rutebanken.netex.model.Parking> tiamatParking = NetexUtils.getMembers(org.rutebanken.netex.model.Parking.class, members);
@@ -150,6 +158,8 @@ public class ParkingsImportHandler {
                 NetexUtils.getMembers(org.rutebanken.netex.model.Parking.class, members);
             }
 
+            Job job = ParkingsImporter.manageJob(exportJob, JobStatus.FINISHED, importParams, provider, null);
+            jobRepository.save(job);
             logger.info("Mapped {} parkings !!", tiamatParking.size());
         }
     }

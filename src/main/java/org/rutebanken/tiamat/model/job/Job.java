@@ -21,14 +21,12 @@ import io.swagger.annotations.ApiModelProperty;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.importer.ImportParams;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Transient;
+import javax.persistence.*;
 import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -68,6 +66,9 @@ public class Job {
 
     @Transient
     private ImportParams importParams;
+
+    @Transient
+    private List<Link> links = new ArrayList<Link>();
 
     public Job() {
     }
@@ -169,6 +170,10 @@ public class Job {
 
     public void setSubFolder(String subFolder) {
         this.subFolder = subFolder;
+    }
+
+    public List<Link> getLinks() {
+        return links;
     }
 
     @XmlType

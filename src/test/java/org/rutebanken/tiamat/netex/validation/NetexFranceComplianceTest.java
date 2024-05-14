@@ -23,7 +23,7 @@ import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.TypeEnumeration;
 import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
-import org.rutebanken.tiamat.general.JobWorker;
+import org.rutebanken.tiamat.general.ExportJobWorker;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
@@ -98,8 +98,8 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
         LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
 
 
-       JobWorker jobWorker = new JobWorker(job, streamingPublicationDelivery, testPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.STOP_PLACE);
-       jobWorker.run();
+       ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, testPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.STOP_PLACE);
+       exportJobWorker.run();
 
        if (job.getStatus().equals(JobStatus.FAILED)){
            Assert.fail("Failure in Netex France generation");

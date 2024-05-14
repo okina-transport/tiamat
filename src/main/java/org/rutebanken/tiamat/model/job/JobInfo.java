@@ -100,7 +100,7 @@ public class JobInfo {
 	@XmlType(name = "jobStatus")
 	@XmlEnum(String.class)
 	public enum STATUS implements java.io.Serializable {
-		RESCHEDULED, SCHEDULED, STARTED, TERMINATED, CANCELED, ABORTED
+		RESCHEDULED, SCHEDULED, STARTED, TERMINATED, FINISHED, CANCELED, ABORTED
 	}
 
 }

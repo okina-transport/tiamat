@@ -3,6 +3,7 @@ package org.rutebanken.tiamat.importer.manualImports;
 import org.junit.Test;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.importer.ParkingsImporter;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
@@ -16,9 +17,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.Collections;
 
 @Transactional
 //Dirties context is used to clear H2 database before each test
@@ -55,7 +54,8 @@ public class ParkingsNetexImportTest extends TiamatIntegrationTest {
 
         try (InputStream testInputStream = new FileInputStream(file)) {
             PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(testInputStream);
-            parkingsImporter.importParkings(incomingPublicationDelivery, null);
+            Provider provider = Collections.singletonList(providerRepository.getProvider(1L)).get(0);
+            parkingsImporter.importParkings(incomingPublicationDelivery, String.valueOf(provider.getId()), fileName);
         } catch (TiamatBusinessException e) {
             throw new RuntimeException(e);
         }

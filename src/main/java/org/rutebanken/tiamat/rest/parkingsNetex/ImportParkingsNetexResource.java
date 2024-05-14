@@ -47,11 +47,10 @@ public class ImportParkingsNetexResource {
                                           @FormDataParam("provider") String provider)
             throws IOException, IllegalArgumentException, JAXBException, SAXException {
         logger.info("Received Netex publication delivery, starting to parse...");
-        logger.info(".........................................................");
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         try {
-            parkingsImporter.importParkings(incomingPublicationDelivery, null, provider);
-            return Response.ok().build();
+            Response.ResponseBuilder builder = parkingsImporter.importParkings(incomingPublicationDelivery, null, provider, fileName);
+            return builder.build();
         } catch (NotAuthenticatedException | NotAuthorizedException e) {
             logger.debug("Access denied for publication delivery: " + e.getMessage(), e);
             throw e;

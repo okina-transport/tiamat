@@ -31,7 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_JOB_PATH;
+import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_EXPORT_JOB_PATH;
 
 @Entity
 @XmlRootElement
@@ -101,7 +101,7 @@ public class Job {
     }
 
     public String getJobUrl() {
-        return ASYNC_JOB_PATH + '/' + getId();
+        return jobUrl;
     }
 
     public void setJobUrl(String jobUrl) {

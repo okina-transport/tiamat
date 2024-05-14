@@ -39,9 +39,9 @@ import java.util.concurrent.Executors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class JobWorker implements Runnable {
+public class ExportJobWorker implements Runnable {
 
-    private static final Logger logger = LoggerFactory.getLogger(JobWorker.class);
+    private static final Logger logger = LoggerFactory.getLogger(ExportJobWorker.class);
     private static final ExecutorService exportService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("exporter-%d").build());
 
@@ -57,17 +57,17 @@ public class JobWorker implements Runnable {
     private static String tiamatExportDestination;
     private final TypeEnumeration exportType;
 
-    public JobWorker(Job job,
-                     StreamingPublicationDelivery streamingPublicationDelivery,
-                     String localExportPath,
-                     String fileNameWithoutExtention,
-                     BlobStoreService blobStoreService,
-                     JobRepository jobRepository,
-                     NetexXmlReferenceValidator netexXmlReferenceValidator,
-                     Provider provider,
-                     LocalDateTime localDateTime,
-                     String tiamatExportDestination,
-                     TypeEnumeration exportType) {
+    public ExportJobWorker(Job job,
+                           StreamingPublicationDelivery streamingPublicationDelivery,
+                           String localExportPath,
+                           String fileNameWithoutExtention,
+                           BlobStoreService blobStoreService,
+                           JobRepository jobRepository,
+                           NetexXmlReferenceValidator netexXmlReferenceValidator,
+                           Provider provider,
+                           LocalDateTime localDateTime,
+                           String tiamatExportDestination,
+                           TypeEnumeration exportType) {
         this.job = job;
         this.streamingPublicationDelivery = streamingPublicationDelivery;
         this.localExportPath = localExportPath;

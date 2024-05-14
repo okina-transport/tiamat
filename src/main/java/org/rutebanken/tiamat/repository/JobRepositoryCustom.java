@@ -9,7 +9,7 @@ public interface JobRepositoryCustom<Job> {
 
     List<Job> findByReferentialAndAction(String referential, List<String> actions, JobStatus status);
 
-    Job findByReferentialAndId(String referential, Long id);
+    Job findBySubFolderLikeReferentialAndId(String referential, Long id);
 
     Job terminatedJob(String referential, Long id);
 }

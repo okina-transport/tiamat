@@ -34,19 +34,19 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 
-import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_JOB_PATH;
+import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_EXPORT_JOB_PATH;
 
 /**
  * Export publication delivery data to google cloud storage. Some parts like stops and parking asynchronously
  */
 @Api(tags = {"Async export resource"}, produces = "application/xml")
 @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
-@Path("/netex/" + ASYNC_JOB_PATH)
+@Path("/netex/" + ASYNC_EXPORT_JOB_PATH)
 public class AsyncExportResource {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncExportResource.class);
 
-    public static final String ASYNC_JOB_PATH = "export";
+    public static final String ASYNC_EXPORT_JOB_PATH = "export";
 
     private final AsyncPublicationDeliveryExporter asyncPublicationDeliveryExporter;
 

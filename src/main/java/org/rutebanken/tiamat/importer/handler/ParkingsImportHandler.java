@@ -118,7 +118,7 @@ public class ParkingsImportHandler {
         }
     }
 
-    public void handleParkingsGeneralFrame(GeneralFrame generalFrame, ImportParams importParams, AtomicInteger parkingsCreatedOrUpdated, GeneralFrame responseGeneralframe, Provider provider, Job exportJob) throws Exception {
+    public void handleParkingsGeneralFrame(GeneralFrame generalFrame, ImportParams importParams, AtomicInteger parkingsCreatedOrUpdated, GeneralFrame responseGeneralframe, Provider provider, String fileName, Job exportJob) throws Exception {
         if (publicationDeliveryHelper.hasParkingsGeneralFrame(generalFrame)) {
             List<JAXBElement<? extends EntityStructure>> members = generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity();
             List<org.rutebanken.netex.model.Parking> tiamatParking = NetexUtils.getMembers(org.rutebanken.netex.model.Parking.class, members);
@@ -158,7 +158,7 @@ public class ParkingsImportHandler {
                 NetexUtils.getMembers(org.rutebanken.netex.model.Parking.class, members);
             }
 
-            Job job = ParkingsImporter.manageJob(exportJob, JobStatus.FINISHED, importParams, provider, null);
+            Job job = ParkingsImporter.manageJob(exportJob, JobStatus.FINISHED, importParams, provider, fileName, null);
             jobRepository.save(job);
             logger.info("Mapped {} parkings !!", tiamatParking.size());
         }

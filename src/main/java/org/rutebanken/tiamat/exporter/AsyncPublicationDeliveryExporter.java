@@ -18,7 +18,7 @@ package org.rutebanken.tiamat.exporter;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.general.JobWorker;
+import org.rutebanken.tiamat.general.ExportJobWorker;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobStatus;
@@ -49,7 +49,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static java.util.stream.Collectors.toList;
-import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_JOB_PATH;
+import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_EXPORT_JOB_PATH;
 
 @Service
 public class AsyncPublicationDeliveryExporter {
@@ -141,8 +141,8 @@ public class AsyncPublicationDeliveryExporter {
                 }
                 job.setFileName(nameFileZip + ".zip");
 
-                JobWorker jobWorker = new JobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.STOP_PLACE);
-                exportService.submit(jobWorker);
+                ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.STOP_PLACE);
+                exportService.submit(exportJobWorker);
                 logger.info("Returning started export job {}", job);
                 setJobUrl(job);
             }
@@ -189,8 +189,8 @@ public class AsyncPublicationDeliveryExporter {
                 }
                 job.setFileName(nameFileZip + ".zip");
 
-                JobWorker jobWorker = new JobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.PARKING);
-                exportService.submit(jobWorker);
+                ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.PARKING);
+                exportService.submit(exportJobWorker);
                 logger.info("Returning started parkings export job {}", job);
                 setJobUrl(job);
             }
@@ -238,8 +238,8 @@ public class AsyncPublicationDeliveryExporter {
                 }
                 job.setFileName(nameFileZip + ".zip");
 
-                JobWorker jobWorker = new JobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.POI);
-                exportService.submit(jobWorker);
+                ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.POI);
+                exportService.submit(exportJobWorker);
                 logger.info("Returning started POI export job {}", job);
                 setJobUrl(job);
             }
@@ -297,7 +297,7 @@ public class AsyncPublicationDeliveryExporter {
     }
 
     private Job setJobUrl(Job jobWithId) {
-        jobWithId.setJobUrl(ASYNC_JOB_PATH + "/" + jobWithId.getId());
+        jobWithId.setJobUrl(ASYNC_EXPORT_JOB_PATH + "/" + jobWithId.getId());
         return jobWithId;
     }
 

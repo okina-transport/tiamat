@@ -40,7 +40,7 @@ public class JobService {
 
     public Job getJobService(String referential, Long id) throws ServiceException {
 
-        Job job = jobRepository.findByReferentialAndId(referential, id);
+        Job job = jobRepository.findBySubFolderLikeReferentialAndId(referential, id);
         if (job != null) {
             return job;
         }

@@ -5,7 +5,9 @@ public enum TypeEnumeration {
     STOP_PLACE("stop place"),
     POI("point of interest"),
     PARKING("parking"),
-    IMPORT_PARKING("import_parking");
+    IMPORT_PARKING("import_parking"),
+    IMPORT_POI("import_poi");
+
     private final String value;
 
     TypeEnumeration(String v) {

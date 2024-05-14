@@ -27,11 +27,13 @@ import org.rutebanken.tiamat.importer.filter.ZoneTopographicPlaceFilter;
 import org.rutebanken.tiamat.importer.initial.ParallelInitialParkingImporter;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.job.Job;
+import org.rutebanken.tiamat.model.job.JobImportType;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.NetexUtils;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.repository.JobRepository;
+import org.rutebanken.tiamat.rest.utils.Importer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -118,7 +120,7 @@ public class ParkingsImportHandler {
         }
     }
 
-    public void handleParkingsGeneralFrame(GeneralFrame generalFrame, ImportParams importParams, AtomicInteger parkingsCreatedOrUpdated, GeneralFrame responseGeneralframe, Provider provider, String fileName, Job exportJob) throws Exception {
+    public void handleParkingsGeneralFrame(GeneralFrame generalFrame, ImportParams importParams, AtomicInteger parkingsCreatedOrUpdated, GeneralFrame responseGeneralframe, Provider provider, String fileName, Job job) throws Exception {
         if (publicationDeliveryHelper.hasParkingsGeneralFrame(generalFrame)) {
             List<JAXBElement<? extends EntityStructure>> members = generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity();
             List<org.rutebanken.netex.model.Parking> tiamatParking = NetexUtils.getMembers(org.rutebanken.netex.model.Parking.class, members);
@@ -158,8 +160,8 @@ public class ParkingsImportHandler {
                 NetexUtils.getMembers(org.rutebanken.netex.model.Parking.class, members);
             }
 
-            Job job = ParkingsImporter.manageJob(exportJob, JobStatus.FINISHED, importParams, provider, fileName, null);
-            jobRepository.save(job);
+            Job jobUpdated = Importer.manageJob(job, JobStatus.FINISHED, importParams, provider, fileName, null, JobImportType.NETEX_PARKING);
+            jobRepository.save(jobUpdated);
             logger.info("Mapped {} parkings !!", tiamatParking.size());
         }
     }

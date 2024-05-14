@@ -19,7 +19,6 @@ import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.InputStream;
 
-
 @Component
 @Path("/parkings_netex_import_xml")
 public class ImportParkingsNetexResource {

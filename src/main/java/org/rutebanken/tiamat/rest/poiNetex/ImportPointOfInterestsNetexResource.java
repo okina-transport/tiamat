@@ -39,28 +39,24 @@ public class ImportPointOfInterestsNetexResource {
         this.poisImporter = poisImporter;
     }
 
-
     @POST
     @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response importPOIFile(@FormDataParam("file") InputStream inputStream,
-                                  @FormDataParam("file_name") String fileName,
-                                  @FormDataParam("user") String user)
+    public Response importPOINetexFile(@FormDataParam("file") InputStream inputStream,
+                                       @FormDataParam("file_name") String fileName,
+                                       @FormDataParam("user") String user,
+                                       @FormDataParam("provider") String provider)
             throws IOException, IllegalArgumentException, JAXBException, SAXException {
         logger.info("Received Netex publication delivery, starting to parse...");
-        logger.info(".........................................................");
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
-
         poiHelper.clearClassificationCache();
-
         try {
-            poisImporter.importPointOfInterests(incomingPublicationDelivery, null);
-        }catch(Exception e){
+            Response.ResponseBuilder builder = poisImporter.importPointOfInterests(incomingPublicationDelivery, null, provider, fileName);
+            return builder.build();
+        } catch(Exception e){
             logger.error(e.getMessage(),e);
         }
-
         logger.info("Import point of interest par " + user + " du fichier " + fileName + " terminé");
-
         return Response.status(200).build();
     }
 }

@@ -18,13 +18,19 @@ package org.rutebanken.tiamat.importer.handler;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
 import org.rutebanken.netex.model.*;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.filter.ZoneTopographicPlaceFilter;
 import org.rutebanken.tiamat.importer.initial.ParallelInitialPointOfInterestImporter;
 import org.rutebanken.tiamat.importer.merging.TransactionalMergingPointOfInterestssImporter;
+import org.rutebanken.tiamat.model.job.Job;
+import org.rutebanken.tiamat.model.job.JobImportType;
+import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
+import org.rutebanken.tiamat.repository.JobRepository;
+import org.rutebanken.tiamat.rest.utils.Importer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +68,10 @@ public class PointOfInterestsImportHandler {
     @Autowired
     private HazelcastInstance hazelcastInstance;
 
-    public void handlePointOfInterests(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger poisCreatedOrUpdated, SiteFrame responseSiteframe) {
+    @Autowired
+    private JobRepository jobRepository;
+
+    public void handlePointOfInterests(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger poisCreatedOrUpdated, SiteFrame responseSiteframe, Provider provider, String fileName, Job job) {
 
         if (publicationDeliveryHelper.hasPointOfInterests(netexSiteFrame)) {
 
@@ -103,6 +112,8 @@ public class PointOfInterestsImportHandler {
                                 .withPointOfInterest(importedPointOfInterests));
             }
 
+            Job jobUpdated = Importer.manageJob(job, JobStatus.FINISHED, importParams, provider, fileName, null, JobImportType.NETEX_PARKING);
+            jobRepository.save(jobUpdated);
             logger.info("Mapped {} point of interests!!", tiamatPointOfInterests.size());
 
         }

@@ -19,10 +19,15 @@ import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.SiteFrame;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.importer.handler.PointOfInterestsImportHandler;
+import org.rutebanken.tiamat.model.job.Job;
+import org.rutebanken.tiamat.model.job.JobImportType;
+import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.repository.CacheProviderRepository;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
+import org.rutebanken.tiamat.rest.utils.Importer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -30,6 +35,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import javax.ws.rs.core.Response;
+import java.net.URI;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
@@ -42,11 +49,8 @@ public class PoisImporter {
     protected CacheProviderRepository providerRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(PoisImporter.class);
-
     public static final String IMPORT_CORRELATION_ID = "importCorrelationId";
     public static final String KC_ROLE_PREFIX = "ROLE_";
-
-
     private final PublicationDeliveryHelper publicationDeliveryHelper;
     private final PointOfInterestsImportHandler pointOfInterestsImportHandler;
     private final RoleAssignmentExtractor roleAssignmentExtractor;
@@ -61,12 +65,12 @@ public class PoisImporter {
     }
 
 
-    public void importPointOfInterests(PublicationDeliveryStructure publicationDeliveryStructure) throws TiamatBusinessException {
-        importPointOfInterests(publicationDeliveryStructure, null);
+    public void importPointOfInterests(PublicationDeliveryStructure publicationDeliveryStructure, String providerId, String fileName) throws TiamatBusinessException {
+        importPointOfInterests(publicationDeliveryStructure, null, providerId, fileName);
     }
 
     @SuppressWarnings("unchecked")
-    public void importPointOfInterests(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams) throws TiamatBusinessException {
+    public Response.ResponseBuilder importPointOfInterests(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams, String providerId, String fileName) throws TiamatBusinessException {
 
         if (roleAssignmentExtractor.getRoleAssignmentsForUser()
                 .stream()
@@ -86,7 +90,7 @@ public class PoisImporter {
         if (importParams == null) {
             importParams = new ImportParams();
         } else {
-            validate(importParams);
+            Importer.validate(importParams);
         }
 
         logger.info("Got publication delivery with {} site frames and description {}",
@@ -97,27 +101,23 @@ public class PoisImporter {
         SiteFrame netexSiteFrame = publicationDeliveryHelper.findSiteFrame(publicationDeliveryStructure);
         String requestId = netexSiteFrame.getId();
         updateMappingContext(netexSiteFrame);
+        Provider provider = Importer.getCurrentProvider(providerId);
+        Job job = new Job();
+        Response.ResponseBuilder builder = Response.accepted();
 
         try {
             SiteFrame responseSiteFrame = new SiteFrame();
             MDC.put(IMPORT_CORRELATION_ID, requestId);
             logger.info("Publication delivery contains site frame created at {}", netexSiteFrame.getCreated());
             responseSiteFrame.withId(requestId + "-response").withVersion("1");
-            pointOfInterestsImportHandler.handlePointOfInterests(netexSiteFrame, importParams, pointOfInterestCounter, responseSiteFrame);
+            Importer.manageJob(job, JobStatus.PROCESSING, importParams, provider, fileName, null, JobImportType.NETEX_POI);
+            pointOfInterestsImportHandler.handlePointOfInterests(netexSiteFrame, importParams, pointOfInterestCounter, responseSiteFrame, provider, fileName, job);
+            return builder.location(URI.create("/services/stop_places/jobs/"+provider.name+"/scheduled_jobs/"+job.getId()));
         } catch (Exception e) {
+            Importer.manageJob(job, JobStatus.FAILED, importParams, provider, fileName, e, JobImportType.NETEX_POI);
             throw new RuntimeException(e);
         } finally {
             MDC.remove(IMPORT_CORRELATION_ID);
         }
     }
-
-
-    private void validate(ImportParams importParams) {
-        if (importParams.targetTopographicPlaces != null && importParams.onlyMatchOutsideTopographicPlaces != null) {
-            if (!importParams.targetTopographicPlaces.isEmpty() && !importParams.onlyMatchOutsideTopographicPlaces.isEmpty()) {
-                throw new IllegalArgumentException("targetTopographicPlaces and onlyMatchOutsideTopographicPlaces cannot be specified at the same time!");
-            }
-        }
-    }
-
 }

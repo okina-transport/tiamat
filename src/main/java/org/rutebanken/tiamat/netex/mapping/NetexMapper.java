@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.xml.bind.JAXBElement;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -574,11 +575,15 @@ public class NetexMapper {
     }
 
     public org.rutebanken.tiamat.model.ParkingArea mapToNetexModel(VehiclePoolingParkingArea area) {
-        return facade.map(area, org.rutebanken.tiamat.model.ParkingArea.class);
+        org.rutebanken.tiamat.model.ParkingArea parkingArea = facade.map(area, org.rutebanken.tiamat.model.ParkingArea.class);
+        parkingArea.setTotalCapacity(area.getRest().get(0).getName().getLocalPart().equals("TotalCapacity") ? (BigInteger) area.getRest().get(0).getValue() : BigInteger.valueOf(0));
+        return parkingArea;
     }
 
     public org.rutebanken.tiamat.model.ParkingArea mapToNetexModel(VehicleSharingParkingArea area) {
-        return facade.map(area, org.rutebanken.tiamat.model.ParkingArea.class);
+        org.rutebanken.tiamat.model.ParkingArea parkingArea = facade.map(area, org.rutebanken.tiamat.model.ParkingArea.class);
+        parkingArea.setTotalCapacity(area.getRest().get(0).getName().getLocalPart().equals("TotalCapacity") ? (BigInteger) area.getRest().get(0).getValue() : BigInteger.valueOf(0));
+        return parkingArea;
     }
 
     public org.rutebanken.tiamat.model.TypeOfPlaceRefs_RelStructure mapToNetexModel(TypeOfPlaceRefs_RelStructure typeOfPlaceRefsRelStructure) {

@@ -21,6 +21,8 @@ import ma.glasnost.orika.metadata.TypeBuilder;
 import org.rutebanken.tiamat.model.ParkingArea;
 import org.rutebanken.tiamat.netex.mapping.converter.VehiclePoolingParkingAreaConverter;
 
+import java.math.BigInteger;
+
 public class VehiclePoolingParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.VehiclePoolingParkingArea, ParkingArea> {
 
     private static VehiclePoolingParkingAreaConverter vehiclePoolingParkingAreaConverter;
@@ -28,6 +30,11 @@ public class VehiclePoolingParkingAreaMapper extends CustomMapper<org.rutebanken
     @Override
     public void mapAtoB(org.rutebanken.netex.model.VehiclePoolingParkingArea netexParkingArea, ParkingArea tiamatParkingArea, MappingContext context) {
         super.mapAtoB(netexParkingArea, tiamatParkingArea, context);
+
+        if (netexParkingArea.getRest().get(0).getName().getLocalPart().equals("TotalCapacity")) {
+            tiamatParkingArea.setTotalCapacity((BigInteger) netexParkingArea.getRest().get(0).getValue());
+        }
+
         vehiclePoolingParkingAreaConverter.convertFrom(netexParkingArea, new TypeBuilder<ParkingArea>() {}.build(), context);
     }
 

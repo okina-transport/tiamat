@@ -25,6 +25,8 @@ import org.rutebanken.netex.model.TypeOfPlaceRefs_RelStructure;
 import org.rutebanken.tiamat.model.ParkingArea;
 import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
 
+import java.math.BigInteger;
+
 public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.ParkingArea, ParkingArea> {
 
     private static final ObjectFactory netexObjectFactory = new ObjectFactory();
@@ -32,6 +34,10 @@ public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.P
     @Override
     public void mapAtoB(org.rutebanken.netex.model.ParkingArea netexParkingArea, ParkingArea tiamatParkingArea, MappingContext context) {
         super.mapAtoB(netexParkingArea, tiamatParkingArea, context);
+
+        if (netexParkingArea.getRest().get(0).getName().getLocalPart().equals("TotalCapacity")) {
+            tiamatParkingArea.setTotalCapacity((BigInteger) netexParkingArea.getRest().get(0).getValue());
+        }
     }
 
     @Override

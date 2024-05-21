@@ -55,7 +55,7 @@ public class PoiNetexImportTest extends TiamatIntegrationTest {
         try (InputStream testInputStream = new FileInputStream(file)) {
             PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(testInputStream);
             Provider provider = Collections.singletonList(providerRepository.getProvider(1L)).get(0);
-            poisImporter.importPointOfInterests(incomingPublicationDelivery, String.valueOf(provider.getId()), fileName);
+            poisImporter.importPointOfInterests(incomingPublicationDelivery, String.valueOf(provider.getId()), fileName, "/");
         } catch (TiamatBusinessException e) {
             throw new RuntimeException(e);
         }

@@ -71,7 +71,7 @@ public class PointOfInterestsImportHandler {
     @Autowired
     private JobRepository jobRepository;
 
-    public void handlePointOfInterests(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger poisCreatedOrUpdated, SiteFrame responseSiteframe, Provider provider, String fileName, Job job) {
+    public void handlePointOfInterests(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger poisCreatedOrUpdated, SiteFrame responseSiteframe, Provider provider, String fileName, String folder, Job job) {
 
         if (publicationDeliveryHelper.hasPointOfInterests(netexSiteFrame)) {
 
@@ -112,10 +112,9 @@ public class PointOfInterestsImportHandler {
                                 .withPointOfInterest(importedPointOfInterests));
             }
 
-            Job jobUpdated = Importer.manageJob(job, JobStatus.FINISHED, importParams, provider, fileName, null, JobImportType.NETEX_PARKING);
+            Job jobUpdated = Importer.manageJob(job, JobStatus.FINISHED, importParams, provider, fileName, folder,  null, JobImportType.NETEX_POI);
             jobRepository.save(jobUpdated);
             logger.info("Mapped {} point of interests!!", tiamatPointOfInterests.size());
-
         }
     }
 }

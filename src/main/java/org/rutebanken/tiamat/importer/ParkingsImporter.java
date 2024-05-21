@@ -26,6 +26,7 @@ import org.rutebanken.tiamat.model.job.JobImportType;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.repository.CacheProviderRepository;
+import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.rutebanken.tiamat.rest.utils.Importer;
 import org.slf4j.Logger;
@@ -37,6 +38,9 @@ import org.springframework.stereotype.Service;
 
 import javax.ws.rs.core.Response;
 import java.net.URI;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
@@ -55,6 +59,9 @@ public class ParkingsImporter {
     private final RoleAssignmentExtractor roleAssignmentExtractor;
 
     @Autowired
+    private JobRepository jobRepository;
+
+    @Autowired
     public ParkingsImporter(PublicationDeliveryHelper publicationDeliveryHelper,
                             ParkingsImportHandler parkingsImportHandler,
                             RoleAssignmentExtractor roleAssignmentExtractor) {
@@ -64,12 +71,12 @@ public class ParkingsImporter {
     }
 
 
-    public void importParkings(PublicationDeliveryStructure publicationDeliveryStructure, String providerId, String fileName) throws TiamatBusinessException {
-        importParkings(publicationDeliveryStructure, null, providerId, fileName);
+    public void importParkings(PublicationDeliveryStructure publicationDeliveryStructure, String providerId, String fileName, String folder) throws TiamatBusinessException {
+        importParkings(publicationDeliveryStructure, null, providerId, fileName, folder);
     }
 
     @SuppressWarnings("unchecked")
-    public Response.ResponseBuilder importParkings(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams, String providerId, String fileName) throws TiamatBusinessException {
+    public Response.ResponseBuilder importParkings(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams, String providerId, String fileName, String folder) throws TiamatBusinessException {
 
         if (roleAssignmentExtractor.getRoleAssignmentsForUser()
                 .stream()
@@ -100,8 +107,9 @@ public class ParkingsImporter {
         GeneralFrame netexGeneralFrame = publicationDeliveryHelper.findGeneralFrame(publicationDeliveryStructure);
         String requestId = netexGeneralFrame.getId();
         updateMappingGeneralFrameContext(netexGeneralFrame);
-        Provider provider = Importer.getCurrentProvider(providerId);
+        Provider provider = getCurrentProvider(providerId);
         Job job = new Job();
+        jobRepository.save(job);
         Response.ResponseBuilder builder = Response.accepted();
 
         try {
@@ -109,14 +117,36 @@ public class ParkingsImporter {
             MDC.put(IMPORT_CORRELATION_ID, requestId);
             logger.info("Publication delivery contains site frame created at {}", netexGeneralFrame.getCreated());
             responseGeneralFrame.withId(requestId + "-response").withVersion("1");
-            Importer.manageJob(job, JobStatus.PROCESSING, importParams, provider, fileName, null, JobImportType.NETEX_PARKING);
-            parkingsImportHandler.handleParkingsGeneralFrame(netexGeneralFrame, importParams, parkingCounter, responseGeneralFrame, provider, fileName, job);
-            return builder.location(URI.create("/services/stop_places/jobs/"+provider.name+"/scheduled_jobs/"+job.getId()));
+            Importer.manageJob(job, JobStatus.PROCESSING, importParams, provider, fileName, folder, null, JobImportType.NETEX_PARKING);
+            jobRepository.save(job);
+            parkingsImportHandler.handleParkingsGeneralFrame(netexGeneralFrame, importParams, parkingCounter, provider, fileName, folder, job);
+            if (provider != null) {
+                return builder.location(URI.create("/services/stop_places/jobs/"+provider.name+"/scheduled_jobs/"+job.getId()));
+            } else {
+                return builder;
+            }
         } catch (Exception e) {
-            Importer.manageJob(job, JobStatus.FAILED, importParams, provider, fileName, e, JobImportType.NETEX_PARKING);
+            Importer.manageJob(job, JobStatus.FAILED, importParams, provider, fileName, folder, e, JobImportType.NETEX_PARKING);
+            jobRepository.save(job);
             throw new RuntimeException(e);
         } finally {
             MDC.remove(IMPORT_CORRELATION_ID);
+        }
+    }
+
+    public Provider getCurrentProvider(String providerId) {
+        providerRepository.populate();
+        Collection<Provider> providers = providerRepository.getProviders();
+
+        try {
+            Long id = Long.valueOf(providerId);
+            Optional<Provider> findProvider = providers.stream()
+                    .filter(provider -> Objects.equals(provider.getId(), id))
+                    .findFirst();
+
+            return findProvider.orElse(null);
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 }

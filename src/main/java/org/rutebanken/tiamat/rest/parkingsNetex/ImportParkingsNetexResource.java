@@ -42,13 +42,13 @@ public class ImportParkingsNetexResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response importParkingsNetexFile(@FormDataParam("file") InputStream inputStream,
                                           @FormDataParam("file_name") String fileName,
-                                          @FormDataParam("user") String user,
-                                          @FormDataParam("provider") String provider)
+                                          @FormDataParam("provider") String provider,
+                                          @FormDataParam("folder") String folder)
             throws IOException, IllegalArgumentException, JAXBException, SAXException {
-        logger.info("Received Netex publication delivery, starting to parse...");
+        logger.info("Received Parking Netex publication delivery, starting to parse...");
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         try {
-            Response.ResponseBuilder builder = parkingsImporter.importParkings(incomingPublicationDelivery, null, provider, fileName);
+            Response.ResponseBuilder builder = parkingsImporter.importParkings(incomingPublicationDelivery, null, provider, fileName, folder);
             return builder.build();
         } catch (NotAuthenticatedException | NotAuthorizedException e) {
             logger.debug("Access denied for publication delivery: " + e.getMessage(), e);

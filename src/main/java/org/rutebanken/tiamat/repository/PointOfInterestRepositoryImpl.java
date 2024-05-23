@@ -167,7 +167,7 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
 
         Map<String, Object> parameters = new HashMap<>();
 
-        String queryStr = "INSERT INTO export_job_id_list \n" +
+        String queryStr = "INSERT INTO job_id_list \n" +
                 " SELECT :exportJobId, req1.poi_id     \n" +
                 " FROM ( \n" +
                 " SELECT MAX(poi.id) AS poi_id, MAX(poi.version) AS version FROM point_of_interest poi WHERE (poi.from_date <= :pointInTime OR poi.from_date IS NULL) \n" +
@@ -225,7 +225,7 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
 
     @Override
     public int countPOIInExport(Long exportJobId) {
-        String queryString = "select count(*) FROM export_job_id_list WHERE job_id = :exportJobId";
+        String queryString = "select count(*) FROM job_id_list WHERE job_id = :exportJobId";
         return ((Number)entityManager.createNativeQuery(queryString).setParameter("exportJobId", exportJobId).getSingleResult()
         ).intValue();
     }
@@ -233,7 +233,7 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void deleteProcessedIds(Long exportJobId, Set<Long> processedPoi) {
         Session session = entityManager.unwrap(Session.class);
-        String queryStr = "DELETE FROM export_job_id_list WHERE job_id = :exportJobId AND exported_object_id IN :poiIdList";
+        String queryStr = "DELETE FROM job_id_list WHERE job_id = :exportJobId AND exported_object_id IN :poiIdList";
         NativeQuery query = session.createNativeQuery(queryStr);
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("exportJobId", exportJobId);
@@ -300,7 +300,7 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Set<Long> getNextBatchToProcess(Long exportJobId){
         Session session = entityManager.unwrap(Session.class);
-        NativeQuery query = session.createNativeQuery("SELECT exported_object_id FROM export_job_id_list WHERE job_id  = :exportJobId LIMIT 1000");
+        NativeQuery query = session.createNativeQuery("SELECT exported_object_id FROM job_id_list WHERE job_id  = :exportJobId LIMIT 1000");
 
         query.setParameter("exportJobId", exportJobId);
 

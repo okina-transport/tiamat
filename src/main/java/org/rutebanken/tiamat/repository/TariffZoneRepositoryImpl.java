@@ -175,7 +175,7 @@ public class TariffZoneRepositoryImpl implements TariffZoneRepositoryCustom {
         Map<String, Object> parameters = new HashMap<>();
 
 
-        String queryStr = "INSERT INTO export_job_id_list\n" +
+        String queryStr = "INSERT INTO job_id_list\n" +
                 "    SELECT :exportJobId, req1.tz_id     \n" +
                 "    FROM (\n" +
                 "        SELECT MAX(tz.id) AS tz_id, MAX(tz.version) AS version \n" +

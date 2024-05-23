@@ -794,7 +794,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         Map<String, Object> parameters = new HashMap<>();
 
 
-        String queryStr = " INSERT INTO export_job_id_list \n" +
+        String queryStr = " INSERT INTO job_id_list \n" +
                 "           SELECT :exportJobId,s.id as stop_id FROM stop_place s where s.id in  \n" +
                 "                 ( SELECT max(s1.id) FROM stop_place s1 ";
 
@@ -823,20 +823,20 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     }
 
     /**
-     * Add parent_stop_places that must be exported to table export_job_id_list
+     * Add parent_stop_places that must be exported to table job_id_list
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void addParentStopPlacesToExportJobTable(Long exportJobId){
 
 
         Map<String, Object> parameters = new HashMap<>();
-        String queryStr = "INSERT INTO export_job_id_list \n" +
+        String queryStr = "INSERT INTO job_id_list \n" +
                 " SELECT :exportJobId, s.id FROM stop_place s WHERE \n" +
                 " s.from_date <= :pointInTime \n" +
                 " AND (   s.to_date >= :pointInTime  or s.to_date IS NULL) \n" +
                 " AND s.netex_id in ( \n" +
                 " SELECT distinct s2.parent_site_ref FROM stop_place s2 WHERE s2.parent_site_ref IS NOT NULL \n" +
-                " AND S2.id IN (SELECT exported_object_id FROM export_job_id_list WHERE job_id = :exportJobId) ) \n";
+                " AND S2.id IN (SELECT exported_object_id FROM job_id_list WHERE job_id = :exportJobId) ) \n";
 
 
 
@@ -859,7 +859,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     public Set<Long> getNextBatchToProcess(Long exportJobId){
 
         Session session = entityManager.unwrap(Session.class);
-        NativeQuery query = session.createNativeQuery("SELECT exported_object_id FROM export_job_id_list WHERE job_id  = :exportJobId LIMIT 1000");
+        NativeQuery query = session.createNativeQuery("SELECT exported_object_id FROM job_id_list WHERE job_id  = :exportJobId LIMIT 1000");
 
         query.setParameter("exportJobId", exportJobId);
 
@@ -875,7 +875,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void deleteProcessedIds(Long exportJobId, Set<Long> processedStops){
         Session session = entityManager.unwrap(Session.class);
-        String queryStr = "DELETE FROM export_job_id_list WHERE job_id = :exportJobId AND exported_object_id IN :stopPlaceIdList";
+        String queryStr = "DELETE FROM job_id_list WHERE job_id = :exportJobId AND exported_object_id IN :stopPlaceIdList";
         NativeQuery query = session.createNativeQuery(queryStr);
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("exportJobId", exportJobId);
@@ -885,7 +885,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     }
 
     public int countStopsInExport(Long exportJobId) {
-        String queryString = "select count(*) FROM export_job_id_list WHERE job_id = :exportJobId";
+        String queryString = "select count(*) FROM job_id_list WHERE job_id = :exportJobId";
         return ((Number)entityManager.createNativeQuery(queryString).setParameter("exportJobId", exportJobId).getSingleResult()
                ).intValue();
     }

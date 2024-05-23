@@ -188,7 +188,7 @@ public class TopographicPlaceRepositoryImpl implements TopographicPlaceRepositor
 
 		Map<String, Object> parameters = new HashMap<>();
 
-		String queryStr = "INSERT INTO export_job_id_list \n" +
+		String queryStr = "INSERT INTO job_id_list \n" +
 				" SELECT :exportJobId,req1.topo_id     \n" +
 				" FROM ( \n" +
 				" SELECT max(tp.id)as topo_id,MAX(tp.version) as version FROM topographic_place tp  WHERE  (tp.from_date <= :pointInTime OR  tp.from_date IS NULL) \n" +
@@ -207,16 +207,16 @@ public class TopographicPlaceRepositoryImpl implements TopographicPlaceRepositor
 	}
 
 	/**
-	 * Add parent_ topographic places that must be exported to table export_job_id_list
+	 * Add parent_ topographic places that must be exported to table job_id_list
 	 */
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void addParentTopographicPlacesToExportJobTable(Long exportJobId){
 
 
 		Map<String, Object> parameters = new HashMap<>();
-		String queryStr = "INSERT INTO export_job_id_list \n" +
+		String queryStr = "INSERT INTO job_id_list \n" +
 				" SELECT :exportJobId,id from topographic_place tp, (SELECT distinct tp2.parent_ref, tp2.parent_ref_version FROM topographic_place tp2 WHERE tp2.parent_ref IS NOT NULL \n" +
-				" AND tp2.id IN (SELECT exported_object_id FROM export_job_id_list WHERE job_id = :exportJobId))parent_list \n" +
+				" AND tp2.id IN (SELECT exported_object_id FROM job_id_list WHERE job_id = :exportJobId))parent_list \n" +
 				" WHERE tp.netex_id  = parent_list.parent_ref and  cast(tp.version as text) = parent_list.parent_ref_version \n";
 
 

@@ -202,7 +202,7 @@ public class StreamingPublicationDelivery {
         GeneralFrame netexGeneralFrame = netexMapper.mapToNetexModel(generalFrame);
 
         stopPlaceRepository.initExportJobTable(provider, exportJobId);
-        logger.info("Initialization completed for table export_job_id_list. jobId :" + exportJobId);
+        logger.info("Initialization completed for table job_id_list. jobId :" + exportJobId);
 
         stopPlaceRepository.addParentStopPlacesToExportJobTable(exportJobId);
         logger.info("Parent stop places has been added successfully");
@@ -262,7 +262,7 @@ public class StreamingPublicationDelivery {
 
 
         parkingRepository.initExportJobTable(exportJobId);
-        logger.info("Initialization completed for table export_job_id_list. jobId :" + exportJobId);
+        logger.info("Initialization completed for table job_id_list. jobId :" + exportJobId);
 
         prepareParkings(mappedParkingCount, listMembers, exportJobId);
         logger.info("Parking preparation completed");
@@ -366,7 +366,7 @@ public class StreamingPublicationDelivery {
 
         pointOfInterestRepository.initExportJobTable(exportJobId);
 
-        logger.info("Initialization completed for table export_job_id_list. jobId :" + exportJobId);
+        logger.info("Initialization completed for table job_id_list. jobId :" + exportJobId);
 
         int totalNbOfPoi = pointOfInterestRepository.countPOIInExport(exportJobId);
         logger.info("Total nb of POI to export:" + totalNbOfPoi);

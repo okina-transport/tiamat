@@ -150,7 +150,7 @@ public class PointOfInterestClassificationRepositoryImpl implements PointOfInter
     @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
     public Set<Long> getNextBatchToProcess(Long exportJobId){
         Session session = entityManager.unwrap(Session.class);
-        NativeQuery query = session.createNativeQuery("SELECT exported_object_id FROM export_job_id_list WHERE job_id  = :exportJobId LIMIT 1000");
+        NativeQuery query = session.createNativeQuery("SELECT exported_object_id FROM job_id_list WHERE job_id  = :exportJobId LIMIT 1000");
 
         query.setParameter("exportJobId", exportJobId);
 
@@ -165,7 +165,7 @@ public class PointOfInterestClassificationRepositoryImpl implements PointOfInter
     @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
     public void deleteProcessedIds(Long exportJobId, Set<Long> processedPoiClassification) {
         Session session = entityManager.unwrap(Session.class);
-        String queryStr = "DELETE FROM export_job_id_list WHERE job_id = :exportJobId AND exported_object_id IN :poiClassificationIdList";
+        String queryStr = "DELETE FROM job_id_list WHERE job_id = :exportJobId AND exported_object_id IN :poiClassificationIdList";
         NativeQuery query = session.createNativeQuery(queryStr);
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("exportJobId", exportJobId);
@@ -204,7 +204,7 @@ public class PointOfInterestClassificationRepositoryImpl implements PointOfInter
 
         Map<String, Object> parameters = new HashMap<>();
 
-        String queryStr = "INSERT INTO export_job_id_list \n" +
+        String queryStr = "INSERT INTO job_id_list \n" +
                 " SELECT :exportJobId, req1.poic_id     \n" +
                 " FROM ( \n" +
                 " SELECT MAX(poic.id) AS poic_id, MAX(poic.version) AS version FROM point_of_interest_classification poic WHERE (poic.from_date <= :pointInTime OR poic.from_date IS NULL) \n" +

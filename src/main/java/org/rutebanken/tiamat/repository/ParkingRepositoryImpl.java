@@ -383,7 +383,7 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
 
         Map<String, Object> parameters = new HashMap<>();
 
-        String queryStr = "INSERT INTO export_job_id_list \n" +
+        String queryStr = "INSERT INTO job_id_list \n" +
                 " SELECT :exportJobId,req1.parking_id     \n" +
                 " FROM ( \n" +
                 " SELECT max(p.id)as parking_id,MAX(p.version) as version FROM parking p  WHERE  (p.from_date <= :pointInTime OR  p.from_date IS NULL) \n" +

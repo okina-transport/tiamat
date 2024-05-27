@@ -1,0 +1,1 @@
+ALTER TABLE parking ADD COLUMN operator character varying(255);

@@ -96,7 +96,8 @@ public class ParkingsCSVHelper {
                     csvRecord.get(26),
                     csvRecord.get(27),
                     csvRecord.get(28),
-                    csvRecord.get(29)
+                    csvRecord.get(29),
+                    csvRecord.get(30)
             );
 
             validateParking(dtoParking);
@@ -305,33 +306,11 @@ public class ParkingsCSVHelper {
             parking.getParkingAreas().add(parkingArea);
             parking.getParkingProperties().add(parkingProperties);
 
+            if(StringUtils.isNotEmpty(parkingDto.getOperator())){
+                parking.setOperator(parkingDto.getOperator());
+            }
+
             return parking;
         }).collect(Collectors.toList());
     }
-
-
-    private static void addAccessibilityAssessment(Parking parking) {
-
-        AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
-        accessibilityAssessment.setVersion(1);
-        accessibilityAssessment.setCreated(Instant.now());
-        accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.PARTIAL);
-        accessibilityAssessment.setLimitations(new ArrayList<>());
-
-        AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
-        accessibilityLimitation.setCreated(Instant.now());
-        accessibilityLimitation.setWheelchairAccess(LimitationStatusEnumeration.TRUE);
-        accessibilityLimitation.setAudibleSignalsAvailable(LimitationStatusEnumeration.UNKNOWN);
-        accessibilityLimitation.setEscalatorFreeAccess(LimitationStatusEnumeration.UNKNOWN);
-        accessibilityLimitation.setLiftFreeAccess(LimitationStatusEnumeration.UNKNOWN);
-        accessibilityLimitation.setStepFreeAccess(LimitationStatusEnumeration.UNKNOWN);
-        accessibilityLimitation.setVisualSignsAvailable(LimitationStatusEnumeration.UNKNOWN);
-
-        accessibilityAssessment.getLimitations().add(accessibilityLimitation);
-        parking.setAccessibilityAssessment(accessibilityAssessment);
-
-    }
-
-
-
 }

@@ -1,6 +1,5 @@
 package org.rutebanken.tiamat.service.parking;
 
-import org.rutebanken.tiamat.general.ParkingsCSVHelper;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.ParkingRepository;
@@ -243,12 +242,12 @@ public class ParkingsImportedService {
             isUpdated = true;
 
         }
+
+        if(existingParking.getOperator() != null){
+            updatedParking.setOperator(existingParking.getOperator());
+            isUpdated = true;
+        }
+
         return isUpdated;
     }
-
-    public void clearAllRentalBikes(){
-        parkingRepository.clearAllRentalbikeParkings();
-    }
-
-
 }

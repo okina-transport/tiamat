@@ -81,6 +81,7 @@ public class Parking
     protected String insee;
     protected String siret;
     protected String typeOfParkingRef;
+    protected String operator;
 
     @Transient
     protected String originalId;
@@ -346,6 +347,10 @@ public class Parking
 
     public String getOriginalId() { return originalId; }
 
+    public String getOperator() { return operator; }
+
+    public void setOperator(String operator) { this.operator = operator; }
+
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
@@ -389,6 +394,7 @@ public class Parking
                 .add("parkingProperties", parkingProperties)
                 .add("parkingAreas", parkingAreas)
                 .add("originalId", originalId)
+                .add("operator", operator)
                 .toString();
     }
 }

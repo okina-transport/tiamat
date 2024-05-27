@@ -509,14 +509,17 @@ public class StreamingPublicationDelivery {
                 org.rutebanken.tiamat.model.Parking tp = parkingResultsIterator.next();
                 Parking np = netexMapper.getFacade().map(tp, Parking.class);
                 if (tp.getSiret() != null && !tp.getSiret().isEmpty()) {
-                    String organisationId = "MOBIITI:Organisation:" + UUID.randomUUID().toString();
-                    String responsabilitySetId = "MOBIITI:ResponsibilitySet:" + UUID.randomUUID().toString();
-                    String responsibilityRoleAssignmentId = "MOBIITI:ResponsibilityRoleAssignment:" + UUID.randomUUID().toString();
+                    String organisationId = "MOBIITI:Organisation:" + UUID.randomUUID();
+                    String responsabilitySetId = "MOBIITI:ResponsibilitySet:" + UUID.randomUUID();
+                    String responsibilityRoleAssignmentId = "MOBIITI:ResponsibilityRoleAssignment:" + UUID.randomUUID();
                     GeneralOrganisation generalOrganisation = new GeneralOrganisation();
                     generalOrganisation.setId(organisationId);
                     generalOrganisation.setVersion("any");
                     generalOrganisation.getOrganisationType().add(OrganisationTypeEnumeration.OTHER);
                     generalOrganisation.setCompanyNumber(tp.getSiret());
+                    if(StringUtils.isNotEmpty(tp.getOperator())){
+                        generalOrganisation.setName(new MultilingualString().withValue(tp.getOperator()));
+                    }
                     listMembers.add(netexObjectFactory.createGeneralOrganisation(generalOrganisation));
 
                     OrganisationRefStructure organisationRefStructure = new OrganisationRefStructure();

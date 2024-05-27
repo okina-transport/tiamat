@@ -37,8 +37,9 @@ public class DtoParking {
     private String workType;
     private String info;
     private String hookType;
+    private String operator;
 
-    public DtoParking(String id, String name, String insee, String adress, String url, String userType, String free, String nbOfPlaces, String nbOfPr, String disabledParkingNb, String electricVehicleNb, String bikeNb, String electricBikesNb, String carSharingNb, String motorcycleNb, String carPoolingNb, String maxHeight, String siretNumber, String xlong, String ylat, String disabledParkingPrice, String oneHourPrice, String twoHoursPrice, String threeHoursPrice, String fourHoursPrice, String twentyFourHoursPrice, String residentSubscription, String nonResidentSubscription, String workType, String info) {
+    public DtoParking(String id, String name, String insee, String adress, String url, String userType, String free, String nbOfPlaces, String nbOfPr, String disabledParkingNb, String electricVehicleNb, String bikeNb, String electricBikesNb, String carSharingNb, String motorcycleNb, String carPoolingNb, String maxHeight, String siretNumber, String xlong, String ylat, String disabledParkingPrice, String oneHourPrice, String twoHoursPrice, String threeHoursPrice, String fourHoursPrice, String twentyFourHoursPrice, String residentSubscription, String nonResidentSubscription, String workType, String info, String operator) {
         this.id = id;
         this.name = name;
         this.insee = insee;
@@ -69,6 +70,7 @@ public class DtoParking {
         this.nonResidentSubscription = nonResidentSubscription;
         this.workType = workType;
         this.info = info;
+        this.operator = operator;
     }
 
     public DtoParking() {
@@ -322,6 +324,10 @@ public class DtoParking {
         this.hookType = hookType;
     }
 
+    public void setOperator(String operator) { this.operator = operator; }
+
+    public String getOperator() { return this.operator; }
+
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
@@ -356,6 +362,7 @@ public class DtoParking {
                 .add("abo_non_resident", nonResidentSubscription)
                 .add("type_ouvrage", workType)
                 .add("info", info)
+                .add("operator", operator)
                 .toString();
     }
 }

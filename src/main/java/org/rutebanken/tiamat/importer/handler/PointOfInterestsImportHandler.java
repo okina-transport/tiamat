@@ -30,16 +30,17 @@ import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.repository.JobRepository;
+import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.rest.utils.Importer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class PointOfInterestsImportHandler {
@@ -70,12 +71,14 @@ public class PointOfInterestsImportHandler {
 
     @Autowired
     private JobRepository jobRepository;
+    @Autowired
+    private PointOfInterestRepository pointOfInterestRepository;
 
     public void handlePointOfInterests(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger poisCreatedOrUpdated, SiteFrame responseSiteframe, Provider provider, String fileName, String folder, Job job) {
 
         if (publicationDeliveryHelper.hasPointOfInterests(netexSiteFrame)) {
-
             List<org.rutebanken.tiamat.model.PointOfInterest> tiamatPointOfInterests = netexMapper.mapPointsOfInterestToTiamatModel(netexSiteFrame.getPointsOfInterest().getPointOfInterest());
+            parseToSynchronizeKeyValues(netexSiteFrame, tiamatPointOfInterests);
 
             int numberOfPoisBeforeFiltering = tiamatPointOfInterests.size();
             logger.info("About to filter {} point of interests based on topographic references: {}", tiamatPointOfInterests.size(), importParams.targetTopographicPlaces);
@@ -89,7 +92,7 @@ public class PointOfInterestsImportHandler {
                 logger.info("Got {} point of interests (was {}) after filtering", tiamatPointOfInterests.size(), numberOfPoisBeforeFiltering);
             }
 
-            Collection<org.rutebanken.netex.model.PointOfInterest> importedPointOfInterests;
+            Collection<PointOfInterest> importedPointOfInterests;
 
             if (importParams.importType == null || importParams.importType.equals(ImportType.MERGE)) {
                 final FencedLock lock = hazelcastInstance.getCPSubsystem().getLock(POI_IMPORT_LOCK_KEY);
@@ -116,5 +119,24 @@ public class PointOfInterestsImportHandler {
             jobRepository.save(jobUpdated);
             logger.info("Mapped {} point of interests!!", tiamatPointOfInterests.size());
         }
+    }
+
+    private void parseToSynchronizeKeyValues(SiteFrame netexSiteFrame, List<org.rutebanken.tiamat.model.PointOfInterest> tiamatPointOfInterests) {
+        // Map Netex POIs by ID for quick access
+        Map<String, PointOfInterest> netexPoiMap = netexSiteFrame.getPointsOfInterest().getPointOfInterest().stream()
+                .collect(Collectors.toMap(PointOfInterest::getId, Function.identity()));
+
+        // Process each Tiamat POI
+        tiamatPointOfInterests.forEach(tiamatPoi -> {
+            org.rutebanken.tiamat.model.PointOfInterest tiamat = pointOfInterestRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(tiamatPoi.getNetexId());
+
+            // Check if there's a corresponding Netex POI
+            if (tiamat != null && netexPoiMap.containsKey(tiamat.getNetexId())) {
+                PointOfInterest correspondingNetexPoi = netexPoiMap.get(tiamat.getNetexId());
+                correspondingNetexPoi.getKeyList().getKeyValue().forEach(entry -> {
+                    tiamatPoi.getOrCreateValues(entry.getKey()).add(entry.getValue());
+                });
+            }
+        });
     }
 }

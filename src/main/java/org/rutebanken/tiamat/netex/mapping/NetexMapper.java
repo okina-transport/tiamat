@@ -430,6 +430,10 @@ public class NetexMapper {
         if (netexParking.getTotalCapacity() != null) parking.setTotalCapacity(netexParking.getTotalCapacity());
         if (netexParking.isRechargingAvailable() != null) parking.setRechargingAvailable(netexParking.isRechargingAvailable());
         if (netexParking.getParentSiteRef() != null) parking.setParentSiteRef(mapToNetexModel(netexParking.getParentSiteRef()));
+
+        for (KeyValueStructure entry : netexParking.getKeyList().getKeyValue()) {
+            parking.getOrCreateValues(entry.getKey()).add(entry.getValue());
+        }
     }
 
     public void parseToSetStopPlaceGlobalInformations(org.rutebanken.netex.model.StopPlace netexStopPlace, org.rutebanken.tiamat.model.StopPlace stopPlace) {

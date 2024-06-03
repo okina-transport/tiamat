@@ -32,9 +32,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Component
@@ -127,9 +125,45 @@ public class MergingPointOfInterestImporter {
 
         PointOfInterest copyPointOfInterest = versionCreator.createCopy(existingPointOfInterest, PointOfInterest.class);
 
-        boolean keyValuesChanged = keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingPointOfInterest, copyPointOfInterest);
-        boolean centroidChanged = (copyPointOfInterest.getCentroid() != null && incomingPointOfInterest.getCentroid() != null && !copyPointOfInterest.getCentroid().equals(incomingPointOfInterest.getCentroid()));
+        boolean keyValuesChanged = false;
+        if ((copyPointOfInterest.getKeyValues() == null && incomingPointOfInterest.getKeyValues() != null) ||
+                (copyPointOfInterest.getKeyValues() != null && incomingPointOfInterest.getKeyValues() != null &&
+                        !copyPointOfInterest.getKeyValues().equals(incomingPointOfInterest.getKeyValues()))) {
 
+            // Suppression des clés qui ne sont plus présentes dans incomingPointOfInterest
+            Iterator<Map.Entry<String, Value>> iterator = copyPointOfInterest.getKeyValues().entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, Value> entry = iterator.next();
+                if (!incomingPointOfInterest.getKeyValues().containsKey(entry.getKey())) {
+                    iterator.remove();
+                    logger.info("Removed key value {} for parking {}", entry.getKey(), copyPointOfInterest);
+                }
+            }
+
+            // Ajout/Mise à jour des nouvelles clés-valeurs
+            for (Map.Entry<String, Value> entry : incomingPointOfInterest.getKeyValues().entrySet()) {
+                keyValueListAppender.appendKeyValue(entry.getKey(), incomingPointOfInterest, copyPointOfInterest);
+            }
+            logger.info("Updated key values to {} for point of interest {}", copyPointOfInterest.getKeyValues(), copyPointOfInterest);
+            keyValuesChanged = true;
+        }
+
+        boolean nameChanged = false;
+        if(copyPointOfInterest.getName() != incomingPointOfInterest.getName()) {
+            copyPointOfInterest.setName(incomingPointOfInterest.getName());
+            logger.info("Updated name to {} for point of interest {}", copyPointOfInterest.getName(), copyPointOfInterest);
+            nameChanged = true;
+        }
+
+        boolean centroidChanged = false;
+        if ((copyPointOfInterest.getCentroid() == null && incomingPointOfInterest.getCentroid() != null) ||
+                (copyPointOfInterest.getCentroid() != null && incomingPointOfInterest.getCentroid() != null
+                        && !copyPointOfInterest.getCentroid().equals(incomingPointOfInterest.getCentroid()))) {
+            copyPointOfInterest.setCentroid(incomingPointOfInterest.getCentroid());
+            logger.info("Updated centroid to {} for point of interest {}", copyPointOfInterest.getCentroid(), copyPointOfInterest);
+            centroidChanged = true;
+        }
+        
         boolean allAreasWheelchairAccessibleChanged = false;
         if ((copyPointOfInterest.isAllAreasWheelchairAccessible() == null && incomingPointOfInterest.isAllAreasWheelchairAccessible() != null) ||
                 (copyPointOfInterest.isAllAreasWheelchairAccessible() != null && incomingPointOfInterest.isAllAreasWheelchairAccessible() != null
@@ -138,20 +172,6 @@ public class MergingPointOfInterestImporter {
             copyPointOfInterest.setAllAreasWheelchairAccessible(incomingPointOfInterest.isAllAreasWheelchairAccessible());
             logger.info("Updated allAreasWheelchairAccessible value to {} for point of interest {}", copyPointOfInterest.isAllAreasWheelchairAccessible(), copyPointOfInterest);
             allAreasWheelchairAccessibleChanged = true;
-        }
-
-        boolean classificationsChanged = false;
-        List<PointOfInterestClassification> pointOfInterestClassifications = new ArrayList<>();
-        if (incomingPointOfInterest.getClassifications() != null && (!new HashSet<>(copyPointOfInterest.getClassifications()).containsAll(incomingPointOfInterest.getClassifications()) ||
-                !new HashSet<>(incomingPointOfInterest.getClassifications()).containsAll(copyPointOfInterest.getClassifications()))) {
-
-            copyPointOfInterest.getClassifications().clear();
-            for (PointOfInterestClassification classification : incomingPointOfInterest.getClassifications()) {
-                pointOfInterestClassifications.add(pointOfInterestClassificationVersionedSaverService.saveNewVersion(classification));
-            }
-            copyPointOfInterest.getClassifications().addAll(pointOfInterestClassifications);
-            logger.info("Updated classification to {} for point of interest {}", copyPointOfInterest.getClassifications(), copyPointOfInterest);
-            classificationsChanged = true;
         }
 
         boolean accessibilityAssessmentChanged = false;
@@ -176,14 +196,22 @@ public class MergingPointOfInterestImporter {
             accessibilityLimitationsChanged = true;
         }
 
-        boolean nameChanged = false;
-        if (!copyPointOfInterest.getName().equals(incomingPointOfInterest.getName())) {
-            copyPointOfInterest.setName(incomingPointOfInterest.getName());
-            nameChanged = true;
+        boolean classificationsChanged = false;
+        List<PointOfInterestClassification> pointOfInterestClassifications = new ArrayList<>();
+        if (incomingPointOfInterest.getClassifications() != null && (!new HashSet<>(copyPointOfInterest.getClassifications()).containsAll(incomingPointOfInterest.getClassifications()) ||
+                !new HashSet<>(incomingPointOfInterest.getClassifications()).containsAll(copyPointOfInterest.getClassifications()))) {
+
+            copyPointOfInterest.getClassifications().clear();
+            for (PointOfInterestClassification classification : incomingPointOfInterest.getClassifications()) {
+                pointOfInterestClassifications.add(pointOfInterestClassificationVersionedSaverService.saveNewVersion(classification));
+            }
+            copyPointOfInterest.getClassifications().addAll(pointOfInterestClassifications);
+            logger.info("Updated classification to {} for point of interest {}", copyPointOfInterest.getClassifications(), copyPointOfInterest);
+            classificationsChanged = true;
         }
 
-        if (keyValuesChanged || centroidChanged || nameChanged || allAreasWheelchairAccessibleChanged  || classificationsChanged ||
-                accessibilityAssessmentChanged || accessibilityLimitationsChanged) {
+        if (keyValuesChanged || nameChanged || centroidChanged || allAreasWheelchairAccessibleChanged ||
+                accessibilityAssessmentChanged || accessibilityLimitationsChanged || classificationsChanged) {
             logger.info("Updated existing point of interest {}. ", copyPointOfInterest);
             copyPointOfInterest = pointOfInterestVersionedSaverService.saveNewVersion(copyPointOfInterest);
             return updateCache(copyPointOfInterest);

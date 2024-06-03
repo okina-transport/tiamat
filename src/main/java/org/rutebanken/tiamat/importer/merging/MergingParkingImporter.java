@@ -32,10 +32,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Component
@@ -150,12 +147,33 @@ public class MergingParkingImporter {
 
         boolean keyValuesChanged = false;
         if ((copyParking.getKeyValues() == null && incomingParking.getKeyValues() != null) ||
-                (copyParking.getKeyValues() != null && incomingParking.getKeyValues() != null
-                        && !copyParking.getKeyValues().equals(incomingParking.getKeyValues()))) {
+                (copyParking.getKeyValues() != null && incomingParking.getKeyValues() != null &&
+                        !copyParking.getKeyValues().equals(incomingParking.getKeyValues()))) {
+
+            // Suppression des clés qui ne sont plus présentes dans incomingParking
+            Iterator<Map.Entry<String, Value>> iterator = copyParking.getKeyValues().entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, Value> entry = iterator.next();
+                if (!incomingParking.getKeyValues().containsKey(entry.getKey())) {
+                    iterator.remove();
+                    logger.info("Removed key value {} for parking {}", entry.getKey(), copyParking);
+                }
+            }
+
+            // Ajout/Mise à jour des nouvelles clés-valeurs
             for (Map.Entry<String, Value> entry : incomingParking.getKeyValues().entrySet()) {
                 keyValueListAppender.appendKeyValue(entry.getKey(), incomingParking, copyParking);
             }
+            logger.info("Updated key values to {} for parking {}", copyParking.getKeyValues(), copyParking);
             keyValuesChanged = true;
+        }
+
+
+        boolean nameChanged = false;
+        if(copyParking.getName() != incomingParking.getName()) {
+            copyParking.setName(incomingParking.getName());
+            logger.info("Updated name to {} for parking {}", copyParking.getName(), copyParking);
+            nameChanged = true;
         }
 
         boolean centroidChanged = false;
@@ -163,6 +181,7 @@ public class MergingParkingImporter {
                 (copyParking.getCentroid() != null && incomingParking.getCentroid() != null
                         && !copyParking.getCentroid().equals(incomingParking.getCentroid()))) {
             copyParking.setCentroid(incomingParking.getCentroid());
+            logger.info("Updated centroid to {} for parking {}", copyParking.getCentroid(), copyParking);
             centroidChanged = true;
         }
 
@@ -204,6 +223,13 @@ public class MergingParkingImporter {
             copyParking.setTotalCapacity(incomingParking.getTotalCapacity());
             logger.info("Updated total capacity type to {} for parking {}", copyParking.getTotalCapacity(), copyParking);
             totalCapacityChanged = true;
+        }
+
+        boolean paymentProcessChanged = false;
+        if(copyParking.getParkingPaymentProcess() != incomingParking.getParkingPaymentProcess()) {
+            copyParking.setParkingPaymentProcess(incomingParking.getParkingPaymentProcess());
+            logger.info("Updated payment process to {} for parking {}", copyParking.getParkingPaymentProcess(), copyParking);
+            paymentProcessChanged = true;
         }
 
         boolean rechargingAvailableChanged = false;
@@ -273,8 +299,8 @@ public class MergingParkingImporter {
             equipmentChanged = true;
         }
 
-        if (keyValuesChanged || allAreasWheelchairAccessibleChanged || typeChanged || centroidChanged || vehicleType || totalCapacityChanged ||
-                rechargingAvailableChanged || bookingUrlChanged || propertiesChanged || areasChanged || equipmentChanged) {
+        if (keyValuesChanged || nameChanged || allAreasWheelchairAccessibleChanged || typeChanged || centroidChanged || vehicleType || totalCapacityChanged ||
+                paymentProcessChanged || rechargingAvailableChanged || bookingUrlChanged || propertiesChanged || areasChanged || equipmentChanged) {
             logger.info("Updated existing parking {}. ", copyParking);
             copyParking = parkingVersionedSaverService.saveNewVersion(copyParking);
             return updateCache(copyParking);

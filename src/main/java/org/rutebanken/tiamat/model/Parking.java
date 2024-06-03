@@ -242,6 +242,10 @@ public class Parking
         return this.parkingPaymentProcess;
     }
 
+    public void setParkingPaymentProcess(List<ParkingPaymentProcessEnumeration> parkingPaymentProcess) {
+        this.parkingPaymentProcess = parkingPaymentProcess;
+    }
+
     public List<PaymentMethodEnumeration> getPaymentMethods() {
         if (paymentMethods == null) {
             paymentMethods = new ArrayList<>();

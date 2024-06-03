@@ -33,10 +33,7 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -415,6 +412,10 @@ public class NetexMapper {
         if (netexParking.getTotalCapacity() != null) parking.setTotalCapacity(netexParking.getTotalCapacity());
         if (netexParking.isRechargingAvailable() != null) parking.setRechargingAvailable(netexParking.isRechargingAvailable());
         if (netexParking.getParentSiteRef() != null) parking.setParentSiteRef(mapToNetexModel(netexParking.getParentSiteRef()));
+
+        for (KeyValueStructure entry : netexParking.getKeyList().getKeyValue()) {
+            parking.getOrCreateValues(entry.getKey()).add(entry.getValue());
+        }
     }
 
     public void parseToSetPlaceEquipments(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {

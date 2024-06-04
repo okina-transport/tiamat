@@ -17,5 +17,6 @@ package org.rutebanken.tiamat.model.job;
 
 public enum JobImportType {
     NETEX_PARKING,
-    NETEX_POI
+    NETEX_POI,
+    NETEX_STOP_PlACE_QUAY
 }

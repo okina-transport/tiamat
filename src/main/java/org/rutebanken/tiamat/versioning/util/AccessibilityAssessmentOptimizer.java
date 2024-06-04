@@ -15,10 +15,7 @@
 
 package org.rutebanken.tiamat.versioning.util;
 
-import org.rutebanken.tiamat.model.AccessibilityAssessment;
-import org.rutebanken.tiamat.model.AccessibilityLimitation;
-import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
-import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -39,7 +36,7 @@ public class AccessibilityAssessmentOptimizer {
     }
 
 
-    public void optimizeAccessibilityAssessments(StopPlace stopPlace) {
+    public void optimizeAccessibilityAssessmentsStopPlace(StopPlace stopPlace) {
 
         List<AccessibilityAssessment> allQuayAccessibilityAssessments = new ArrayList<>();
 
@@ -86,6 +83,45 @@ public class AccessibilityAssessmentOptimizer {
                     .stream()
                     .filter(quay -> quay.getAccessibilityAssessment() != null)
                     .forEach(quay -> calculateAndSetMobilityImpairedAccess(quay.getAccessibilityAssessment()));
+        }
+    }
+
+    public void optimizeAccessibilityAssessmentsQuay(Quay quay) {
+
+        List<AccessibilityAssessment> allQuayAccessibilityAssessments = new ArrayList<>();
+
+        // Populate assessments on all quays that do not have assessments set
+        if(quay.getAccessibilityAssessment() == null) {
+            quay.setAccessibilityAssessment(deepCopyAccessibilityAssessment(quay.getAccessibilityAssessment()));
+
+            allQuayAccessibilityAssessments.add(quay.getAccessibilityAssessment());
+        }
+
+        if (!allQuayAccessibilityAssessments.isEmpty()) {
+            //Assessments are set
+
+            if (allAccessibilityAssessmentsAreEqual(allQuayAccessibilityAssessments)) {
+                //All quays are equal
+                //Set Assessment on StopPlace
+
+                AccessibilityAssessment firstAccessibilityAssessment = deepCopyAccessibilityAssessment(allQuayAccessibilityAssessments.get(0));
+
+                if (quay.getAccessibilityAssessment() != null) {
+                    // Use existing Assessment instead, but update limitations
+                    AccessibilityAssessment nextVersion = quay.getAccessibilityAssessment();
+                    nextVersion.setLimitations(firstAccessibilityAssessment.getLimitations());
+                    firstAccessibilityAssessment = nextVersion;
+                }
+
+                quay.setAccessibilityAssessment(firstAccessibilityAssessment);
+            } else {
+                // Assessments are different - remove from StopPlace
+                quay.setAccessibilityAssessment(null);
+            }
+        }
+
+        if (quay.getAccessibilityAssessment() != null) {
+            calculateAndSetMobilityImpairedAccess(quay.getAccessibilityAssessment());
         }
     }
 

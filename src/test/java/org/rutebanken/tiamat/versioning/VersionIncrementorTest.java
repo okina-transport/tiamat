@@ -21,7 +21,7 @@ import org.rutebanken.tiamat.model.StopPlace;
 import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
+
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class VersionIncrementorTest {
     @Test
@@ -37,7 +37,7 @@ public class VersionIncrementorTest {
         stopPlace.getQuays().add(quay);
 
 
-        StopPlace newVersion = new VersionIncrementor().initiateOrIncrementVersions(stopPlace);
+        StopPlace newVersion = new VersionIncrementor().initiateOrIncrementVersionsStopPlace(stopPlace);
         assertThat(newVersion.getVersion()).isEqualTo(2L);
         assertThat(newVersion.getQuays()).isNotEmpty();
         assertThat(newVersion.getQuays().iterator().next().getVersion()).isEqualTo(3L);

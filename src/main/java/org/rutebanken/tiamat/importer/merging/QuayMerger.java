@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.operation.TransformException;
+import org.rutebanken.netex.model.Quays_RelStructure;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;

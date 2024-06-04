@@ -44,6 +44,7 @@ import org.rutebanken.tiamat.rest.poi.ImportPOIResource;
 import org.rutebanken.tiamat.rest.parkings.ImportRentalBikeResource;
 import org.rutebanken.tiamat.rest.poiNetex.ImportPointOfInterestsNetexResource;
 import org.rutebanken.tiamat.rest.postcode.PostcodeResource;
+import org.rutebanken.tiamat.rest.stopPlacesNetex.ImportStopPlacesNetexResource;
 import org.rutebanken.tiamat.rest.tad.ImportTADRessource;
 import org.rutebanken.tiamat.rest.tariffzone.TariffZoneRessource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -109,7 +110,7 @@ public class JerseyConfig {
         publicResources.add(ImportParkingsNetexResource.class);
         publicResources.add(JobsResources.class);
         publicResources.add(ImportPointOfInterestsNetexResource.class);
-
+        publicResources.add(ImportStopPlacesNetexResource.class);
 
         publicResources.add(GeneralExceptionMapper.class);
         publicResources.add(TiamatBusinessExceptionMapper.class);

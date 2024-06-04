@@ -21,7 +21,6 @@ import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.ImportParams;
-import org.rutebanken.tiamat.importer.ParkingsImporter;
 import org.rutebanken.tiamat.importer.merging.TransactionalMergingParkingsImporter;
 import org.rutebanken.tiamat.importer.filter.ZoneTopographicPlaceFilter;
 import org.rutebanken.tiamat.importer.initial.ParallelInitialParkingImporter;
@@ -121,7 +120,7 @@ public class ParkingsImportHandler {
     }
 
     public void handleParkingsGeneralFrame(GeneralFrame generalFrame, ImportParams importParams, AtomicInteger parkingsCreatedOrUpdated, Provider provider, String fileName, String folder, Job job) throws Exception {
-        if (publicationDeliveryHelper.hasParkingsGeneralFrame(generalFrame)) {
+        if (publicationDeliveryHelper.hasGeneralFrame(generalFrame)) {
             List<JAXBElement<? extends EntityStructure>> members = generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity();
             List<org.rutebanken.netex.model.Parking> tiamatParking = NetexUtils.getMembers(org.rutebanken.netex.model.Parking.class, members);
             List<Parking> parkingsParsed = parseParkings(tiamatParking);

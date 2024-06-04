@@ -15,10 +15,14 @@
 
 package org.rutebanken.tiamat.repository;
 
+import org.locationtech.jts.geom.Envelope;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingIntervalDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.model.Quay;
+import org.rutebanken.tiamat.model.StopTypeEnumeration;
+import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -39,6 +43,8 @@ public interface QuayRepositoryCustom extends DataManagedObjectStructureReposito
 
     List<String> searchByKeyValue(String key, String value);
 
+    Set<String> findByKeyValues(String key, Set<String> values, boolean exactMatch);
+
     List<Quay> findAllByImportedId(String importedId);
 
     Optional<Quay> findActiveQuayForImportedId(String importedId);
@@ -49,6 +55,7 @@ public interface QuayRepositoryCustom extends DataManagedObjectStructureReposito
 
     Optional<Quay> findTADQuay(String netexId) ;
 
+    Set<String> findByKeyValues(String key, Set<String> values);
 
-
+    String findNearbyQuay(Envelope envelope, String name, String publicCode);
 }

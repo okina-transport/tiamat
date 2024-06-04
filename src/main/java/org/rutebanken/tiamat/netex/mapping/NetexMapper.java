@@ -20,9 +20,16 @@ import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.netex.model.*;
+import org.rutebanken.netex.model.ObjectFactory;
+import org.rutebanken.tiamat.importer.ImportParams;
+import org.rutebanken.tiamat.importer.merging.QuayMerger;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.PlaceEquipment;
+import org.rutebanken.tiamat.netex.mapping.converter.QuayListConverter;
 import org.rutebanken.tiamat.netex.mapping.mapper.*;
+import org.rutebanken.tiamat.repository.QuayRepository;
+import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.rest.dto.DtoStopPlaceResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +51,17 @@ public class NetexMapper {
 
     @Autowired
     private GeometryFactory geometryFactory;
+
+    @Autowired
+    QuayRepository quayRepository;
+
+    @Autowired
+    QuayListConverter quayListConverter;
+
+    @Autowired
+    StopPlaceRepository stopPlaceRepository;
+
+    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
 
 
     @Autowired
@@ -415,6 +433,73 @@ public class NetexMapper {
 
         for (KeyValueStructure entry : netexParking.getKeyList().getKeyValue()) {
             parking.getOrCreateValues(entry.getKey()).add(entry.getValue());
+        }
+    }
+
+    public void parseToSetStopPlaceGlobalInformations(org.rutebanken.netex.model.StopPlace netexStopPlace, org.rutebanken.tiamat.model.StopPlace stopPlace) {
+        if (netexStopPlace.getId() != null) stopPlace.setNetexId(netexStopPlace.getId());
+
+        stopPlace.setChanged(Instant.from(LocalDateTime.now().atZone(ZoneId.of("Europe/Paris")).toInstant()));
+
+        if (netexStopPlace.getCreated() != null) stopPlace.setCreated(Instant.from(netexStopPlace.getCreated().atZone(ZoneId.of("Europe/Paris")).toInstant()));
+        if (netexStopPlace.getVersion() != null) stopPlace.setVersion(Long.parseLong(netexStopPlace.getVersion()));
+        if (netexStopPlace.getName() != null) stopPlace.setName(new EmbeddableMultilingualString(netexStopPlace.getName().getValue()));
+        if (netexStopPlace.getCentroid().getLocation() != null) stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(String.valueOf(netexStopPlace.getCentroid().getLocation().getLongitude())), Double.parseDouble(String.valueOf(netexStopPlace.getCentroid().getLocation().getLatitude())))));
+        if (netexStopPlace.getDescription() != null) stopPlace.setDescription(new EmbeddableMultilingualString(netexStopPlace.getDescription().getValue()));
+//        if (netexStopPlace.getPostalAddress() != null) stopPlace.setTopographicPlace(...);
+        if (netexStopPlace.isAllAreasWheelchairAccessible() != null) stopPlace.setAllAreasWheelchairAccessible(netexStopPlace.isAllAreasWheelchairAccessible());
+        if (netexStopPlace.getStopPlaceType() != null) stopPlace.setStopPlaceType(org.rutebanken.tiamat.model.StopTypeEnumeration.valueOf(netexStopPlace.getStopPlaceType().name()));
+        if (netexStopPlace.getParentSiteRef() != null) stopPlace.setParentSiteRef(mapToNetexModel(netexStopPlace.getParentSiteRef()));
+
+        if (netexStopPlace.getValidBetween() != null && netexStopPlace.getValidBetween().get(0).getFromDate() != null) {
+            LocalDateTime fromDateTime = netexStopPlace.getValidBetween().get(0).getFromDate();
+            Instant fromInstant = fromDateTime.atZone(ZoneId.systemDefault()).toInstant();
+
+            if (stopPlace.getValidBetween() == null) {
+                stopPlace.setValidBetween(new org.rutebanken.tiamat.model.ValidBetween());
+                stopPlace.getValidBetween().setFromDate(fromInstant);
+            } else {
+                stopPlace.getValidBetween().setFromDate(fromInstant);
+            }
+        }
+
+        for (KeyValueStructure entry : netexStopPlace.getKeyList().getKeyValue()) {
+            stopPlace.getOrCreateValues(entry.getKey()).add(entry.getValue());
+        }
+
+        if (netexStopPlace.getQuays() != null && netexStopPlace.getQuays().getQuayRefOrQuay() != null) {
+            for (javax.xml.bind.JAXBElement<?> quayElement : netexStopPlace.getQuays().getQuayRefOrQuay()) {
+                Object quayRefStructure = quayElement.getValue();
+                if (quayRefStructure instanceof QuayRefStructure) {
+                    org.rutebanken.tiamat.model.Quay netexQuay = new org.rutebanken.tiamat.model.Quay();
+                    netexQuay.setNetexId(((QuayRefStructure) quayRefStructure).getRef());
+                    netexQuay.setVersion(Long.parseLong(((QuayRefStructure) quayRefStructure).getVersion()));
+
+                    Set<org.rutebanken.tiamat.model.Quay> quays = new HashSet<>();
+                    quays.add(netexQuay);
+                    stopPlace.setQuays(quays);
+                }
+            }
+        }
+    }
+
+    public void parseToSetQuayGlobalInformations(org.rutebanken.netex.model.Quay netexQuay, org.rutebanken.tiamat.model.Quay quay) {
+        if (netexQuay.getId() != null) quay.setNetexId(netexQuay.getId());
+
+        quay.setChanged(Instant.from(LocalDateTime.now().atZone(ZoneId.of("Europe/Paris")).toInstant()));
+
+        if (netexQuay.getCreated() != null) quay.setCreated(Instant.from(netexQuay.getCreated().atZone(ZoneId.of("Europe/Paris")).toInstant()));
+        if (netexQuay.getVersion() != null) quay.setVersion(Long.parseLong(netexQuay.getVersion()));
+        if (netexQuay.getName() != null) quay.setName(new EmbeddableMultilingualString(netexQuay.getName().getValue()));
+        if (netexQuay.getCentroid().getLocation() != null) quay.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(String.valueOf(netexQuay.getCentroid().getLocation().getLongitude())), Double.parseDouble(String.valueOf(netexQuay.getCentroid().getLocation().getLatitude())))));
+        if (netexQuay.getDescription() != null) quay.setDescription(new EmbeddableMultilingualString(netexQuay.getDescription().getValue()));
+        if (netexQuay.isAllAreasWheelchairAccessible() != null) quay.setAllAreasWheelchairAccessible(netexQuay.isAllAreasWheelchairAccessible());
+        if (netexQuay.getTransportMode() != null) quay.setTransportMode(org.rutebanken.tiamat.model.VehicleModeEnumeration.valueOf(netexQuay.getTransportMode().name()));
+        if (netexQuay.getPublicCode() != null) quay.setPublicCode(netexQuay.getPublicCode());
+        if (netexQuay.getSiteRef() != null) quay.setSiteRef(mapToNetexModel(netexQuay.getSiteRef()));
+
+        for (KeyValueStructure entry : netexQuay.getKeyList().getKeyValue()) {
+            quay.getOrCreateValues(entry.getKey()).add(entry.getValue());
         }
     }
 

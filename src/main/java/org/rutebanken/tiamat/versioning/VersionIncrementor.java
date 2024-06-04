@@ -88,7 +88,7 @@ public class VersionIncrementor {
      * @param stopPlace with quays and accessibility assessment
      * @return modified StopPlace
      */
-    public StopPlace initiateOrIncrementVersions(StopPlace stopPlace) {
+    public StopPlace initiateOrIncrementVersionsStopPlace(StopPlace stopPlace) {
         initiateOrIncrementSiteElementVersion(stopPlace);
         initiateOrIncrementPlaceEquipment(stopPlace.getPlaceEquipments());
 
@@ -102,10 +102,29 @@ public class VersionIncrementor {
 
         if(stopPlace.getChildren() != null) {
             logger.debug("Initiating versions for {} child stop places. Parent: {}", stopPlace.getChildren().size(), stopPlace.getNetexId());
-            stopPlace.getChildren().forEach(this::initiateOrIncrementVersions);
+            stopPlace.getChildren().forEach(this::initiateOrIncrementVersionsStopPlace);
         }
 
         return stopPlace;
+    }
+
+    /**
+     * Increment versions for stop place with children.
+     * The object must have their netexId set, or else they will get an initial version
+     * @param quay with quays and accessibility assessment
+     * @return modified StopPlace
+     */
+    public Quay initiateOrIncrementVersionsQuay(Quay quay) {
+        initiateOrIncrementSiteElementVersion(quay);
+        initiateOrIncrementPlaceEquipment(quay.getPlaceEquipments());
+
+        if (quay != null) {
+            logger.debug("Initiating first versions for {} quay", quay);
+            initiateOrIncrementSiteElementVersion(quay);
+            initiateOrIncrementPlaceEquipment(quay.getPlaceEquipments());
+        }
+
+        return quay;
     }
 
     public void initiateOrIncrementPlaceEquipment(PlaceEquipment placeEquipment) {

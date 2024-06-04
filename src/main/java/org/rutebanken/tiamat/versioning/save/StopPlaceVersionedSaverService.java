@@ -26,7 +26,6 @@ import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.repository.TariffZoneRepository;
-import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
 import org.rutebanken.tiamat.service.TariffZonesLookupService;
 import org.rutebanken.tiamat.service.TopographicPlaceLookupService;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
@@ -129,7 +128,10 @@ public class StopPlaceVersionedSaverService {
 
     public StopPlace saveNewVersion(StopPlace existingVersion, StopPlace newVersion, Instant defaultValidFrom, Set<String> childStopsUpdated) {
 
-        versionValidator.validate(existingVersion, newVersion);
+        if (existingVersion == null) {
+            existingVersion = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
+        }
+//        versionValidator.validate(existingVersion, newVersion);
 
         if (newVersion.getParentSiteRef() != null && !newVersion.isParentStopPlace()) {
             throw new IllegalArgumentException("StopPlace " +
@@ -160,7 +162,7 @@ public class StopPlaceVersionedSaverService {
         Instant changed = Instant.now();
 
         logger.debug("Rearrange accessibility assessments for: {}", newVersion);
-        accessibilityAssessmentOptimizer.optimizeAccessibilityAssessments(newVersion);
+        accessibilityAssessmentOptimizer.optimizeAccessibilityAssessmentsStopPlace(newVersion);
 
         Instant newVersionValidFrom = validityUpdater.updateValidBetween(existingVersion, newVersion, defaultValidFrom);
         updateValidBetweenInChildren(newVersion, newVersion.getValidBetween());
@@ -180,7 +182,7 @@ public class StopPlaceVersionedSaverService {
             stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersionRefetched, newVersion, childStopsUpdated);
         }
 
-        newVersion = versionIncrementor.initiateOrIncrementVersions(newVersion);
+        newVersion = versionIncrementor.initiateOrIncrementVersionsStopPlace(newVersion);
 
         newVersion.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
         logger.info("StopPlace [{}], version {} changed by user [{}]. {}", newVersion.getNetexId(), newVersion.getVersion(), newVersion.getChangedBy(), newVersion.getValidBetween());

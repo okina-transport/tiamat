@@ -49,8 +49,6 @@ public class TransactionalMergingStopPlacesImporter {
 
     public Collection<org.rutebanken.netex.model.StopPlace> importStopPlaces(List<StopPlace> stopPlaces, AtomicInteger stopPlacesCreated) {
 
-
-
         List<org.rutebanken.netex.model.StopPlace> createdStopPlaces = stopPlaces
                 .stream()
                 .filter(Objects::nonNull)

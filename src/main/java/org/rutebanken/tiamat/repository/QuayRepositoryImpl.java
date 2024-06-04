@@ -15,22 +15,27 @@
 
 package org.rutebanken.tiamat.repository;
 
+import com.google.common.collect.Sets;
 import org.hibernate.Hibernate;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
+import org.rutebanken.tiamat.model.VehicleModeEnumeration;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
+import javax.persistence.*;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
 
+import static java.util.stream.Collectors.toSet;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.MERGED_ID_KEY;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 import static org.rutebanken.tiamat.repository.StopPlaceRepositoryImpl.*;
@@ -41,6 +46,9 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    @Autowired
+    private GeometryFactory geometryFactory;
 
     /**
      * This repository method does not use validity for returning the right version.
@@ -108,6 +116,63 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
             }
         } catch (NoResultException noResultException) {
             return null;
+        }
+    }
+
+    @Override
+    public Set<String> findByKeyValues(String key, Set<String> values, boolean exactMatch) {
+        StringBuilder sqlQuery = new StringBuilder("SELECT q.netex_id " +
+                "FROM quay q " +
+                "INNER JOIN quay_key_values qpkv " +
+                "ON qpkv.quay_id = q.id " +
+                "INNER JOIN value_items v " +
+                "ON qpkv.key_values_id = v.value_id " +
+                "WHERE qpkv.key_values_key = :key ");
+
+
+        List<String> parameters = new ArrayList<>(values.size());
+        List<String> parametervalues = new ArrayList<>(values.size());
+        final String parameterPrefix = "value";
+        sqlQuery.append(" AND (");
+        Iterator<String> valuesIterator = values.iterator();
+        for (int parameterCounter = 0; parameterCounter < values.size(); parameterCounter++) {
+            if(exactMatch){
+                sqlQuery.append(" v.items = :value").append(parameterCounter);
+                parameters.add(parameterPrefix + parameterCounter);
+                parametervalues.add(valuesIterator.next());
+            }
+            else{
+                sqlQuery.append(" v.items LIKE :value").append(parameterCounter);
+                parameters.add(parameterPrefix + parameterCounter);
+                parametervalues.add("%" + valuesIterator.next());
+            }
+            if (parameterCounter + 1 < values.size()) {
+                sqlQuery.append(" OR ");
+            }
+        }
+
+        sqlQuery.append(" )");
+
+        Query query = entityManager.createNativeQuery(sqlQuery.toString());
+
+        Iterator<String> iterator = parametervalues.iterator();
+        parameters.forEach(parameter -> query.setParameter(parameter, iterator.next()));
+        query.setParameter("key", key);
+
+        return getSetResult(query);
+    }
+
+    private Set<String> getSetResult(Query query) {
+        try {
+            @SuppressWarnings("unchecked")
+            List<String> results = query.getResultList();
+            if (results.isEmpty()) {
+                return Sets.newHashSet();
+            } else {
+                return results.stream().collect(toSet());
+            }
+        } catch (NoResultException noResultException) {
+            return Sets.newHashSet();
         }
     }
 
@@ -215,7 +280,7 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
                 "   INNER JOIN stop_place_quays spq " +
                 "       ON spq.stop_place_id = skv.stop_place_id " +
                 "   INNER JOIN stop_place s " +
-                "       ON s.id = skv.stop_place_id AND s.stop_place_type = :stopPlaceType " +
+                "       ON s.id = skv.stop_place_id AND s.stop_place_type = :vehicleModeEnumeration " +
                 SQL_LEFT_JOIN_PARENT_STOP +
                 "   INNER JOIN quay q " +
                 "       ON spq.quays_id = q.id  AND q.public_code NOT LIKE '' " +
@@ -225,7 +290,7 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
                 "ORDER BY items, public_code ";
         Query nativeQuery = entityManager.createNativeQuery(sql);
 
-        nativeQuery.setParameter("stopPlaceType", StopTypeEnumeration.RAIL_STATION.toString());
+        nativeQuery.setParameter("vehicleModeEnumeration", StopTypeEnumeration.RAIL_STATION.toString());
         nativeQuery.setParameter("mappingIdKeys", Arrays.asList(JBV_CODE));
         nativeQuery.setParameter("pointInTime", Date.from(Instant.now()));
 
@@ -412,4 +477,39 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
         return Optional.of(resultList.get(0));
     }
 
+    /**
+     * Find stop place netex IDs by key value
+     *
+     * @param key key in key values for stop
+     * @param values list of values to check for
+     * @return set of stop place's netex IDs
+     */
+    @Override
+    public Set<String> findByKeyValues(String key, Set<String> values) {
+        return findByKeyValues(key, values, false);
+    }
+
+    /* OK*/
+    @Override
+    public String findNearbyQuay(Envelope envelope, String name, String publicCode) {
+        Geometry geometryFilter = geometryFactory.toGeometry(envelope);
+
+        String sql = "SELECT q.netex_id FROM quay q WHERE ST_Within(q.centroid, :filter) = true AND q.name_value = :name " +
+                "AND q.public_code = :publicCode";
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("filter", geometryFilter);
+        query.setParameter("name", name);
+        query.setParameter("publicCode", publicCode);
+        return getOneOrNull((TypedQuery<String>) query);
+    }
+
+    private <T> T getOneOrNull(TypedQuery<T> query) {
+        try {
+            List<T> resultList = query.getResultList();
+            return resultList.isEmpty() ? null : resultList.get(0);
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
 }

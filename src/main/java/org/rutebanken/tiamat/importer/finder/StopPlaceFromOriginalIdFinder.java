@@ -20,6 +20,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.rutebanken.tiamat.general.PeriodicCacheLogger;
+import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
@@ -31,6 +32,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -82,6 +84,22 @@ public class StopPlaceFromOriginalIdFinder {
         List<StopPlace> existingStopPlaces = findByKeyValue(originalIds);
 
         return existingStopPlaces;
+    }
+
+    public StopPlace findStopPlace(StopPlace stopPlace) {
+
+        Set<String> originalIds = stopPlace.getOrCreateValues(ORIGINAL_ID_KEY);
+
+        if(originalIds.isEmpty()) return null;
+
+        StopPlace existingStopPlace = null;
+        if (findByKeyValue(originalIds).size() != 0 ) existingStopPlace = Optional.of(findByKeyValue(originalIds).stream().findFirst().get()).orElse(null);
+
+        if (existingStopPlace != null) {
+            logger.debug("Found stop place {} from original ID", existingStopPlace.getNetexId());
+            return existingStopPlace;
+        }
+        return null;
     }
 
     public void update(StopPlace stopPlace) {

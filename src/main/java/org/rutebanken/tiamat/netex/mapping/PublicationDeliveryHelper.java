@@ -141,7 +141,7 @@ public class PublicationDeliveryHelper {
                 .findFirst().orElse(null);
     }
 
-    public boolean hasParkingsGeneralFrame(GeneralFrame generalFrame) {
+    public boolean hasGeneralFrame(GeneralFrame generalFrame) {
         return generalFrame!= null;
     }
 }

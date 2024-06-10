@@ -49,7 +49,7 @@ public class TransactionalMergingPointOfInterestssImporter {
                 .stream()
                 .filter(Objects::nonNull)
                 .map(pointOfInterest -> {
-                    org.rutebanken.netex.model.PointOfInterest importedPointOfInterest = null;
+                    org.rutebanken.netex.model.PointOfInterest importedPointOfInterest;
                     try {
                         importedPointOfInterest = mergingPointOfInterestImporter.importPointOfInterest(pointOfInterest);
                     } catch (Exception e) {

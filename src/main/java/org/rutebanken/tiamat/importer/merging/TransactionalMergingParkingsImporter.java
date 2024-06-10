@@ -49,7 +49,7 @@ public class TransactionalMergingParkingsImporter {
                 .stream()
                 .filter(Objects::nonNull)
                 .map(parking -> {
-                    org.rutebanken.netex.model.Parking importedParking = null;
+                    org.rutebanken.netex.model.Parking importedParking;
                     try {
                         importedParking = mergingParkingImporter.importParking(parking);
                     } catch (Exception e) {

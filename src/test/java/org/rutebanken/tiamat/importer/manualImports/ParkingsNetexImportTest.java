@@ -4,7 +4,8 @@ import org.junit.Test;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.importer.ParkingsImporter;
+import org.rutebanken.tiamat.importer.NetexImporter;
+import org.rutebanken.tiamat.model.job.JobImportType;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.rutebanken.tiamat.rest.parkingsNetex.ImportParkingsNetexResource;
@@ -31,15 +32,15 @@ public class ParkingsNetexImportTest extends TiamatIntegrationTest {
     private PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller;
 
     @Autowired
-    private ParkingsImporter parkingsImporter;
+    private NetexImporter netexImporter;
 
     @Test
-    public void testParkingsNetex() throws IOException, JAXBException, SAXException {
+    public void testParkingsNetex() throws IOException, JAXBException, SAXException, TiamatBusinessException {
         launchImportForFile("parkings_relai_vls_velo.xml");
     }
 
     @Test
-    public void testParkingsNetexWithoutName() throws IOException, JAXBException, SAXException {
+    public void testParkingsNetexWithoutName() throws IOException, JAXBException, SAXException, TiamatBusinessException {
         launchImportForFile("parkings_relai_vls_velo_without_name.xml");
     }
 
@@ -49,15 +50,13 @@ public class ParkingsNetexImportTest extends TiamatIntegrationTest {
      * the file to import
      * @throws IOException
      */
-    private void launchImportForFile(String fileName) throws IOException, JAXBException, SAXException {
+    private void launchImportForFile(String fileName) throws IOException, JAXBException, SAXException, TiamatBusinessException {
         File file = new File("src/test/resources/manualImports/parkingsNetex/" + fileName);
 
         try (InputStream testInputStream = new FileInputStream(file)) {
             PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(testInputStream);
             Provider provider = Collections.singletonList(providerRepository.getProvider(1L)).get(0);
-            parkingsImporter.importParkings(incomingPublicationDelivery, String.valueOf(provider.getId()), fileName, "/");
-        } catch (TiamatBusinessException e) {
-            throw new RuntimeException(e);
+            netexImporter.importProcessTest(incomingPublicationDelivery, String.valueOf(provider.getId()), fileName, JobImportType.NETEX_PARKING);
         }
     }
 

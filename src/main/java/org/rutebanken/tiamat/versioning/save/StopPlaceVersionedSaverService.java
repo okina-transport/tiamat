@@ -33,7 +33,6 @@ import org.rutebanken.tiamat.versioning.ValidityUpdater;
 import org.rutebanken.tiamat.versioning.VersionIncrementor;
 import org.rutebanken.tiamat.versioning.util.AccessibilityAssessmentOptimizer;
 import org.rutebanken.tiamat.versioning.validate.SubmodeValidator;
-import org.rutebanken.tiamat.versioning.validate.VersionValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,9 +99,6 @@ public class StopPlaceVersionedSaverService {
 
     @Autowired
     private UsernameFetcher usernameFetcher;
-
-    @Autowired
-    private VersionValidator versionValidator;
 
     @Autowired
     private TiamatObjectDiffer tiamatObjectDiffer;
@@ -175,11 +171,12 @@ public class StopPlaceVersionedSaverService {
             newVersion.setChanged(changed);
             Instant oldversionTerminationTime = newVersionValidFrom.minusMillis(MILLIS_BETWEEN_VERSIONS);
             logger.debug("About to terminate previous version for {},{}", existingVersion.getNetexId(), existingVersion.getVersion());
-            StopPlace existingVersionRefetched = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingVersion.getNetexId());
-            logger.debug("Found previous version {},{}. Terminating it.", existingVersionRefetched.getNetexId(), existingVersionRefetched.getVersion());
-            validityUpdater.terminateVersion(existingVersionRefetched, oldversionTerminationTime);
-            terminateChild(existingVersionRefetched, oldversionTerminationTime);
-            stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersionRefetched, newVersion, childStopsUpdated);
+//            StopPlace existingVersionRefetched = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingVersion.getNetexId());
+            logger.debug("Found previous version {},{}. Terminating it.", existingVersion.getNetexId(), existingVersion.getVersion());
+            validityUpdater.terminateVersion(existingVersion, oldversionTerminationTime);
+            terminateChild(existingVersion, oldversionTerminationTime);
+            stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion, childStopsUpdated);
+            stopPlaceRepository.delete(existingVersion);
         }
 
         newVersion = versionIncrementor.initiateOrIncrementVersionsStopPlace(newVersion);
@@ -196,7 +193,7 @@ public class StopPlaceVersionedSaverService {
         tariffZonesLookupService.populateTariffZone(newVersion);
 
 
-        if (newVersion.getChildren() != null) {
+        if (newVersion.getChildren() != null && newVersion.getChildren().size() > 0) {
             newVersion.getChildren().forEach(child -> {
                 child.setChanged(changed);
                 tariffZonesLookupService.populateTariffZone(child);

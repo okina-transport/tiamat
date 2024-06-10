@@ -17,40 +17,27 @@ package org.rutebanken.tiamat.netex.mapping;
 
 import ma.glasnost.orika.*;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.netex.model.*;
-import org.rutebanken.netex.model.ObjectFactory;
-import org.rutebanken.tiamat.importer.ImportParams;
-import org.rutebanken.tiamat.importer.merging.QuayMerger;
-import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
-import org.rutebanken.tiamat.model.PlaceEquipment;
 import org.rutebanken.tiamat.netex.mapping.converter.QuayListConverter;
 import org.rutebanken.tiamat.netex.mapping.mapper.*;
 import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.rest.dto.DtoStopPlaceResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.xml.bind.JAXBElement;
 import java.math.BigInteger;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class NetexMapper {
     private static final Logger logger = LoggerFactory.getLogger(NetexMapper.class);
 
     private final MapperFacade facade;
-
-    @Autowired
-    private GeometryFactory geometryFactory;
 
     @Autowired
     QuayRepository quayRepository;
@@ -60,8 +47,6 @@ public class NetexMapper {
 
     @Autowired
     StopPlaceRepository stopPlaceRepository;
-
-    private static final ObjectFactory netexObjectFactory = new ObjectFactory();
 
 
     @Autowired
@@ -413,135 +398,33 @@ public class NetexMapper {
         return Optional.empty();
     }
 
-    public void parseToSetParkingGlobalInformations(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {
-        if (netexParking.getId() != null) parking.setNetexId(netexParking.getId());
-
-        parking.setChanged(Instant.from(LocalDateTime.now().atZone(ZoneId.of("Europe/Paris")).toInstant()));
-
-        if (netexParking.getCreated() != null) parking.setCreated(Instant.from(netexParking.getCreated().atZone(ZoneId.of("Europe/Paris")).toInstant()));
-        if (netexParking.getVersion() != null) parking.setVersion(Long.parseLong(netexParking.getVersion()));
-        if (netexParking.getName() != null) parking.setName(new EmbeddableMultilingualString(netexParking.getName().getValue()));
-        if (netexParking.getCentroid().getLocation() != null) parking.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(String.valueOf(netexParking.getCentroid().getLocation().getLongitude())), Double.parseDouble(String.valueOf(netexParking.getCentroid().getLocation().getLatitude())))));
-        if (netexParking.getDescription() != null) parking.setDescription(new EmbeddableMultilingualString(netexParking.getDescription().getValue()));
-        if (netexParking.getBookingUrl() != null) parking.setBookingUrl(netexParking.getBookingUrl());
-        if (netexParking.getPostalAddress() != null) parking.setInsee(netexParking.getPostalAddress().getPostalRegion());
-        if (netexParking.isAllAreasWheelchairAccessible() != null) parking.setAllAreasWheelchairAccessible(netexParking.isAllAreasWheelchairAccessible());
-        if (netexParking.getParkingType() != null) parking.setParkingType(org.rutebanken.tiamat.model.ParkingTypeEnumeration.valueOf(netexParking.getParkingType().name()));
-        if (netexParking.getTotalCapacity() != null) parking.setTotalCapacity(netexParking.getTotalCapacity());
-        if (netexParking.isRechargingAvailable() != null) parking.setRechargingAvailable(netexParking.isRechargingAvailable());
-        if (netexParking.getParentSiteRef() != null) parking.setParentSiteRef(mapToNetexModel(netexParking.getParentSiteRef()));
-
-        for (KeyValueStructure entry : netexParking.getKeyList().getKeyValue()) {
-            parking.getOrCreateValues(entry.getKey()).add(entry.getValue());
-        }
-    }
-
-    public void parseToSetStopPlaceGlobalInformations(org.rutebanken.netex.model.StopPlace netexStopPlace, org.rutebanken.tiamat.model.StopPlace stopPlace) {
-        if (netexStopPlace.getId() != null) stopPlace.setNetexId(netexStopPlace.getId());
-
-        stopPlace.setChanged(Instant.from(LocalDateTime.now().atZone(ZoneId.of("Europe/Paris")).toInstant()));
-
-        if (netexStopPlace.getCreated() != null) stopPlace.setCreated(Instant.from(netexStopPlace.getCreated().atZone(ZoneId.of("Europe/Paris")).toInstant()));
-        if (netexStopPlace.getVersion() != null) stopPlace.setVersion(Long.parseLong(netexStopPlace.getVersion()));
-        if (netexStopPlace.getName() != null) stopPlace.setName(new EmbeddableMultilingualString(netexStopPlace.getName().getValue()));
-        if (netexStopPlace.getCentroid().getLocation() != null) stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(String.valueOf(netexStopPlace.getCentroid().getLocation().getLongitude())), Double.parseDouble(String.valueOf(netexStopPlace.getCentroid().getLocation().getLatitude())))));
-        if (netexStopPlace.getDescription() != null) stopPlace.setDescription(new EmbeddableMultilingualString(netexStopPlace.getDescription().getValue()));
-//        if (netexStopPlace.getPostalAddress() != null) stopPlace.setTopographicPlace(...);
-        if (netexStopPlace.isAllAreasWheelchairAccessible() != null) stopPlace.setAllAreasWheelchairAccessible(netexStopPlace.isAllAreasWheelchairAccessible());
-        if (netexStopPlace.getStopPlaceType() != null) stopPlace.setStopPlaceType(org.rutebanken.tiamat.model.StopTypeEnumeration.valueOf(netexStopPlace.getStopPlaceType().name()));
-        if (netexStopPlace.getParentSiteRef() != null) stopPlace.setParentSiteRef(mapToNetexModel(netexStopPlace.getParentSiteRef()));
-
-        if (netexStopPlace.getValidBetween() != null && netexStopPlace.getValidBetween().get(0).getFromDate() != null) {
-            LocalDateTime fromDateTime = netexStopPlace.getValidBetween().get(0).getFromDate();
-            Instant fromInstant = fromDateTime.atZone(ZoneId.systemDefault()).toInstant();
-
-            if (stopPlace.getValidBetween() == null) {
-                stopPlace.setValidBetween(new org.rutebanken.tiamat.model.ValidBetween());
-                stopPlace.getValidBetween().setFromDate(fromInstant);
-            } else {
-                stopPlace.getValidBetween().setFromDate(fromInstant);
-            }
-        }
-
-        for (KeyValueStructure entry : netexStopPlace.getKeyList().getKeyValue()) {
-            stopPlace.getOrCreateValues(entry.getKey()).add(entry.getValue());
-        }
+    public org.rutebanken.tiamat.model.StopPlace parseToTiamatStopPlace(org.rutebanken.netex.model.StopPlace netexStopPlace, List<org.rutebanken.tiamat.model.Quay> quaysParsed) {
+        org.rutebanken.tiamat.model.StopPlace stopPlace = mapToTiamatModel(netexStopPlace);
+        Set<org.rutebanken.tiamat.model.Quay> quays = new HashSet<>();
 
         if (netexStopPlace.getQuays() != null && netexStopPlace.getQuays().getQuayRefOrQuay() != null) {
-            for (javax.xml.bind.JAXBElement<?> quayElement : netexStopPlace.getQuays().getQuayRefOrQuay()) {
-                Object quayRefStructure = quayElement.getValue();
-                if (quayRefStructure instanceof QuayRefStructure) {
-                    org.rutebanken.tiamat.model.Quay netexQuay = new org.rutebanken.tiamat.model.Quay();
-                    netexQuay.setNetexId(((QuayRefStructure) quayRefStructure).getRef());
-                    netexQuay.setVersion(Long.parseLong(((QuayRefStructure) quayRefStructure).getVersion()));
+            Quays_RelStructure quaysRelStructure = netexStopPlace.getQuays();
 
-                    Set<org.rutebanken.tiamat.model.Quay> quays = new HashSet<>();
-                    quays.add(netexQuay);
-                    stopPlace.setQuays(quays);
+            for (javax.xml.bind.JAXBElement<?> quayElement : quaysRelStructure.getQuayRefOrQuay()) {
+                Object quayRefStructure = quayElement.getValue();
+
+                if (quayRefStructure instanceof QuayRefStructure) {
+                    String netexId = ((QuayRefStructure) quayRefStructure).getRef();
+                    Stream<org.rutebanken.tiamat.model.Quay> tiamatQuay = quaysParsed.stream().filter(quay -> {
+                        return quay.equals(quayRepository.findByNetexId(netexId));
+                    });
+                    tiamatQuay.findFirst().ifPresent(quays::add);
                 }
             }
-        }
-    }
 
-    public void parseToSetQuayGlobalInformations(org.rutebanken.netex.model.Quay netexQuay, org.rutebanken.tiamat.model.Quay quay) {
-        if (netexQuay.getId() != null) quay.setNetexId(netexQuay.getId());
-
-        quay.setChanged(Instant.from(LocalDateTime.now().atZone(ZoneId.of("Europe/Paris")).toInstant()));
-
-        if (netexQuay.getCreated() != null) quay.setCreated(Instant.from(netexQuay.getCreated().atZone(ZoneId.of("Europe/Paris")).toInstant()));
-        if (netexQuay.getVersion() != null) quay.setVersion(Long.parseLong(netexQuay.getVersion()));
-        if (netexQuay.getName() != null) quay.setName(new EmbeddableMultilingualString(netexQuay.getName().getValue()));
-        if (netexQuay.getCentroid().getLocation() != null) quay.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(String.valueOf(netexQuay.getCentroid().getLocation().getLongitude())), Double.parseDouble(String.valueOf(netexQuay.getCentroid().getLocation().getLatitude())))));
-        if (netexQuay.getDescription() != null) quay.setDescription(new EmbeddableMultilingualString(netexQuay.getDescription().getValue()));
-        if (netexQuay.isAllAreasWheelchairAccessible() != null) quay.setAllAreasWheelchairAccessible(netexQuay.isAllAreasWheelchairAccessible());
-        if (netexQuay.getTransportMode() != null) quay.setTransportMode(org.rutebanken.tiamat.model.VehicleModeEnumeration.valueOf(netexQuay.getTransportMode().name()));
-        if (netexQuay.getPublicCode() != null) quay.setPublicCode(netexQuay.getPublicCode());
-        if (netexQuay.getSiteRef() != null) quay.setSiteRef(mapToNetexModel(netexQuay.getSiteRef()));
-
-        for (KeyValueStructure entry : netexQuay.getKeyList().getKeyValue()) {
-            quay.getOrCreateValues(entry.getKey()).add(entry.getValue());
-        }
-    }
-
-    public void parseToSetPlaceEquipments(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {
-        PlaceEquipment placeEquipment = new PlaceEquipment();
-
-        for (JAXBElement<?> parkingEquipmentElement : netexParking.getPlaceEquipments().getInstalledEquipmentRefOrInstalledEquipment()) {
-            if (parkingEquipmentElement.getValue() instanceof CycleStorageEquipment) {
-                CycleStorageEquipment equipment = (CycleStorageEquipment) parkingEquipmentElement.getValue();
-                org.rutebanken.tiamat.model.CycleStorageEquipment cycleStorageEquipment = mapToNetexModel((CycleStorageEquipment) parkingEquipmentElement.getValue());
-
-                if (netexParking.getPlaceEquipments() != null) cycleStorageEquipment.setNetexId(netexParking.getPlaceEquipments().getId());
-                if (equipment.getNumberOfSpaces() != null) cycleStorageEquipment.setNumberOfSpaces(equipment.getNumberOfSpaces());
-                if (equipment.getCycleStorageType() != null) cycleStorageEquipment.setCycleStorageType(org.rutebanken.tiamat.model.CycleStorageEnumeration.fromValue(equipment.getCycleStorageType().value()));
-
-                placeEquipment.setNetexId(null);
-                placeEquipment.getInstalledEquipment().add(cycleStorageEquipment);
-                parking.setPlaceEquipments(placeEquipment);
+            if (quays.size() > 0) {
+                stopPlace.setQuays(quays);
             }
         }
-        parking.setPlaceEquipments(placeEquipment);
+
+        return stopPlace;
     }
 
-    public void parseToSetParkingAreas(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {
-        List<org.rutebanken.tiamat.model.ParkingArea> parkingAreas = new ArrayList<>();
-
-        for (JAXBElement<?> parkingAreaElement : netexParking.getParkingAreas().getParkingAreaRefOrParkingArea_()) {
-            if (parkingAreaElement.getValue() instanceof ParkingArea) {
-                org.rutebanken.tiamat.model.ParkingArea tiamatArea = mapToNetexModel((ParkingArea) parkingAreaElement.getValue());
-                parkingAreas.add(tiamatArea);
-            }
-            if (parkingAreaElement.getValue() instanceof VehiclePoolingParkingArea) {
-                org.rutebanken.tiamat.model.ParkingArea tiamatArea = mapToNetexModel((VehiclePoolingParkingArea) parkingAreaElement.getValue());
-                parkingAreas.add(tiamatArea);
-            }
-            if (parkingAreaElement.getValue() instanceof VehicleSharingParkingArea) {
-                org.rutebanken.tiamat.model.ParkingArea tiamatArea = mapToNetexModel((VehicleSharingParkingArea) parkingAreaElement.getValue());
-                parkingAreas.add(tiamatArea);
-            }
-        }
-        parking.setParkingAreas(parkingAreas);
-    }
 
     public void parseToSetParkingProperties(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {
         List<org.rutebanken.tiamat.model.ParkingProperties> parkingPropertiesList = new ArrayList<>();
@@ -557,16 +440,6 @@ public class NetexMapper {
             parkingPropertiesList.add(mapToNetexModel(parkingPropertiesElement));
         }
         parking.setParkingProperties(parkingPropertiesList);
-    }
-
-    public void parseToSetParkingPaymentProcess(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {
-        List<org.rutebanken.tiamat.model.ParkingPaymentProcessEnumeration> paymentProcesses = new ArrayList<>();
-
-        for (ParkingPaymentProcessEnumeration payment : netexParking.getParkingPaymentProcess()) {
-            paymentProcesses.add(mapToNetexModel(payment));
-        }
-
-        parking.getParkingPaymentProcess().addAll(paymentProcesses);
     }
 
     public Parking mapToNetexModel(org.rutebanken.tiamat.model.Parking tiamatParking) {
@@ -591,6 +464,10 @@ public class NetexMapper {
 
     public org.rutebanken.tiamat.model.TariffZone mapToTiamatModel(TariffZone tariffZone) {
         return facade.map(tariffZone, org.rutebanken.tiamat.model.TariffZone.class);
+    }
+
+    private org.rutebanken.tiamat.model.AccessibilityAssessment mapToTiamatModel(AccessibilityAssessment accessibilityAssessment) {
+        return facade.map(accessibilityAssessment, org.rutebanken.tiamat.model.AccessibilityAssessment.class);
     }
 
     public List<org.rutebanken.tiamat.model.StopPlace> mapStopsToTiamatModel(List<StopPlace> stopPlaces) {
@@ -688,6 +565,10 @@ public class NetexMapper {
         return facade.map(netexPointOfInterestClassification, org.rutebanken.tiamat.model.PointOfInterestClassification.class);
     }
 
+    public org.rutebanken.tiamat.model.StopPlace mapToTiamatModel(org.rutebanken.tiamat.model.EntityStructure entity) {
+        return facade.map(entity, org.rutebanken.tiamat.model.StopPlace.class);
+    }
+
     public Quay mapToNetexModel(org.rutebanken.tiamat.model.Quay tiamatQuay) {
         return facade.map(tiamatQuay, Quay.class);
     }
@@ -699,4 +580,5 @@ public class NetexMapper {
     public MapperFacade getFacade() {
         return facade;
     }
+
 }

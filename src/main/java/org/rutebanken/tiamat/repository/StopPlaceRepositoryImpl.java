@@ -379,15 +379,25 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     @Override
     public Set<String> findByKeyValues(String key, Set<String> values, boolean exactMatch) {
 
-        StringBuilder sqlQuery = new StringBuilder("SELECT s.netex_id " +
-                                                           "FROM stop_place s " +
-                                                            "INNER JOIN stop_place_key_values spkv " +
-                                                           "ON spkv.stop_place_id = s.id " +
-                                                           "INNER JOIN value_items v " +
-                                                           "ON spkv.key_values_id = v.value_id " +
-                                                           SQL_LEFT_JOIN_PARENT_STOP +
-                                                           "WHERE spkv.key_values_key = :key " +
-                                                           "AND " + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME);
+        StringBuilder sqlQuery;
+
+        if (exactMatch) {
+            sqlQuery = new StringBuilder("SELECT s.netex_id " +
+                    "FROM stop_place s " +
+                    "INNER JOIN stop_place_key_values spkv " +
+                    "ON spkv.stop_place_id = s.id " +
+                    "INNER JOIN value_items v " +
+                    "ON spkv.key_values_id = v.value_id " +
+                    SQL_LEFT_JOIN_PARENT_STOP +
+                    "WHERE spkv.key_values_key = :key " +
+                    "AND " + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME);
+        } else {
+            sqlQuery = new StringBuilder("SELECT s.netex_id " +
+                    "FROM stop_place s " +
+                    "INNER JOIN stop_place_key_values spkv ON spkv.stop_place_id = s.id " +
+                    "INNER JOIN value_items v ON spkv.key_values_id = v.value_id " +
+                    "WHERE spkv.key_values_key = :key");
+        }
 
 
         List<String> parameters = new ArrayList<>(values.size());
@@ -418,7 +428,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         Iterator<String> iterator = parametervalues.iterator();
         parameters.forEach(parameter -> query.setParameter(parameter, iterator.next()));
         query.setParameter("key", key);
-        query.setParameter("pointInTime", Date.from(Instant.now()));
+        if(exactMatch) {
+            query.setParameter("pointInTime", Date.from(Instant.now()));
+        }
 
 
         return getSetResult(query);
@@ -1353,7 +1365,8 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         return results.isEmpty() ? null : results.get(0);
     }
 
-    private void initializeStopPlace(StopPlace stopPlace){
+    @Override
+    public StopPlace initializeStopPlace(StopPlace stopPlace){
         Hibernate.initialize(stopPlace.getKeyValues());
         stopPlace.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
         Hibernate.initialize(stopPlace.getAccessibilityAssessment());
@@ -1395,6 +1408,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                 Hibernate.initialize(quay.getAccessibilityAssessment().getLimitations());
             }
         });
+        return stopPlace;
     }
 
     @Override

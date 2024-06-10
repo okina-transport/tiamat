@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.importer.merging;
 
 import org.rutebanken.tiamat.importer.StopPlaceTopographicPlaceReferenceUpdater;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +43,8 @@ public class TransactionalMergingStopPlacesImporter {
     private final StopPlaceTopographicPlaceReferenceUpdater topographicPlaceReferenceUpdater;
 
     @Autowired
-    public TransactionalMergingStopPlacesImporter(MergingStopPlaceImporter mergingStopPlaceImporter, StopPlaceTopographicPlaceReferenceUpdater topographicPlaceReferenceUpdater) {
+    public TransactionalMergingStopPlacesImporter(MergingStopPlaceImporter mergingStopPlaceImporter,
+                                                  StopPlaceTopographicPlaceReferenceUpdater topographicPlaceReferenceUpdater) {
         this.mergingStopPlaceImporter = mergingStopPlaceImporter;
         this.topographicPlaceReferenceUpdater = topographicPlaceReferenceUpdater;
     }
@@ -53,7 +55,7 @@ public class TransactionalMergingStopPlacesImporter {
                 .stream()
                 .filter(Objects::nonNull)
                 .map(stopPlace -> {
-                    org.rutebanken.netex.model.StopPlace importedStop = null;
+                    org.rutebanken.netex.model.StopPlace importedStop;
                     try {
                         topographicPlaceReferenceUpdater.updateTopographicReference(stopPlace);
                         importedStop = mergingStopPlaceImporter.importStopPlace(stopPlace);

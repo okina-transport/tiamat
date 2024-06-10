@@ -22,13 +22,13 @@ import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.filter.ZoneTopographicPlaceFilter;
+import org.rutebanken.tiamat.importer.finder.PointOfInterestFromOriginalIdFinder;
 import org.rutebanken.tiamat.importer.initial.ParallelInitialPointOfInterestImporter;
 import org.rutebanken.tiamat.importer.merging.TransactionalMergingPointOfInterestssImporter;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobImportType;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
-import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.rest.utils.Importer;
@@ -52,9 +52,6 @@ public class PointOfInterestsImportHandler {
     private static final String POI_IMPORT_LOCK_KEY = "STOP_PLACE_MERGING_IMPORT_LOCK_KEY";
 
     @Autowired
-    private PublicationDeliveryHelper publicationDeliveryHelper;
-
-    @Autowired
     private NetexMapper netexMapper;
 
     @Autowired
@@ -72,53 +69,50 @@ public class PointOfInterestsImportHandler {
     @Autowired
     private JobRepository jobRepository;
     @Autowired
-    private PointOfInterestRepository pointOfInterestRepository;
+    private PointOfInterestFromOriginalIdFinder pointOfInterestRepository;
 
     public void handlePointOfInterests(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger poisCreatedOrUpdated, SiteFrame responseSiteframe, Provider provider, String fileName, String folder, Job job) {
+        List<org.rutebanken.tiamat.model.PointOfInterest> tiamatPointOfInterests = netexMapper.mapPointsOfInterestToTiamatModel(netexSiteFrame.getPointsOfInterest().getPointOfInterest());
+        parseToSynchronizeKeyValues(netexSiteFrame, tiamatPointOfInterests);
 
-        if (publicationDeliveryHelper.hasPointOfInterests(netexSiteFrame)) {
-            List<org.rutebanken.tiamat.model.PointOfInterest> tiamatPointOfInterests = netexMapper.mapPointsOfInterestToTiamatModel(netexSiteFrame.getPointsOfInterest().getPointOfInterest());
-            parseToSynchronizeKeyValues(netexSiteFrame, tiamatPointOfInterests);
+        int numberOfPoisBeforeFiltering = tiamatPointOfInterests.size();
+        logger.info("About to filter {} point of interests based on topographic references: {}", tiamatPointOfInterests.size(), importParams.targetTopographicPlaces);
+        tiamatPointOfInterests = zoneTopographicPlaceFilter.filterByTopographicPlaceMatch(importParams.targetTopographicPlaces, tiamatPointOfInterests);
+        logger.info("Got {} point of interests (was {}) after filtering by: {}", tiamatPointOfInterests.size(), numberOfPoisBeforeFiltering, importParams.targetTopographicPlaces);
 
-            int numberOfPoisBeforeFiltering = tiamatPointOfInterests.size();
-            logger.info("About to filter {} point of interests based on topographic references: {}", tiamatPointOfInterests.size(), importParams.targetTopographicPlaces);
-            tiamatPointOfInterests = zoneTopographicPlaceFilter.filterByTopographicPlaceMatch(importParams.targetTopographicPlaces, tiamatPointOfInterests);
-            logger.info("Got {} point of interests (was {}) after filtering by: {}", tiamatPointOfInterests.size(), numberOfPoisBeforeFiltering, importParams.targetTopographicPlaces);
-
-            if (importParams.onlyMatchOutsideTopographicPlaces != null && !importParams.onlyMatchOutsideTopographicPlaces.isEmpty()) {
-                numberOfPoisBeforeFiltering = tiamatPointOfInterests.size();
-                logger.info("Filtering point of interests outside given list of topographic places: {}", importParams.onlyMatchOutsideTopographicPlaces);
-                tiamatPointOfInterests = zoneTopographicPlaceFilter.filterByTopographicPlaceMatch(importParams.onlyMatchOutsideTopographicPlaces, tiamatPointOfInterests, true);
-                logger.info("Got {} point of interests (was {}) after filtering", tiamatPointOfInterests.size(), numberOfPoisBeforeFiltering);
-            }
-
-            Collection<PointOfInterest> importedPointOfInterests;
-
-            if (importParams.importType == null || importParams.importType.equals(ImportType.MERGE)) {
-                final FencedLock lock = hazelcastInstance.getCPSubsystem().getLock(POI_IMPORT_LOCK_KEY);
-                lock.lock();
-                try {
-                    importedPointOfInterests = transactionalMergingPointOfInterestssImporter.importPointOfInterests(tiamatPointOfInterests, poisCreatedOrUpdated);
-                } finally {
-                    lock.unlock();
-                }
-            } else if (importParams.importType.equals(ImportType.INITIAL)) {
-                importedPointOfInterests = parallelInitialPointOfInterestImporter.importPointOfInterests(tiamatPointOfInterests, poisCreatedOrUpdated);
-            } else {
-                logger.warn("Import type " + importParams.importType + " not implemented. Will not match point of interest.");
-                importedPointOfInterests = new ArrayList<>(0);
-            }
-
-            if (!importedPointOfInterests.isEmpty()) {
-                responseSiteframe.withPointsOfInterest(
-                        new PointsOfInterestInFrame_RelStructure()
-                                .withPointOfInterest(importedPointOfInterests));
-            }
-
-            Job jobUpdated = Importer.manageJob(job, JobStatus.FINISHED, importParams, provider, fileName, folder,  null, JobImportType.NETEX_POI);
-            jobRepository.save(jobUpdated);
-            logger.info("Mapped {} point of interests!!", tiamatPointOfInterests.size());
+        if (importParams.onlyMatchOutsideTopographicPlaces != null && !importParams.onlyMatchOutsideTopographicPlaces.isEmpty()) {
+            numberOfPoisBeforeFiltering = tiamatPointOfInterests.size();
+            logger.info("Filtering point of interests outside given list of topographic places: {}", importParams.onlyMatchOutsideTopographicPlaces);
+            tiamatPointOfInterests = zoneTopographicPlaceFilter.filterByTopographicPlaceMatch(importParams.onlyMatchOutsideTopographicPlaces, tiamatPointOfInterests, true);
+            logger.info("Got {} point of interests (was {}) after filtering", tiamatPointOfInterests.size(), numberOfPoisBeforeFiltering);
         }
+
+        Collection<PointOfInterest> importedPointOfInterests;
+
+        if (importParams.importType == null || importParams.importType.equals(ImportType.MERGE)) {
+            final FencedLock lock = hazelcastInstance.getCPSubsystem().getLock(POI_IMPORT_LOCK_KEY);
+            lock.lock();
+            try {
+                importedPointOfInterests = transactionalMergingPointOfInterestssImporter.importPointOfInterests(tiamatPointOfInterests, poisCreatedOrUpdated);
+            } finally {
+                lock.unlock();
+            }
+        } else if (importParams.importType.equals(ImportType.INITIAL)) {
+            importedPointOfInterests = parallelInitialPointOfInterestImporter.importPointOfInterests(tiamatPointOfInterests, poisCreatedOrUpdated);
+        } else {
+            logger.warn("Import type " + importParams.importType + " not implemented. Will not match point of interest.");
+            importedPointOfInterests = new ArrayList<>(0);
+        }
+
+        if (!importedPointOfInterests.isEmpty()) {
+            responseSiteframe.withPointsOfInterest(
+                    new PointsOfInterestInFrame_RelStructure()
+                            .withPointOfInterest(importedPointOfInterests));
+        }
+
+        Job jobUpdated = Importer.manageJob(job, JobStatus.FINISHED, importParams, provider, fileName, folder,  null, JobImportType.NETEX_POI);
+        jobRepository.save(jobUpdated);
+        logger.info("Mapped {} point of interests!!", tiamatPointOfInterests.size());
     }
 
     private void parseToSynchronizeKeyValues(SiteFrame netexSiteFrame, List<org.rutebanken.tiamat.model.PointOfInterest> tiamatPointOfInterests) {
@@ -128,7 +122,7 @@ public class PointOfInterestsImportHandler {
 
         // Process each Tiamat POI
         tiamatPointOfInterests.forEach(tiamatPoi -> {
-            org.rutebanken.tiamat.model.PointOfInterest tiamat = pointOfInterestRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(tiamatPoi.getNetexId());
+            org.rutebanken.tiamat.model.PointOfInterest tiamat = pointOfInterestRepository.find(tiamatPoi);
 
             // Check if there's a corresponding Netex POI
             if (tiamat != null && netexPoiMap.containsKey(tiamat.getNetexId())) {

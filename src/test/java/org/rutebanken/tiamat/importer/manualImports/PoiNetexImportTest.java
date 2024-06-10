@@ -4,7 +4,8 @@ import org.junit.Test;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.importer.PoisImporter;
+import org.rutebanken.tiamat.importer.NetexImporter;
+import org.rutebanken.tiamat.model.job.JobImportType;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.rutebanken.tiamat.rest.parkingsNetex.ImportParkingsNetexResource;
@@ -31,15 +32,15 @@ public class PoiNetexImportTest extends TiamatIntegrationTest {
     private PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller;
 
     @Autowired
-    private PoisImporter poisImporter;
+    private NetexImporter netexImporter;
 
     @Test
-    public void testPoiNetex() throws IOException, JAXBException, SAXException {
+    public void testPoiNetex() throws IOException, JAXBException, SAXException, TiamatBusinessException {
         launchImportForFile("poi.xml");
     }
 
     @Test
-    public void testPoiNetexWithoutName() throws IOException, JAXBException, SAXException {
+    public void testPoiNetexWithoutName() throws IOException, JAXBException, SAXException, TiamatBusinessException {
         launchImportForFile("poi_without_name.xml");
     }
 
@@ -49,15 +50,13 @@ public class PoiNetexImportTest extends TiamatIntegrationTest {
      * the file to import
      * @throws IOException
      */
-    private void launchImportForFile(String fileName) throws IOException, JAXBException, SAXException {
+    private void launchImportForFile(String fileName) throws IOException, JAXBException, SAXException, TiamatBusinessException {
         File file = new File("src/test/resources/manualImports/poiNetex/" + fileName);
 
         try (InputStream testInputStream = new FileInputStream(file)) {
             PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(testInputStream);
             Provider provider = Collections.singletonList(providerRepository.getProvider(1L)).get(0);
-            poisImporter.importPointOfInterests(incomingPublicationDelivery, String.valueOf(provider.getId()), fileName, "/");
-        } catch (TiamatBusinessException e) {
-            throw new RuntimeException(e);
+            netexImporter.importProcessTest(incomingPublicationDelivery, String.valueOf(provider.getId()), fileName, JobImportType.NETEX_POI);
         }
     }
 

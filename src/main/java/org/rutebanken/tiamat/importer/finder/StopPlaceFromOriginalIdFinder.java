@@ -30,9 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -92,8 +90,7 @@ public class StopPlaceFromOriginalIdFinder {
 
         if(originalIds.isEmpty()) return null;
 
-        StopPlace existingStopPlace = null;
-        if (findByKeyValue(originalIds).size() != 0 ) existingStopPlace = Optional.of(findByKeyValue(originalIds).stream().findFirst().get()).orElse(null);
+        StopPlace existingStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(stopPlace.getNetexId());
 
         if (existingStopPlace != null) {
             logger.debug("Found stop place {} from original ID", existingStopPlace.getNetexId());
@@ -172,7 +169,7 @@ public class StopPlaceFromOriginalIdFinder {
         logger.debug("Looking for stop places from original IDs: {}", originalIds);
 
         // No cache match
-        Set<String> stopPlaceNetexIds = stopPlaceRepository.findByKeyValues(ORIGINAL_ID_KEY, originalIds, true);
+        Set<String> stopPlaceNetexIds = stopPlaceRepository.findByKeyValues(ORIGINAL_ID_KEY, originalIds);
         return stopPlaceNetexIds
                 .stream()
                 .map(stopPlaceNetexId -> stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceNetexId))

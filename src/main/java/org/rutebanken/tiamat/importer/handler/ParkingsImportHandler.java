@@ -18,21 +18,15 @@ package org.rutebanken.tiamat.importer.handler;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
 import org.rutebanken.netex.model.*;
-import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.merging.TransactionalMergingParkingsImporter;
 import org.rutebanken.tiamat.importer.filter.ZoneTopographicPlaceFilter;
 import org.rutebanken.tiamat.importer.initial.ParallelInitialParkingImporter;
 import org.rutebanken.tiamat.model.Parking;
-import org.rutebanken.tiamat.model.job.Job;
-import org.rutebanken.tiamat.model.job.JobImportType;
-import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.NetexUtils;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
-import org.rutebanken.tiamat.repository.JobRepository;
-import org.rutebanken.tiamat.rest.utils.Importer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,9 +62,6 @@ public class ParkingsImportHandler {
 
     @Autowired
     private HazelcastInstance hazelcastInstance;
-
-    @Autowired
-    private JobRepository jobRepository;
 
     public void handleParkings(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger parkingsCreatedOrUpdated, SiteFrame responseSiteframe) {
 
@@ -119,75 +110,57 @@ public class ParkingsImportHandler {
         }
     }
 
-    public void handleParkingsGeneralFrame(GeneralFrame generalFrame, ImportParams importParams, AtomicInteger parkingsCreatedOrUpdated, Provider provider, String fileName, String folder, Job job) throws Exception {
-        if (publicationDeliveryHelper.hasGeneralFrame(generalFrame)) {
-            List<JAXBElement<? extends EntityStructure>> members = generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity();
-            List<org.rutebanken.netex.model.Parking> tiamatParking = NetexUtils.getMembers(org.rutebanken.netex.model.Parking.class, members);
-            List<Parking> parkingsParsed = parseParkings(tiamatParking);
+    public void handleParkingsGeneralFrame(List<org.rutebanken.netex.model.Parking> tiamatParking, ImportParams importParams, List<JAXBElement<? extends EntityStructure>> members, AtomicInteger parkingsCreatedOrUpdated) {
+        List<Parking> parkingsParsed = parseParkings(tiamatParking);
 
-            int numberOfParkingsBeforeFiltering = parkingsParsed.size();
-            logger.info("About to filter {} parkings based on topographic references: {}", parkingsParsed.size(), importParams.targetTopographicPlaces);
-            parkingsParsed = zoneTopographicPlaceFilter.filterByTopographicPlaceMatch(importParams.targetTopographicPlaces, parkingsParsed);
-            logger.info("Got {} parkings (was {}) after filtering by: {}", parkingsParsed.size(), numberOfParkingsBeforeFiltering, importParams.targetTopographicPlaces);
+        int numberOfParkingsBeforeFiltering = parkingsParsed.size();
+        logger.info("About to filter {} parkings based on topographic references: {}", parkingsParsed.size(), importParams.targetTopographicPlaces);
+        parkingsParsed = zoneTopographicPlaceFilter.filterByTopographicPlaceMatch(importParams.targetTopographicPlaces, parkingsParsed);
+        logger.info("Got {} parkings (was {}) after filtering by: {}", parkingsParsed.size(), numberOfParkingsBeforeFiltering, importParams.targetTopographicPlaces);
 
-            if (importParams.onlyMatchOutsideTopographicPlaces != null && !importParams.onlyMatchOutsideTopographicPlaces.isEmpty()) {
-                numberOfParkingsBeforeFiltering = parkingsParsed.size();
-                logger.info("Filtering parkings outside given list of topographic places: {}", importParams.onlyMatchOutsideTopographicPlaces);
-                parkingsParsed = zoneTopographicPlaceFilter.filterByTopographicPlaceMatch(importParams.onlyMatchOutsideTopographicPlaces, parkingsParsed, true);
-                logger.info("Got {} parkings (was {}) after filtering", parkingsParsed.size(), numberOfParkingsBeforeFiltering);
-            }
-
-            Collection<org.rutebanken.netex.model.Parking> importedParkings;
-            if (importParams.importType == null || importParams.importType.equals(ImportType.MERGE)) {
-                final FencedLock lock = hazelcastInstance.getCPSubsystem().getLock(PARKING_IMPORT_LOCK_KEY);
-                lock.lock();
-                try {
-                    importedParkings = transactionalMergingParkingsImporter.importParkings(parkingsParsed, parkingsCreatedOrUpdated);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                } finally {
-                    lock.unlock();
-                }
-            } else if (importParams.importType.equals(ImportType.INITIAL)) {
-                importedParkings = parallelInitialParkingImporter.importParkings(parkingsParsed, parkingsCreatedOrUpdated);
-            } else {
-                logger.warn("Import type " + importParams.importType + " not implemented. Will not match parking.");
-                importedParkings = new ArrayList<>(0);
-            }
-
-            if (!importedParkings.isEmpty()) {
-                NetexUtils.getMembers(org.rutebanken.netex.model.Parking.class, members);
-            }
-
-            Job jobUpdated = Importer.manageJob(job, JobStatus.FINISHED, importParams, provider, fileName, folder, null, JobImportType.NETEX_PARKING);
-            jobRepository.save(jobUpdated);
-            logger.info("Mapped {} parkings !!", tiamatParking.size());
+        if (importParams.onlyMatchOutsideTopographicPlaces != null && !importParams.onlyMatchOutsideTopographicPlaces.isEmpty()) {
+            numberOfParkingsBeforeFiltering = parkingsParsed.size();
+            logger.info("Filtering parkings outside given list of topographic places: {}", importParams.onlyMatchOutsideTopographicPlaces);
+            parkingsParsed = zoneTopographicPlaceFilter.filterByTopographicPlaceMatch(importParams.onlyMatchOutsideTopographicPlaces, parkingsParsed, true);
+            logger.info("Got {} parkings (was {}) after filtering", parkingsParsed.size(), numberOfParkingsBeforeFiltering);
         }
+
+        Collection<org.rutebanken.netex.model.Parking> importedParkings;
+        if (importParams.importType == null || importParams.importType.equals(ImportType.MERGE)) {
+            final FencedLock lock = hazelcastInstance.getCPSubsystem().getLock(PARKING_IMPORT_LOCK_KEY);
+            lock.lock();
+            try {
+                importedParkings = transactionalMergingParkingsImporter.importParkings(parkingsParsed, parkingsCreatedOrUpdated);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                lock.unlock();
+            }
+        } else if (importParams.importType.equals(ImportType.INITIAL)) {
+            importedParkings = parallelInitialParkingImporter.importParkings(parkingsParsed, parkingsCreatedOrUpdated);
+        } else {
+            logger.warn("Import type " + importParams.importType + " not implemented. Will not match parking.");
+            importedParkings = new ArrayList<>(0);
+        }
+
+        if (!importedParkings.isEmpty()) {
+            NetexUtils.getMembers(org.rutebanken.netex.model.Parking.class, members);
+        }
+
+        logger.info("Mapped {} parkings !!", tiamatParking.size());
     }
 
-    private List<Parking> parseParkings(List<org.rutebanken.netex.model.Parking> netexParkingsInFrame) throws Exception {
+    private List<Parking> parseParkings(List<org.rutebanken.netex.model.Parking> netexParkingsInFrame) {
         if (netexParkingsInFrame.isEmpty())
             return null;
 
-        List<Parking_VersionStructure> parkings = new ArrayList<>();
-        parkings.addAll(netexParkingsInFrame);
-        return parse(parkings);
-    }
-
-    public List<Parking> parse(List<Parking_VersionStructure> parkings) throws Exception {
         List<Parking> parkingsList = new ArrayList<>();
-        parkings.stream()
-                .filter(serviceParking -> serviceParking instanceof org.rutebanken.netex.model.Parking)
-                .map(netexParking -> (org.rutebanken.netex.model.Parking)netexParking)
-                .forEach(netexParking -> {
-                    Parking parking = new Parking();
-                    netexMapper.parseToSetParkingGlobalInformations(netexParking, parking);
-                    if (netexParking.getParkingPaymentProcess() != null) netexMapper.parseToSetParkingPaymentProcess(netexParking, parking);
-                    if (netexParking.getParkingProperties() != null) netexMapper.parseToSetParkingProperties(netexParking, parking);
-                    if (netexParking.getParkingAreas() != null) netexMapper.parseToSetParkingAreas(netexParking, parking);
-                    if (netexParking.getPlaceEquipments() != null) netexMapper.parseToSetPlaceEquipments(netexParking, parking);
-                    parkingsList.add(parking);
-                });
+        new ArrayList<>(netexParkingsInFrame).forEach(netexParking -> {
+            Parking parkingTiamat = new Parking();
+            netexMapper.parseToSetParkingProperties(netexParking, parkingTiamat);
+            parkingTiamat = netexMapper.mapToTiamatModel(netexParking);
+            parkingsList.add(parkingTiamat);
+        });
         return parkingsList;
     }
 }

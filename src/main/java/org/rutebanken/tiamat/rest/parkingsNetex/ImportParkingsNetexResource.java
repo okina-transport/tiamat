@@ -3,8 +3,8 @@ package org.rutebanken.tiamat.rest.parkingsNetex;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
-import org.rutebanken.tiamat.importer.ParkingsImporter;
-import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
+import org.rutebanken.tiamat.importer.NetexImporter;
+import org.rutebanken.tiamat.model.job.JobImportType;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,15 +26,13 @@ public class ImportParkingsNetexResource {
     private static final Logger logger = LoggerFactory.getLogger(ImportParkingsNetexResource.class);
 
     private final PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller;
-    private final ParkingsImporter parkingsImporter;
-
-
+    private final NetexImporter netexImporter;
 
     @Autowired
     ImportParkingsNetexResource(PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller,
-                                ParkingsImporter parkingsImporter){
+                                NetexImporter netexImporter){
         this.publicationDeliveryUnmarshaller=publicationDeliveryUnmarshaller;
-        this.parkingsImporter =parkingsImporter;
+        this.netexImporter =netexImporter;
     }
 
     @POST
@@ -48,7 +46,7 @@ public class ImportParkingsNetexResource {
         logger.info("Received Parking Netex publication delivery, starting to parse...");
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         try {
-            Response.ResponseBuilder builder = parkingsImporter.importParkings(incomingPublicationDelivery, null, provider, fileName, folder);
+            Response.ResponseBuilder builder = netexImporter.importProcess(incomingPublicationDelivery, provider, fileName, folder, JobImportType.NETEX_PARKING);
             return builder.build();
         } catch (NotAuthenticatedException | NotAuthorizedException e) {
             logger.debug("Access denied for publication delivery: " + e.getMessage(), e);
@@ -56,8 +54,6 @@ public class ImportParkingsNetexResource {
         } catch (RuntimeException e) {
             logger.warn("Caught exception while importing publication delivery: " + incomingPublicationDelivery, e);
             throw e;
-        } catch (TiamatBusinessException e) {
-            throw new RuntimeException(e);
         }
     }
 }

@@ -16,8 +16,6 @@
 package org.rutebanken.tiamat.versioning.util;
 
 import org.rutebanken.tiamat.model.*;
-import org.rutebanken.tiamat.versioning.VersionCreator;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -27,14 +25,6 @@ import static org.rutebanken.tiamat.versioning.util.MobilityImpairedAccessCalcul
 
 @Service
 public class AccessibilityAssessmentOptimizer {
-
-    private final VersionCreator versionCreator;
-
-    @Autowired
-    public AccessibilityAssessmentOptimizer(VersionCreator versionCreator) {
-        this.versionCreator = versionCreator;
-    }
-
 
     public void optimizeAccessibilityAssessmentsStopPlace(StopPlace stopPlace) {
 

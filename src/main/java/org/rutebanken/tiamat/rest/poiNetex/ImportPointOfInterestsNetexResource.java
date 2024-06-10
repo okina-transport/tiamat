@@ -3,7 +3,8 @@ package org.rutebanken.tiamat.rest.poiNetex;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.general.PointOfInterestCSVHelper;
-import org.rutebanken.tiamat.importer.PoisImporter;
+import org.rutebanken.tiamat.importer.NetexImporter;
+import org.rutebanken.tiamat.model.job.JobImportType;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,16 +28,16 @@ public class ImportPointOfInterestsNetexResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportPointOfInterestsNetexResource.class);
     private final PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller;
-    private final PoisImporter poisImporter;
+    private final NetexImporter netexImporter;
 
 
     @Autowired
     PointOfInterestCSVHelper poiHelper;
 
     public ImportPointOfInterestsNetexResource(PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller,
-                                               PoisImporter poisImporter) {
+                                               NetexImporter netexImporter) {
         this.publicationDeliveryUnmarshaller = publicationDeliveryUnmarshaller;
-        this.poisImporter = poisImporter;
+        this.netexImporter = netexImporter;
     }
 
     @POST
@@ -51,7 +52,7 @@ public class ImportPointOfInterestsNetexResource {
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         poiHelper.clearClassificationCache();
         try {
-            Response.ResponseBuilder builder = poisImporter.importPointOfInterests(incomingPublicationDelivery, null, provider, fileName, folder);
+            Response.ResponseBuilder builder = netexImporter.importProcess(incomingPublicationDelivery, provider, fileName, folder, JobImportType.NETEX_POI);
             return builder.build();
         } catch(Exception e){
             logger.error(e.getMessage(),e);

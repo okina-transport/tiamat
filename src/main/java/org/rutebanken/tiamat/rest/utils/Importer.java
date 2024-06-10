@@ -4,7 +4,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.general.ImportJobWorker;
 import org.rutebanken.tiamat.importer.ImportParams;
-import org.rutebanken.tiamat.importer.ParkingsImporter;
+import org.rutebanken.tiamat.importer.NetexImporter;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobImportType;
 import org.rutebanken.tiamat.model.job.JobStatus;
@@ -21,13 +21,17 @@ import java.util.concurrent.Executors;
 @Component
 public class Importer {
 
-    private static final Logger logger = LoggerFactory.getLogger(ParkingsImporter.class);
+    private static final Logger logger = LoggerFactory.getLogger(NetexImporter.class);
 
     public static final String ASYNC_IMPORT_PARKING_JOB_PATH = "import_parking";
     public static final String ASYNC_IMPORT_POI_JOB_PATH = "import_poi";
 
     private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("import-%d").build());
+
+    public static Job manageJob(Job job, JobStatus state, ImportParams importParams, Provider provider, String fileName, String folder, JobImportType type) {
+        return manageJob(job, state, importParams, provider, fileName, folder, null, type);
+    }
 
     public static Job manageJob(Job job, JobStatus state, ImportParams importParams, Provider provider, String fileName, String folder, Exception exception, JobImportType type) {
         job.setStatus(state);

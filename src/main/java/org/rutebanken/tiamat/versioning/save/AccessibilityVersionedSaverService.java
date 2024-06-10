@@ -15,6 +15,10 @@
 
 package org.rutebanken.tiamat.versioning.save;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import org.rutebanken.tiamat.changelog.EntityChangedListener;
+import org.rutebanken.tiamat.general.PeriodicCacheLogger;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.AccessibilityAssessmentRepository;
 import org.rutebanken.tiamat.repository.AccessibilityLimitationRepository;
@@ -23,16 +27,20 @@ import org.rutebanken.tiamat.versioning.VersionIncrementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Transactional
 @Service
 public class AccessibilityVersionedSaverService {
 
     private static final Logger logger = LoggerFactory.getLogger(AccessibilityVersionedSaverService.class);
+    private final Cache<String, Optional<String>> nearbyStopCache;
 
     @Autowired
     private AccessibilityLimitationRepository accessibilityLimitationRepository;
@@ -45,6 +53,23 @@ public class AccessibilityVersionedSaverService {
 
     @Autowired
     private MetricsService metricsService;
+
+    @Autowired
+    private EntityChangedListener entityChangedListener;
+
+    @Autowired
+    public AccessibilityVersionedSaverService(@Value("${nearbyStopPlaceFinderCache.maxSize:50000}") int maximumSize,
+                                              @Value("${nearbyStopPlaceFinderCache.expiresAfter:30}") int expiresAfter,
+                                              @Value("${nearbyStopPlaceFinderCache.expiresAfterTimeUnit:DAYS}") TimeUnit expiresAfterTimeUnit,
+                                              PeriodicCacheLogger periodicCacheLogger) {
+        this.nearbyStopCache = CacheBuilder.newBuilder()
+                .maximumSize(maximumSize)
+                .expireAfterWrite(expiresAfter, expiresAfterTimeUnit)
+                .recordStats()
+                .build();
+
+        periodicCacheLogger.scheduleCacheStatsLogging(nearbyStopCache, logger);
+    }
 
     public AccessibilityAssessment saveNewVersionAssessment(AccessibilityAssessment newVersion) {
 
@@ -73,6 +98,8 @@ public class AccessibilityVersionedSaverService {
         logger.info("Saved assessment {}, version {}", result.getNetexId(), result.getVersion());
 
         metricsService.registerEntitySaved(newVersion.getClass());
+        nearbyStopCache.put(newVersion.getNetexId(), Optional.ofNullable(newVersion.getNetexId()));
+        entityChangedListener.onChange(newVersion);
         return result;
     }
 
@@ -103,6 +130,8 @@ public class AccessibilityVersionedSaverService {
         logger.info("Saved limitation {}, version {}", result.getNetexId(), result.getVersion());
 
         metricsService.registerEntitySaved(newVersion.getClass());
+        nearbyStopCache.put(newVersion.getNetexId(), Optional.ofNullable(newVersion.getNetexId()));
+        entityChangedListener.onChange(newVersion);
         return result;
     }
 }

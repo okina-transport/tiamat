@@ -9,6 +9,7 @@ import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryU
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
@@ -40,6 +41,7 @@ public class ImportPointOfInterestsNetexResource {
         this.netexImporter = netexImporter;
     }
 
+    @PreAuthorize("@rolesChecker.hasRoleEdit()")
     @POST
     @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)

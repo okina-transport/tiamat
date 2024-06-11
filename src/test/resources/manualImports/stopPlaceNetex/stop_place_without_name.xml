@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><PublicationDelivery xmlns="http://www.netex.org.uk/netex" xmlns:acbs="http://www.ifopt.org.uk/acsb" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:ifopt="http://www.ifopt.org.uk/ifopt" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.1:FR-NETEX-2.2">
+    <PublicationTimestamp>2023-01-17T09:37:28.55Z</PublicationTimestamp>
+    <ParticipantRef>MOBIITI</ParticipantRef>
+    <dataObjects>
+        <GeneralFrame id="MOBI-ITI:GeneralFrame:NETEX_ARRET_20230117T093620Z:LOC" modification="revise" version="1">
+            <TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_ARRET">version="1.1:FR-NETEX_ARRET-2.2"</TypeOfFrameRef>
+            <members>
+                <Quay id="MOBIITI:Quay:2" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>LES HALLES</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CHOLETBUS:Quay:20006</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value>MAU02</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description>Poteau</Description>
+                    <Centroid>
+                        <Location>
+                            <Longitude>-0.879556</Longitude>
+                            <Latitude>47.057327</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:2" version="7">
+                        <Name>LES HALLES</Name>
+                        <PostalRegion>49099</PostalRegion>
+                    </PostalAddress>
+                    <AccessibilityAssessment id="MOBIITI:AccessibilityAssessment:3" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation id="3" modification="new" version="1">
+<WheelchairAccess>true</WheelchairAccess>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <SiteRef ref="MOBIITI:StopPlace:1"/>
+                    <TransportMode>bus</TransportMode>
+                    <PublicCode>MAU02</PublicCode>
+                </Quay>
+                <Quay id="MOBIITI:Quay:3" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>LES HALLES</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CHOLETBUS:Quay:20761</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value>PTDL01</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description>Poteau</Description>
+                    <Centroid>
+                        <Location>
+                            <Longitude>-0.878557</Longitude>
+                            <Latitude>47.055882</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:3" version="7">
+                        <Name>LES HALLES</Name>
+                        <PostalRegion>49099</PostalRegion>
+                    </PostalAddress>
+                    <AccessibilityAssessment id="MOBIITI:AccessibilityAssessment:4" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation id="4" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <SiteRef ref="MOBIITI:StopPlace:1"/>
+                    <TransportMode>bus</TransportMode>
+                    <PublicCode>PTDL01</PublicCode>
+                </Quay>
+                <Quay id="MOBIITI:Quay:1" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>LES HALLES</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CHOLETBUS:Quay:20762</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value>PDTL02</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description>Poteau</Description>
+                    <Centroid>
+                        <Location>
+                            <Longitude>-0.878624</Longitude>
+                            <Latitude>47.056011</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:1" version="7">
+                        <Name>LES HALLES</Name>
+                        <PostalRegion>49099</PostalRegion>
+                    </PostalAddress>
+                    <AccessibilityAssessment id="MOBIITI:AccessibilityAssessment:2" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation id="2" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <SiteRef ref="MOBIITI:StopPlace:1"/>
+                    <TransportMode>bus</TransportMode>
+                    <PublicCode>PDTL02</PublicCode>
+                </Quay>
+                <Quay id="MOBIITI:Quay:4" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>LES HALLES</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CHOLETBUS:Quay:20005</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value>MAU01</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description>Poteau</Description>
+                    <Centroid>
+                        <Location>
+                            <Longitude>-0.879604</Longitude>
+                            <Latitude>47.056808</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:4" version="7">
+                        <Name>LES HALLES</Name>
+                        <PostalRegion>49099</PostalRegion>
+                    </PostalAddress>
+                    <AccessibilityAssessment id="MOBIITI:AccessibilityAssessment:5" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation id="5" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <SiteRef ref="MOBIITI:StopPlace:1"/>
+                    <TransportMode>bus</TransportMode>
+                    <PublicCode>MAU01</PublicCode>
+                </Quay>
+                <Quay id="MOBIITI:Quay:6" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>LES HALLES</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CHOLETBUS:Quay:20065</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value>HAL01</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description>Poteau</Description>
+                    <Centroid>
+                        <Location>
+                            <Longitude>-0.878410</Longitude>
+                            <Latitude>47.057308</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:6" version="7">
+                        <Name>LES HALLES</Name>
+                        <PostalRegion>49099</PostalRegion>
+                    </PostalAddress>
+                    <AccessibilityAssessment id="MOBIITI:AccessibilityAssessment:7" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation id="7" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <SiteRef ref="MOBIITI:StopPlace:1"/>
+                    <TransportMode>bus</TransportMode>
+                    <PublicCode>HAL01</PublicCode>
+                </Quay>
+                <Quay id="MOBIITI:Quay:5" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>LES HALLES</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CHOLETBUS:Quay:20126</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value>HAL02</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Centroid>
+                        <Location>
+                            <Longitude>-0.878631</Longitude>
+                            <Latitude>47.057278</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:5" version="7">
+                        <Name>LES HALLES</Name>
+                        <PostalRegion>49099</PostalRegion>
+                    </PostalAddress>
+                    <AccessibilityAssessment id="MOBIITI:AccessibilityAssessment:6" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation id="6" modification="new" version="1">
+<WheelchairAccess>true</WheelchairAccess>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <SiteRef ref="MOBIITI:StopPlace:1"/>
+                    <TransportMode>bus</TransportMode>
+                    <PublicCode>HAL02</PublicCode>
+                </Quay>
+                <StopPlace created="2022-11-30T09:48:29.051" id="MOBIITI:StopPlace:1" modification="new" version="1">
+                    <ValidBetween>
+                        <FromDate>2025-11-30T09:48:29.05</FromDate>
+                    </ValidBetween>
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>LES HALLES</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CHOLETBUS:StopPlace:10041</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>IS_PARENT_STOP_PLACE</Key>
+                            <Value>false</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="fr">LES HALLES</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>-0.878897</Longitude>
+                            <Latitude>47.056769</Latitude>
+                        </Location>
+                    </Centroid>
+                    <AccessibilityAssessment id="MOBIITI:AccessibilityAssessment:1" modification="new" version="1">
+                        <MobilityImpairedAccess>true</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation id="1" modification="new" version="1">
+<WheelchairAccess>true</WheelchairAccess>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <TransportMode>bus</TransportMode>
+                    <OtherTransportModes/>
+                    <StopPlaceType>onstreetBus</StopPlaceType>
+                    <Weighting>interchangeAllowed</Weighting>
+                    <quays>
+                        <QuayRef ref="MOBIITI:Quay:2" version="1"/>
+                        <QuayRef ref="MOBIITI:Quay:3" version="1"/>
+                        <QuayRef ref="MOBIITI:Quay:1" version="1"/>
+                        <QuayRef ref="MOBIITI:Quay:4" version="1"/>
+                        <QuayRef ref="MOBIITI:Quay:6" version="1"/>
+                        <QuayRef ref="MOBIITI:Quay:5" version="1"/>
+                    </quays>
+                </StopPlace>
+                <Quay id="MOBIITI:Quay:7" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>CHANTERIVIERE</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CHOLETBUS:Quay:20420</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value>VIE01</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Centroid>
+                        <Location>
+                            <Longitude>-0.895127</Longitude>
+                            <Latitude>47.041740</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:7" version="7">
+                        <Name>CHANTERIVIERE</Name>
+                        <PostalRegion>49099</PostalRegion>
+                    </PostalAddress>
+                    <AccessibilityAssessment id="MOBIITI:AccessibilityAssessment:9" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation id="9" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <SiteRef ref="MOBIITI:StopPlace:2"/>
+                    <TransportMode>bus</TransportMode>
+                    <PublicCode>VIE01</PublicCode>
+                </Quay>
+                <StopPlace created="2022-11-30T09:48:31.57" id="MOBIITI:StopPlace:2" modification="new" version="1">
+                    <ValidBetween>
+                        <FromDate>2025-11-30T09:48:31.57</FromDate>
+                    </ValidBetween>
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>CHANTERIVIERE</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CHOLETBUS:StopPlace:10242</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>IS_PARENT_STOP_PLACE</Key>
+                            <Value>false</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="fr">CHANTERIVIERE</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>-0.895127</Longitude>
+                            <Latitude>47.041740</Latitude>
+                        </Location>
+                    </Centroid>
+                    <AccessibilityAssessment id="MOBIITI:AccessibilityAssessment:8" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation id="8" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <TransportMode>bus</TransportMode>
+                    <OtherTransportModes/>
+                    <StopPlaceType>onstreetBus</StopPlaceType>
+                    <Weighting>interchangeAllowed</Weighting>
+                    <quays>
+                        <QuayRef ref="MOBIITI:Quay:7" version="1"/>
+                    </quays>
+                </StopPlace>
+                <Quay id="MOBIITI:Quay:9" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>BOSQUET</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CHOLETBUS:Quay:20051</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value>BOS02</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description>Poteau</Description>
+                    <Centroid>
+                        <Location>
+                            <Longitude>-0.871612</Longitude>
+                            <Latitude>47.063263</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:9" version="7">
+                        <Name>BOSQUET</Name>
+                        <PostalRegion>49099</PostalRegion>
+                    </PostalAddress>
+                    <AccessibilityAssessment id="MOBIITI:AccessibilityAssessment:12" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation id="12" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <SiteRef ref="MOBIITI:StopPlace:3"/>
+                    <TransportMode>bus</TransportMode>
+                    <PublicCode>BOS02</PublicCode>
+                </Quay>
+                <Quay id="MOBIITI:Quay:8" modification="new" version="1">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>BOSQUET</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CHOLETBUS:Quay:20050</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value>BOS01</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Description>Abribus</Description>
+                    <Centroid>
+                        <Location>
+                            <Longitude>-0.872032</Longitude>
+                            <Latitude>47.062794</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:8" version="7">
+                        <Name>BOSQUET</Name>
+                        <PostalRegion>49099</PostalRegion>
+                    </PostalAddress>
+                    <AccessibilityAssessment id="MOBIITI:AccessibilityAssessment:11" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation id="11" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <SiteRef ref="MOBIITI:StopPlace:3"/>
+                    <TransportMode>bus</TransportMode>
+                    <PublicCode>BOS01</PublicCode>
+                </Quay>
+                <StopPlace created="2022-11-30T09:48:31.671" id="MOBIITI:StopPlace:3" modification="new" version="1">
+                    <ValidBetween>
+                        <FromDate>2025-11-30T09:48:31.671</FromDate>
+                    </ValidBetween>
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>BOSQUET</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>CHOLETBUS:StopPlace:10031</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value/>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>IS_PARENT_STOP_PLACE</Key>
+                            <Value>false</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Name lang="fr">BOSQUET</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>-0.871822</Longitude>
+                            <Latitude>47.063029</Latitude>
+                        </Location>
+                    </Centroid>
+                    <AccessibilityAssessment id="MOBIITI:AccessibilityAssessment:10" modification="new" version="1">
+                        <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                        <limitations>
+                            <AccessibilityLimitation id="10" modification="new" version="1">
+<WheelchairAccess>unknown</WheelchairAccess>
+                            </AccessibilityLimitation>
+                        </limitations>
+                    </AccessibilityAssessment>
+                    <TransportMode>bus</TransportMode>
+                    <OtherTransportModes/>
+                    <StopPlaceType>onstreetBus</StopPlaceType>
+                    <Weighting>interchangeAllowed</Weighting>
+                    <quays>
+                        <QuayRef ref="MOBIITI:Quay:9" version="1"/>
+                        <QuayRef ref="MOBIITI:Quay:8" version="1"/>
+                    </quays>
+                </StopPlace>
+            </members>
+        </GeneralFrame>
+    </dataObjects>
+</PublicationDelivery>

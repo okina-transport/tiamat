@@ -240,29 +240,6 @@ public class DtoStopPlaceResource {
         lightStopPlace.setQuays(quays);
     }
 
-    public void convertQuaysToLightTiamat(StopPlace lightStopPlace, org.rutebanken.netex.model.StopPlace stopPlace) {
-        List<JAXBElement<?>> netexLightQuays = new ArrayList<>();
-        for (JAXBElement<?> quay : stopPlace.getQuays().getQuayRefOrQuay()) {
-            
-            org.rutebanken.netex.model.Quay netexQuay = new org.rutebanken.netex.model.Quay();
-//            netexQuay.setId(quay.getNetexId());
-//            if (quay.getName() != null) {
-//                netexQuay.setName(convertToMultiLingualString(quay.getName()));
-//            }
-//            Point centroid = quay.getCentroid();
-//            SimplePoint_VersionStructure simplePoint = new SimplePoint_VersionStructure();
-//            LocationStructure location = new LocationStructure();
-//            location.setLongitude(BigDecimal.valueOf(centroid.getX()));
-//            location.setLatitude(BigDecimal.valueOf(centroid.getY()));
-//            simplePoint.setLocation(location);
-//            netexQuay.setCentroid(simplePoint);
-//            netexLightQuays.add(netexObjectFactory.createQuay(netexQuay));
-        }
-        Quays_RelStructure quays = new Quays_RelStructure();
-        quays.withQuayRefOrQuay(netexLightQuays);
-//        lightStopPlace.setQuays(quays);
-    }
-
     private MultilingualString convertToMultiLingualString(EmbeddableMultilingualString emString) {
         MultilingualString result = new MultilingualString();
 

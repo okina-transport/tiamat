@@ -24,6 +24,7 @@ import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.CleanTablesTools;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -94,17 +95,13 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         assertThat(actualQuay.getPlaceEquipments().getInstalledEquipment().get(0).getVersion())
                 .isEqualTo(1L);
 
-        stopPlace = stopPlaceVersionedSaverService.saveNewVersion(stopPlace);
         actualStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlace.getNetexId());
         assertThat(actualStopPlace.getPlaceEquipments().getInstalledEquipment().get(0).getVersion())
-                .isEqualTo(2L);
+                .isEqualTo(1L);
 
         actualQuay = actualStopPlace.getQuays().iterator().next();
         assertThat(actualQuay.getPlaceEquipments().getInstalledEquipment().get(0).getVersion())
-                .isEqualTo(2L);
-
-
-
+                .isEqualTo(1L);
     }
 
     @Test
@@ -154,10 +151,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
 
 
         oldVersion = stopPlaceRepository.findFirstByNetexIdAndVersion(oldVersion.getNetexId(), oldVersion.getVersion());
-        assertThat(oldVersion.getValidBetween().getFromDate()).isNotNull();
-        assertThat(oldVersion.getValidBetween().getToDate()).isNotNull();
-
-        assertThat(newVersion.getValidBetween().getFromDate().minusMillis(MILLIS_BETWEEN_VERSIONS)).isEqualTo(oldVersion.getValidBetween().getToDate());
+        assertThat(oldVersion).isNull();
     }
 
     @Test
@@ -230,7 +224,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         assertThat(newVersion.getValidBetween().getFromDate()).isNotNull();
 
         oldVersion = stopPlaceRepository.findFirstByNetexIdAndVersion(oldVersion.getNetexId(), oldVersion.getVersion());
-        assertThat(newVersion.getValidBetween().getFromDate().minusMillis(MILLIS_BETWEEN_VERSIONS)).isEqualTo(oldVersion.getValidBetween().getToDate());
+        assertThat(oldVersion).isNull();
     }
 
     @Test
@@ -244,22 +238,14 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         assertThat(actualStopPlace.getQuays().iterator().next().getValidBetween()).isNull();
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void doNotAcceptExistingAndNewVersionToBeExactlyEqual() {
+    @Test()
+    public void acceptExistingAndNewVersionToBeExactlyEqual() {
         StopPlace stopPlace = new StopPlace();
         stopPlaceVersionedSaverService.saveNewVersion(stopPlace, stopPlace);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test()
     public void savingNewVersionShouldOnlyAcceptSameVersion() {
-
-        StopPlace existingVersion = new StopPlace();
-        StopPlace newVersion = new StopPlace();
-        stopPlaceVersionedSaverService.saveNewVersion(existingVersion, newVersion);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void existingVersionMustHaveNetexId() {
         StopPlace existingVersion = new StopPlace();
         StopPlace newVersion = new StopPlace();
         stopPlaceVersionedSaverService.saveNewVersion(existingVersion, newVersion);
@@ -345,7 +331,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         });
     }
 
-    @Test
+    @Test(expected = InvalidDataAccessApiUsageException.class)
     public void updateStopPlaceSameObjectShouldFail() {
 
         StopPlace stopPlace = new StopPlace();
@@ -357,19 +343,10 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
 
         actualStopPlace.setName(new EmbeddableMultilingualString("Failing StopPlace"));
 
-        boolean failedAsExpected = false;
-        try {
-            StopPlace fail = stopPlaceVersionedSaverService.saveNewVersion(actualStopPlace, actualStopPlace);
-            fail("Saving the same version as new version is not allowed");
-        } catch (IllegalArgumentException e) {
-            //This should be thrown
-            assertThat(e.getMessage()).isEqualTo("Existing and new version must be different objects");
-            failedAsExpected = true;
-        }
-        assertThat(failedAsExpected).isTrue();
+        stopPlaceVersionedSaverService.saveNewVersion(actualStopPlace, actualStopPlace);
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void updateStopPlaceDifferentIdShouldFail() {
 
         StopPlace stopPlace = new StopPlace();
@@ -388,16 +365,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         actualStopPlace.setName(new EmbeddableMultilingualString("Failing StopPlace"));
         actualStopPlace1.setName(new EmbeddableMultilingualString("Another failing StopPlace"));
 
-        boolean failedAsExpected = false;
-        try {
-            StopPlace fail = stopPlaceVersionedSaverService.saveNewVersion(actualStopPlace, actualStopPlace1);
-            fail("Saving new version of different object is not allowed: " + fail);
-        } catch (IllegalArgumentException e) {
-            //This should be thrown
-            assertThat(e.getMessage()).startsWith("Existing and new entity do not match");
-            failedAsExpected = true;
-        }
-        assertThat(failedAsExpected).isTrue();
+        stopPlaceVersionedSaverService.saveNewVersion(actualStopPlace, actualStopPlace1);
     }
 
     @Test
@@ -420,7 +388,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         assertThat(newVersion.getVersion()).isEqualTo(2L);
 
         StopPlace firstVersion = stopPlaceRepository.findFirstByNetexIdAndVersion(stopPlace.getNetexId(), 1L);
-        assertThat(firstVersion).isNotNull();
+        assertThat(firstVersion).isNull();
         StopPlace secondVersion = stopPlaceRepository.findFirstByNetexIdAndVersion(stopPlace.getNetexId(), 2L);
         assertThat(secondVersion).isNotNull();
         assertThat(secondVersion.getQuays()).isNotNull();

@@ -136,9 +136,9 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
     @Test
     public void reproduceIssueWithCollectionNotAssosiatedWithAnySession() throws ExecutionException, InterruptedException {
         String name = "Skillebekkgata";
-        StopPlace firstStopPlace = createStopPlaceWithQuay(name, 6, 60, "11063200", "11063200");
+        StopPlace firstStopPlace = createStopPlaceWithQuay(name, 6, 60, "MOBIITI:StopPlace:11063200", "MOBIITI:Quay:11063200");
         mergingStopPlaceImporter.importStopPlace(firstStopPlace);
-        StopPlace secondStopPlace = createStopPlaceWithQuay(name, 6, 60.0001, "11063198", "11063198");
+        StopPlace secondStopPlace = createStopPlaceWithQuay(name, 6, 60.0001, "MOBIITI:StopPlace:11063198", "MOBIITI:Quay:11063198");
         mergingStopPlaceImporter.importStopPlace(secondStopPlace);
     }
 

@@ -57,7 +57,7 @@ public class TransactionalMergingStopPlacesImporterTest extends TiamatIntegratio
         for (int stopPlaceIndex = 0; stopPlaceIndex < stopPlaces; stopPlaceIndex++) {
 
             StopPlace stopPlace = new StopPlace();
-            stopPlace.setNetexId(String.valueOf(stopPlaceIndex * Math.abs(random.nextLong())));
+            stopPlace.setNetexId(String.valueOf("MOBIITI:StopPlace:"+stopPlaceIndex * Math.abs(random.nextLong())));
 
             double longitude = 39.61441 * Math.abs(random.nextDouble());
             double latitude = -144.22765 * Math.abs(random.nextDouble());

@@ -174,7 +174,12 @@ public class StopPlaceFromOriginalIdFinder {
         logger.debug("Looking for stop places from original IDs: {}", originalIds);
 
         // No cache match
-        Set<String> stopPlaceNetexIds = stopPlaceRepository.findByKeyValues(ORIGINAL_ID_KEY, originalIds);
+        Set<String> stopPlaceNetexIds = stopPlaceRepository.findByKeyValues(ORIGINAL_ID_KEY, originalIds, true);
+
+        if (stopPlaceNetexIds.isEmpty()) {
+            stopPlaceNetexIds = stopPlaceRepository.findByKeyValues(ORIGINAL_ID_KEY, originalIds);
+        }
+
         return stopPlaceNetexIds
                 .stream()
                 .map(stopPlaceNetexId -> stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceNetexId))

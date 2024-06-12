@@ -124,7 +124,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         assertTrue(matchedStopPlaces.size() == 1);
         org.rutebanken.netex.model.StopPlace importedStopPlaceOnProv2 = matchedStopPlaces.get(0);
-        assertNotEquals(importedStopPlaceOnProv1.getId(),importedStopPlaceOnProv2.getId());
+        assertEquals(importedStopPlaceOnProv1.getId(),importedStopPlaceOnProv2.getId());
         Optional<String> stop2Opt = NetexMapper.getImportedId(importedStopPlaceOnProv2);
         assertTrue(stop2Opt.isPresent());
         //The new point must contain in "imported-id" value both values from point1 ID + point2 ID

@@ -127,7 +127,10 @@ public class StopPlaceVersionedSaverService {
         if (existingVersion == null) {
             existingVersion = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
         }
-//        versionValidator.validate(existingVersion, newVersion);
+
+        if (existingVersion != null && !newVersion.getNetexId().equals(existingVersion.getNetexId())) {
+            throw new IllegalArgumentException("Saving new version of different object is not allowed");
+        }
 
         if (newVersion.getParentSiteRef() != null && !newVersion.isParentStopPlace()) {
             throw new IllegalArgumentException("StopPlace " +
@@ -171,7 +174,6 @@ public class StopPlaceVersionedSaverService {
             newVersion.setChanged(changed);
             Instant oldversionTerminationTime = newVersionValidFrom.minusMillis(MILLIS_BETWEEN_VERSIONS);
             logger.debug("About to terminate previous version for {},{}", existingVersion.getNetexId(), existingVersion.getVersion());
-//            StopPlace existingVersionRefetched = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingVersion.getNetexId());
             logger.debug("Found previous version {},{}. Terminating it.", existingVersion.getNetexId(), existingVersion.getVersion());
             validityUpdater.terminateVersion(existingVersion, oldversionTerminationTime);
             terminateChild(existingVersion, oldversionTerminationTime);

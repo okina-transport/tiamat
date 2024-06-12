@@ -53,7 +53,7 @@ public class TransactionalMergingParkingsImporter {
                     try {
                         importedParking = mergingParkingImporter.importParking(parking);
                     } catch (Exception e) {
-                        throw new RuntimeException("Could not import stop place " + parking, e);
+                        throw new RuntimeException("Could not import parking " + parking, e);
                     }
                     parkingsCreated.incrementAndGet();
                     return importedParking;

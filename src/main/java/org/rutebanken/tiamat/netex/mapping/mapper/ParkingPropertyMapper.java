@@ -28,26 +28,6 @@ public class ParkingPropertyMapper extends CustomMapper<org.rutebanken.netex.mod
     @Override
     public void mapAtoB(org.rutebanken.netex.model.ParkingProperties netexParkingProperties, ParkingProperties tiamatParkingProperties, MappingContext context) {
         super.mapAtoB(netexParkingProperties, tiamatParkingProperties, context);
-
-        List<ParkingCapacity> capacities = new ArrayList<>();
-
-        for (Object capacity : netexParkingProperties.getSpaces().getParkingCapacityRefOrParkingCapacity()) {
-            ParkingCapacity currentCapacity = (ParkingCapacity) capacity;
-            //construire un parking capacity tiamat
-            ParkingCapacity newCapacity = new ParkingCapacity();
-            newCapacity.setParentRef(currentCapacity.getParentRef());
-            newCapacity.setParkingUserType(currentCapacity.getParkingUserType());
-            newCapacity.setParkingVehicleType(currentCapacity.getParkingVehicleType());
-            newCapacity.setParkingStayType(currentCapacity.getParkingStayType());
-            newCapacity.setNumberOfSpaces(currentCapacity.getNumberOfSpaces());
-            newCapacity.setNumberOfSpacesWithRechargePoint(currentCapacity.getNumberOfSpacesWithRechargePoint());
-            newCapacity.setNumberOfCarsharingSpaces(currentCapacity.getNumberOfCarsharingSpaces());
-            newCapacity.setVersion(currentCapacity.getVersion()+1);
-            capacities.add(newCapacity);
-        }
-        tiamatParkingProperties.setSpaces(capacities);
-        tiamatParkingProperties.setNetexId(netexParkingProperties.getId());
-        tiamatParkingProperties.setVersion(Long.parseLong(netexParkingProperties.getVersion())+1);
     }
 
     @Override

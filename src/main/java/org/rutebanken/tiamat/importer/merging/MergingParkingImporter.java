@@ -183,8 +183,9 @@ public class MergingParkingImporter {
 
         boolean areasChanged = false;
         List<ParkingArea> copyParkingAreas = new ArrayList<>();
-        if (incomingParking.getParkingAreas()!= null && (!new HashSet<>(copyParking.getParkingAreas()).containsAll(incomingParking.getParkingAreas()) ||
-                !new HashSet<>(incomingParking.getParkingAreas()).containsAll(copyParking.getParkingAreas()))) {
+        if (((copyParking.getParkingAreas() != null && incomingParking.getParkingAreas() != null) ||
+                (copyParking.getParkingAreas() == null && incomingParking.getParkingAreas() != null)) &&
+                incomingParking.getParkingAreas().equals(copyParking.getParkingAreas())) {
 
             copyParking.getParkingAreas().clear();
             for (ParkingArea area : incomingParking.getParkingAreas()) {

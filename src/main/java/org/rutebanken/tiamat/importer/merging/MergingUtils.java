@@ -38,9 +38,9 @@ public class MergingUtils {
     }
 
     public boolean updateKeyValues(DataManagedObjectStructure existing, DataManagedObjectStructure incoming, String netexId) {
-        if ((existing.getKeyValues() == null && incoming.getKeyValues() != null) ||
-                (existing.getKeyValues() != null && incoming.getKeyValues() != null &&
-                        !existing.getKeyValues().equals(incoming.getKeyValues()))) {
+        if (((existing.getKeyValues() == null && incoming.getKeyValues() != null) ||
+                (existing.getKeyValues() != null && incoming.getKeyValues() != null)) &&
+                        !existing.getKeyValues().equals(incoming.getKeyValues())) {
 
             // Suppression des clés qui ne sont plus présentes dans incoming
             Iterator<Map.Entry<String, Value>> iterator = existing.getKeyValues().entrySet().iterator();

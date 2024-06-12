@@ -90,7 +90,12 @@ public class StopPlaceFromOriginalIdFinder {
 
         if(originalIds.isEmpty()) return null;
 
-        StopPlace existingStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(stopPlace.getNetexId());
+        List<StopPlace> list = findByKeyValue(originalIds);
+        StopPlace existingStopPlace = null;
+
+        if (list.size() > 0) {
+            existingStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(list.get(0).getNetexId());
+        }
 
         if (existingStopPlace != null) {
             logger.debug("Found stop place {} from original ID", existingStopPlace.getNetexId());

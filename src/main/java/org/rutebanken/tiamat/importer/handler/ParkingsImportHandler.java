@@ -132,6 +132,7 @@ public class ParkingsImportHandler {
             try {
                 importedParkings = transactionalMergingParkingsImporter.importParkings(parkingsParsed, parkingsCreatedOrUpdated);
             } catch (Exception e) {
+                logger.error("Error during import : ", e);
                 throw new RuntimeException(e);
             } finally {
                 lock.unlock();

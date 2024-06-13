@@ -157,6 +157,7 @@ public class ParkingsImportHandler {
         List<Parking> parkingsList = new ArrayList<>();
         new ArrayList<>(netexParkingsInFrame).forEach(netexParking -> {
             Parking parkingTiamat = netexMapper.mapToTiamatModel(netexParking);
+            if (parkingTiamat.getNetexId() == null) parkingTiamat.setNetexId(netexParking.getId());
             netexMapper.parseToSetParkingProperties(netexParking, parkingTiamat);
             netexMapper.parseToSetParkingAreas(netexParking, parkingTiamat);
             netexMapper.parseToSetParkingPaymentProcess(netexParking, parkingTiamat);

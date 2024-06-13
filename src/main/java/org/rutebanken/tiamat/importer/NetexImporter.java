@@ -163,13 +163,11 @@ public class NetexImporter {
             List<JAXBElement<? extends EntityStructure>> members = netexGeneralFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity();
 
             if (!members.isEmpty()) {
-                EntityStructure firstMember = members.get(0).getValue();
-
-                if (firstMember instanceof Parking) {
+                if (members.stream().filter(mem -> mem.getValue() instanceof Parking).collect(Collectors.toList()).size() > 0) {
                     parkingsImport(importParams, atomicInteger, members);
                 }
 
-                else if (firstMember instanceof StopPlace || firstMember instanceof Quay) {
+                else if (members.stream().filter(mem -> mem.getValue() instanceof StopPlace || mem.getValue() instanceof Quay).collect(Collectors.toList()).size() > 0) {
                     stopPlaceAndQuayImport(importParams, atomicInteger, members);
                 }
             }

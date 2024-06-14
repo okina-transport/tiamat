@@ -161,7 +161,6 @@ public class ParkingsImportHandler {
             if (parkingTiamat.getNetexId() == null) parkingTiamat.setNetexId(netexParking.getId());
             netexMapper.parseToSetParkingProperties(netexParking, parkingTiamat);
             netexMapper.parseToSetParkingAreas(netexParking, parkingTiamat);
-            netexMapper.parseToSetParkingPaymentProcess(netexParking, parkingTiamat);
             if (netexParking.getPlaceEquipments() != null) {
                 netexMapper.parseToSetPlaceEquipments(netexParking, parkingTiamat);
             }

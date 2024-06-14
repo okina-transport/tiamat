@@ -446,16 +446,6 @@ public class NetexMapper {
         parking.setParkingProperties(parkingPropertiesList);
     }
 
-    public void parseToSetParkingPaymentProcess(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {
-        List<org.rutebanken.tiamat.model.ParkingPaymentProcessEnumeration> paymentProcesses = new ArrayList<>();
-
-        for (ParkingPaymentProcessEnumeration payment : netexParking.getParkingPaymentProcess()) {
-            paymentProcesses.add(mapToNetexModel(payment));
-        }
-
-        parking.getParkingPaymentProcess().addAll(paymentProcesses);
-    }
-
     public void parseToSetPlaceEquipments(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {
         PlaceEquipment placeEquipment = new PlaceEquipment();
 

@@ -4,6 +4,8 @@ import com.google.common.io.ByteStreams;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.tiamat.general.ParkingsCSVHelper;
 import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.ParkingLayoutEnumeration;
+import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.rest.dto.DtoParking;
 import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
 import org.slf4j.Logger;
@@ -37,8 +39,13 @@ public class ImportParkingsResource {
     @POST
     @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response importParkingsCsvFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
+    public Response importParkingsCsvFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user,
+                                          @FormDataParam("parking_type") String parkingTypeParam, @FormDataParam("parking_layout") String parkingLayoutParam,
+                                          @FormDataParam("park_and_ride_detection") Boolean parkAndRideDetection) throws IOException, IllegalArgumentException {
         try {
+
+            ParkingLayoutEnumeration  parkingLayoutEnumeration = ParkingLayoutEnumeration.fromValue(parkingLayoutParam);
+            ParkingTypeEnumeration parkingTypeEnumeration = ParkingTypeEnumeration.fromValue(parkingTypeParam);
 
             logger.info("Import Parkings par " + user + " du fichier " + fileName);
 
@@ -46,7 +53,7 @@ public class ImportParkingsResource {
 
             ParkingsCSVHelper.checkDuplicatedParkings(dtoParkingCSV);
 
-            List<Parking> parkings = ParkingsCSVHelper.mapFromDtoToEntity(dtoParkingCSV);
+            List<Parking> parkings = ParkingsCSVHelper.mapFromDtoToEntity(dtoParkingCSV, parkingLayoutEnumeration, parkingTypeEnumeration, parkAndRideDetection);
 
             parkingsImportedService.createOrUpdateParkings(parkings);
 

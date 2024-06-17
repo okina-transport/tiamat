@@ -3,44 +3,23 @@ package org.rutebanken.tiamat.general;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.importer.ImporterUtils;
-import org.rutebanken.tiamat.model.AccessibilityAssessment;
-import org.rutebanken.tiamat.model.AccessibilityLimitation;
-import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
-import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
-import org.rutebanken.tiamat.model.Parking;
-import org.rutebanken.tiamat.model.ParkingArea;
-import org.rutebanken.tiamat.model.ParkingCapacity;
-import org.rutebanken.tiamat.model.ParkingPaymentProcessEnumeration;
-import org.rutebanken.tiamat.model.ParkingProperties;
-import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
-import org.rutebanken.tiamat.model.ParkingUserEnumeration;
-import org.rutebanken.tiamat.model.PublicUseEnumeration;
-import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.rest.dto.DtoParking;
 import org.rutebanken.tiamat.service.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -145,7 +124,8 @@ public class ParkingsCSVHelper {
     }
 
 
-    public static List<Parking> mapFromDtoToEntity(List<DtoParking> dtoParkingsCSV) {
+    public static List<Parking> mapFromDtoToEntity(List<DtoParking> dtoParkingsCSV, ParkingLayoutEnumeration parkingLayoutEnumeration,
+                                                   ParkingTypeEnumeration parkingTypeEnumeration, Boolean parkAndRideDetection) {
         return  dtoParkingsCSV.stream().map(parkingDto -> {
 
             Parking parking = new Parking();
@@ -172,11 +152,15 @@ public class ParkingsCSVHelper {
 
             BigInteger parkAndRideCapacity = parkingDto.getNbOfPr().isEmpty() ? BigInteger.ZERO : new BigInteger(parkingDto.getNbOfPr());
 
-            if (parkAndRideCapacity.equals(BigInteger.ZERO)){
-                parking.setParkingType(ParkingTypeEnumeration.PARKING_ZONE);
-            }else{
-                parking.setParkingType(ParkingTypeEnumeration.PARK_AND_RIDE);
 
+            if (parkAndRideDetection){
+                // detection based on field : nb_pr
+                parking.setParkingType(parkAndRideCapacity.equals(BigInteger.ZERO) ? ParkingTypeEnumeration.PARKING_ZONE : ParkingTypeEnumeration.PARK_AND_RIDE);
+            }else{
+                parking.setParkingType(parkingTypeEnumeration);
+            }
+
+            if (ParkingTypeEnumeration.PARK_AND_RIDE.equals(parking.getParkingType())){
                 ParkingArea parkAndRideArea = new ParkingArea();
                 parkAndRideArea.setVersion(1L);
                 parkAndRideArea.setName(new EmbeddableMultilingualString("Zone P+R", "FR"));
@@ -184,6 +168,9 @@ public class ParkingsCSVHelper {
                 parkAndRideArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.PARD_AND_RIDE);
                 parking.getParkingAreas().add(parkAndRideArea);
             }
+
+            parking.setParkingLayout(parkingLayoutEnumeration);
+
 
 
             parking.setBookingUrl(parkingDto.getUrl());

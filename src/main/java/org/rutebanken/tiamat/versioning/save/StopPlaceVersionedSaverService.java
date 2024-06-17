@@ -128,7 +128,7 @@ public class StopPlaceVersionedSaverService {
             existingVersion = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
         }
 
-        if (existingVersion != null && !newVersion.getNetexId().equals(existingVersion.getNetexId())) {
+        if (existingVersion != null && existingVersion.getNetexId() != null && newVersion.getNetexId() != null && !newVersion.getNetexId().equals(existingVersion.getNetexId())) {
             throw new IllegalArgumentException("Saving new version of different object is not allowed");
         }
 

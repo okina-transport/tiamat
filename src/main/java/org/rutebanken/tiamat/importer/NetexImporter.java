@@ -222,7 +222,12 @@ public class NetexImporter {
             return null;
 
         List<org.rutebanken.tiamat.model.Quay> quaysList = new ArrayList<>();
-        netexQuaysInFrame.forEach(netexQuay -> quaysList.add(netexMapper.mapToTiamatModel(netexQuay)));
+        netexQuaysInFrame.forEach(netexQuay -> {
+            org.rutebanken.tiamat.model.Quay currentQuay = netexMapper.mapToTiamatModel(netexQuay);
+            if (currentQuay.getNetexId() == null) currentQuay.setNetexId(netexQuay.getId());
+            quaysList.add(currentQuay);
+
+        });
         return quaysList;
     }
 }

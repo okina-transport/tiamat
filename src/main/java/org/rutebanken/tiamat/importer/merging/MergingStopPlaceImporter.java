@@ -23,6 +23,7 @@ import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
 import org.rutebanken.tiamat.versioning.VersionCreator;
+import org.rutebanken.tiamat.versioning.save.QuaysVersionedSaverService;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 @Component
@@ -57,6 +60,8 @@ public class MergingStopPlaceImporter {
 
     private final MergingUtils mergingUtils;
 
+    private final QuaysVersionedSaverService quaysVersionedSaverService;
+
     @Autowired
     public MergingStopPlaceImporter(StopPlaceFromOriginalIdFinder stopPlaceFromOriginalIdFinder,
                                     NearbyStopPlaceFinder nearbyStopPlaceFinder,
@@ -65,7 +70,8 @@ public class MergingStopPlaceImporter {
                                     StopPlaceVersionedSaverService stopPlaceVersionedSaverService,
                                     VersionCreator versionCreator,
                                     ReferenceResolver referenceResolver,
-                                    MergingUtils mergingUtils) {
+                                    MergingUtils mergingUtils,
+                                    QuaysVersionedSaverService quaysVersionedSaverService) {
         this.stopPlaceFromOriginalIdFinder = stopPlaceFromOriginalIdFinder;
         this.nearbyStopPlaceFinder = nearbyStopPlaceFinder;
         this.stopPlaceCentroidComputer = stopPlaceCentroidComputer;
@@ -74,6 +80,7 @@ public class MergingStopPlaceImporter {
         this.versionCreator = versionCreator;
         this.referenceResolver = referenceResolver;
         this.mergingUtils = mergingUtils;
+        this.quaysVersionedSaverService = quaysVersionedSaverService;
     }
 
     /**
@@ -197,11 +204,15 @@ public class MergingStopPlaceImporter {
         boolean weightingChanged = mergingUtils.updateProperty(copyStopPlace.getWeighting(), incomingStopPlace.getWeighting(), copyStopPlace::setWeighting, "weighting", netexId);
 
         boolean quaysChanged = false;
-        if ((copyStopPlace.getQuays() == null && incomingStopPlace.getQuays() != null) ||
-                (copyStopPlace.getQuays() != null && incomingStopPlace.getQuays() != null
-                        && !copyStopPlace.getQuays().equals(incomingStopPlace.getQuays()))) {
+        Set<Quay> copyQuays = new HashSet<>();
 
-            copyStopPlace.setQuays(incomingStopPlace.getQuays());
+        if (incomingStopPlace.getQuays() != null && (!new HashSet<>(copyStopPlace.getQuays()).containsAll(incomingStopPlace.getQuays()) ||
+                !new HashSet<>(incomingStopPlace.getQuays()).containsAll(copyStopPlace.getQuays()))) {
+            copyStopPlace.getQuays().clear();
+            for (Quay quay : incomingStopPlace.getQuays()) {
+                copyQuays.add(quaysVersionedSaverService.saveNewVersion(quay));
+            }
+            copyStopPlace.setQuays(copyQuays);
             logger.info("Updated quays for {}", netexId);
             quaysChanged = true;
         }

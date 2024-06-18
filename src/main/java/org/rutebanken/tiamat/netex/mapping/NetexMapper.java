@@ -412,8 +412,11 @@ public class NetexMapper {
 
                 if (quayRefStructure instanceof QuayRefStructure) {
                     String netexId = ((QuayRefStructure) quayRefStructure).getRef();
-                    Stream<org.rutebanken.tiamat.model.Quay> tiamatQuay = quaysParsed.stream().filter(quay -> quay.equals(quayRepository.findByNetexId(netexId)));
-                    tiamatQuay.findFirst().ifPresent(quays::add);
+                    for (org.rutebanken.tiamat.model.Quay quay : quaysParsed) {
+                        if (quay.getNetexId().equals(netexId)) {
+                            quays.add(quay);
+                        }
+                    }
                 }
             }
 
@@ -422,6 +425,7 @@ public class NetexMapper {
             }
         }
 
+        stopPlace.setNetexId(netexStopPlace.getId());
         return stopPlace;
     }
 

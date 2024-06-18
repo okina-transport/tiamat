@@ -116,7 +116,7 @@
 
         <maven-surefire-plugin.version>3.0.0-M6</maven-surefire-plugin.version>
         <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
-        <argLine></argLine>
+        <argLine/>
         <!--TODO temporary manual upgrade of Logback-->
         <logback.version>1.2.12</logback.version>
         <log4j2.version>2.17.1</log4j2.version>
@@ -410,12 +410,6 @@
             <groupId>org.codehaus.janino</groupId>
             <artifactId>janino</artifactId>
             <version>${janino.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.okina</groupId>
-            <artifactId>netex-java-model</artifactId>
-            <version>${netex-java-model.version}</version>
         </dependency>
 
         <dependency>

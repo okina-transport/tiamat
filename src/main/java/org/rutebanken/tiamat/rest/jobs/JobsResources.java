@@ -73,15 +73,15 @@ public class JobsResources {
     @GET
     @Path("/{ref}/scheduled_jobs/{id}")
     @Produces({ MediaType.APPLICATION_JSON })
-    public Response scheduledJob(@PathParam("ref") String referential, @PathParam("id") Long id) {
+    public Response scheduledJob(@PathParam("ref") String subFolder, @PathParam("id") Long id) {
         try {
-            logger.debug(Color.CYAN + "Call scheduledJob referential = " + referential + ", id = " + id);
+            logger.debug(Color.CYAN + "Call scheduledJob referential = " + subFolder + ", id = " + id);
 
             Response result = null;
             Response.ResponseBuilder builder = null;
 
             {
-                Job job = jobService.scheduledJob(referential, id);
+                Job job = jobService.scheduledJob(subFolder, id);
 
                 // build response
                 if (job.getStatus().ordinal() <= JobInfo.STATUS.STARTED.ordinal()) {

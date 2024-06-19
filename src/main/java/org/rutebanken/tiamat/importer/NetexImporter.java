@@ -114,7 +114,7 @@ public class NetexImporter {
             updateJobState(JobStatus.FINISHED, importParams, fileName, folder, jobType, provider, job);
 
             if (provider != null) {
-                return builder.location(URI.create("/services/stop_places/jobs/" + provider.name + "/scheduled_jobs/" + job.getId()));
+                return builder.location(URI.create(String.format("/services/stop_places/jobs/%s/scheduled_jobs/%d", folder, job.getId())));
             } else {
                 return builder;
             }

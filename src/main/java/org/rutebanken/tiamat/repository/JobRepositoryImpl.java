@@ -49,14 +49,14 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
         return em.createQuery(cq).getResultList();
     }
 
-    public Job findBySubFolderLikeReferentialAndId(String referential, Long id) {
+    public Job findBySubFolderLikeReferentialAndId(String subFolder, Long id) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Job> cq = cb.createQuery(Job.class);
         Root<Job> jobRoot = cq.from(Job.class);
 
         cq.select(jobRoot);
 
-        Predicate referentialPredicate = cb.equal(jobRoot.get("subFolder"), referential);
+        Predicate referentialPredicate = cb.equal(jobRoot.get("subFolder"), subFolder);
         Predicate idPredicate = jobRoot.get("id").in(id);
 
         Predicate finalPredicate = cb.and(referentialPredicate, idPredicate);
@@ -65,7 +65,7 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
         return em.createQuery(cq).getSingleResult();
     }
 
-    public Job terminatedJob(String referential, Long id) {
-        return findBySubFolderLikeReferentialAndId(referential, id);
+    public Job terminatedJob(String subFolder, Long id) {
+        return findBySubFolderLikeReferentialAndId(subFolder, id);
     }
 }

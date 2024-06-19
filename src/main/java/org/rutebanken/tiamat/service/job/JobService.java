@@ -34,16 +34,16 @@ public class JobService {
         return jobs;
     }
 
-    public Job scheduledJob(String referential, Long id) throws ServiceException {
-        return getJobService(referential, id);
+    public Job scheduledJob(String subFolder, Long id) throws ServiceException {
+        return getJobService(subFolder, id);
     }
 
-    public Job getJobService(String referential, Long id) throws ServiceException {
+    public Job getJobService(String subFolder, Long id) throws ServiceException {
 
-        Job job = jobRepository.findBySubFolderLikeReferentialAndId(referential, id);
+        Job job = jobRepository.findBySubFolderLikeReferentialAndId(subFolder, id);
         if (job != null) {
             return job;
         }
-        throw new ServiceException("referential = " + referential + " ,id = " + id);
+        throw new ServiceException("subFolder = " + subFolder + " ,id = " + id);
     }
 }

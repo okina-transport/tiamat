@@ -178,7 +178,6 @@ public class StopPlaceVersionedSaverService {
             validityUpdater.terminateVersion(existingVersion, oldversionTerminationTime);
             terminateChild(existingVersion, oldversionTerminationTime);
             stopPlaceAuthorizationService.assertAuthorizedToEdit(existingVersion, newVersion, childStopsUpdated);
-            stopPlaceRepository.delete(existingVersion);
         }
 
         newVersion = versionIncrementor.initiateOrIncrementVersionsStopPlace(newVersion);

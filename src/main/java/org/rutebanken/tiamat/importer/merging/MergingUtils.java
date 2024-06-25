@@ -68,17 +68,23 @@ public class MergingUtils {
         if ((existing.getAccessibilityAssessment() == null && incoming.getAccessibilityAssessment() != null) ||
                 (existing.getAccessibilityAssessment() != null && incoming.getAccessibilityAssessment() != null &&
                         !existing.getAccessibilityAssessment().equals(incoming.getAccessibilityAssessment()))) {
-            existing.setAccessibilityAssessment(accessibilityVersionedSaverService.saveNewVersionAssessment(incoming.getAccessibilityAssessment()));
+
+            if ((existing instanceof StopPlace && incoming instanceof StopPlace) || (existing instanceof Quay && incoming instanceof Quay)) {
+                existing.setAccessibilityAssessment(accessibilityVersionedSaverService.saveNewVersionAssessment(incoming.getAccessibilityAssessment(), true));
+            } else {
+                existing.setAccessibilityAssessment(accessibilityVersionedSaverService.saveNewVersionAssessment(incoming.getAccessibilityAssessment(), false));
+            }
             logger.info("Updated accessibility assessment for {}", netexId);
 
-            if (!existing.getAccessibilityAssessment().getLimitations().equals(incoming.getAccessibilityAssessment().getLimitations())) {
-                existing.getAccessibilityAssessment().getLimitations().clear();
-                for (AccessibilityLimitation limitation : incoming.getAccessibilityAssessment().getLimitations()) {
-                    accessibilityLimitations.add(accessibilityVersionedSaverService.saveNewVersionLimitation(limitation));
+            for (AccessibilityLimitation limitation : incoming.getAccessibilityAssessment().getLimitations()) {
+                if ((existing instanceof StopPlace && incoming instanceof StopPlace) || (existing instanceof Quay && incoming instanceof Quay)) {
+                    accessibilityLimitations.add(accessibilityVersionedSaverService.saveNewVersionLimitation(limitation, true));
+                } else {
+                    accessibilityLimitations.add(accessibilityVersionedSaverService.saveNewVersionLimitation(limitation, false));
                 }
-                existing.getAccessibilityAssessment().getLimitations().addAll(accessibilityLimitations);
-                logger.info("Updated accessibility limitations for {}", netexId);
             }
+            existing.getAccessibilityAssessment().getLimitations().addAll(accessibilityLimitations);
+            logger.info("Updated accessibility limitations for {}", netexId);
             return true;
         }
         return false;

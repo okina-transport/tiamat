@@ -177,6 +177,8 @@ public class PointOfInterestCSVHelper {
             if (poiInBdd != null && poiInBdd.getNetexId() != null) {
                 PointOfInterest updatedPoi = versionCreator.createCopy(poiInBdd, PointOfInterest.class);
                 if (populatePOI(updatedPoi, pointOfInterest)) {
+                    updatedPoi.getAccessibilityAssessment().getLimitations().forEach(limitation -> limitation.setVersion(limitation.getVersion()+1));
+                    updatedPoi.getAccessibilityAssessment().setVersion(updatedPoi.getAccessibilityAssessment().getVersion()+1);
                     poiVersionedSaverService.saveNewVersion(updatedPoi);
                 }
             } else {
@@ -237,6 +239,11 @@ public class PointOfInterestCSVHelper {
 
         if (newPOI.getName().getValue() != null) {
             existingPOI.setName(newPOI.getName());
+            updated = true;
+        }
+
+        if(newPOI.getOperator() != null){
+            existingPOI.setOperator(newPOI.getOperator());
             updated = true;
         }
 
@@ -312,6 +319,10 @@ public class PointOfInterestCSVHelper {
 
         accessibilityAssessment.getLimitations().add(accessibilityLimitation);
         newPointOfInterest.setAccessibilityAssessment(accessibilityAssessment);
+
+        if(StringUtils.isNotEmpty(dtoPoiCSV.getOperator())){
+            newPointOfInterest.setOperator(dtoPoiCSV.getOperator());
+        }
 
         return newPointOfInterest;
     }

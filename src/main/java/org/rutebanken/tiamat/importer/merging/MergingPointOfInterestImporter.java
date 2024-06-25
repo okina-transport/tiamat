@@ -127,6 +127,7 @@ public class MergingPointOfInterestImporter {
         boolean nameChanged = mergingUtils.updateProperty(copyPointOfInterest.getName(), incomingPointOfInterest.getName(), copyPointOfInterest::setName, "name", netexId);
         boolean centroidChanged = mergingUtils.updateProperty(copyPointOfInterest.getCentroid(), incomingPointOfInterest.getCentroid(), copyPointOfInterest::setCentroid, "centroid", netexId);
         boolean allAreasWheelchairAccessibleChanged = mergingUtils.updateProperty(copyPointOfInterest.isAllAreasWheelchairAccessible(), incomingPointOfInterest.isAllAreasWheelchairAccessible(), copyPointOfInterest::setAllAreasWheelchairAccessible, "all areas wheelchair accessible", netexId);
+        boolean operatorChanged = mergingUtils.updateProperty(copyPointOfInterest.getOperator(), incomingPointOfInterest.getOperator(), copyPointOfInterest::setOperator, "operator", netexId);
 
         boolean accessibilityAssessmentChanged = mergingUtils.updateAccessibilityAccessment(copyPointOfInterest, incomingPointOfInterest, netexId);
 
@@ -144,7 +145,7 @@ public class MergingPointOfInterestImporter {
             classificationsChanged = true;
         }
 
-        if (keyValuesChanged || nameChanged || centroidChanged || allAreasWheelchairAccessibleChanged ||
+        if (keyValuesChanged || nameChanged || centroidChanged || allAreasWheelchairAccessibleChanged || operatorChanged ||
                 accessibilityAssessmentChanged || classificationsChanged) {
             logger.info("Updated existing point of interest {}. ", copyPointOfInterest);
             copyPointOfInterest = pointOfInterestVersionedSaverService.saveNewVersion(copyPointOfInterest);

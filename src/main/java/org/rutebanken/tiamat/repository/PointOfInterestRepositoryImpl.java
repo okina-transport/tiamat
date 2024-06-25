@@ -69,8 +69,13 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
     }
 
     @Override
-    public Iterator<PointOfInterest> scrollPointsOfInterest() {
-        return scrollPointsOfInterest(getPointsOfInterest());
+    public Set<Long> scrollPointsOfInterest() {
+        Iterator<PointOfInterest> ip = scrollPointsOfInterest(getPointsOfInterest());
+        Set<Long> result = new HashSet<>();
+        while (ip.hasNext()) {
+            result.add(ip.next().getId());
+        }
+        return result;
     }
 
     private Iterator<PointOfInterest> scrollPointsOfInterest(Pair<String, Map<String, Object>> sqlWithParams) {

@@ -102,15 +102,34 @@ public class NetexImporter {
         Response.ResponseBuilder builder = Response.accepted();
 
         AtomicInteger atomicInteger = new AtomicInteger(0);
-        Common_VersionFrameStructure findedFrameType = publicationDeliveryStructure.getDataObjects().getCompositeFrameOrCommonFrame().get(0).getValue();
+        List<javax.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = publicationDeliveryStructure.getDataObjects().getCompositeFrameOrCommonFrame();
 
         try {
-            if (findedFrameType instanceof GeneralFrame) {
-                generalFrameProcess(publicationDeliveryStructure, importParams, fileName, folder, jobType, provider, job, atomicInteger);
+            List<GeneralOrganisation> generalOrganisations = new ArrayList<>();
+            List<ResponsibilitySet> responsibilitySets = new ArrayList<>();
+            List<JAXBElement<? extends EntityStructure>> members = null;
+
+            // Première boucle pour traiter GeneralFrame et récupérer les GeneralOrganisations et ResponsibilitySets
+            for (JAXBElement<? extends Common_VersionFrameStructure> frameType : findedFrameType) {
+                if (frameType.getValue() instanceof GeneralFrame) {
+                    members = getMembers(publicationDeliveryStructure, importParams, fileName, folder, jobType, provider, job);
+                    assert members != null;
+                    generalOrganisations = NetexUtils.getMembers(GeneralOrganisation.class, members);
+                    responsibilitySets = NetexUtils.getMembers(ResponsibilitySet.class, members);
+                    generalFrameProcess(members, importParams, fileName, folder, jobType, provider, job, atomicInteger, generalOrganisations, responsibilitySets);
+                    break; // Quitter la boucle après avoir trouvé et traité le GeneralFrame
+                }
             }
-            else if (findedFrameType instanceof SiteFrame) {
-                siteFrameProcess(publicationDeliveryStructure, importParams, fileName, folder, jobType, provider, job, atomicInteger);
+
+            // Deuxième boucle pour traiter SiteFrame et utiliser les GeneralOrganisations et ResponsibilitySets si disponibles
+            for (JAXBElement<? extends Common_VersionFrameStructure> frameType : findedFrameType) {
+                if (frameType.getValue() instanceof SiteFrame) {
+                    // Si les GeneralOrganisations et ResponsibilitySets ont été trouvés, les utiliser
+                    siteFrameProcess(publicationDeliveryStructure, importParams, fileName, folder, jobType, provider, job, atomicInteger, generalOrganisations, responsibilitySets);
+                    break; // Quitter la boucle après avoir trouvé et traité le SiteFrame
+                }
             }
+
             updateJobState(JobStatus.FINISHED, importParams, fileName, folder, jobType, provider, job);
 
             if (provider != null) {
@@ -127,7 +146,7 @@ public class NetexImporter {
         }
     }
 
-    private void siteFrameProcess(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams, String fileName, String folder, JobImportType jobType, Provider provider, Job job, AtomicInteger atomicInteger) {
+    private void siteFrameProcess(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams, String fileName, String folder, JobImportType jobType, Provider provider, Job job, AtomicInteger atomicInteger, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {
         SiteFrame netexSiteFrame = publicationDeliveryHelper.findSiteFrame(publicationDeliveryStructure);
         String requestId = netexSiteFrame.getId();
         updateMappingContext(netexSiteFrame);
@@ -138,16 +157,16 @@ public class NetexImporter {
         responseSiteFrame.withId(requestId + "-response").withVersion("1");
 
         if (publicationDeliveryHelper.hasPointOfInterests(netexSiteFrame)) {
-            pointOfInterestImport(importParams, fileName, folder, jobType, provider, job, atomicInteger, netexSiteFrame, responseSiteFrame);
+            pointOfInterestImport(importParams, fileName, folder, jobType, provider, job, atomicInteger, netexSiteFrame, responseSiteFrame, generalOrganisations, responsibilitySets);
         }
     }
 
-    private void pointOfInterestImport(ImportParams importParams, String fileName, String folder, JobImportType jobType, Provider provider, Job job, AtomicInteger atomicInteger, SiteFrame netexSiteFrame, SiteFrame responseSiteFrame) {
+    private void pointOfInterestImport(ImportParams importParams, String fileName, String folder, JobImportType jobType, Provider provider, Job job, AtomicInteger atomicInteger, SiteFrame netexSiteFrame, SiteFrame responseSiteFrame, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {
         updateJobState(JobStatus.PROCESSING, importParams, fileName, folder, jobType, provider, job);
-        pointOfInterestsImportHandler.handlePointOfInterests(netexSiteFrame, importParams, atomicInteger, responseSiteFrame, provider, fileName, folder, job);
+        pointOfInterestsImportHandler.handlePointOfInterests(netexSiteFrame, importParams, atomicInteger, responseSiteFrame, provider, fileName, folder, job, generalOrganisations, responsibilitySets);
     }
 
-    private void generalFrameProcess(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams, String fileName, String folder, JobImportType jobType, Provider provider, Job job, AtomicInteger atomicInteger) {
+    private List<JAXBElement<? extends EntityStructure>> getMembers(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams, String fileName, String folder, JobImportType jobType, Provider provider, Job job) {
         GeneralFrame netexGeneralFrame = publicationDeliveryHelper.findGeneralFrame(publicationDeliveryStructure);
         String requestId = netexGeneralFrame.getId();
         updateMappingGeneralFrameContext(netexGeneralFrame);
@@ -158,18 +177,21 @@ public class NetexImporter {
         responseGeneralFrame.withId(requestId + "-response").withVersion("1");
 
         if (publicationDeliveryHelper.hasGeneralFrame(netexGeneralFrame)) {
-            updateJobState(JobStatus.PROCESSING, importParams, fileName, folder, jobType, provider, job);
+            return netexGeneralFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity();
+        }
+        return null;
+    }
 
-            List<JAXBElement<? extends EntityStructure>> members = netexGeneralFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity();
+    private void generalFrameProcess(List<JAXBElement<? extends EntityStructure>> members, ImportParams importParams, String fileName, String folder, JobImportType jobType, Provider provider, Job job, AtomicInteger atomicInteger, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {
+        updateJobState(JobStatus.PROCESSING, importParams, fileName, folder, jobType, provider, job);
 
-            if (!members.isEmpty()) {
-                if (members.stream().anyMatch(mem -> mem.getValue() instanceof Parking)) {
-                    parkingsImport(importParams, atomicInteger, members);
-                }
+        if (!members.isEmpty()) {
+            if (members.stream().anyMatch(mem -> mem.getValue() instanceof Parking)) {
+                parkingsImport(importParams, atomicInteger, members, generalOrganisations, responsibilitySets);
+            }
 
-                else if (members.stream().anyMatch(mem -> mem.getValue() instanceof StopPlace || mem.getValue() instanceof Quay)) {
-                    stopPlaceAndQuayImport(importParams, atomicInteger, members);
-                }
+            else if (members.stream().anyMatch(mem -> mem.getValue() instanceof StopPlace || mem.getValue() instanceof Quay)) {
+                stopPlaceAndQuayImport(importParams, atomicInteger, members);
             }
         }
     }
@@ -191,9 +213,9 @@ public class NetexImporter {
         stopPlacesImportHandler.handleStopPlacesGeneralFrame(tiamatStopPlaces, importParams, members, atomicInteger, quaysParsed);
     }
 
-    private void parkingsImport(ImportParams importParams, AtomicInteger atomicInteger, List<JAXBElement<? extends EntityStructure>> members) {
+    private void parkingsImport(ImportParams importParams, AtomicInteger atomicInteger, List<JAXBElement<? extends EntityStructure>> members, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {
         List<Parking> tiamatParking = NetexUtils.getMembers(Parking.class, members);
-        parkingsImportHandler.handleParkingsGeneralFrame(tiamatParking, importParams, members, atomicInteger);
+        parkingsImportHandler.handleParkingsGeneralFrame(tiamatParking, importParams, members, atomicInteger, generalOrganisations, responsibilitySets);
     }
 
     private void updateJobState(JobStatus jobStatus, ImportParams importParams, String fileName, String folder, JobImportType jobType, Provider provider, Job job) {

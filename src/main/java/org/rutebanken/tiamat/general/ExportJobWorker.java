@@ -92,7 +92,7 @@ public class ExportJobWorker implements Runnable {
 
             switch (this.exportType) {
                 case POI:
-                    exportPOIToLocalXmlFile(localExportXmlFile);
+                    exportPOIToLocalXmlFile(localExportXmlFile, localDateTime);
                     break;
                 case PARKING:
                     exportParkingsToLocalXmlFile(localExportXmlFile, localDateTime);
@@ -143,10 +143,10 @@ public class ExportJobWorker implements Runnable {
         logger.info("export to local file completed");
     }
 
-    private void exportPOIToLocalXmlFile(File localExportXmlFile) throws IOException, SAXException, JAXBException {
+    private void exportPOIToLocalXmlFile(File localExportXmlFile, LocalDateTime localDateTime) throws IOException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.streamPOI(job.getExportParams(), fileOutputStream, job.getId());
+        streamingPublicationDelivery.streamPOI(job.getExportParams(), fileOutputStream, localDateTime, job.getId());
     }
 
     private void exportParkingsToLocalXmlFile(File localExportXmlFile, LocalDateTime localDateTime) throws IOException, SAXException, JAXBException {

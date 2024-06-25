@@ -38,6 +38,8 @@ public class PointOfInterest extends PointOfInterest_VersionStructure {
     @JoinColumn(name = "point_of_interest_opening_hours_id")
     private PointOfInterestOpeningHours pointOfInterestOpeningHours;
 
+    private String operator;
+
     public String getZipCode() {
         return zipCode;
     }
@@ -70,8 +72,6 @@ public class PointOfInterest extends PointOfInterest_VersionStructure {
         this.postalCode = postalCode;
     }
 
-
-
     public Set<PointOfInterestClassification> getClassifications() {
         return classifications;
     }
@@ -94,5 +94,13 @@ public class PointOfInterest extends PointOfInterest_VersionStructure {
 
     public void setPointOfInterestOpeningHours(PointOfInterestOpeningHours pointOfInterestOpeningHours){
         this.pointOfInterestOpeningHours = pointOfInterestOpeningHours;
+    }
+
+    public String getOperator() {
+        return operator;
+    }
+
+    public void setOperator(String operator) {
+        this.operator = operator;
     }
 }

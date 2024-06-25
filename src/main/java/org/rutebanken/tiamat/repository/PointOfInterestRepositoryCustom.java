@@ -16,7 +16,7 @@ import java.util.Set;
 public interface PointOfInterestRepositoryCustom extends DataManagedObjectStructureRepository<PointOfInterest> {
     int countResult();
 
-    Iterator<PointOfInterest> scrollPointsOfInterest();
+    Set<Long> scrollPointsOfInterest();
 
     void clearAllPois();
 

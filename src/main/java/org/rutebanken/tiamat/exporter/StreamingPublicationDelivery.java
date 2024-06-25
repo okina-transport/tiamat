@@ -16,15 +16,14 @@
 package org.rutebanken.tiamat.exporter;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.netex.validation.NeTExValidator;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.async.NetexMappingIterator;
-import org.rutebanken.tiamat.exporter.async.NetexMappingIteratorList;
 import org.rutebanken.tiamat.exporter.async.ParentStopFetchingIterator;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
-import org.rutebanken.tiamat.model.PointOfInterestClassification;
 import org.rutebanken.tiamat.model.TariffZone;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.VehicleModeEnumeration;
@@ -59,6 +58,7 @@ import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static javax.xml.bind.JAXBContext.newInstance;
 
@@ -358,11 +358,10 @@ public class StreamingPublicationDelivery {
         return filteredList;
     }
 
-    public void streamPOI(ExportParams exportParams, OutputStream outputStream, Long exportJobId) throws JAXBException, IOException, SAXException {
+    public void streamPOI(ExportParams exportParams, OutputStream outputStream, LocalDateTime localDateTime, Long exportJobId) throws JAXBException, IOException, SAXException {
         org.rutebanken.tiamat.model.SiteFrame siteFrame = tiamatSiteFrameExporter.createTiamatSiteFrame("Site frame " + exportParams);
 
         AtomicInteger mappedPointOfInterestCount = new AtomicInteger();
-        AtomicInteger mappedPointOfInterestClassificationCount = new AtomicInteger();
 
         pointOfInterestRepository.initExportJobTable(exportJobId);
 
@@ -372,7 +371,7 @@ public class StreamingPublicationDelivery {
         logger.info("Total nb of POI to export:" + totalNbOfPoi);
 
         logger.info("Streaming POI export initiated. Export params: {}", exportParams);
-        logger.info("Mapping site frame to netex model");
+        logger.info("Mapping site frame to netex poi list model");
         org.rutebanken.netex.model.SiteFrame netexSiteFrame = netexMapper.mapToNetexModel(siteFrame);
         // On n'exporte pas les topographicPlaces
         netexSiteFrame.setTopographicPlaces(null);
@@ -391,7 +390,7 @@ public class StreamingPublicationDelivery {
             } else {
                 initializedPoi.addAll(pointOfInterestRepository.getPOIInitializedForExport(batchIdsToExport));
                 pointOfInterestRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
-                totalPoiProcessed = totalPoiProcessed + batchIdsToExport.size();
+                totalPoiProcessed += batchIdsToExport.size();
                 logger.info("total poi processed:" + totalPoiProcessed);
             }
         }
@@ -409,34 +408,90 @@ public class StreamingPublicationDelivery {
             } else {
                 initializedPoiClassification.addAll(pointOfInterestClassificationRepository.getPOIClassificationInitializedForExport(batchIdsToExport));
                 pointOfInterestClassificationRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
-                totalPoiClassificationProcessed = totalPoiClassificationProcessed + batchIdsToExport.size();
+                totalPoiClassificationProcessed += batchIdsToExport.size();
                 logger.info("total poi classification processed:" + totalPoiClassificationProcessed);
             }
         }
 
         logger.info("Preparing scrollable iterators for poi");
-        preparePointsOfInterest(mappedPointOfInterestCount, netexSiteFrame, initializedPoi.iterator());
+        List<PointOfInterest> netexPoiList = initializedPoi.stream()
+                .map(netexMapper::mapToNetexModel)
+                .distinct()
+                .collect(Collectors.toList());
+
+        preparePointsOfInterest(netexSiteFrame, netexPoiList);
 
         logger.info("Preparing scrollable iterators for poi class");
-        preparePointsOfInterestClassification(mappedPointOfInterestClassificationCount, netexSiteFrame, initializedPoiClassification.iterator());
+        List<PointOfInterestClassification> netexPoiClassificationList = initializedPoiClassification.stream()
+                .map(netexMapper::mapToNetexModel)
+                .distinct()
+                .collect(Collectors.toList());
+
+        preparePointsOfInterestClassification(netexSiteFrame, netexPoiClassificationList);
 
         logger.info("Preparing scrollable iterators for poi classification hierarchies");
         preparePointsOfInterestClassificationHierarchies(netexSiteFrame, initializedPoiClassification);
 
         logger.info("Publication delivery creation");
-        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexSiteFrame);
-        Marshaller marshaller = createMarshaller();
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
-        JAXBElement<PublicationDeliveryStructure> publicationDelivery = netexObjectFactory.createPublicationDelivery(publicationDeliveryStructure);
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime, TypeEnumeration.PARKING);
+        GeneralFrame netexGeneralFrame = netexMapper.mapToNetexModel(generalFrame);
 
-        logger.info("Start marshalling publication delivery");
-        marshaller.marshal(publicationDelivery, byteArrayOutputStream);
+        // Préparation des organisations POI
+        List<JAXBElement<? extends EntityStructure>> listMembers = new ArrayList<>();
+        prepareGeneralOrganisationForPointsOfInterest(mappedPointOfInterestCount, listMembers, netexSiteFrame, exportJobId);
+        logger.info("Point of interest preparation completed");
+
+        List<JAXBElement<? extends EntityStructure>> filteredListMembers = filterDuplicates(listMembers);
+        logger.info("Duplicates filtered");
+
+        // Ajout des membres au general Frame
+        General_VersionFrameStructure.Members general_VersionFrameStructure = netexObjectFactory.createGeneral_VersionFrameStructureMembers();
+        general_VersionFrameStructure.withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(filteredListMembers);
+        netexGeneralFrame.withMembers(general_VersionFrameStructure);
+
+        PublicationDeliveryStructure publicationDeliveryStructureSiteFrame = publicationDeliveryExporter.createPublicationDelivery(netexSiteFrame);
+        PublicationDeliveryStructure publicationDeliveryStructureGeneralFrame = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame, "idSite", LocalDateTime.now());
+
+        ByteArrayOutputStream byteArrayOutputStream = combineAndMarshalPoiFrames(publicationDeliveryStructureSiteFrame, publicationDeliveryStructureGeneralFrame);
 
         doLastModifications(outputStream, byteArrayOutputStream);
 
+        logger.info("Mapped {} points of interest to netexPoiList", mappedPointOfInterestCount);
+    }
 
-        logger.info("Mapped {} points of interest to netex", mappedPointOfInterestCount);
+    @NotNull
+    private ByteArrayOutputStream combineAndMarshalPoiFrames(PublicationDeliveryStructure publicationDeliveryStructureSiteFrame, PublicationDeliveryStructure publicationDeliveryStructureGeneralFrame) throws JAXBException, IOException, SAXException {
+        // Ajout de la deuxième structure à la suite de la première
+        if (publicationDeliveryStructureGeneralFrame.getDataObjects() == null) {
+            publicationDeliveryStructureGeneralFrame.setDataObjects(new PublicationDeliveryStructure.DataObjects());
+        }
+
+        if (publicationDeliveryStructureSiteFrame.getDataObjects() == null) {
+            publicationDeliveryStructureSiteFrame.setDataObjects(new PublicationDeliveryStructure.DataObjects());
+        }
+
+        // Combinaison des frames en s'assurant qu'il n'y a pas de duplications
+        List<JAXBElement<? extends Common_VersionFrameStructure>> combinedFrames = new ArrayList<>(publicationDeliveryStructureGeneralFrame.getDataObjects().getCompositeFrameOrCommonFrame());
+        combinedFrames.addAll(publicationDeliveryStructureSiteFrame.getDataObjects().getCompositeFrameOrCommonFrame());
+
+        // Utiliser un Set pour vérifier les duplications et maintenir l'ordre
+        Set<String> seenIds = new HashSet<>();
+        List<JAXBElement<? extends Common_VersionFrameStructure>> uniqueFrames = combinedFrames.stream()
+                .filter(frame -> seenIds.add(frame.getValue().getId())) // Ajoute uniquement si l'identifiant n'est pas déjà présent
+                .collect(Collectors.toList());
+
+        publicationDeliveryStructureSiteFrame.getDataObjects().getCompositeFrameOrCommonFrame().clear();
+        publicationDeliveryStructureSiteFrame.getDataObjects().getCompositeFrameOrCommonFrame().addAll(uniqueFrames);
+
+        Marshaller marshaller = createMarshaller();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+        JAXBElement<PublicationDeliveryStructure> publicationDelivery = netexObjectFactory.createPublicationDelivery(publicationDeliveryStructureSiteFrame);
+
+        logger.info("Start marshalling publication delivery");
+        marshaller.marshal(publicationDelivery, byteArrayOutputStream);
+        return byteArrayOutputStream;
     }
 
     /**
@@ -486,6 +541,82 @@ public class StreamingPublicationDelivery {
         }
     }
 
+    public void prepareGeneralOrganisationForPointsOfInterest(AtomicInteger mappedPointOfInterestCount, List<JAXBElement<? extends EntityStructure>> listMembers, SiteFrame netexSiteFrame, Long exportJobId) {
+        Iterator<org.rutebanken.tiamat.model.PointOfInterest> pointOfInterestIterator;
+
+        if (exportJobId == null) {
+            List<org.rutebanken.tiamat.model.PointOfInterest> pointOfInterestList = pointOfInterestRepository.getPOIInitializedForExport(pointOfInterestRepository.scrollPointsOfInterest());
+            pointOfInterestIterator = pointOfInterestList.iterator();
+        } else {
+            pointOfInterestIterator = getIteratorForPointOfInterestManualExport(exportJobId);
+        }
+
+        int pointOfInterestCount = pointOfInterestRepository.countResult();
+        if (pointOfInterestCount > 0) {
+            logger.info("Point of interest count is {}, will create point of interest in publication delivery", pointOfInterestCount);
+            mappedPointOfInterestCount.set(pointOfInterestCount);
+
+            Set<String> seenIds = new HashSet<>();
+
+            while (pointOfInterestIterator.hasNext()) {
+                org.rutebanken.tiamat.model.PointOfInterest tp = pointOfInterestIterator.next();
+                PointOfInterest np = netexMapper.getFacade().map(tp, PointOfInterest.class);
+
+                // Ajout d'une vérification pour les identifiants dupliqués
+                if (!seenIds.add(np.getId())) {
+                    continue; // Ignore si l'identifiant est déjà présent
+                }
+
+                // Supprime le PointOfInterest actuel de listMembers
+                listMembers.removeIf(element ->
+                        element.getValue() instanceof PointOfInterest &&
+                                (element.getValue()).getId().equals(np.getId())
+                );
+
+                String organisationId = "MOBIITI:Organisation:" + UUID.randomUUID();
+                String responsabilitySetId = "MOBIITI:ResponsibilitySet:" + UUID.randomUUID();
+                String responsibilityRoleAssignmentId = "MOBIITI:ResponsibilityRoleAssignment:" + UUID.randomUUID();
+                GeneralOrganisation generalOrganisation = new GeneralOrganisation();
+                generalOrganisation.setId(organisationId);
+                generalOrganisation.setVersion("any");
+                generalOrganisation.getOrganisationType().add(OrganisationTypeEnumeration.OTHER);
+                if(StringUtils.isNotEmpty(tp.getOperator())){
+                    generalOrganisation.setName(new MultilingualString().withValue(tp.getOperator()));
+                }
+                listMembers.add(netexObjectFactory.createGeneralOrganisation(generalOrganisation));
+
+                OrganisationRefStructure organisationRefStructure = new OrganisationRefStructure();
+                organisationRefStructure.setRef(organisationId);
+
+                ResponsibilityRoleAssignment_VersionedChildStructure responsibilityRoleAssignment = new ResponsibilityRoleAssignment_VersionedChildStructure();
+                responsibilityRoleAssignment.setId(responsibilityRoleAssignmentId);
+                responsibilityRoleAssignment.setVersion("any");
+                responsibilityRoleAssignment.setResponsibleOrganisationRef(organisationRefStructure);
+                responsibilityRoleAssignment.getStakeholderRoleType().add(StakeholderRoleTypeEnumeration.ENTITY_LEGAL_OWNERSHIP);
+
+                ResponsibilityRoleAssignments_RelStructure responsibilityRoleAssignmentsRelStructure = new ResponsibilityRoleAssignments_RelStructure();
+                responsibilityRoleAssignmentsRelStructure.getResponsibilityRoleAssignment().add(responsibilityRoleAssignment);
+
+                ResponsibilitySet responsibilitySet = new ResponsibilitySet();
+                responsibilitySet.setId(responsabilitySetId);
+                responsibilitySet.setVersion("any");
+                responsibilitySet.setRoles(responsibilityRoleAssignmentsRelStructure);
+                listMembers.add(netexObjectFactory.createResponsibilitySet(responsibilitySet));
+
+                np.setResponsibilitySetRef(responsibilitySet.getId());
+
+                // Mise à jour des PointsOfInterest dans netexSiteFrame
+                netexSiteFrame.getPointsOfInterest().getPointOfInterest().forEach(poi -> {
+                    if (poi.getId().equals(np.getId())) {
+                        poi.setResponsibilitySetRef(responsibilitySet.getId());
+                    }
+                });
+            }
+        } else {
+            logger.info("No point of interests to export");
+        }
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void prepareParkings(AtomicInteger mappedParkingCount, List<JAXBElement<? extends EntityStructure>> listMembers, Long exportJobId) {
         Iterator<org.rutebanken.tiamat.model.Parking> parkingResultsIterator;
@@ -494,7 +625,7 @@ public class StreamingPublicationDelivery {
             List<org.rutebanken.tiamat.model.Parking> parkingList = parkingRepository.getParkingsInitializedForExport(parkingRepository.scrollParkings());
             parkingResultsIterator = parkingList.iterator();
         } else {
-            parkingResultsIterator = getIteratorForManualExport(exportJobId);
+            parkingResultsIterator = getIteratorForParkingManualExport(exportJobId);
         }
 
         // ExportParams could be used for parkingExportMode.
@@ -569,7 +700,7 @@ public class StreamingPublicationDelivery {
         }
     }
 
-    private Iterator<org.rutebanken.tiamat.model.Parking> getIteratorForManualExport(Long exportJobId){
+    private Iterator<org.rutebanken.tiamat.model.Parking> getIteratorForParkingManualExport(Long exportJobId){
         parkingRepository.initExportJobTable(exportJobId);
         int totalNbOfParkings = stopPlaceRepository.countStopsInExport(exportJobId);
         logger.info("Total nb of parkings to export:" + totalNbOfParkings);
@@ -598,41 +729,69 @@ public class StreamingPublicationDelivery {
         return completeParkingList.iterator();
     }
 
-    private void preparePointsOfInterest(AtomicInteger mappedPointOfInterestCount, SiteFrame netexSiteFrame, Iterator<org.rutebanken.tiamat.model.PointOfInterest> pointOfInterestIterator) {
+    private Iterator<org.rutebanken.tiamat.model.PointOfInterest> getIteratorForPointOfInterestManualExport(Long exportJobId){
+        pointOfInterestRepository.initExportJobTable(exportJobId);
+        int totalNbOfPointOfInterests = pointOfInterestRepository.countPOIInExport(exportJobId);
+        logger.info("Total nb of point of interest to export:" + totalNbOfPointOfInterests);
 
+        boolean isDataToExport = true;
+        int totalPointOfInterestProcessed = 0;
+
+        List<org.rutebanken.tiamat.model.PointOfInterest> completeList = new ArrayList<>();
+
+        while (isDataToExport){
+            Set<Long> batchIdsToExport = pointOfInterestRepository.getNextBatchToProcess(exportJobId);
+            if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
+                logger.info("no more point of interests to export");
+                isDataToExport = false;
+            } else {
+                List<org.rutebanken.tiamat.model.PointOfInterest> initialized = pointOfInterestRepository.getPOIInitializedForExport(batchIdsToExport);
+                completeList.addAll(initialized);
+                pointOfInterestRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
+                totalPointOfInterestProcessed = totalPointOfInterestProcessed + batchIdsToExport.size();
+                logger.info("total poitn of interests processed:" + totalPointOfInterestProcessed);
+            }
+        }
+
+        return completeList.iterator();
+    }
+
+    private void preparePointsOfInterest(SiteFrame netexSiteFrame, List<PointOfInterest> initializedPoi) {
         int poiCount = pointOfInterestRepository.countResult();
         if (poiCount > 0) {
             logger.info("POI count is {}, will create poi in publication delivery", poiCount);
             PointsOfInterestInFrame_RelStructure pointsOfInterestInFrame_relStructure = new PointsOfInterestInFrame_RelStructure();
 
-            List<PointOfInterest> pointsOfInterest = new NetexMappingIteratorList<>(() ->
-                    new NetexMappingIterator<>(netexMapper, pointOfInterestIterator, PointOfInterest.class, mappedPointOfInterestCount));
+            // Vérification d'identifiants dupliqués
+            Set<String> seenIds = new HashSet<>();
+            initializedPoi.removeIf(poi -> !seenIds.add(poi.getId()));
 
-            setField(PointsOfInterestInFrame_RelStructure.class, "pointOfInterest", pointsOfInterestInFrame_relStructure, pointsOfInterest);
+            setField(PointsOfInterestInFrame_RelStructure.class, "pointOfInterest", pointsOfInterestInFrame_relStructure, initializedPoi);
             netexSiteFrame.setPointsOfInterest(pointsOfInterestInFrame_relStructure);
         } else {
             logger.info("No poi to export");
         }
     }
 
-
-    private void preparePointsOfInterestClassification(AtomicInteger mappedPointOfInterestClassificationCount, SiteFrame netexSiteFrame, Iterator<org.rutebanken.tiamat.model.PointOfInterestClassification> pointOfInterestClassificationIterator) {
+    private void preparePointsOfInterestClassification(SiteFrame netexSiteFrame, List<PointOfInterestClassification> netexClassification) {
         int poiClassificationCount = pointOfInterestClassificationRepository.countResult();
         if (poiClassificationCount > 0) {
             logger.info("POI count is {}, will create poi classifications in publication delivery", poiClassificationCount);
 
             Site_VersionFrameStructure.PointOfInterestClassifications pointOfInterestClassificationsInFrame_relStructure = new Site_VersionFrameStructure.PointOfInterestClassifications();
-            List<org.rutebanken.netex.model.PointOfInterestClassification> pointOfInterestClassifications = new NetexMappingIteratorList<>(() -> new NetexMappingIterator<>(netexMapper, pointOfInterestClassificationIterator,
-                    org.rutebanken.netex.model.PointOfInterestClassification.class, mappedPointOfInterestClassificationCount));
 
-            setField(PointOfInterestClassificationsInFrame_RelStructure.class, "pointOfInterestClassification", pointOfInterestClassificationsInFrame_relStructure, pointOfInterestClassifications);//pointsOfInterestClassification);
+            // Vérification d'identifiants dupliqués
+            Set<String> seenIds = new HashSet<>();
+            netexClassification.removeIf(poiClass -> !seenIds.add(poiClass.getId()));
+
+            setField(PointOfInterestClassificationsInFrame_RelStructure.class, "pointOfInterestClassification", pointOfInterestClassificationsInFrame_relStructure, netexClassification);
             netexSiteFrame.setPointOfInterestClassifications(pointOfInterestClassificationsInFrame_relStructure);
         } else {
             logger.info("No poi classifications to export");
         }
     }
 
-    private void preparePointsOfInterestClassificationHierarchies(SiteFrame netexSiteFrame, List<PointOfInterestClassification> pointOfInterestClassificationList) {
+    private void preparePointsOfInterestClassificationHierarchies(SiteFrame netexSiteFrame, List<org.rutebanken.tiamat.model.PointOfInterestClassification> pointOfInterestClassificationList) {
         org.rutebanken.netex.model.PointOfInterestClassificationHierarchyMembers_RelStructure pointOfInterestClassificationHierarchyMembers_relStructure = new org.rutebanken.netex.model.PointOfInterestClassificationHierarchyMembers_RelStructure();
 
         pointOfInterestClassificationList.forEach(pointOfInterestClassification -> {

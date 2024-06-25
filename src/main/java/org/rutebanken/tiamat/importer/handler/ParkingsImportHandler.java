@@ -35,6 +35,7 @@ import org.springframework.stereotype.Component;
 import javax.xml.bind.JAXBElement;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Component
 public class ParkingsImportHandler {
@@ -110,8 +111,8 @@ public class ParkingsImportHandler {
         }
     }
 
-    public void handleParkingsGeneralFrame(List<org.rutebanken.netex.model.Parking> tiamatParking, ImportParams importParams, List<JAXBElement<? extends EntityStructure>> members, AtomicInteger parkingsCreatedOrUpdated) {
-        List<Parking> parkingsParsed = parseParkings(tiamatParking);
+    public void handleParkingsGeneralFrame(List<org.rutebanken.netex.model.Parking> tiamatParking, ImportParams importParams, List<JAXBElement<? extends EntityStructure>> members, AtomicInteger parkingsCreatedOrUpdated, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {
+        List<Parking> parkingsParsed = parseParkings(tiamatParking, generalOrganisations, responsibilitySets);
 
         int numberOfParkingsBeforeFiltering = parkingsParsed.size();
         logger.info("About to filter {} parkings based on topographic references: {}", parkingsParsed.size(), importParams.targetTopographicPlaces);
@@ -151,14 +152,37 @@ public class ParkingsImportHandler {
         logger.info("Mapped {} parkings !!", tiamatParking.size());
     }
 
-    private List<Parking> parseParkings(List<org.rutebanken.netex.model.Parking> netexParkingsInFrame) {
+    private List<Parking> parseParkings(List<org.rutebanken.netex.model.Parking> netexParkingsInFrame, List<org.rutebanken.netex.model.GeneralOrganisation> generalOrganisations, List<org.rutebanken.netex.model.ResponsibilitySet> responsibilitySets) {
         if (netexParkingsInFrame.isEmpty())
             return null;
 
+        Map<String, ResponsibilitySet> responsibilitySetMap = responsibilitySets.stream()
+                .collect(Collectors.toMap(ResponsibilitySet::getId, rs -> rs));
+
+        Map<String, GeneralOrganisation> generalOrganisationMap = generalOrganisations.stream()
+                .collect(Collectors.toMap(GeneralOrganisation::getId, go -> go));
+
         List<Parking> parkingsList = new ArrayList<>();
+
         new ArrayList<>(netexParkingsInFrame).forEach(netexParking -> {
             Parking parkingTiamat = netexMapper.mapToTiamatModel(netexParking);
             if (parkingTiamat.getNetexId() == null) parkingTiamat.setNetexId(netexParking.getId());
+
+            // Mapper l'opérateur
+            String responsibilitySetRef = netexParking.getResponsibilitySetRef();
+            if (responsibilitySetRef != null) {
+                ResponsibilitySet responsibilitySet = responsibilitySetMap.get(responsibilitySetRef);
+                if (responsibilitySet != null) {
+                    ResponsibilityRoleAssignment_VersionedChildStructure responsibilityRoleAssignment = responsibilitySet.getRoles().getResponsibilityRoleAssignment().get(0);
+                    String organisationRef = responsibilityRoleAssignment.getResponsibleOrganisationRef().getRef();
+                    GeneralOrganisation generalOrganisation = generalOrganisationMap.get(organisationRef);
+                    if (generalOrganisation != null && generalOrganisation.getName() != null) {
+                        // Mettre à jour l'opérateur pour le parking
+                        parkingTiamat.setOperator(generalOrganisation.getName().getValue());
+                    }
+                }
+            }
+
             if (netexParking.getParkingProperties() != null) {
                 netexMapper.parseToSetParkingProperties(netexParking, parkingTiamat);
             }

@@ -71,8 +71,11 @@ public class PointOfInterestsImportHandler {
     @Autowired
     private PointOfInterestFromOriginalIdFinder pointOfInterestRepository;
 
-    public void handlePointOfInterests(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger poisCreatedOrUpdated, SiteFrame responseSiteframe, Provider provider, String fileName, String folder, Job job) {
+    public void handlePointOfInterests(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger poisCreatedOrUpdated, SiteFrame responseSiteframe, Provider provider, String fileName, String folder, Job job, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {
         List<org.rutebanken.tiamat.model.PointOfInterest> tiamatPointOfInterests = netexMapper.mapPointsOfInterestToTiamatModel(netexSiteFrame.getPointsOfInterest().getPointOfInterest());
+
+        setOperatorPoiForGeneralFrame(generalOrganisations, responsibilitySets, tiamatPointOfInterests);
+
         parseToSynchronizeKeyValues(netexSiteFrame, tiamatPointOfInterests);
 
         int numberOfPoisBeforeFiltering = tiamatPointOfInterests.size();
@@ -113,6 +116,31 @@ public class PointOfInterestsImportHandler {
         Job jobUpdated = Importer.manageJob(job, JobStatus.FINISHED, importParams, provider, fileName, folder,  null, JobImportType.NETEX_POI);
         jobRepository.save(jobUpdated);
         logger.info("Mapped {} point of interests!!", tiamatPointOfInterests.size());
+    }
+
+    private void setOperatorPoiForGeneralFrame(List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets, List<org.rutebanken.tiamat.model.PointOfInterest> tiamatPointOfInterests) {
+        Map<String, ResponsibilitySet> responsibilitySetMap = responsibilitySets.stream()
+                .collect(Collectors.toMap(ResponsibilitySet::getId, rs -> rs));
+
+        Map<String, GeneralOrganisation> generalOrganisationMap = generalOrganisations.stream()
+                .collect(Collectors.toMap(GeneralOrganisation::getId, go -> go));
+
+        tiamatPointOfInterests.forEach(poi -> {
+            // Ajouter la logique pour mapper l'opérateur
+            String responsibilitySetRef = poi.getResponsibilitySetRef();
+            if (responsibilitySetRef != null) {
+                ResponsibilitySet responsibilitySet = responsibilitySetMap.get(responsibilitySetRef);
+                if (responsibilitySet != null) {
+                    ResponsibilityRoleAssignment_VersionedChildStructure responsibilityRoleAssignment = responsibilitySet.getRoles().getResponsibilityRoleAssignment().get(0);
+                    String organisationRef = responsibilityRoleAssignment.getResponsibleOrganisationRef().getRef();
+                    GeneralOrganisation generalOrganisation = generalOrganisationMap.get(organisationRef);
+                    if (generalOrganisation != null && generalOrganisation.getName() != null) {
+                        // Mettre à jour l'opérateur pour le point of interest
+                        poi.setOperator(generalOrganisation.getName().getValue());
+                    }
+                }
+            }
+        });
     }
 
     private void parseToSynchronizeKeyValues(SiteFrame netexSiteFrame, List<org.rutebanken.tiamat.model.PointOfInterest> tiamatPointOfInterests) {

@@ -29,14 +29,12 @@ public class DtoPointOfInterest {
     private String landuse;
     private String tourism;
     private Map<String, String> tags = new HashMap<>();
+    private String operator;
 
     public DtoPointOfInterest() {
     }
 
     public DtoPointOfInterest(CSVRecord csvRec) {
-
-    
-
         id = removeQuotes(csvRec.get(0));
         name = removeQuotes(csvRec.get(1));
         houseNumber = removeQuotes(csvRec.get(2));
@@ -54,15 +52,14 @@ public class DtoPointOfInterest {
         office = removeQuotes(csvRec.get(14));
         shop = removeQuotes(csvRec.get(15));
         lpImportId = removeQuotes(csvRec.get(16).replace("\r",""));
-
-        if (csvRec.size() > 17){
-            addTag(csvRec.get(17));
-        }
+        operator = removeQuotes(csvRec.get(17));
 
         if (csvRec.size() > 18){
             addTag(csvRec.get(18));
         }
-
+        if (csvRec.size() > 19){
+            addTag(csvRec.get(19));
+        }
     }
 
     private void addTag(String rawCell){
@@ -163,6 +160,10 @@ public class DtoPointOfInterest {
         return tags;
     }
 
+    public void setOperator(String operator) { this.operator = operator; }
+
+    public String getOperator() { return this.operator; }
+
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
@@ -184,6 +185,7 @@ public class DtoPointOfInterest {
                 .add("office", office)
                 .add("shop", shop)
                 .add("lpImportId", lpImportId)
+                .add("operator", operator)
                 .toString();
     }
 }

@@ -151,6 +151,7 @@ public class MergingParkingImporter {
         boolean centroidChanged = mergingUtils.updateProperty(copyParking.getCentroid(), incomingParking.getCentroid(), copyParking::setCentroid, "centroid", netexId);
         boolean allAreasWheelchairAccessibleChanged = mergingUtils.updateProperty(copyParking.isAllAreasWheelchairAccessible(), incomingParking.isAllAreasWheelchairAccessible(), copyParking::setAllAreasWheelchairAccessible, "all areas weelchair accessible", netexId);
         boolean typeChanged = mergingUtils.updateProperty(copyParking.getParkingType(), incomingParking.getParkingType(), copyParking::setParkingType, "type", netexId);
+        boolean operatorChanged = mergingUtils.updateProperty(copyParking.getOperator(), incomingParking.getOperator(), copyParking::setOperator, "operator", netexId);
 
         boolean vehicleType = false;
         if (!copyParking.getParkingVehicleTypes().containsAll(incomingParking.getParkingVehicleTypes()) ||
@@ -215,8 +216,9 @@ public class MergingParkingImporter {
             equipmentChanged = true;
         }
 
-        if (keyValuesChanged || nameChanged || allAreasWheelchairAccessibleChanged || typeChanged || centroidChanged || vehicleType || totalCapacityChanged ||
-                paymentProcessChanged || rechargingAvailableChanged || bookingUrlChanged || propertiesChanged || areasChanged || equipmentChanged) {
+        if (keyValuesChanged || nameChanged || allAreasWheelchairAccessibleChanged || typeChanged || centroidChanged ||
+                operatorChanged ||vehicleType || totalCapacityChanged || paymentProcessChanged || rechargingAvailableChanged ||
+                bookingUrlChanged || propertiesChanged || areasChanged || equipmentChanged) {
             logger.info("Updated existing parking {}. ", copyParking);
             copyParking = parkingVersionedSaverService.saveNewVersion(copyParking);
             return updateCache(copyParking);

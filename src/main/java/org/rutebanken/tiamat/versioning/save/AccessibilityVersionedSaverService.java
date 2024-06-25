@@ -23,6 +23,7 @@ import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.AccessibilityAssessmentRepository;
 import org.rutebanken.tiamat.repository.AccessibilityLimitationRepository;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
+import org.rutebanken.tiamat.versioning.ValidityUpdater;
 import org.rutebanken.tiamat.versioning.VersionIncrementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+
+import static org.rutebanken.tiamat.versioning.save.DefaultVersionedSaverService.MILLIS_BETWEEN_VERSIONS;
 
 @Transactional
 @Service
@@ -58,6 +61,9 @@ public class AccessibilityVersionedSaverService {
     private EntityChangedListener entityChangedListener;
 
     @Autowired
+    private ValidityUpdater validityUpdater;
+
+    @Autowired
     public AccessibilityVersionedSaverService(@Value("${nearbyStopPlaceFinderCache.maxSize:50000}") int maximumSize,
                                               @Value("${nearbyStopPlaceFinderCache.expiresAfter:30}") int expiresAfter,
                                               @Value("${nearbyStopPlaceFinderCache.expiresAfterTimeUnit:DAYS}") TimeUnit expiresAfterTimeUnit,
@@ -71,12 +77,14 @@ public class AccessibilityVersionedSaverService {
         periodicCacheLogger.scheduleCacheStatsLogging(nearbyStopCache, logger);
     }
 
-    public AccessibilityAssessment saveNewVersionAssessment(AccessibilityAssessment newVersion) {
+    public AccessibilityAssessment saveNewVersionAssessment(AccessibilityAssessment newVersion, Boolean withHistory) {
 
         AccessibilityAssessment existing = accessibilityAssessmentRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
 
         AccessibilityAssessment result;
         if (existing != null) {
+            Instant newVersionValidFrom = validityUpdater.updateValidBetween(existing, newVersion, Instant.now());
+
             logger.trace("existing: {}", existing);
             logger.trace("new: {}", newVersion);
 
@@ -84,11 +92,17 @@ public class AccessibilityVersionedSaverService {
             newVersion.setChanged(Instant.now());
             newVersion.setVersion(existing.getVersion());
 
-            accessibilityAssessmentRepository.delete(existing);
+            Instant oldversionTerminationTime = newVersionValidFrom.minusMillis(MILLIS_BETWEEN_VERSIONS);
+            logger.debug("About to terminate previous version for {},{}", existing.getNetexId(), existing.getVersion());
+            logger.debug("Found previous version {},{}. Terminating it.", existing.getNetexId(), existing.getVersion());
+            validityUpdater.terminateVersion(existing, oldversionTerminationTime);
+
+            if (!withHistory) {
+                accessibilityAssessmentRepository.delete(existing);
+            }
         } else {
             newVersion.setCreated(Instant.now());
         }
-
 
         newVersion.setValidBetween(null);
         versionIncrementor.initiateOrIncrement(newVersion);
@@ -103,12 +117,14 @@ public class AccessibilityVersionedSaverService {
         return result;
     }
 
-    public AccessibilityLimitation saveNewVersionLimitation(AccessibilityLimitation newVersion) {
+    public AccessibilityLimitation saveNewVersionLimitation(AccessibilityLimitation newVersion, Boolean withHistory) {
 
         AccessibilityLimitation existing = accessibilityLimitationRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
 
         AccessibilityLimitation result;
         if (existing != null) {
+            Instant newVersionValidFrom = validityUpdater.updateValidBetween(existing, newVersion, Instant.now());
+
             logger.trace("existing: {}", existing);
             logger.trace("new: {}", newVersion);
 
@@ -116,7 +132,14 @@ public class AccessibilityVersionedSaverService {
             newVersion.setChanged(Instant.now());
             newVersion.setVersion(existing.getVersion());
 
-            accessibilityLimitationRepository.delete(existing);
+            Instant oldversionTerminationTime = newVersionValidFrom.minusMillis(MILLIS_BETWEEN_VERSIONS);
+            logger.debug("About to terminate previous version for {},{}", existing.getNetexId(), existing.getVersion());
+            logger.debug("Found previous version {},{}. Terminating it.", existing.getNetexId(), existing.getVersion());
+            validityUpdater.terminateVersion(existing, oldversionTerminationTime);
+
+            if (!withHistory) {
+                accessibilityLimitationRepository.delete(existing);
+            }
         } else {
             newVersion.setCreated(Instant.now());
         }

@@ -30,10 +30,10 @@ import org.springframework.stereotype.Component;
 
 import javax.xml.bind.JAXBElement;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Component
 public class NetexMapper {
@@ -426,9 +426,25 @@ public class NetexMapper {
         }
 
         stopPlace.setNetexId(netexStopPlace.getId());
+        setCreatedTimeForAccessibilityStopPlace(stopPlace);
         return stopPlace;
     }
 
+    private void setCreatedTimeForAccessibilityStopPlace(org.rutebanken.tiamat.model.StopPlace stopPlace) {
+        if (stopPlace.getAccessibilityAssessment().getCreated() == null) stopPlace.getAccessibilityAssessment().setCreated(Instant.now());
+
+        stopPlace.getAccessibilityAssessment().getLimitations().forEach(limitation -> {
+            if (limitation.getCreated() == null) limitation.setCreated(Instant.now());
+        });
+
+        stopPlace.getQuays().forEach(quay -> {
+            if (quay.getAccessibilityAssessment().getCreated() == null) quay.getAccessibilityAssessment().setCreated(Instant.now());
+
+            quay.getAccessibilityAssessment().getLimitations().forEach(limitation -> {
+                if (limitation.getCreated() == null) limitation.setCreated(Instant.now());
+            });
+        });
+    }
 
     public void parseToSetParkingProperties(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {
         List<org.rutebanken.tiamat.model.ParkingProperties> parkingPropertiesList = new ArrayList<>();

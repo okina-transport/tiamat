@@ -33,8 +33,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Component
@@ -204,14 +203,25 @@ public class MergingStopPlaceImporter {
         boolean weightingChanged = mergingUtils.updateProperty(copyStopPlace.getWeighting(), incomingStopPlace.getWeighting(), copyStopPlace::setWeighting, "weighting", netexId);
 
         boolean quaysChanged = false;
-        Set<Quay> copyQuays = new HashSet<>();
-
         if (incomingStopPlace.getQuays() != null && (!new HashSet<>(copyStopPlace.getQuays()).containsAll(incomingStopPlace.getQuays()) ||
                 !new HashSet<>(incomingStopPlace.getQuays()).containsAll(copyStopPlace.getQuays()))) {
-            copyStopPlace.getQuays().clear();
+            Set<Quay> copyQuays = new HashSet<>();
+
             for (Quay quay : incomingStopPlace.getQuays()) {
-                copyQuays.add(quaysVersionedSaverService.saveNewVersion(quay));
+                Optional<Quay> copyOptional = copyStopPlace.getQuays().stream()
+                        .filter(copyQuay -> copyQuay.getNetexId().equals(quay.getNetexId()))
+                        .findFirst();
+
+                if (copyOptional.isPresent()) {
+                    Quay copy = copyOptional.get();
+                    mergingUtils.updateAccessibilityAccessment(copy, quay, netexId);
+                    copyQuays.add(quaysVersionedSaverService.saveNewVersion(copy));
+                } else {
+                    copyQuays.add(quaysVersionedSaverService.saveNewVersion(quay));
+                }
             }
+
+            copyStopPlace.getQuays().clear();
             copyStopPlace.setQuays(copyQuays);
             logger.info("Updated quays for {}", netexId);
             quaysChanged = true;

@@ -17,23 +17,31 @@ package org.rutebanken.tiamat.importer.merging;
 
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
+import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
+import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
+import org.rutebanken.tiamat.importer.finder.NearbyStopsWithSameTypeFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceFromOriginalIdFinder;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.StopTypeEnumeration;
+import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
-import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
+import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.versioning.VersionCreator;
-import org.rutebanken.tiamat.versioning.save.QuaysVersionedSaverService;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
@@ -44,43 +52,55 @@ public class MergingStopPlaceImporter {
 
     private static final Logger logger = LoggerFactory.getLogger(MergingStopPlaceImporter.class);
 
+    /**
+     * Enable short distance check for quay merging when merging existing stop places
+     */
+    public static final boolean EXISTING_STOP_QUAY_MERGE_SHORT_DISTANCE_CHECK_BEFORE_ID_MATCH = false;
+
+    /**
+     * Allow the quay merger to add new quays if no match found
+     */
+    public static final boolean ADD_NEW_QUAYS = true;
+
     private final StopPlaceFromOriginalIdFinder stopPlaceFromOriginalIdFinder;
+
+    private final NearbyStopsWithSameTypeFinder nearbyStopsWithSameTypeFinder;
 
     private final NearbyStopPlaceFinder nearbyStopPlaceFinder;
 
     private final StopPlaceCentroidComputer stopPlaceCentroidComputer;
 
+    private final KeyValueListAppender keyValueListAppender;
+
+    private final QuayMerger quayMerger;
+
     private final NetexMapper netexMapper;
 
     private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
 
+    private final ZoneDistanceChecker zoneDistanceChecker;
+
     private final VersionCreator versionCreator;
 
-    private final ReferenceResolver referenceResolver;
-
-    private final MergingUtils mergingUtils;
-
-    private final QuaysVersionedSaverService quaysVersionedSaverService;
+    private final StopPlaceRepository stopPlaceRepository;
 
     @Autowired
     public MergingStopPlaceImporter(StopPlaceFromOriginalIdFinder stopPlaceFromOriginalIdFinder,
-                                    NearbyStopPlaceFinder nearbyStopPlaceFinder,
+                                    NearbyStopsWithSameTypeFinder nearbyStopsWithSameTypeFinder, NearbyStopPlaceFinder nearbyStopPlaceFinder,
                                     StopPlaceCentroidComputer stopPlaceCentroidComputer,
-                                    NetexMapper netexMapper,
-                                    StopPlaceVersionedSaverService stopPlaceVersionedSaverService,
-                                    VersionCreator versionCreator,
-                                    ReferenceResolver referenceResolver,
-                                    MergingUtils mergingUtils,
-                                    QuaysVersionedSaverService quaysVersionedSaverService) {
+                                    KeyValueListAppender keyValueListAppender, QuayMerger quayMerger, NetexMapper netexMapper,
+                                    StopPlaceVersionedSaverService stopPlaceVersionedSaverService, ZoneDistanceChecker zoneDistanceChecker, VersionCreator versionCreator, StopPlaceRepository stopPlaceRepository) {
         this.stopPlaceFromOriginalIdFinder = stopPlaceFromOriginalIdFinder;
+        this.nearbyStopsWithSameTypeFinder = nearbyStopsWithSameTypeFinder;
         this.nearbyStopPlaceFinder = nearbyStopPlaceFinder;
         this.stopPlaceCentroidComputer = stopPlaceCentroidComputer;
+        this.keyValueListAppender = keyValueListAppender;
+        this.quayMerger = quayMerger;
         this.netexMapper = netexMapper;
         this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
+        this.zoneDistanceChecker = zoneDistanceChecker;
         this.versionCreator = versionCreator;
-        this.referenceResolver = referenceResolver;
-        this.mergingUtils = mergingUtils;
-        this.quaysVersionedSaverService = quaysVersionedSaverService;
+        this.stopPlaceRepository = stopPlaceRepository;
     }
 
     /**
@@ -104,33 +124,14 @@ public class MergingStopPlaceImporter {
         return netexMapper.mapToNetexModel(importStopPlaceWithoutNetexMapping(newStopPlace));
     }
 
-    public StopPlace importStopPlaceWithoutNetexMapping(StopPlace incomingStopPlace) {
-
-        final StopPlace foundStopPlace = findNearbyOrExistingStopPlace(incomingStopPlace);
-
-        final StopPlace stopPlace;
-        if (foundStopPlace != null) {
-            stopPlace = handleAlreadyExistingStopPlace(foundStopPlace, incomingStopPlace);
-
-        } else {
-            stopPlace = handleCompletelyNewStopPlace(incomingStopPlace, false);
-        }
-
-        resolveAndFixParentSiteRef(stopPlace);
-
-        return stopPlace;
+    public StopPlace importStopPlaceWithoutNetexMapping(StopPlace incomingStopPlace) throws InterruptedException, ExecutionException {
+        return handleCompletelyNewStopPlace(incomingStopPlace);
     }
 
-    private void resolveAndFixParentSiteRef(StopPlace stopPlace) {
-        if (stopPlace != null && stopPlace.getParentSiteRef() != null) {
-            DataManagedObjectStructure referencedStopPlace = referenceResolver.resolve(stopPlace.getParentSiteRef());
-            stopPlace.getParentSiteRef().setRef(referencedStopPlace.getNetexId());
-        }
-    }
 
-    public StopPlace handleCompletelyNewStopPlace(StopPlace incomingStopPlace, Boolean resetNetexId) {
+    public StopPlace handleCompletelyNewStopPlace(StopPlace incomingStopPlace) throws ExecutionException {
 
-        if (incomingStopPlace.getNetexId() != null && resetNetexId) {
+        if (incomingStopPlace.getNetexId() != null) {
             // This should not be necesarry.
             // Because this is a completely new stop.
             // And original netex ID should have been moved to key values.
@@ -161,70 +162,13 @@ public class MergingStopPlaceImporter {
 
 
     private StopPlace updateCache(StopPlace stopPlace) {
+        // Keep the attached stop place reference in case it is merged.
+
         stopPlaceFromOriginalIdFinder.update(stopPlace);
         nearbyStopPlaceFinder.update(stopPlace);
         logger.info("Saved stop place {}", stopPlace);
         return stopPlace;
     }
 
-    private StopPlace findNearbyOrExistingStopPlace(StopPlace newStopPlace) {
-        final StopPlace existingStopPlace = stopPlaceFromOriginalIdFinder.findStopPlace(newStopPlace);
-        if (existingStopPlace != null) {
-            return existingStopPlace;
-        }
 
-        if (newStopPlace.getName() != null) {
-            final StopPlace nearbyStopPlace = nearbyStopPlaceFinder.find(newStopPlace);
-            if (nearbyStopPlace != null) {
-                logger.debug("Found nearby stop place with name: {}, id: {}", nearbyStopPlace.getName(), nearbyStopPlace.getNetexId());
-                return nearbyStopPlace;
-            }
-        }
-        return null;
-    }
-
-    public StopPlace handleAlreadyExistingStopPlace(StopPlace existingStopPlace, StopPlace incomingStopPlace) {
-        logger.debug("Found existing stop place {} from incoming {}", existingStopPlace, incomingStopPlace);
-
-        StopPlace copyStopPlace = versionCreator.createCopy(existingStopPlace, StopPlace.class);
-        String netexId = copyStopPlace.getNetexId();
-
-        boolean validBetweenChanged = mergingUtils.updateProperty(copyStopPlace.getValidBetween(), incomingStopPlace.getValidBetween(), copyStopPlace::setValidBetween, "valid between", netexId);
-
-        boolean keyValuesChanged = mergingUtils.updateKeyValues(copyStopPlace, incomingStopPlace, netexId);
-
-        boolean nameChanged = mergingUtils.updateProperty(copyStopPlace.getName(), incomingStopPlace.getName(), copyStopPlace::setName, "name", netexId);
-        boolean descriptionChanged = mergingUtils.updateProperty(copyStopPlace.getDescription(), incomingStopPlace.getDescription(), copyStopPlace::setDescription, "description", netexId);
-        boolean centroidChanged = mergingUtils.updateProperty(copyStopPlace.getCentroid(), incomingStopPlace.getCentroid(), copyStopPlace::setCentroid, "centroid", netexId);
-
-        boolean accessibilityAssessmentChanged = mergingUtils.updateAccessibilityAccessment(copyStopPlace, incomingStopPlace, netexId);
-
-        boolean transportModeChanged = mergingUtils.updateProperty(copyStopPlace.getTransportMode(), incomingStopPlace.getTransportMode(), copyStopPlace::setTransportMode, "transport mode", netexId);
-        boolean typeChanged = mergingUtils.updateProperty(copyStopPlace.getStopPlaceType(), incomingStopPlace.getStopPlaceType(), copyStopPlace::setStopPlaceType, "type", netexId);
-        boolean weightingChanged = mergingUtils.updateProperty(copyStopPlace.getWeighting(), incomingStopPlace.getWeighting(), copyStopPlace::setWeighting, "weighting", netexId);
-
-        boolean quaysChanged = false;
-        Set<Quay> copyQuays = new HashSet<>();
-
-        if (incomingStopPlace.getQuays() != null && (!new HashSet<>(copyStopPlace.getQuays()).containsAll(incomingStopPlace.getQuays()) ||
-                !new HashSet<>(incomingStopPlace.getQuays()).containsAll(copyStopPlace.getQuays()))) {
-            copyStopPlace.getQuays().clear();
-            for (Quay quay : incomingStopPlace.getQuays()) {
-                copyQuays.add(quaysVersionedSaverService.saveNewVersion(quay));
-            }
-            copyStopPlace.setQuays(copyQuays);
-            logger.info("Updated quays for {}", netexId);
-            quaysChanged = true;
-        }
-
-        if (validBetweenChanged || keyValuesChanged || nameChanged || descriptionChanged || centroidChanged || accessibilityAssessmentChanged ||
-                transportModeChanged || typeChanged || weightingChanged || quaysChanged) {
-            logger.info("Updated existing stop place {}. ", copyStopPlace);
-            copyStopPlace = stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, copyStopPlace);
-            return updateCache(copyStopPlace);
-        }
-
-        logger.debug("No changes. Returning existing stop place {}", existingStopPlace);
-        return existingStopPlace;
-    }
 }

@@ -43,6 +43,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -126,6 +127,9 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
         stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
         List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
+        foundStopPlaces = removeExpiredVersions(foundStopPlaces);
+
+
         final int foundStopPlacesCount = foundStopPlaces.size();
 
         if (!foundStopPlaces.isEmpty()) {
@@ -292,6 +296,22 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             }
         }
+    }
+
+    private List<org.rutebanken.tiamat.model.StopPlace> removeExpiredVersions(List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces) {
+
+        if (foundStopPlaces == null || foundStopPlaces.isEmpty()){
+            return new ArrayList<>();
+        }
+
+        List<org.rutebanken.tiamat.model.StopPlace> filteredStopPlaces = new ArrayList<>();
+        for (org.rutebanken.tiamat.model.StopPlace foundStopPlace : foundStopPlaces) {
+            if(foundStopPlace.getValidBetween() != null &&
+                    (foundStopPlace.getValidBetween().getToDate() == null || foundStopPlace.getValidBetween().getToDate().isAfter(Instant.now()))){
+                filteredStopPlaces.add(foundStopPlace);
+            }
+        }
+        return filteredStopPlaces;
     }
 
     private boolean updateTransportMode(org.rutebanken.tiamat.model.StopPlace incomingStopPlace, org.rutebanken.tiamat.model.StopPlace existingStopPlace) {

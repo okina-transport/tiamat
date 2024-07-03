@@ -58,7 +58,7 @@ public class StopPlacesImportHandler {
 
     public void handleStopPlacesGeneralFrame(List<org.rutebanken.netex.model.StopPlace> tiamatStopPlaces, ImportParams importParams,
                                              List<JAXBElement<? extends EntityStructure>> members, AtomicInteger atomicInteger,
-                                             List<org.rutebanken.tiamat.model.Quay> quaysParsed) {
+                                             List<org.rutebanken.tiamat.model.Quay> quaysParsed, Boolean containsMobiitiIds) {
         List<StopPlace> stopPlacesParsed = mapStopPlacesToTiamatModel(tiamatStopPlaces, quaysParsed);
 
         int numberOfStopPlacesBeforeFiltering = stopPlacesParsed.size();
@@ -78,14 +78,14 @@ public class StopPlacesImportHandler {
             final FencedLock lock = hazelcastInstance.getCPSubsystem().getLock(PARKING_IMPORT_LOCK_KEY);
             lock.lock();
             try {
-                importedStopPlaces = transactionalMergingStopPlacesImporter.importStopPlaces(stopPlacesParsed, atomicInteger);
+                importedStopPlaces = transactionalMergingStopPlacesImporter.importStopPlaces(stopPlacesParsed, atomicInteger, containsMobiitiIds);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             } finally {
                 lock.unlock();
             }
         } else if (importParams.importType.equals(ImportType.INITIAL)) {
-            importedStopPlaces = transactionalMergingStopPlacesImporter.importStopPlaces(stopPlacesParsed, atomicInteger);
+            importedStopPlaces = transactionalMergingStopPlacesImporter.importStopPlaces(stopPlacesParsed, atomicInteger, containsMobiitiIds);
         } else {
             logger.warn("Import type " + importParams.importType + " not implemented. Will not match stop places.");
             importedStopPlaces = new ArrayList<>(0);

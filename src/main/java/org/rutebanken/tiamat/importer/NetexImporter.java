@@ -76,13 +76,13 @@ public class NetexImporter {
         this.pointOfInterestsImportHandler = pointOfInterestsImportHandler;
     }
 
-    public Response.ResponseBuilder importProcessTest(PublicationDeliveryStructure publicationDeliveryStructure, String providerId, String fileName, JobImportType jobType) throws TiamatBusinessException {
-        return importProcess(publicationDeliveryStructure, providerId, fileName, "/", jobType);
+    public Response.ResponseBuilder importProcessTest(PublicationDeliveryStructure publicationDeliveryStructure, String providerId, String fileName, Boolean containsMobiitiIds, JobImportType jobType) throws TiamatBusinessException {
+        return importProcess(publicationDeliveryStructure, providerId, fileName, "/", containsMobiitiIds, jobType);
     }
 
     @SuppressWarnings("unchecked")
     public Response.ResponseBuilder importProcess(PublicationDeliveryStructure publicationDeliveryStructure,
-                                                  String providerId, String fileName, String folder, JobImportType jobType) {
+                                                  String providerId, String fileName, String folder, Boolean containsMobiitiIds, JobImportType jobType) {
 
         if (publicationDeliveryStructure.getDataObjects() == null) {
             String responseMessage = "Received publication delivery but it does not contain any data objects.";
@@ -116,7 +116,7 @@ public class NetexImporter {
                     assert members != null;
                     generalOrganisations = NetexUtils.getMembers(GeneralOrganisation.class, members);
                     responsibilitySets = NetexUtils.getMembers(ResponsibilitySet.class, members);
-                    generalFrameProcess(members, importParams, fileName, folder, jobType, provider, job, atomicInteger, generalOrganisations, responsibilitySets);
+                    generalFrameProcess(members, importParams, fileName, folder, jobType, provider, job, atomicInteger, generalOrganisations, responsibilitySets, containsMobiitiIds);
                     break; // Quitter la boucle après avoir trouvé et traité le GeneralFrame
                 }
             }
@@ -182,7 +182,7 @@ public class NetexImporter {
         return null;
     }
 
-    private void generalFrameProcess(List<JAXBElement<? extends EntityStructure>> members, ImportParams importParams, String fileName, String folder, JobImportType jobType, Provider provider, Job job, AtomicInteger atomicInteger, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {
+    private void generalFrameProcess(List<JAXBElement<? extends EntityStructure>> members, ImportParams importParams, String fileName, String folder, JobImportType jobType, Provider provider, Job job, AtomicInteger atomicInteger, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets, Boolean containsMobiitiIds) {
         updateJobState(JobStatus.PROCESSING, importParams, fileName, folder, jobType, provider, job);
 
         if (!members.isEmpty()) {
@@ -191,12 +191,12 @@ public class NetexImporter {
             }
 
             else if (members.stream().anyMatch(mem -> mem.getValue() instanceof StopPlace || mem.getValue() instanceof Quay)) {
-                stopPlaceAndQuayImport(importParams, atomicInteger, members);
+                stopPlaceAndQuayImport(importParams, atomicInteger, members, containsMobiitiIds);
             }
         }
     }
 
-    private void stopPlaceAndQuayImport(ImportParams importParams, AtomicInteger atomicInteger, List<JAXBElement<? extends EntityStructure>> members) {
+    private void stopPlaceAndQuayImport(ImportParams importParams, AtomicInteger atomicInteger, List<JAXBElement<? extends EntityStructure>> members, Boolean containsMobiitiIds) {
         // Récupération de tous les quay présents dans le netex
         List<Quay> tiamatQuays = members.stream()
                 .filter(member -> member.getValue() instanceof Quay)
@@ -210,7 +210,7 @@ public class NetexImporter {
                 .collect(Collectors.toList());
 
         List<org.rutebanken.tiamat.model.Quay> quaysParsed = mapQuaysToTiamatModel(tiamatQuays);
-        stopPlacesImportHandler.handleStopPlacesGeneralFrame(tiamatStopPlaces, importParams, members, atomicInteger, quaysParsed);
+        stopPlacesImportHandler.handleStopPlacesGeneralFrame(tiamatStopPlaces, importParams, members, atomicInteger, quaysParsed, containsMobiitiIds);
     }
 
     private void parkingsImport(ImportParams importParams, AtomicInteger atomicInteger, List<JAXBElement<? extends EntityStructure>> members, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {

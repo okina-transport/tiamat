@@ -179,7 +179,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             StopPlace newStopPlace = null;
             try {
-                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace);
+                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace, false);
             } catch (InterruptedException | ExecutionException e) {
                 logger.error("Problem while adding new stop place", e);
             }

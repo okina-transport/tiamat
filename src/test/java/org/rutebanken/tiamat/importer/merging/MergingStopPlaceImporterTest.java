@@ -97,7 +97,7 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
         SiteFrame siteFrame = new SiteFrame();
 
         // Import first stop place.
-        mergingStopPlaceImporter.importStopPlace(firstStopPlace);
+        mergingStopPlaceImporter.importStopPlace(firstStopPlace, false);
 
         StopPlace secondStopPlace = createStopPlace(name, longitude, latitude, null);
         secondStopPlace.getQuays().add(createQuay(name, longitude, latitude, null));
@@ -137,9 +137,9 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
     public void reproduceIssueWithCollectionNotAssosiatedWithAnySession() throws ExecutionException, InterruptedException {
         String name = "Skillebekkgata";
         StopPlace firstStopPlace = createStopPlaceWithQuay(name, 6, 60, "MOBIITI:StopPlace:11063200", "MOBIITI:Quay:11063200");
-        mergingStopPlaceImporter.importStopPlace(firstStopPlace);
+        mergingStopPlaceImporter.importStopPlace(firstStopPlace, false);
         StopPlace secondStopPlace = createStopPlaceWithQuay(name, 6, 60.0001, "MOBIITI:StopPlace:11063198", "MOBIITI:Quay:11063198");
-        mergingStopPlaceImporter.importStopPlace(secondStopPlace);
+        mergingStopPlaceImporter.importStopPlace(secondStopPlace, false);
     }
 
 //    /**

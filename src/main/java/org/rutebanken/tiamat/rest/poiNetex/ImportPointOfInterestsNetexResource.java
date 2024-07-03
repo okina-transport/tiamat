@@ -54,7 +54,7 @@ public class ImportPointOfInterestsNetexResource {
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         poiHelper.clearClassificationCache();
         try {
-            Response.ResponseBuilder builder = netexImporter.importProcess(incomingPublicationDelivery, provider, fileName, folder, JobImportType.NETEX_POI);
+            Response.ResponseBuilder builder = netexImporter.importProcess(incomingPublicationDelivery, provider, fileName, folder, false, JobImportType.NETEX_POI);
             return builder.build();
         } catch(Exception e){
             logger.error(e.getMessage(),e);

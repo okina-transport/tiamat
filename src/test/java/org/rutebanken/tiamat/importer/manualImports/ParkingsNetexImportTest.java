@@ -56,7 +56,7 @@ public class ParkingsNetexImportTest extends TiamatIntegrationTest {
         try (InputStream testInputStream = new FileInputStream(file)) {
             PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(testInputStream);
             Provider provider = Collections.singletonList(providerRepository.getProvider(1L)).get(0);
-            netexImporter.importProcessTest(incomingPublicationDelivery, String.valueOf(provider.getId()), fileName, JobImportType.NETEX_PARKING);
+            netexImporter.importProcessTest(incomingPublicationDelivery, String.valueOf(provider.getId()), fileName, false, JobImportType.NETEX_PARKING);
         }
     }
 

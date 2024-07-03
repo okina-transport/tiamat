@@ -66,7 +66,7 @@ public class TransactionalMergingStopPlacesImporterTest extends TiamatIntegratio
             stopPlacesCreated.add(stopPlace);
         }
 
-        siteFrameImporter.importStopPlaces(stopPlacesCreated, new AtomicInteger());
+        siteFrameImporter.importStopPlaces(stopPlacesCreated, new AtomicInteger(), false);
     }
 
 
@@ -116,7 +116,7 @@ public class TransactionalMergingStopPlacesImporterTest extends TiamatIntegratio
         sp.add(stopPlace);
 
         AtomicInteger counter = new AtomicInteger();
-        Collection<org.rutebanken.netex.model.StopPlace> importStopPlaces = siteFrameImporter.importStopPlaces(sp, counter);
+        Collection<org.rutebanken.netex.model.StopPlace> importStopPlaces = siteFrameImporter.importStopPlaces(sp, counter, false);
 
 
         assertThat(importStopPlaces).hasSize(1);

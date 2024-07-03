@@ -190,7 +190,7 @@ public class StopPlaceImportHandler {
                 lock.lock();
                 try {
                     if (importParams.importType == null || importParams.importType.equals(ImportType.MERGE)) {
-                        importedOrMatchedNetexStopPlaces = transactionalMergingStopPlacesImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated);
+                        importedOrMatchedNetexStopPlaces = transactionalMergingStopPlacesImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated, false);
                     } else if (importParams.importType.equals(ImportType.INITIAL)) {
                         importedOrMatchedNetexStopPlaces = parallelInitialStopPlaceImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated);
                     } else if (importParams.importType.equals(ImportType.MATCH)) {

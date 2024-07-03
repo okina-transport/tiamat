@@ -43,12 +43,13 @@ public class ImportStopPlacesNetexResource {
     public Response importStopPlacesNetexFile(@FormDataParam("file") InputStream inputStream,
                                           @FormDataParam("file_name") String fileName,
                                           @FormDataParam("provider") String provider,
-                                          @FormDataParam("folder") String folder)
+                                          @FormDataParam("folder") String folder,
+                                          @FormDataParam("containsMobiitiIds") Boolean containsMobiitiIds)
             throws IOException, IllegalArgumentException, JAXBException, SAXException {
         logger.info("Received Stop Places Netex publication delivery, starting to parse...");
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         try {
-            Response.ResponseBuilder builder = netexImporter.importProcess(incomingPublicationDelivery, provider, fileName, folder, JobImportType.NETEX_STOP_PlACE_QUAY);
+            Response.ResponseBuilder builder = netexImporter.importProcess(incomingPublicationDelivery, provider, fileName, folder, containsMobiitiIds, JobImportType.NETEX_STOP_PlACE_QUAY);
             return builder.build();
         } catch (NotAuthenticatedException | NotAuthorizedException e) {
             logger.debug("Access denied for publication delivery: " + e.getMessage(), e);

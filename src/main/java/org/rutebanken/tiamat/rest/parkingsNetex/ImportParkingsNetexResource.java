@@ -48,7 +48,7 @@ public class ImportParkingsNetexResource {
         logger.info("Received Parking Netex publication delivery, starting to parse...");
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         try {
-            Response.ResponseBuilder builder = netexImporter.importProcess(incomingPublicationDelivery, provider, fileName, folder, JobImportType.NETEX_PARKING);
+            Response.ResponseBuilder builder = netexImporter.importProcess(incomingPublicationDelivery, provider, fileName, folder, false, JobImportType.NETEX_PARKING);
             return builder.build();
         } catch (NotAuthenticatedException | NotAuthorizedException e) {
             logger.debug("Access denied for publication delivery: " + e.getMessage(), e);

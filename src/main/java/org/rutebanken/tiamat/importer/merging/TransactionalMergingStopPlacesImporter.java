@@ -49,7 +49,7 @@ public class TransactionalMergingStopPlacesImporter {
         this.topographicPlaceReferenceUpdater = topographicPlaceReferenceUpdater;
     }
 
-    public Collection<org.rutebanken.netex.model.StopPlace> importStopPlaces(List<StopPlace> stopPlaces, AtomicInteger stopPlacesCreated) {
+    public Collection<org.rutebanken.netex.model.StopPlace> importStopPlaces(List<StopPlace> stopPlaces, AtomicInteger stopPlacesCreated, Boolean containsMobiitiIds) {
 
         List<org.rutebanken.netex.model.StopPlace> createdStopPlaces = stopPlaces
                 .stream()
@@ -58,7 +58,7 @@ public class TransactionalMergingStopPlacesImporter {
                     org.rutebanken.netex.model.StopPlace importedStop;
                     try {
                         topographicPlaceReferenceUpdater.updateTopographicReference(stopPlace);
-                        importedStop = mergingStopPlaceImporter.importStopPlace(stopPlace);
+                        importedStop = mergingStopPlaceImporter.importStopPlace(stopPlace, containsMobiitiIds);
                     } catch (Exception e) {
                         throw new RuntimeException("Could not import stop place " + stopPlace, e);
                     }

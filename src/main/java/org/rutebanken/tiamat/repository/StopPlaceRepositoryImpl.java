@@ -1311,6 +1311,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     public boolean deleteAllStopPlacesQuaysByOrganisation(String organisation){
         Query query = entityManager.createNativeQuery("SELECT clean_orga(:organisation)");
         query.setParameter("organisation", organisation);
+        query.setHint("javax.persistence.query.timeout", 300000);
         return (boolean) query.getSingleResult();
     }
 

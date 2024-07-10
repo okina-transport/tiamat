@@ -1,19 +1,15 @@
 package org.rutebanken.tiamat.service.delete;
 
-import org.rutebanken.tiamat.model.PointOfInterestClassification;
-import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 import org.rutebanken.tiamat.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.math.BigInteger;
 
 @Service
 public class DeleteService {
@@ -24,12 +20,6 @@ public class DeleteService {
     private EntityManager entityManager;
 
     @Autowired
-    private PointOfInterestRepository pointOfInterestRepository;
-
-    @Autowired
-    private PointOfInterestOpeningHoursRepository pointOfInterestOpeningHoursRepository;
-
-    @Autowired
     PointOfInterestFacilitySetRepository pointOfInterestFacilitySetRepository;
 
     @Autowired
@@ -38,55 +28,43 @@ public class DeleteService {
     @Autowired
     ParkingRepository parkingRepository;
 
+    @Transactional
+    public void deleteAllPoi() {
+        try {
+            // Deleting value_items from point_of_interest_key_values if exists...
+            BigInteger countKeyValuesPoi = (BigInteger) entityManager.createNativeQuery("SELECT COUNT(*) FROM point_of_interest_key_values")
+                    .getSingleResult();
 
-    public boolean deleteAllPoi(){
+            if (countKeyValuesPoi.compareTo(BigInteger.ZERO) > 0) {
+                entityManager.createNativeQuery("DELETE FROM value_items WHERE value_id IN (SELECT key_values_id FROM point_of_interest_key_values)")
+                        .executeUpdate();
+            }
 
-        List<Long> listPoiId = pointOfInterestRepository.findAll().stream().map(IdentifiedEntity::getId).collect(Collectors.toList());
+            // Deleting value_items from point_of_interest_classification_key_values if exists...
+            BigInteger countKeyValuesClassification = (BigInteger) entityManager.createNativeQuery("SELECT COUNT(*) FROM point_of_interest_classification_key_values")
+                    .getSingleResult();
 
-        List<String> listValue = new ArrayList<>();
-        List<String> listEquipmentPlace = new ArrayList<>();
-        List<String> listClassification = new ArrayList<>();
+            if (countKeyValuesClassification.compareTo(BigInteger.ZERO) > 0) {
+                entityManager.createNativeQuery("DELETE FROM value_items WHERE value_id IN (SELECT key_values_id FROM point_of_interest_classification_key_values)")
+                        .executeUpdate();
+            }
 
-        if(!listPoiId.isEmpty()){
-            final Query query = entityManager.createNativeQuery("SELECT poikv.key_values_id FROM point_of_interest_key_values poikv WHERE poikv.point_of_interest_id IN :poilist");
-            query.setParameter("poilist", listPoiId);
-            listValue.addAll(query.getResultList());
-
-            final Query query3 = entityManager.createNativeQuery("SELECT poics.classifications_id FROM point_of_interest_classifications poics WHERE poics.point_of_interest_id IN :poilist");
-            query3.setParameter("poilist", listPoiId);
-            listClassification.addAll(query3.getResultList());
+            // Truncating point_of_interest and related tables...
+            entityManager.createNativeQuery("TRUNCATE TABLE point_of_interest CASCADE").executeUpdate();
+            logger.info("Point of interests deleted successfully");
+        } catch (Exception e) {
+            logger.error("Error occurred: ", e);
+            throw e;
         }
-
-        if(!listClassification.isEmpty()){
-            final Query query4 = entityManager.createNativeQuery("SELECT poickv.key_values_id FROM point_of_interest_classification_key_values poickv WHERE poickv.point_of_interest_classification_id IN :listClassification");
-            query4.setParameter("listClassification", listClassification);
-            listValue.addAll(query4.getResultList());
-        }
-
-        List<Long> listPoiOhDt = pointOfInterestOpeningHoursRepository.findAll().stream().map(IdentifiedEntity::getId).collect(Collectors.toList());
-
-        pointOfInterestRepository.deleteAll();
-
-        if(!listValue.isEmpty()){
-            final Query query5 = entityManager.createNativeQuery("DELETE FROM value_items vi WHERE vi.value_id IN :valuelist");
-            query5.setParameter("valuelist", listValue);
-            query5.executeUpdate();
-        }
-
-        List<PointOfInterestClassification> listPoicParent = pointOfInterestClassificationRepository.findAll().stream()
-                .filter(pointOfInterestClassification -> pointOfInterestClassification.getParent() != null).collect(Collectors.toList());
-        pointOfInterestClassificationRepository.deleteAll(listPoicParent);
-
-        pointOfInterestClassificationRepository.deleteAll();
-        pointOfInterestOpeningHoursRepository.deleteAll();
-        pointOfInterestFacilitySetRepository.deleteAll();
-
-        return true;
     }
 
-    public boolean deleteAllParkings(){
-
-        parkingRepository.deleteAll();
-        return true;
+    public void deleteAllParkings(){
+        try {
+            parkingRepository.deleteAll();
+            logger.info("Parkings deleted successfully");
+        } catch (Exception e) {
+            logger.error("Error occurred: ", e);
+            throw e;
+        }
     }
 }

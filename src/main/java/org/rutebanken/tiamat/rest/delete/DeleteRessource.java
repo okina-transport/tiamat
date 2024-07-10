@@ -26,9 +26,7 @@ public class DeleteRessource {
     @Path("/parkings")
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteAllParkings() throws IOException, IllegalArgumentException {
-
         deleteService.deleteAllParkings();
-        logger.info("Suppression parkings réussi");
         return Response.status(200).build();
     }
 
@@ -36,9 +34,7 @@ public class DeleteRessource {
     @Path("/poi")
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteAllPoi() throws IOException, IllegalArgumentException {
-
         deleteService.deleteAllPoi();
-        logger.info("Suppression poi réussi");
         return Response.status(200).build();
     }
 }

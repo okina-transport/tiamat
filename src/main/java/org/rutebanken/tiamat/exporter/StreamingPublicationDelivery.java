@@ -749,7 +749,7 @@ public class StreamingPublicationDelivery {
                 completeList.addAll(initialized);
                 pointOfInterestRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
                 totalPointOfInterestProcessed = totalPointOfInterestProcessed + batchIdsToExport.size();
-                logger.info("total poitn of interests processed:" + totalPointOfInterestProcessed);
+                logger.info("total point of interests processed:" + totalPointOfInterestProcessed);
             }
         }
 

@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import javax.xml.bind.JAXBElement;
 import java.math.BigInteger;
@@ -431,19 +432,34 @@ public class NetexMapper {
     }
 
     private void setCreatedTimeForAccessibilityStopPlace(org.rutebanken.tiamat.model.StopPlace stopPlace) {
-        if (stopPlace.getAccessibilityAssessment().getCreated() == null) stopPlace.getAccessibilityAssessment().setCreated(Instant.now());
-
-        stopPlace.getAccessibilityAssessment().getLimitations().forEach(limitation -> {
-            if (limitation.getCreated() == null) limitation.setCreated(Instant.now());
-        });
-
-        stopPlace.getQuays().forEach(quay -> {
-            if (quay.getAccessibilityAssessment().getCreated() == null) quay.getAccessibilityAssessment().setCreated(Instant.now());
-
-            quay.getAccessibilityAssessment().getLimitations().forEach(limitation -> {
-                if (limitation.getCreated() == null) limitation.setCreated(Instant.now());
+        if (stopPlace.getAccessibilityAssessment() != null) {
+            if (stopPlace.getAccessibilityAssessment().getCreated() == null) {
+                stopPlace.getAccessibilityAssessment().setCreated(Instant.now());
+            }
+            if (!CollectionUtils.isEmpty(stopPlace.getAccessibilityAssessment().getLimitations())) {
+                stopPlace.getAccessibilityAssessment().getLimitations().forEach(l -> {
+                    if (l.getCreated() == null) {
+                        l.setCreated(Instant.now());
+                    }
+                });
+            }
+        }
+        if (!CollectionUtils.isEmpty(stopPlace.getQuays())) {
+            stopPlace.getQuays().stream().forEach(q -> {
+                if (q.getAccessibilityAssessment() != null) {
+                    if (q.getAccessibilityAssessment().getCreated() == null) {
+                        q.getAccessibilityAssessment().setCreated(Instant.now());
+                    }
+                    if (!CollectionUtils.isEmpty(q.getAccessibilityAssessment().getLimitations())) {
+                        q.getAccessibilityAssessment().getLimitations().forEach(l -> {
+                            if (l.getCreated() == null) {
+                                l.setCreated(Instant.now());
+                            }
+                        });
+                    }
+                }
             });
-        });
+        }
     }
 
     public void parseToSetParkingProperties(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {

@@ -47,5 +47,7 @@ public interface StopPlaceRepository extends StopPlaceRepositoryCustom, EntityIn
 
     @Override
     Iterator<StopPlace> scrollStopPlaces(Set<Long> stopPlacePrimaryIds);
+
+    List<StopPlace> getStopPlaceWithQuaysWithoutPostCode();
 }
 

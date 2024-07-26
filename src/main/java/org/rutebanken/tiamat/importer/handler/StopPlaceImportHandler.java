@@ -18,12 +18,13 @@ package org.rutebanken.tiamat.importer.handler;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
-import org.rutebanken.tiamat.exporter.TariffZonesFromStopsExporter;
 import org.rutebanken.tiamat.exporter.TopographicPlacesExporter;
-import org.rutebanken.tiamat.externalapis.ApiProxyService;
+import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
+import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.importer.filter.StopPlaceTypeFilter;
 import org.rutebanken.tiamat.importer.filter.ZoneTopographicPlaceFilter;
 import org.rutebanken.tiamat.importer.initial.ParallelInitialStopPlaceImporter;
@@ -31,7 +32,6 @@ import org.rutebanken.tiamat.importer.matching.MatchingAppendingIdStopPlacesImpo
 import org.rutebanken.tiamat.importer.matching.StopPlaceIdMatcher;
 import org.rutebanken.tiamat.importer.merging.TransactionalMergingStopPlacesImporter;
 import org.rutebanken.tiamat.importer.modifier.StopPlacePostFilterSteps;
-import org.rutebanken.tiamat.importer.modifier.StopPlacePreSteps;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
@@ -43,14 +43,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.math.MathContext;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 @Component
@@ -76,13 +73,7 @@ public class StopPlaceImportHandler {
     private NetexMapper netexMapper;
 
     @Autowired
-    private StopPlacePreSteps stopPlacePreSteps;
-
-    @Autowired
     private ZoneTopographicPlaceFilter zoneTopographicPlaceFilter;
-
-    @Autowired
-    private TariffZonesFromStopsExporter tariffZonesFromStopsExporter;
 
     @Autowired
     private StopPlaceTypeFilter stopPlaceTypeFilter;
@@ -111,8 +102,6 @@ public class StopPlaceImportHandler {
     @Autowired
     private CacheProviderRepository providerRepository;
 
-    private ApiProxyService apiProxyService = new ApiProxyService();
-
     public void handleStops(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger stopPlacesCreatedMatchedOrUpdated, SiteFrame responseSiteframe) throws TiamatBusinessException {
         if (publicationDeliveryHelper.hasStops(netexSiteFrame)) {
             List<StopPlace> tiamatStops = netexMapper.mapStopsToTiamatModel(netexSiteFrame.getStopPlaces().getStopPlace_().stream()
@@ -124,14 +113,14 @@ public class StopPlaceImportHandler {
                     .stream()
                     .flatMap(stopPlace -> stopPlace.getQuays().stream())
                     .forEach(quay -> {
-                        String citycodeReverseGeocoding = null;
+                        DtoGeocode dtoGeocode = null;
                         try {
-                            citycodeReverseGeocoding = apiProxyService.getCitycodeByReverseGeocoding(new BigDecimal(quay.getCentroid().getCoordinate().y, MathContext.DECIMAL64), new BigDecimal(quay.getCentroid().getCoordinate().x, MathContext.DECIMAL64));
+                            dtoGeocode = ImporterUtils.getGeocodeDataByReverseGeocoding(quay.getCentroid().getCoordinate().x, quay.getCentroid().getCoordinate().y);
                         } catch (Exception e) {
                             logger.error("Erreur lors de la récupération du code postal du quay = " + quay.getId(), e);
                         }
-                        if (citycodeReverseGeocoding != null) {
-                            quay.setZipCode(citycodeReverseGeocoding);
+                        if (dtoGeocode != null && StringUtils.isNotEmpty(dtoGeocode.getCity())) {
+                            quay.setZipCode(dtoGeocode.getCityCode());
                         }
                     });
 

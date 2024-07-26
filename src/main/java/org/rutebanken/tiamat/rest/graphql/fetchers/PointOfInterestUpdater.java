@@ -21,8 +21,8 @@ import graphql.schema.DataFetchingEnvironment;
 import io.micrometer.core.instrument.util.StringUtils;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
-import org.rutebanken.tiamat.externalapis.ApiProxyService;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
+import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.*;
 import org.rutebanken.tiamat.rest.graphql.mappers.GeometryMapper;
@@ -36,7 +36,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -76,8 +75,6 @@ class PointOfInterestUpdater implements DataFetcher {
 
     @Autowired
     private GroupOfEntitiesMapper groupOfEntitiesMapper;
-
-    private ApiProxyService apiProxyService = new ApiProxyService();
 
 
     @Override
@@ -135,7 +132,7 @@ class PointOfInterestUpdater implements DataFetcher {
             updatedPointOfInterest.setCentroid(geoJsonPoint);
 
             try {
-                DtoGeocode dtoGeocode = apiProxyService.getGeocodeDataByReverseGeocoding(BigDecimal.valueOf(geoJsonPoint.getCoordinate().y), BigDecimal.valueOf(geoJsonPoint.getCoordinate().x));
+                DtoGeocode dtoGeocode = ImporterUtils.getGeocodeDataByReverseGeocoding(geoJsonPoint.getCoordinate().x, geoJsonPoint.getCoordinate().y);
                 if (StringUtils.isNotEmpty(dtoGeocode.getAddress())) {
                     updatedPointOfInterest.setAddress(dtoGeocode.getAddress());
                 }

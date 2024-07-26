@@ -6,7 +6,6 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
-import org.rutebanken.tiamat.externalapis.ApiProxyService;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
@@ -77,9 +76,6 @@ public class PointOfInterestCSVHelper {
 
     //Cache to store child classifications
     private Map<String, Map<String, PointOfInterestClassification>> childClassificationCache = new HashMap<>();
-
-
-    private ApiProxyService apiProxyService = new ApiProxyService();
 
 
     /**

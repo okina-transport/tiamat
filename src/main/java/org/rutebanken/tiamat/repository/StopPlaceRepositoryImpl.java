@@ -116,10 +116,6 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         return String.format(SQL_LEFT_JOIN_PARENT_STOP_TEMPLATE, Collections.nCopies(3, parentAlias).toArray());
     }
 
-    /**
-     * When selecting stop places and there are multiple versions of the same stop place, and you only need the highest version by number.
-     */
-    protected static final String SQL_MAX_VERSION_OF_STOP_PLACE = "s.version = (select max(sv.version) from stop_place sv where sv.netex_id = s.netex_id) ";
 
     /**
      * Check stop place or it's parent for match in geometry filter.
@@ -1430,6 +1426,26 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                     .setParameter("stopPlaceId", stopPlace.getId())
                     .executeUpdate();
         }
+    }
+
+    @Override
+    public List<StopPlace> getStopPlaceWithQuaysWithoutPostCode(){
+        final String queryString = "SELECT DISTINCT ON (sp.netex_id) sp.* " +
+                "FROM stop_place sp " +
+                "INNER JOIN ( " +
+                "SELECT netex_id, MAX(version) AS latest_version " +
+                "FROM stop_place " +
+                "GROUP BY netex_id " +
+                ") sp2 ON sp.netex_id = sp2.netex_id AND sp.version = sp2.latest_version " +
+                "JOIN stop_place_quays spq ON sp.id = spq.stop_place_id " +
+                "JOIN quay q ON spq.quays_id = q.id " +
+                "WHERE q.zip_code IS NULL " +
+                "AND (sp.to_date >= :pointInTime OR sp.to_date IS NULL) ";
+
+        Query stopPlaceTypedQuery = entityManager.createNativeQuery(queryString, StopPlace.class);
+        stopPlaceTypedQuery.setParameter("pointInTime", Date.from(Instant.now()));
+        List<StopPlace> results = stopPlaceTypedQuery.getResultList();
+        return results;
     }
 
 }

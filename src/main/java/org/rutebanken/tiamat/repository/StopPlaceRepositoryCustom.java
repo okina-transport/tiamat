@@ -125,4 +125,5 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     void deleteStopPlaceChildrenByParent(List<StopPlace> stopPlaces);
 
+    List<StopPlace> getStopPlaceWithQuaysWithoutPostCode();
 }

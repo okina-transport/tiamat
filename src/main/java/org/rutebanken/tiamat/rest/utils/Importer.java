@@ -6,7 +6,7 @@ import org.rutebanken.tiamat.general.ImportJobWorker;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.NetexImporter;
 import org.rutebanken.tiamat.model.job.Job;
-import org.rutebanken.tiamat.model.job.JobImportType;
+import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,11 +29,11 @@ public class Importer {
     private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("import-%d").build());
 
-    public static Job manageJob(Job job, JobStatus state, ImportParams importParams, Provider provider, String fileName, String folder, JobImportType type) {
+    public static Job manageJob(Job job, JobStatus state, ImportParams importParams, Provider provider, String fileName, String folder, JobType type) {
         return manageJob(job, state, importParams, provider, fileName, folder, null, type);
     }
 
-    public static Job manageJob(Job job, JobStatus state, ImportParams importParams, Provider provider, String fileName, String folder, Exception exception, JobImportType type) {
+    public static Job manageJob(Job job, JobStatus state, ImportParams importParams, Provider provider, String fileName, String folder, Exception exception, JobType type) {
         job.setStatus(state);
 
         if (state.equals(JobStatus.FAILED)) {
@@ -73,10 +73,10 @@ public class Importer {
         return job;
     }
 
-    private static Job setJobUrl(Job jobWithId, JobImportType type) {
-        if (type.equals(JobImportType.NETEX_PARKING)) {
+    private static Job setJobUrl(Job jobWithId, JobType type) {
+        if (type.equals(JobType.NETEX_PARKING)) {
             jobWithId.setJobUrl(ASYNC_IMPORT_PARKING_JOB_PATH + "/" + jobWithId.getId());
-        } else if (type.equals(JobImportType.NETEX_POI)) {
+        } else if (type.equals(JobType.NETEX_POI)) {
             jobWithId.setJobUrl(ASYNC_IMPORT_POI_JOB_PATH + "/" + jobWithId.getId());
         }
         return jobWithId;

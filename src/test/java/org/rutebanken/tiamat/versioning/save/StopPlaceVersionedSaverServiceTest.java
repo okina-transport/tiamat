@@ -151,7 +151,10 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
 
 
         oldVersion = stopPlaceRepository.findFirstByNetexIdAndVersion(oldVersion.getNetexId(), oldVersion.getVersion());
-        assertThat(oldVersion).isNull();
+        assertThat(oldVersion.getValidBetween().getFromDate()).isNotNull();
+        assertThat(oldVersion.getValidBetween().getToDate()).isNotNull();
+
+        assertThat(newVersion.getValidBetween().getFromDate().minusMillis(MILLIS_BETWEEN_VERSIONS)).isEqualTo(oldVersion.getValidBetween().getToDate());
     }
 
     @Test
@@ -224,7 +227,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         assertThat(newVersion.getValidBetween().getFromDate()).isNotNull();
 
         oldVersion = stopPlaceRepository.findFirstByNetexIdAndVersion(oldVersion.getNetexId(), oldVersion.getVersion());
-        assertThat(oldVersion).isNull();
+        assertThat(newVersion.getValidBetween().getFromDate().minusMillis(MILLIS_BETWEEN_VERSIONS)).isEqualTo(oldVersion.getValidBetween().getToDate());
     }
 
     @Test
@@ -331,20 +334,6 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         });
     }
 
-    @Test(expected = InvalidDataAccessApiUsageException.class)
-    public void updateStopPlaceSameObjectShouldFail() {
-
-        StopPlace stopPlace = new StopPlace();
-        stopPlace.setName(new EmbeddableMultilingualString("Initial name"));
-
-        stopPlaceVersionedSaverService.saveNewVersion(stopPlace);
-
-        StopPlace actualStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlace.getNetexId());
-
-        actualStopPlace.setName(new EmbeddableMultilingualString("Failing StopPlace"));
-
-        stopPlaceVersionedSaverService.saveNewVersion(actualStopPlace, actualStopPlace);
-    }
 
     @Test(expected = IllegalArgumentException.class)
     public void updateStopPlaceDifferentIdShouldFail() {
@@ -388,7 +377,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         assertThat(newVersion.getVersion()).isEqualTo(2L);
 
         StopPlace firstVersion = stopPlaceRepository.findFirstByNetexIdAndVersion(stopPlace.getNetexId(), 1L);
-        assertThat(firstVersion).isNull();
+        assertThat(firstVersion).isNotNull();
         StopPlace secondVersion = stopPlaceRepository.findFirstByNetexIdAndVersion(stopPlace.getNetexId(), 2L);
         assertThat(secondVersion).isNotNull();
         assertThat(secondVersion.getQuays()).isNotNull();

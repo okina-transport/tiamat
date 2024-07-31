@@ -20,13 +20,15 @@ public class CSVHelper {
     public static Iterable<CSVRecord> getRecords(InputStream csvFile) throws IOException {
 
 
-
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];
         int len;
+
         while ((len = csvFile.read(buffer)) > -1) {
             baos.write(buffer, 0, len);
         }
+
+
         baos.flush();
 
         InputStream is1 = new ByteArrayInputStream(baos.toByteArray());
@@ -45,7 +47,7 @@ public class CSVHelper {
                 .parse(reader);
     }
 
-    private static String guessDelimiter(String fileContent){
+    private static String guessDelimiter(String fileContent) {
 
         String[] lines = fileContent.split("\n");
         String firstLine = lines[0];
@@ -58,7 +60,6 @@ public class CSVHelper {
                 .count();
 
         return nbOfSemiColon > nbOfComma ? ";" : ",";
-
 
 
     }

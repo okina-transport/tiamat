@@ -1,7 +1,9 @@
 package org.rutebanken.tiamat.repository;
 
 import org.rutebanken.tiamat.model.job.Job;
+import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobStatus;
+import org.rutebanken.tiamat.model.job.JobType;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -30,6 +32,24 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
         cq.where(finalPredicate);
 
         return em.createQuery(cq).getResultList();
+    }
+
+    public List<Job> findByTypesAndAction(List<JobType> types, JobAction jobAction) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Job> cq = cb.createQuery(Job.class);
+        Root<Job> jobRoot = cq.from(Job.class);
+
+        cq.select(jobRoot);
+
+        Predicate typePredicate = jobRoot.get("type").in(types);
+        Predicate statusPredicate = cb.equal(jobRoot.get("action"), jobAction);
+
+        Predicate finalPredicate = cb.and(typePredicate, statusPredicate);
+        cq.where(finalPredicate);
+        cq.orderBy(cb.desc(jobRoot.get("id")));
+
+        return em.createQuery(cq).setMaxResults(10).getResultList();
+
     }
 
     public List<Job> findByReferentialAndAction(String referential, List<String> actions, JobStatus status) {

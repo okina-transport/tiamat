@@ -31,8 +31,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_EXPORT_JOB_PATH;
-
 @Entity
 @XmlRootElement
 @ApiModel(description = "Job model")
@@ -61,6 +59,12 @@ public class Job {
     @ApiModelProperty("Job status")
     private JobStatus status;
 
+    @Enumerated(EnumType.STRING)
+    private JobType type;
+
+    @Enumerated(EnumType.STRING)
+    private JobAction action;
+
     @Transient
     private ExportParams exportParams;
 
@@ -83,6 +87,7 @@ public class Job {
                 .omitNullValues()
                 .add("id", id)
                 .add("status", status)
+                .add("type", type)
                 .add("jobUrl", getJobUrl())
                 .add("fileName", fileName)
                 .add("subFolder", subFolder)
@@ -174,6 +179,22 @@ public class Job {
 
     public List<Link> getLinks() {
         return links;
+    }
+
+    public JobType getType() {
+        return type;
+    }
+
+    public void setType(JobType type) {
+        this.type = type;
+    }
+
+    public JobAction getAction() {
+        return action;
+    }
+
+    public void setAction(JobAction action) {
+        this.action = action;
     }
 
     @XmlType

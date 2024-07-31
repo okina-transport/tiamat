@@ -5,7 +5,7 @@ import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.importer.NetexImporter;
-import org.rutebanken.tiamat.model.job.JobImportType;
+import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.rutebanken.tiamat.rest.parkingsNetex.ImportParkingsNetexResource;
@@ -57,7 +57,7 @@ public class StopPlaceNetexImportTest extends TiamatIntegrationTest {
         try (InputStream testInputStream = new FileInputStream(file)) {
             PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(testInputStream);
             Provider provider = Collections.singletonList(providerRepository.getProvider(1L)).get(0);
-            netexImporter.importProcessTest(incomingPublicationDelivery, String.valueOf(provider.getId()), fileName, true, JobImportType.NETEX_STOP_PlACE_QUAY);
+            netexImporter.importProcessTest(incomingPublicationDelivery,  true);
         }
     }
 

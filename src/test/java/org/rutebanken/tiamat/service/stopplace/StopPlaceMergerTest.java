@@ -184,7 +184,19 @@ public class StopPlaceMergerTest extends TiamatIntegrationTest {
                 .as("merged stop place from date")
                 .isAfterOrEqualTo(atTestStart);
 
-        assertThat(stopPlaceBeforeMerging).isNull();
+        assertThat(mergedStopPlace.getValidBetween().getFromDate())
+                .as("merged stop place from date")
+                .isEqualTo(stopPlaceBeforeMerging.getValidBetween().getToDate().plusMillis(MILLIS_BETWEEN_VERSIONS))
+                .as("merged stop place from date should have version from date after test started")
+                .isAfterOrEqualTo(atTestStart);
+
+        assertThat(stopPlaceBeforeMerging.getValidBetween().getFromDate())
+                .as("old version of to-stopplace should not have changed from date")
+                .isEqualTo(toStopPlaceOriginalFromDate);
+
+        assertThat(stopPlaceBeforeMerging.getValidBetween().getToDate())
+                .as("old version of to-stopplace should have its to date updated")
+                .isAfterOrEqualTo(atTestStart);
     }
 
     @Test

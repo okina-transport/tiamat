@@ -26,11 +26,10 @@ import org.rutebanken.tiamat.importer.finder.PointOfInterestFromOriginalIdFinder
 import org.rutebanken.tiamat.importer.initial.ParallelInitialPointOfInterestImporter;
 import org.rutebanken.tiamat.importer.merging.TransactionalMergingPointOfInterestssImporter;
 import org.rutebanken.tiamat.model.job.Job;
-import org.rutebanken.tiamat.model.job.JobImportType;
+import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.repository.JobRepository;
-import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.rest.utils.Importer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +70,7 @@ public class PointOfInterestsImportHandler {
     @Autowired
     private PointOfInterestFromOriginalIdFinder pointOfInterestRepository;
 
-    public void handlePointOfInterests(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger poisCreatedOrUpdated, SiteFrame responseSiteframe, Provider provider, String fileName, String folder, Job job, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {
+    public void handlePointOfInterests(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger poisCreatedOrUpdated, SiteFrame responseSiteframe, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {
         List<org.rutebanken.tiamat.model.PointOfInterest> tiamatPointOfInterests = netexMapper.mapPointsOfInterestToTiamatModel(netexSiteFrame.getPointsOfInterest().getPointOfInterest());
 
         setOperatorPoiForGeneralFrame(generalOrganisations, responsibilitySets, tiamatPointOfInterests);
@@ -112,9 +111,6 @@ public class PointOfInterestsImportHandler {
                     new PointsOfInterestInFrame_RelStructure()
                             .withPointOfInterest(importedPointOfInterests));
         }
-
-        Job jobUpdated = Importer.manageJob(job, JobStatus.FINISHED, importParams, provider, fileName, folder,  null, JobImportType.NETEX_POI);
-        jobRepository.save(jobUpdated);
         logger.info("Mapped {} point of interests!!", tiamatPointOfInterests.size());
     }
 

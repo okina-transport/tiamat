@@ -84,11 +84,11 @@ public class JobsResources {
                 Job job = jobService.scheduledJob(subFolder, id);
 
                 // build response
-                if (job.getStatus().ordinal() <= JobInfo.STATUS.STARTED.ordinal()) {
+                if (JobStatus.PROCESSING.equals(job.getStatus())) {
                     JobInfo info = new JobInfo(job, true, uriInfo);
                     builder = Response.ok(info);
                 } else {
-                    builder = Response.seeOther(URI.create("/terminated_jobs/" + job.getId()));
+                    builder = Response.seeOther(URI.create("jobs/" + subFolder + "/terminated_jobs/" + job.getId()));
                 }
 
                 // add links

@@ -36,7 +36,7 @@ public class JobInfo {
 	private Date updated;
 
 	@XmlElement(name = "status", required = true)
-	private STATUS status;
+	private JobStatus status;
 
 	@XmlElement(name = "links")
 	private List<LinkInfo> linkInfos;
@@ -51,7 +51,7 @@ public class JobInfo {
 	public JobInfo(Job job, boolean addLink, UriInfo uriInfo) throws ServiceException {
 		id = job.getId();
 		started = job.getStarted() == null ? null : Date.from(job.getStarted());
-		status = STATUS.valueOf(job.getStatus().name());
+		status = job.getStatus();
 
 		if (addLink) {
 			linkInfos = new ArrayList<>();
@@ -97,10 +97,5 @@ public class JobInfo {
 		return null;
 	}
 
-	@XmlType(name = "jobStatus")
-	@XmlEnum(String.class)
-	public enum STATUS implements java.io.Serializable {
-		RESCHEDULED, SCHEDULED, STARTED, TERMINATED, FINISHED, CANCELED, ABORTED
-	}
 
 }

@@ -126,6 +126,7 @@ public class StopPlaceVersionedSaverService {
 
         if (existingVersion == null) {
             existingVersion = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
+
         }
 
         if (existingVersion != null && existingVersion.getNetexId() != null && newVersion.getNetexId() != null && !newVersion.getNetexId().equals(existingVersion.getNetexId())) {

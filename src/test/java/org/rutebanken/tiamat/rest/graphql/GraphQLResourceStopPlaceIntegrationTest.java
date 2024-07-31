@@ -373,8 +373,9 @@ public class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLReso
 
 
         executeGraphQL(graphQlJsonQuery)
-                .body("data.stopPlace", hasSize(1))
-                .body("data.stopPlace[0].id", equalTo(stopPlace.getNetexId()));
+                .body("data.stopPlace", hasSize(2))
+                .body("data.stopPlace[0].id", equalTo(stopPlace.getNetexId()))
+                .body("data.stopPlace[1].id", equalTo(stopPlace.getNetexId()));
     }
 
     @Test

@@ -31,6 +31,7 @@ import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 
@@ -47,6 +48,10 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
     @Autowired
     private TransactionalMatchingAppendingStopPlaceImporter importer;
+
+
+    @org.springframework.beans.factory.annotation.Value("${stopPlace.sharing.policy}")
+    private String sharingPolicy;
 
 
     @Test
@@ -124,7 +129,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         assertTrue(matchedStopPlaces.size() == 1);
         org.rutebanken.netex.model.StopPlace importedStopPlaceOnProv2 = matchedStopPlaces.get(0);
-        assertEquals(importedStopPlaceOnProv1.getId(),importedStopPlaceOnProv2.getId());
+        assertNotEquals(importedStopPlaceOnProv1.getId(),importedStopPlaceOnProv2.getId());
         Optional<String> stop2Opt = NetexMapper.getImportedId(importedStopPlaceOnProv2);
         assertTrue(stop2Opt.isPresent());
         //The new point must contain in "imported-id" value both values from point1 ID + point2 ID

@@ -17,8 +17,14 @@ package org.rutebanken.tiamat.repository;
 
 
 import org.rutebanken.tiamat.model.job.Job;
+import org.rutebanken.tiamat.model.job.JobAction;
+import org.rutebanken.tiamat.model.job.JobType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
+import java.util.List;
+
 public interface JobRepository extends PagingAndSortingRepository<Job, Long>, JobRepositoryCustom<Job>, JpaRepository<Job, Long> {
+
+    List<Job> findByTypesAndAction(List<JobType> types, JobAction jobAction);
 }

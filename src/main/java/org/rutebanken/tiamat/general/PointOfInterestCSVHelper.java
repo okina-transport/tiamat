@@ -98,6 +98,35 @@ public class PointOfInterestCSVHelper {
 
     }
 
+    public List<DtoPointOfInterest> filterPoisWithClassification(List<DtoPointOfInterest> dtoPointOfInterest){
+        return dtoPointOfInterest.stream()
+                .filter(poi -> StringUtils.isNotEmpty(poi.getAmenity()) ||  StringUtils.isNotEmpty(poi.getBuilding()) || StringUtils.isNotEmpty(poi.getHistoric())
+                        ||  StringUtils.isNotEmpty(poi.getLanduse()) ||  StringUtils.isNotEmpty(poi.getLeisure())
+                        ||  StringUtils.isNotEmpty(poi.getTourism()) ||StringUtils.isNotEmpty(poi.getOffice()))
+                .collect(Collectors.toList());
+
+
+
+    }
+
+
+    public void checkShops( List<DtoPointOfInterest> dtoPointOfInterest){
+        List<DtoPointOfInterest> nonShopPOI = dtoPointOfInterest.stream()
+                .filter(poi -> StringUtils.isEmpty(poi.getShop()))
+                .collect(Collectors.toList());
+
+        String nonShopString = nonShopPOI.stream()
+                .map(DtoPointOfInterest::getId)
+                .collect(Collectors.joining(","));
+
+        if (!nonShopPOI.isEmpty()){
+            String errorMsg = "Non shops POIs have been found in shop import:" + nonShopString;
+            logger.error(errorMsg);
+            throw new IllegalArgumentException(errorMsg);
+        }
+
+    }
+
 
     /**
      * Converts a raw string from CSV to a DTO object

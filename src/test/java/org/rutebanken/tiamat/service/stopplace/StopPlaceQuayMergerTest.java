@@ -171,9 +171,11 @@ public class StopPlaceQuayMergerTest extends TiamatIntegrationTest {
         StopPlace firstVersion = stopPlaceRepository.findFirstByNetexIdAndVersion(fromStopPlace.getNetexId(), 1);
         StopPlace secondVersion = stopPlaceRepository.findFirstByNetexIdAndVersion(fromStopPlace.getNetexId(), 2);
 
-        assertThat(firstVersion).isNull();
+        assertThat(firstVersion).isNotNull();
         assertThat(secondVersion).isNotNull();
+        assertThat(firstVersion.getValidBetween().getToDate()).as("first version to date should be after after from date").isAfter(firstVersion.getValidBetween().getFromDate());
         assertThat(secondVersion.getValidBetween().getToDate()).as("second version to date").isNull();
+        assertThat(firstVersion.getQuays()).hasSize(3);
         assertThat(secondVersion.getQuays()).hasSize(2);
 
     }
@@ -240,7 +242,10 @@ public class StopPlaceQuayMergerTest extends TiamatIntegrationTest {
 
         StopPlace previousVersionParentStopPlace = stopPlaceRepository.findFirstByNetexIdAndVersion(parentStopPlace.getNetexId(), parentStopPlace.getVersion());
 
-        assertThat(previousVersionParentStopPlace).isNull();
+        assertThat(previousVersionParentStopPlace.getValidBetween()).as("preivous version of parent stop valid between").isNotNull();
+        assertThat(previousVersionParentStopPlace.getValidBetween().getToDate())
+                .as("first version to date should be after after from date")
+                .isAfter(previousVersionParentStopPlace.getValidBetween().getFromDate());
         assertThat(actualParentStopPlace.getValidBetween().getToDate()).as("second version to date").isNull();
 
         StopPlace stopPlaceWithMergedQuays = childFromParentResolver.resolveChildFromParent(actualParentStopPlace, stopPlace.getNetexId(), 0L);
@@ -282,7 +287,7 @@ public class StopPlaceQuayMergerTest extends TiamatIntegrationTest {
         StopPlace thirdVersion = stopPlaceRepository.findFirstByNetexIdAndVersion(stopPlace.getNetexId(), 3);
 
         assertThat(firstVersion).isNotNull();
-        assertThat(secondVersion).isNull();
+        assertThat(secondVersion).isNotNull();
 
         assertThat(firstVersion.getQuays()).hasSize(3);
         assertThat(thirdVersion.getQuays()).hasSize(2);

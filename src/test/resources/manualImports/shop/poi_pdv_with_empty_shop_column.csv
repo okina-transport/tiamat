@@ -1,16 +1,16 @@
-@id;name;addr:housenumber;addr:street;addr:city;addr:postcode;@lon;@lat;amenity;building;historic;landuse;leisure;tourism;office;shop;LP_IMPORT_ID
-2000001;Gare ALBIGNY NEUVILLE;;PLACE DE LA GARE;ALBIGNY SUR SAONE;69250;4,832789;45,874928;;;;;;;;yes;193
-2000002;Gare VALENCE TGV RHON ALP SUD;;Lieu dit La Correspondance;ALIXAN;26300;4,978532;44,992582;;;;;;;;yes;359
-2000003;Tabac Presse;;335 route des fonderies royales;ALLEMOND;38114;6,040608;45,13216;;;;;;;;tobacco;622
-2000004;Presse Loto Le Dauphin;;4 rue de la Gorge;ALLEVARD;38580;6,073995;45,393494;;;;;;;;kiosk;451
-2000316;Office du Tourisme;;21 RUE LAURENT GAYET;ALLEVARD;38580;6,022023;45,432076;;;;;;;;;427
-2000628;Tabazar;;Place Ancelot;AMBIERLE;42820;3,89567;46,104178;;;;;;;;tobacco;35642
-2000006;Gare AMBERIEU;;Place de la Gare;AMBRONAY;;5,342287;45,953967;;;;;;;;yes;194
-2000007;Gare AMPLEPUIS;;PLACE DE LA GARE;AMPLEPUIS;69550;4,326768;45,971002;;;;;;;;yes;195
-2000008;Café Tabac Presse Le Bourbon;;Place Victor Hugo;ANDREZIEUX BOUTHEON;42160;4,270896;45,542243;;;;;;;;tobacco;163
-2000009;Cars Philibert;;ZAC Les communaux;ANDREZIEUX BOUTHEON;42160;4,2861;45,533032;;;;;;;;yes;166
-2000010;Tabac Presse;;1 rue Fernand Bonis;ANDREZIEUX BOUTHEON;42160;4,257554;45,526498;;;;;;;;tobacco;626
-2000011;Tabac Presse LOTO;;La Chapelle;ANDREZIEUX BOUTHEON;42160;4,260889;45,527728;;;;;;;;tobacco;680
-2000012;Gare ANNECY;;Place de la gare;ANNECY;74000;6,121788;45,901992;;;;;;;;yes;196
-2000013;BOUTIQUE SNCF ANNECY;;9 rue de carillons;ANNECY LE VIEUX;74940;6,141315;45,913139;;;;;;;;yes;135
-2000014;Gare ANNEMASSE;;11 Place de la gare;ANNEMASSE;74100;6,236452;46,199237;;;;;;;;yes;197
+@id;name;addr:housenumber;addr:street;addr:city;addr:postcode;@lon;@lat;amenity;building;historic;landuse;leisure;tourism;office;shop;LP_IMPORT_ID;operator
+2000001;Gare ALBIGNY NEUVILLE;;PLACE DE LA GARE;ALBIGNY SUR SAONE;69250;4,832789;45,874928;;;;;;;;yes;193;
+2000002;Gare VALENCE TGV RHON ALP SUD;;Lieu dit La Correspondance;ALIXAN;26300;4,978532;44,992582;;;;;;;;yes;359;
+2000003;Tabac Presse;;335 route des fonderies royales;ALLEMOND;38114;6,040608;45,13216;;;;;;;;tobacco;622;
+2000004;Presse Loto Le Dauphin;;4 rue de la Gorge;ALLEVARD;38580;6,073995;45,393494;;;;;;;;kiosk;451;
+2000316;Office du Tourisme;;21 RUE LAURENT GAYET;ALLEVARD;38580;6,022023;45,432076;;;;;;;;;427;
+2000628;Tabazar;;Place Ancelot;AMBIERLE;42820;3,89567;46,104178;;;;;;;;tobacco;35642;
+2000006;Gare AMBERIEU;;Place de la Gare;AMBRONAY;;5,342287;45,953967;;;;;;;;yes;194;
+2000007;Gare AMPLEPUIS;;PLACE DE LA GARE;AMPLEPUIS;69550;4,326768;45,971002;;;;;;;;yes;195;
+2000008;Café Tabac Presse Le Bourbon;;Place Victor Hugo;ANDREZIEUX BOUTHEON;42160;4,270896;45,542243;;;;;;;;tobacco;163;
+2000009;Cars Philibert;;ZAC Les communaux;ANDREZIEUX BOUTHEON;42160;4,2861;45,533032;;;;;;;;yes;166;
+2000010;Tabac Presse;;1 rue Fernand Bonis;ANDREZIEUX BOUTHEON;42160;4,257554;45,526498;;;;;;;;tobacco;626;
+2000011;Tabac Presse LOTO;;La Chapelle;ANDREZIEUX BOUTHEON;42160;4,260889;45,527728;;;;;;;;tobacco;680;
+2000012;Gare ANNECY;;Place de la gare;ANNECY;74000;6,121788;45,901992;;;;;;;;yes;196;
+2000013;BOUTIQUE SNCF ANNECY;;9 rue de carillons;ANNECY LE VIEUX;74940;6,141315;45,913139;;;;;;;;yes;135;
+2000014;Gare ANNEMASSE;;11 Place de la gare;ANNEMASSE;74100;6,236452;46,199237;;;;;;;;yes;197;

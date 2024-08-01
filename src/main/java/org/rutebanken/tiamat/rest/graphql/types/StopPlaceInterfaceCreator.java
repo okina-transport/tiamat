@@ -43,8 +43,8 @@ public class StopPlaceInterfaceCreator {
     @Autowired
     private TagObjectTypeCreator tagObjectTypeCreator;
 
-    @Autowired
-    private DataFetcher<List<GroupOfStopPlaces>> stopPlaceGroupsFetcher;
+//    @Autowired
+//    private DataFetcher<List<GroupOfStopPlaces>> stopPlaceGroupsFetcher;
 
     @Autowired
     private TagFetcher tagFetcher;
@@ -79,11 +79,12 @@ public class StopPlaceInterfaceCreator {
                 .name(TAGS)
                 .type(new GraphQLList(tagObjectTypeCreator.create()))
                 .dataFetcher(tagFetcher).build());
-        stopPlaceInterfaceFields.add(newFieldDefinition()
-                .name(STOP_PLACE_GROUPS)
-                .type(new GraphQLList(new GraphQLTypeReference(OUTPUT_TYPE_GROUP_OF_STOPPLACES)))
-                .dataFetcher(stopPlaceGroupsFetcher)
-                .build());
+        // disabled because not used and slows PDM search
+//        stopPlaceInterfaceFields.add(newFieldDefinition()
+//                .name(STOP_PLACE_GROUPS)
+//                .type(new GraphQLList(new GraphQLTypeReference(OUTPUT_TYPE_GROUP_OF_STOPPLACES)))
+//                .dataFetcher(stopPlaceGroupsFetcher)
+//                .build());
         return stopPlaceInterfaceFields;
     }
 

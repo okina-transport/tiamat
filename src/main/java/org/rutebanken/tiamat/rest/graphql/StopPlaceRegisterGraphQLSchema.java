@@ -134,9 +134,6 @@ public class StopPlaceRegisterGraphQLSchema {
     @Autowired
     DataFetcher stopPlaceFetcher;
 
-//    @Autowired
-//    private DataFetcher<Page<GroupOfStopPlaces>> groupOfStopPlacesFetcher;
-
     @Autowired
     private DataFetcher<GroupOfStopPlaces> groupOfStopPlacesUpdater;
 
@@ -368,14 +365,6 @@ public class StopPlaceRegisterGraphQLSchema {
                                 .type(new GraphQLNonNull(GraphQLString)))
                         .dataFetcher(tagFetcher)
                         .build())
-                // disabled because not used and slows PDM search
-//                .field(newFieldDefinition()
-//                        .name(GROUP_OF_STOP_PLACES)
-//                        .type(new GraphQLList(groupOfStopPlacesObjectType))
-//                        .description("Group of stop places")
-//                        .argument(createFindGroupOfStopPlacesArguments())
-//                        .dataFetcher(groupOfStopPlacesFetcher)
-//                        .build())
                 .field(newFieldDefinition()
                         .name(TARIFF_ZONES)
                         .type(new GraphQLList(tariffZoneObjectType))

@@ -28,6 +28,7 @@ import org.rutebanken.tiamat.rest.dto.DtoParking;
 import org.rutebanken.tiamat.rest.dto.DtoPointOfInterest;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.rutebanken.tiamat.rest.utils.StreamUtils;
+import org.rutebanken.tiamat.service.batch.MissingPostCodeService;
 import org.rutebanken.tiamat.service.parking.BikeParkingsImportedService;
 import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
 import org.rutebanken.tiamat.service.parking.RentalBikeParkingsImportedService;
@@ -63,10 +64,15 @@ public class ImportJobWorker implements Runnable {
     private ParkingsImportedService parkingsImportedService;
     private BikeParkingsImportedService bikeParkingsImportedService;
     private RentalBikeParkingsImportedService rentalBikeparkingsImportedService;
-
+    private MissingPostCodeService missingPostalCodeService;
 
     public ImportJobWorker(Job job) {
         this.job = job;
+    }
+
+    public ImportJobWorker(Job job, JobRepository jobRepository) throws IOException {
+        this.job = job;
+        this.jobRepository = jobRepository;
     }
 
     public ImportJobWorker(Job job, InputStream inputStream, JobRepository jobRepository) throws IOException {
@@ -148,6 +154,9 @@ public class ImportJobWorker implements Runnable {
                 case NETEX_PARKING:
                     launchNetexParkingImport();
                     break;
+                case MISSING_POSTAL_CODE:
+                    launchMissingPostalCodeService();
+                    break;
                 default:
                     logger.warn("No process associated to this job type: {}", job.getType());
             }
@@ -227,6 +236,9 @@ public class ImportJobWorker implements Runnable {
 
     }
 
+    private void launchMissingPostalCodeService() {
+        missingPostalCodeService.getMissingPostCode();
+    }
 
     public void setParkAndRideDetection(boolean parkAndRideDetection) {
         this.parkAndRideDetection = parkAndRideDetection;
@@ -262,5 +274,9 @@ public class ImportJobWorker implements Runnable {
 
     public void setPoiHelper(PointOfInterestCSVHelper poiHelper) {
         this.poiHelper = poiHelper;
+    }
+
+    public void setMissingPostalCodeService(MissingPostCodeService missingPostalCodeService) {
+        this.missingPostalCodeService = missingPostalCodeService;
     }
 }

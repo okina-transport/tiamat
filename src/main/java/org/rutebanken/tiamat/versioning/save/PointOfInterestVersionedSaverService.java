@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.versioning.save;
 
+import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
@@ -32,6 +33,9 @@ import java.time.Instant;
 public class PointOfInterestVersionedSaverService {
 
     private static final Logger logger = LoggerFactory.getLogger(PointOfInterestVersionedSaverService.class);
+
+    @Autowired
+    private UsernameFetcher usernameFetcher;
 
     @Autowired
     private PointOfInterestRepository poiRepository;
@@ -54,7 +58,6 @@ public class PointOfInterestVersionedSaverService {
             newVersion.setCreated(existing.getCreated());
             newVersion.setChanged(Instant.now());
             newVersion.setVersion(existing.getVersion());
-
             poiRepository.delete(existing);
         } else {
             newVersion.setCreated(Instant.now());
@@ -67,6 +70,21 @@ public class PointOfInterestVersionedSaverService {
         result = poiRepository.save(newVersion);
 
         logger.info("Saved point of interest property {}, version {}", result.getNetexId(), result.getVersion());
+
+        metricsService.registerEntitySaved(newVersion.getClass());
+        return result;
+    }
+
+    public PointOfInterest saveNewVersionForPostalCodeProcess(PointOfInterest newVersion) {
+
+        PointOfInterest result;
+        newVersion.setValidBetween(null);
+        versionIncrementor.initiateOrIncrement(newVersion);
+        versionIncrementor.initiateOrIncrementAccessibilityAssesmentVersion(newVersion);
+        newVersion.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
+        result = poiRepository.save(newVersion);
+
+        logger.info("Saved POI {}, version {}, name {}", result.getNetexId(), result.getVersion(), result.getName());
 
         metricsService.registerEntitySaved(newVersion.getClass());
         return result;

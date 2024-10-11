@@ -149,7 +149,7 @@ public class MissingPostCodeService {
             logger.info("Code postal manquant pour le POI : {}", nameIdPoi);
         } else {
             pointOfInterest.setPostalCode(geocodeData.getPostCode());
-            pointOfInterestVersionedSaverService.saveNewVersion(pointOfInterest);
+            pointOfInterestVersionedSaverService.saveNewVersionForPostalCodeProcess(pointOfInterest);
             nbPostCodePOI++;
         }
     }

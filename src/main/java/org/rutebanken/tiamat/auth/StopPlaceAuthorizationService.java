@@ -107,7 +107,7 @@ public class StopPlaceAuthorizationService {
                         existingChildrenIds, newVersion.getNetexId(), mustBeAuthorizedToEditTheseChildren);
             }
         } else {
-            if (authentication.getAuthorities().stream().noneMatch(
+            if (authentication == null || authentication.getAuthorities().stream().noneMatch(
                     authority -> (KC_ROLE_PREFIX + ROLE_EDIT_STOPS).equals(authority.getAuthority()))) {
                 authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Collections.singletonList(newVersion));
             }

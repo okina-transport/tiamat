@@ -79,6 +79,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest {
 
+    private static final String USERNAME = "toto";
+
     @Qualifier("syncStreamingPublicationDelivery")
     @Autowired
     private StreamingPublicationDelivery streamingPublicationDelivery;
@@ -158,7 +160,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
                 .setProviderId(provider.getId())
                 .build();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        Job job = asyncPublicationDeliveryExporter.startExportJob(exportParams);
+        Job job = asyncPublicationDeliveryExporter.startExportJob(USERNAME, exportParams);
 
 
         streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId());
@@ -246,7 +248,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
                 .setProviderId(provider.getId())
                 .build();
 
-        Job job = asyncPublicationDeliveryExporter.startExportJob(exportParams);
+        Job job = asyncPublicationDeliveryExporter.startExportJob("", exportParams);
 
         streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId());
         asyncPublicationDeliveryExporter.streamingPublicationDelivery = streamingPublicationDelivery;
@@ -352,7 +354,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
                 .setProviderId(provider.getId())
                 .build();
 
-        Job job = asyncPublicationDeliveryExporter.startExportJob(exportParams);
+        Job job = asyncPublicationDeliveryExporter.startExportJob("", exportParams);
 
         streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId());
 
@@ -494,7 +496,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
                 .setProviderId(provider.getId())
                 .build();
 
-        Job job = asyncPublicationDeliveryExporter.startExportJob(exportParams);
+        Job job = asyncPublicationDeliveryExporter.startExportJob("", exportParams);
 
         streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId());
 

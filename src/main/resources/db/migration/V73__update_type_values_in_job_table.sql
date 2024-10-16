@@ -1,0 +1,1 @@
+UPDATE job set type='NETEX_STOP_PLACE_QUAY' where type='NETEX_STOP_PlACE_QUAY'

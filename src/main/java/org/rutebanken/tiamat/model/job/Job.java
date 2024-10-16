@@ -74,6 +74,8 @@ public class Job {
     @Transient
     private List<Link> links = new ArrayList<Link>();
 
+    private String userName;
+
     public Job() {
     }
 
@@ -94,6 +96,7 @@ public class Job {
                 .add("started", started)
                 .add("finished", finished)
                 .add("message", message)
+                .add("username", userName)
                 .toString();
     }
 
@@ -195,6 +198,14 @@ public class Job {
 
     public void setAction(JobAction action) {
         this.action = action;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 
     @XmlType

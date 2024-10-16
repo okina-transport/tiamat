@@ -28,6 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class JobTest extends TiamatIntegrationTest {
 
+    private static final String USERNAME = "username";
+
     @Autowired
     private JobRepository jobRepository;
 
@@ -35,10 +37,13 @@ public class JobTest extends TiamatIntegrationTest {
     public void saveAndLoadExportJob() {
         Job job = new Job();
         job.setStatus(JobStatus.PROCESSING);
+        job.setUserName(USERNAME);
         jobRepository.save(job);
 
         Optional<Job> actual = jobRepository.findById(job.getId());
         assertThat(actual).isPresent();
+        assertThat(actual.get().getStatus()).isEqualTo(JobStatus.PROCESSING);
+        assertThat(actual.get().getUserName()).isEqualTo("username");
     }
 
 }

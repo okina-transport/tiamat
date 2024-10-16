@@ -99,13 +99,13 @@ public class ImportStopPlacesNetexResource {
 
         Job job = new Job();
         job.setFileName(fileName);
-        job.setType(JobType.NETEX_STOP_PlACE_QUAY);
+        job.setType(JobType.NETEX_STOP_PLACE_QUAY);
         job.setAction(JobAction.IMPORT);
         job.setStatus(JobStatus.PROCESSING);
         job.setStarted(Instant.now());
         job.setSubFolder(folder);
         jobRepository.save(job);
-        logger.info("Import stop place netex:" + fileName);
+        logger.info("Import stop place netex: {}", fileName);
         ImportJobWorker importJobWorker = new ImportJobWorker(job, publicationDeliveryUnmarshaller, inputStream, containsMobiitiIds, jobRepository, netexImporter, provider, authentication);
         importService.submit(importJobWorker);
 
@@ -122,7 +122,7 @@ public class ImportStopPlacesNetexResource {
     @Path("/stop_place_import_list")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getStopPlaceImportList() {
-        List<JobType> poiTypes = Arrays.asList(JobType.NETEX_STOP_PlACE_QUAY);
+        List<JobType> poiTypes = List.of(JobType.NETEX_STOP_PLACE_QUAY);
         try {
             List<Job> foundJobs = jobRepository.findByTypesAndAction(poiTypes, JobAction.IMPORT);
             return Response.ok(foundJobs).build();

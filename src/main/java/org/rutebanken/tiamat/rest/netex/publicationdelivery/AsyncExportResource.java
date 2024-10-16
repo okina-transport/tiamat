@@ -21,10 +21,20 @@ import io.swagger.annotations.Api;
 import org.rutebanken.tiamat.exporter.AsyncPublicationDeliveryExporter;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.job.Job;
+import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobStatus;
+import org.rutebanken.tiamat.model.job.JobType;
+import org.rutebanken.tiamat.repository.JobRepository;
+import org.rutebanken.tiamat.repository.JobSpecification;
+import org.rutebanken.tiamat.rest.netex.publicationdelivery.mapper.NetexExportSummaryMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -34,6 +44,8 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 
+import static org.rutebanken.tiamat.repository.JobSpecification.jobActionFilter;
+import static org.rutebanken.tiamat.repository.JobSpecification.jobTypeFilter;
 import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_EXPORT_JOB_PATH;
 
 /**
@@ -50,9 +62,15 @@ public class AsyncExportResource {
 
     private final AsyncPublicationDeliveryExporter asyncPublicationDeliveryExporter;
 
+    private final JobRepository jobRepository;
+
+    private final NetexExportSummaryMapper netexExportSummaryMapper;
+
     @Autowired
-    public AsyncExportResource(AsyncPublicationDeliveryExporter asyncPublicationDeliveryExporter) {
+    public AsyncExportResource(AsyncPublicationDeliveryExporter asyncPublicationDeliveryExporter, JobRepository jobRepository, NetexExportSummaryMapper netexExportSummaryMapper) {
         this.asyncPublicationDeliveryExporter = asyncPublicationDeliveryExporter;
+        this.jobRepository = jobRepository;
+        this.netexExportSummaryMapper = netexExportSummaryMapper;
     }
 
     @GET
@@ -95,8 +113,8 @@ public class AsyncExportResource {
 
     @GET
     @Path("initiate")
-    public Response asyncExport(@BeanParam ExportParams exportParams) {
-        Job job = asyncPublicationDeliveryExporter.startExportJob(exportParams);
+    public Response asyncExport(@HeaderParam("RutebankenUser") String username, @BeanParam ExportParams exportParams) {
+        Job job = asyncPublicationDeliveryExporter.startExportJob(username, exportParams);
         return Response.ok(job).build();
     }
 
@@ -128,6 +146,29 @@ public class AsyncExportResource {
             e.printStackTrace();
         }
         return Response.ok(jsonString).build();
+    }
+
+    @GET
+    @Path("stop-place-summary/{providerName}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAllStopPlaceExports(@PathParam("providerName") String providerName, @HeaderParam("maxNbResults") Integer maxNbResults) {
+        try {
+            Specification<Job> jobActionFilter = jobActionFilter(JobAction.EXPORT);
+            Specification<Job> jobTypeFilter = jobTypeFilter(JobType.NETEX_STOP_PLACE_QUAY);
+            Specification<Job> providerFilter = JobSpecification.providerFilter(providerName);
+
+            Specification<Job> combinedFilter = Specification.where(jobActionFilter)
+                    .and(jobTypeFilter)
+                    .and(providerFilter);
+
+            Pageable pageable = PageRequest.of(0, maxNbResults, Sort.Direction.DESC, "started");
+            Page<Job> foundJobs = jobRepository.findAll(combinedFilter, pageable);
+            return Response.ok(netexExportSummaryMapper.mapJobToExportSummary(foundJobs.toList())).build();
+        } catch(Exception e) {
+            logger.error("Error getting netex stop exports for provider {}", providerName, e);
+        }
+
+        return Response.status(500).build();
     }
 
     @GET

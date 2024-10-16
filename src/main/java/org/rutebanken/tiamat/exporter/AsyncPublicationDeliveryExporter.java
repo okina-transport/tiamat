@@ -21,7 +21,9 @@ import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.general.ExportJobWorker;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.job.Job;
+import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobStatus;
+import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.repository.ProviderRepository;
@@ -103,10 +105,11 @@ public class AsyncPublicationDeliveryExporter {
     /**
      * Start export job with upload to google cloud storage
      *
+     * @param username
      * @param exportParams search params for stops
      * @return export job with information about the started process
      */
-    public Job startExportJob(ExportParams exportParams) {
+    public Job startExportJob(String username, ExportParams exportParams) {
 
         Iterable<Provider> providers;
 
@@ -120,7 +123,9 @@ public class AsyncPublicationDeliveryExporter {
                 job.setStarted(Instant.now());
                 job.setExportParams(exportParams);
                 job.setSubFolder(provider.name);
-
+                job.setUserName(username);
+                job.setAction(JobAction.EXPORT);
+                job.setType(JobType.NETEX_STOP_PLACE_QUAY);
                 LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
                 jobRepository.save(job);
                 String idSite = provider.getChouetteInfo().getCodeIdfm();

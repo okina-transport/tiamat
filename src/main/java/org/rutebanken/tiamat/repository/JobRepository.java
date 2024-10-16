@@ -20,11 +20,14 @@ import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 import java.util.List;
 
-public interface JobRepository extends PagingAndSortingRepository<Job, Long>, JobRepositoryCustom<Job>, JpaRepository<Job, Long> {
+public interface JobRepository extends PagingAndSortingRepository<Job, Long>, JobRepositoryCustom<Job>, JpaRepository<Job, Long>,
+        JpaSpecificationExecutor<Job> {
 
     List<Job> findByTypesAndAction(List<JobType> types, JobAction jobAction);
+
 }

@@ -148,7 +148,7 @@ public class ImportJobWorker implements Runnable {
                 case NETEX_POI:
                     launchNetexPoiImport();
                     break;
-                case NETEX_STOP_PlACE_QUAY:
+                case NETEX_STOP_PLACE_QUAY:
                     launchNetexStopPlaceImport();
                     break;
                 case NETEX_PARKING:

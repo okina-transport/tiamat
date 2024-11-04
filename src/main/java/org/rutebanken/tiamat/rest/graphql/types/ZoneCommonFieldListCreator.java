@@ -19,6 +19,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
 import org.rutebanken.tiamat.rest.graphql.fetchers.KeyValuesDataFetcher;
 import org.rutebanken.tiamat.rest.graphql.fetchers.OriginalIdsDataFetcher;
+import org.rutebanken.tiamat.rest.graphql.fetchers.OtherTransportModesFetcher;
 import org.rutebanken.tiamat.rest.graphql.fetchers.PolygonFetcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,9 @@ public class ZoneCommonFieldListCreator {
 
     @Autowired
     private KeyValuesDataFetcher keyValuesDataFetcher;
+
+    @Autowired
+    private OtherTransportModesFetcher otherTransportModesFetcher;
 
     @Autowired
     private PolygonFetcher polygonFetcher;

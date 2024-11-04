@@ -443,6 +443,8 @@ public class GraphQLNames {
     public static final String TRANSPORT_MODE = "transportMode";
     public static final String TRANSPORT_MODE_TYPE = "TransportModeType";
     public static final String SUBMODE = "submode";
+    public static final String OTHER_TRANSPORT_MODE = "otherTransportModes";
+    public static final String OTHER_TRANSPORT_MODE_TYPE = "OtherTransportModesType";
     public static final String SUBMODE_TYPE = "SubmodeType";
 
     public static final String FIND_STOPPLACE = "stopPlace";

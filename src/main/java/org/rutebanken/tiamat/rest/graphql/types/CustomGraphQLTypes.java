@@ -73,6 +73,7 @@ public class CustomGraphQLTypes {
     public static GraphQLEnumType genderTypeEnum = createCustomEnumType(GENDER, GenderLimitationEnumeration.class);
     public static GraphQLEnumType nameTypeEnum = createCustomEnumType(NAME_TYPE, NameTypeEnumeration.class);
     public static GraphQLEnumType allVehiclesModesOfTransportationEnum = createCustomEnumType(TRANSPORT_MODE_TYPE, VehicleModeEnumeration.class);
+    public static GraphQLEnumType otherTransportModes = createCustomEnumType(OTHER_TRANSPORT_MODE_TYPE, VehicleModeEnumeration.class);
     public static GraphQLEnumType busSubmodeType = createCustomEnumType("BusSubmodeType", BusSubmodeEnumeration.class);
     public static GraphQLEnumType tramSubmodeType = createCustomEnumType("TramSubmodeType", TramSubmodeEnumeration.class);
     public static GraphQLEnumType railSubmodeType = createCustomEnumType("RailSubmodeType", RailSubmodeEnumeration.class);

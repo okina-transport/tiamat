@@ -16,8 +16,7 @@
 package org.rutebanken.tiamat.rest.graphql.types;
 
 import graphql.schema.*;
-import org.rutebanken.tiamat.model.GroupOfStopPlaces;
-import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.rest.graphql.fetchers.OtherTransportModesFetcher;
 import org.rutebanken.tiamat.rest.graphql.fetchers.StopPlaceTariffZoneFetcher;
 import org.rutebanken.tiamat.rest.graphql.fetchers.TagFetcher;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +32,7 @@ import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.ALTERNATIVE_NAMES;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.TARIFF_ZONES;
 import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.alternativeNameObjectType;
+import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.otherTransportModes;
 
 @Component
 public class StopPlaceInterfaceCreator {
@@ -45,6 +45,9 @@ public class StopPlaceInterfaceCreator {
 
     @Autowired
     private TagFetcher tagFetcher;
+
+    @Autowired
+    private OtherTransportModesFetcher otherTransportModesFetcher;
 
     public List<GraphQLFieldDefinition> createCommonInterfaceFields(GraphQLObjectType tariffZoneObjectType,
                                                               GraphQLObjectType topographicPlaceObjectType,
@@ -76,6 +79,11 @@ public class StopPlaceInterfaceCreator {
                 .name(TAGS)
                 .type(new GraphQLList(tagObjectTypeCreator.create()))
                 .dataFetcher(tagFetcher).build());
+        stopPlaceInterfaceFields.add(newFieldDefinition()
+                .name(OTHER_TRANSPORT_MODE)
+                .type(new GraphQLList(otherTransportModes))
+                .dataFetcher(otherTransportModesFetcher)
+                .build());
         return stopPlaceInterfaceFields;
     }
 

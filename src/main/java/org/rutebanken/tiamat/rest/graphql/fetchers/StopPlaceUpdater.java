@@ -18,20 +18,15 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import org.rutebanken.tiamat.model.ModificationEnumeration;
+import org.rutebanken.tiamat.model.*;
 import org.apache.commons.lang3.StringUtils;
-import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.lock.MutateLock;
-import org.rutebanken.tiamat.model.Quay;
-import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.repository.CacheProviderRepository;
 import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.rest.graphql.helpers.CleanupHelper;
 import org.rutebanken.tiamat.rest.graphql.mappers.StopPlaceMapper;
 import org.rutebanken.tiamat.service.Preconditions;
 import org.rutebanken.tiamat.service.Renamer;
-import org.rutebanken.tiamat.service.stopplace.StopPlaceRenamer;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
@@ -41,7 +36,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CHILDREN;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CREATE_MULTI_MODAL_STOPPLACE;
@@ -155,6 +149,12 @@ class StopPlaceUpdater implements DataFetcher {
                     hasValuesChanged |= !childStopsUpdated.isEmpty();
                 } else {
                     childStopsUpdated = new HashSet<>();
+                }
+
+                List<VehicleModeEnumeration> newOtherTransportModes = (List<VehicleModeEnumeration>) input.get("otherTransportModes");
+                if (newOtherTransportModes != null && !newOtherTransportModes.equals(updatedStopPlace.getOtherTransportModes())) {
+                    updatedStopPlace.getOtherTransportModes().clear();
+                    updatedStopPlace.getOtherTransportModes().addAll(newOtherTransportModes);
                 }
 
                 if (hasValuesChanged) {

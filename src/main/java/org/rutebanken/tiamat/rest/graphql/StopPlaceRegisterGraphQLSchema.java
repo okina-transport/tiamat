@@ -15,16 +15,7 @@
 
 package org.rutebanken.tiamat.rest.graphql;
 
-import graphql.schema.DataFetcher;
-import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInputObjectField;
-import graphql.schema.GraphQLInputObjectType;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLSchema;
+import graphql.schema.*;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.rest.graphql.fetchers.AuthorizationCheckDataFetcher;
 import org.rutebanken.tiamat.rest.graphql.fetchers.TagFetcher;
@@ -898,7 +889,6 @@ public class StopPlaceRegisterGraphQLSchema {
                 .build();
     }
 
-
     private GraphQLInputObjectType createStopPlaceInputObjectType(List<GraphQLInputObjectField> commonInputFieldsList,
                                                                   GraphQLInputObjectType topographicPlaceInputObjectType,
                                                                   GraphQLInputObjectType quayObjectInputType,
@@ -968,6 +958,12 @@ public class StopPlaceRegisterGraphQLSchema {
         commonInputFieldsList.add(newInputObjectField().name(ALTERNATIVE_NAMES).type(new GraphQLList(alternativeNameInputObjectType)).build());
         commonInputFieldsList.add(newInputObjectField().name(PLACE_EQUIPMENTS).type(equipmentInputType).build());
         commonInputFieldsList.add(newInputObjectField().name(KEY_VALUES).type(new GraphQLList(keyValuesObjectInputType)).build());
+
+        commonInputFieldsList.add(newInputObjectField()
+                .name(OTHER_TRANSPORT_MODE)
+                .type(new GraphQLList(vehicleModeEnumType))
+                .build());
+
         commonInputFieldsList.add(
                 newInputObjectField()
                         .name(ACCESSIBILITY_ASSESSMENT)
@@ -978,6 +974,22 @@ public class StopPlaceRegisterGraphQLSchema {
         return commonInputFieldsList;
     }
 
+    public static GraphQLEnumType vehicleModeEnumType = GraphQLEnumType.newEnum()
+            .name("VehicleModeEnumeration")
+            .value("air", VehicleModeEnumeration.AIR)
+            .value("coach", VehicleModeEnumeration.COACH)
+            .value("lift", VehicleModeEnumeration.LIFT)
+            .value("bus", VehicleModeEnumeration.BUS)
+            .value("rail", VehicleModeEnumeration.RAIL)
+            .value("ferry", VehicleModeEnumeration.FERRY)
+            .value("funicular", VehicleModeEnumeration.FUNICULAR)
+            .value("metro", VehicleModeEnumeration.METRO)
+            .value("cableway", VehicleModeEnumeration.CABLEWAY)
+            .value("tram", VehicleModeEnumeration.TRAM)
+            .value("water", VehicleModeEnumeration.WATER)
+            .value("trolleyBus", VehicleModeEnumeration.TROLLEY_BUS)
+            .value("other", VehicleModeEnumeration.OTHER)
+            .build();
 
     private GraphQLInputObjectType createQuayInputObjectType(List<GraphQLInputObjectField> graphQLCommonInputObjectFieldsList) {
         return newInputObject()

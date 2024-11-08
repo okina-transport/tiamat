@@ -9,7 +9,7 @@ public class DtoParking {
     private String id;
     private String name;
     private String insee;
-    private String adress;
+    private String address;
     private String url;
     private String userType;
     private String free;
@@ -39,11 +39,11 @@ public class DtoParking {
     private String hookType;
     private String operator;
 
-    public DtoParking(String id, String name, String insee, String adress, String url, String userType, String free, String nbOfPlaces, String nbOfPr, String disabledParkingNb, String electricVehicleNb, String bikeNb, String electricBikesNb, String carSharingNb, String motorcycleNb, String carPoolingNb, String maxHeight, String siretNumber, String xlong, String ylat, String disabledParkingPrice, String oneHourPrice, String twoHoursPrice, String threeHoursPrice, String fourHoursPrice, String twentyFourHoursPrice, String residentSubscription, String nonResidentSubscription, String workType, String info, String operator) {
+    public DtoParking(String id, String name, String insee, String address, String url, String userType, String free, String nbOfPlaces, String nbOfPr, String disabledParkingNb, String electricVehicleNb, String bikeNb, String electricBikesNb, String carSharingNb, String motorcycleNb, String carPoolingNb, String maxHeight, String siretNumber, String xlong, String ylat, String disabledParkingPrice, String oneHourPrice, String twoHoursPrice, String threeHoursPrice, String fourHoursPrice, String twentyFourHoursPrice, String residentSubscription, String nonResidentSubscription, String workType, String info, String operator) {
         this.id = id;
         this.name = name;
         this.insee = insee;
-        this.adress = adress;
+        this.address = address;
         this.url = url;
         this.userType = userType;
         this.free = free;
@@ -88,8 +88,8 @@ public class DtoParking {
         return insee;
     }
 
-    public String getAdress() {
-        return adress;
+    public String getAddress() {
+        return address;
     }
 
     public String getUrl() {
@@ -208,8 +208,8 @@ public class DtoParking {
         this.insee = insee;
     }
 
-    public void setAdress(String adress) {
-        this.adress = adress;
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     public void setUrl(String url) {
@@ -335,7 +335,7 @@ public class DtoParking {
                 .add("id", id)
                 .add("nom", name)
                 .add("insee", insee)
-                .add("adresse", adress)
+                .add("adresse", address)
                 .add("url", url)
                 .add("type_usagers", userType)
                 .add("gratuit", free)

@@ -34,6 +34,9 @@ public class ParkingCapacity
     protected BigInteger numberOfSpaces;
     protected BigInteger numberOfSpacesWithRechargePoint;
     protected BigInteger numberOfCarsharingSpaces;
+    protected BigInteger numberOfBikeSpaces;
+    protected BigInteger numberOfElectricBikesWithRechargePoint;
+    protected BigInteger numberOfTwoWheeledVehicle;
 
     public SiteElementRefStructure getParentRef() {
         return parentRef;
@@ -89,5 +92,21 @@ public class ParkingCapacity
         this.numberOfCarsharingSpaces = numberOfCarsharingSpaces;
     }
 
+    public BigInteger getNumberOfBikeSpaces() { return numberOfBikeSpaces; }
 
+    public void setNumberOfBikeSpaces(BigInteger numberOfBikeSpaces) {
+        this.numberOfBikeSpaces = numberOfBikeSpaces;
+    }
+
+    public BigInteger getNumberOfElectricBikesWithRechargePoint() { return numberOfElectricBikesWithRechargePoint; }
+
+    public void setNumberOfElectricBikesWithRechargePoint(BigInteger numberOfElectricBikesWithRechargePoint) {
+        this.numberOfElectricBikesWithRechargePoint = numberOfElectricBikesWithRechargePoint;
+    }
+
+    public BigInteger getNumberOfTwoWheeledVehicle() { return numberOfTwoWheeledVehicle; }
+
+    public void setNumberOfTwoWheeledVehicle(BigInteger numberOfTwoWheeledVehicle) {
+        this.numberOfTwoWheeledVehicle = numberOfTwoWheeledVehicle;
+    }
 }

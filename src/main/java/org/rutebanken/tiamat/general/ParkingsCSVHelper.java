@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -42,7 +43,6 @@ public class ParkingsCSVHelper {
         List<DtoParking> dtoParkingList = new ArrayList<>();
 
         Iterable<CSVRecord> records = CSVHelper.getRecords(csvFile);
-
 
         for (CSVRecord csvRecord : records) {
             DtoParking dtoParking = new DtoParking(
@@ -151,27 +151,40 @@ public class ParkingsCSVHelper {
             }
 
             BigInteger parkAndRideCapacity = parkingDto.getNbOfPr().isEmpty() ? BigInteger.ZERO : new BigInteger(parkingDto.getNbOfPr());
+            BigInteger nbPMR = parkingDto.getDisabledParkingNb().isEmpty() ? BigInteger.ZERO : new BigInteger(parkingDto.getDisabledParkingNb());
 
 
             if (parkAndRideDetection){
                 // detection based on field : nb_pr
                 parking.setParkingType(parkAndRideCapacity.equals(BigInteger.ZERO) ? ParkingTypeEnumeration.PARKING_ZONE : ParkingTypeEnumeration.PARK_AND_RIDE);
-            }else{
+            } else{
                 parking.setParkingType(parkingTypeEnumeration);
             }
 
             if (ParkingTypeEnumeration.PARK_AND_RIDE.equals(parking.getParkingType())){
                 ParkingArea parkAndRideArea = new ParkingArea();
                 parkAndRideArea.setVersion(1L);
-                parkAndRideArea.setName(new EmbeddableMultilingualString("Zone P+R", "FR"));
-                parkAndRideArea.setTotalCapacity(parkAndRideCapacity);
                 parkAndRideArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.PARD_AND_RIDE);
+                if (nbPMR != null) {
+                    parkAndRideArea.setName(new EmbeddableMultilingualString("Zone PMR", "FR"));
+                    parkAndRideArea.setTotalCapacity(nbPMR);
+
+                    AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
+                    accessibilityAssessment.setMobilityImpairedAccess(LimitationStatusEnumeration.TRUE);
+
+                    AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
+                    accessibilityLimitation.setWheelchairAccess(LimitationStatusEnumeration.TRUE);
+                    accessibilityAssessment.setLimitations(Arrays.asList(accessibilityLimitation));
+
+                    parking.setAccessibilityAssessment(accessibilityAssessment);
+                } else {
+                    parkAndRideArea.setName(new EmbeddableMultilingualString("Zone P+R", "FR"));
+                    parkAndRideArea.setTotalCapacity(parkAndRideCapacity);
+                }
                 parking.getParkingAreas().add(parkAndRideArea);
             }
 
             parking.setParkingLayout(parkingLayoutEnumeration);
-
-
 
             parking.setBookingUrl(parkingDto.getUrl());
             parking.setVersion(1L);
@@ -280,6 +293,37 @@ public class ParkingsCSVHelper {
             } else {
                 parking.setCarsharingAvailable(false);
             }
+
+            //Nombre de places pour les vélos
+            if (!parkingDto.getBikeNb().isEmpty() && Integer.parseInt(parkingDto.getBikeNb()) >= 1) {
+                BigInteger numberValue = BigInteger.valueOf(Long.parseLong(parkingDto.getBikeNb()));
+                
+                createBikeOrTwoWheeledArea(parkingDto, parking, parkingProperties, totalCapacity,
+                        ParkingVehicleEnumeration.PEDAL_CYCLE,
+                        SpecificParkingAreaUsageEnumeration.PEDAL_CYCLE, numberValue,
+                        "Zone réservée aux vélos");
+            }
+
+            //Nombre de places pour les vélos électriques
+            if (!parkingDto.getElectricBikesNb().isEmpty() && Integer.parseInt(parkingDto.getElectricBikesNb()) >= 1) {
+                BigInteger numberValue = BigInteger.valueOf(Long.parseLong(parkingDto.getElectricBikesNb()));
+
+                createBikeOrTwoWheeledArea(parkingDto, parking, parkingProperties, totalCapacity,
+                        ParkingVehicleEnumeration.TWO_WHEELED_VEHICLE,
+                        SpecificParkingAreaUsageEnumeration.TWO_WHEELED_VEHICLE, numberValue,
+                        "Zone réservée aux vélos électriques");
+            }
+
+            //Nombre de places pour les 2 roues
+            if (!parkingDto.getMotorcycleNb().isEmpty() && Integer.parseInt(parkingDto.getMotorcycleNb()) >= 1) {
+                BigInteger numberValue = BigInteger.valueOf(Long.parseLong(parkingDto.getMotorcycleNb()));
+
+                createBikeOrTwoWheeledArea(parkingDto, parking, parkingProperties, totalCapacity,
+                        ParkingVehicleEnumeration.TWO_WHEELED_VEHICLE,
+                        SpecificParkingAreaUsageEnumeration.TWO_WHEELED_VEHICLE, numberValue,
+                        "Zone réservée aux 2 roues");
+            }
+
             parkingProperties.getSpaces().add(totalCapacity);
 
             //Emplacement du parking
@@ -297,7 +341,45 @@ public class ParkingsCSVHelper {
                 parking.setOperator(parkingDto.getOperator());
             }
 
+            parking.setDescription(new EmbeddableMultilingualString(parkingDto.getInfo()));
+            parking.setParkingLayout(ParkingLayoutEnumeration.fromValue(parkingDto.getWorkType()));
+            parking.setAddress(parkingDto.getAddress());
+
             return parking;
         }).collect(Collectors.toList());
+    }
+
+    private static void createBikeOrTwoWheeledArea(DtoParking parkingDto,
+                                                   Parking parking,
+                                                   ParkingProperties parkingProperties,
+                                                   ParkingCapacity totalCapacity,
+                                                   ParkingVehicleEnumeration parkingVehicleEnumeration,
+                                                   SpecificParkingAreaUsageEnumeration specificParkingAreaUsageEnumeration,
+                                                   BigInteger numberValue,
+                                                   String areaName) {
+        
+        ParkingArea newArea = new ParkingArea();
+        newArea.setSpecificParkingAreaUsage(specificParkingAreaUsageEnumeration);
+        newArea.setPublicUse(PublicUseEnumeration.ALL);
+        newArea.setVersion(1L);
+
+        if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")){
+            newArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+        }
+        newArea.setName(new EmbeddableMultilingualString(areaName, "FR"));
+        newArea.setTotalCapacity(numberValue);
+
+        ParkingProperties newProterties = parkingProperties;
+        newProterties.getParkingVehicleTypes().add(parkingVehicleEnumeration);
+
+        ParkingCapacity newCapacity = new ParkingCapacity();
+        newCapacity.setParkingUserType(totalCapacity.getParkingUserType());
+        newCapacity.setNumberOfSpaces(numberValue);
+        newCapacity.setParkingVehicleType(parkingVehicleEnumeration);
+
+        newProterties.getSpaces().add(newCapacity);
+        newArea.setParkingProperties(newProterties);
+
+        parking.getParkingAreas().add(newArea);
     }
 }

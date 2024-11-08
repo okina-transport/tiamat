@@ -48,20 +48,27 @@ public class ParkingPropertiesListConverter extends BidirectionalConverter<List<
                     space -> {
                         ParkingCapacity parkingCapacity = new ParkingCapacity();
                         ParkingUserEnumeration netexParkingUserType = mapperFacade.map(space.getParkingUserType(), ParkingUserEnumeration.class);
+                        ParkingVehicleEnumeration netexParkingVehicleType = mapperFacade.map(space.getParkingVehicleType(), ParkingVehicleEnumeration.class);
+
                         parkingCapacity.withParkingUserType(netexParkingUserType);
                         parkingCapacity.withNumberOfSpaces(space.getNumberOfSpaces());
                         parkingCapacity.withNumberOfSpacesWithRechargePoint(space.getNumberOfSpacesWithRechargePoint());
+                        parkingCapacity.withParkingVehicleType(netexParkingVehicleType);
                         parkingCapacity.setId(space.getNetexId());
                         parkingCapacity.setVersion(String.valueOf(space.getVersion()));
                         parkingCapacityList.add(parkingCapacity);
 
                     }
             );
-           final List<ParkingUserEnumeration> parkingUserEnumerations = mapperFacade.mapAsList(parkingProperties.getParkingUserTypes(), ParkingUserEnumeration.class);
+
+            final List<ParkingUserEnumeration> parkingUserEnumerations = mapperFacade.mapAsList(parkingProperties.getParkingUserTypes(), ParkingUserEnumeration.class);
+            final List<ParkingVehicleEnumeration> netexParkingVehicleType = mapperFacade.mapAsList(parkingProperties.getParkingVehicleTypes(), ParkingVehicleEnumeration.class);
+
             parkingCapacities_relStructure.getParkingCapacityRefOrParkingCapacity().addAll(parkingCapacityList);
             parkingCapacities_relStructure.setModificationSet(ModificationSetEnumeration.ALL);
             final org.rutebanken.netex.model.ParkingProperties netexParkingProperties = new org.rutebanken.netex.model.ParkingProperties();
             netexParkingProperties.getParkingUserTypes().addAll(parkingUserEnumerations);
+            netexParkingProperties.getParkingVehicleTypes().addAll(netexParkingVehicleType);
             netexParkingProperties.withSpaces(parkingCapacities_relStructure);
             netexParkingProperties.setId(parkingProperties.getNetexId());
             netexParkingProperties.setVersion(String.valueOf(parkingProperties.getVersion()));

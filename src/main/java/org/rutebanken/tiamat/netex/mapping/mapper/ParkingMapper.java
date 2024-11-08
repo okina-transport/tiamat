@@ -24,6 +24,8 @@ import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.model.Parking> {
@@ -54,12 +56,37 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
             netexParking.setTypeOfParkingRef(typeOfParkingRefStructure);
         }
 
-        if (tiamatParking.getInsee() != null) {
+        // todo : vérifier
+        if (tiamatParking.getInsee() != null || tiamatParking.getAddress() != null) {
             PostalAddress postalAddress = new PostalAddress();
             postalAddress.setId("MOBIITI:PostalAddress:" + UUID.randomUUID().toString());
             postalAddress.setVersion("any");
-            postalAddress.setPostalRegion(tiamatParking.getInsee());
+            if (tiamatParking.getAddress() != null) {
+                // Expression régulière pour capturer les premiers chiffres au début de l'adresse
+                Pattern pattern = Pattern.compile("^(\\d+)\\s*(.*)$");
+                Matcher matcher = pattern.matcher(tiamatParking.getAddress());
+
+                if (matcher.matches()) {
+                    postalAddress.setHouseNumber(matcher.group(1));
+                    postalAddress.setStreet(new MultilingualString().withValue(matcher.group(2)));
+                } else {
+                    postalAddress.setStreet(new MultilingualString().withValue(tiamatParking.getAddress()));
+                }
+            }
+            else if (tiamatParking.getInsee() != null) {
+                postalAddress.setPostalRegion(tiamatParking.getInsee());
+            }
             netexParking.setPostalAddress(postalAddress);
+        }
+
+        // todo : ok
+        if (tiamatParking.getUrl() != null) {
+            InfoLinkStructure infoLink = new InfoLinkStructure();
+            GroupOfEntities_VersionStructure.InfoLinks infoLinks = new GroupOfEntities_VersionStructure.InfoLinks();
+            infoLink.setValue(tiamatParking.getUrl());
+            infoLinks.getInfoLink().add(infoLink);
+
+            netexParking.setInfoLinks(infoLinks);
         }
 
         if (tiamatParking.getParkingAreas() != null &&

@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 
 @Service
@@ -248,6 +250,46 @@ public class ParkingsImportedService {
             isUpdated = true;
         }
 
+        if(existingParking.getDescription() != null){
+            updatedParking.setDescription(existingParking.getDescription());
+            isUpdated = true;
+        }
+
+        if(existingParking.getParkingLayout() != null){
+            updatedParking.setParkingLayout(existingParking.getParkingLayout());
+            isUpdated = true;
+        }
+
+        if(existingParking.getAddress() != null){
+            updatedParking.setAddress(existingParking.getAddress());
+            isUpdated = true;
+        }
+
+        for (int i = 0; i < existingParking.getParkingProperties().size(); i++) {
+            for (int j = 0; j < existingParking.getParkingProperties().get(i).getSpaces().size(); j++) {
+
+                // Récupération des espaces des parkings pour existing et updated
+                var existingSpace = existingParking.getParkingProperties().get(i).getSpaces().get(j);
+                var updatedSpace = updatedParking.getParkingProperties().get(i).getSpaces().get(j);
+
+                // Mise à jour des propriétés si nécessaire
+                isUpdated |= updateIfDifferent(existingSpace::getNumberOfElectricBikesWithRechargePoint, updatedSpace::getNumberOfElectricBikesWithRechargePoint, existingSpace::setNumberOfElectricBikesWithRechargePoint);
+                isUpdated |= updateIfDifferent(existingSpace::getNumberOfBikeSpaces, updatedSpace::getNumberOfBikeSpaces, existingSpace::setNumberOfBikeSpaces);
+                isUpdated |= updateIfDifferent(existingSpace::getNumberOfTwoWheeledVehicle, updatedSpace::getNumberOfTwoWheeledVehicle, existingSpace::setNumberOfTwoWheeledVehicle);
+            }
+        }
+
         return isUpdated;
+    }
+
+    // Méthode générique pour comparer et mettre à jour une propriété si nécessaire
+    private boolean updateIfDifferent(Supplier<BigInteger> existingGetter, Supplier<BigInteger> updatedGetter, Consumer<BigInteger> setter) {
+        BigInteger existingValue = existingGetter.get();
+        BigInteger updatedValue = updatedGetter.get();
+        if (updatedValue != null && !updatedValue.equals(existingValue)) {
+            setter.accept(updatedValue);  // Met à jour existing avec la valeur de updated
+            return true;
+        }
+        return false;
     }
 }

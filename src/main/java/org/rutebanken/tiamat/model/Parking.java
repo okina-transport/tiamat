@@ -82,6 +82,7 @@ public class Parking
     protected String siret;
     protected String typeOfParkingRef;
     protected String operator;
+    protected String address;
 
     @Transient
     protected String originalId;
@@ -345,6 +346,14 @@ public class Parking
 
     public String getParkingTypeRef() {
         return typeOfParkingRef;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getAddress() {
+        return address;
     }
 
     public void setOriginalId(String originalId) { this.originalId = originalId; }

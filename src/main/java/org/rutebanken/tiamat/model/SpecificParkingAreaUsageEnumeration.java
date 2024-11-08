@@ -4,6 +4,8 @@ public enum SpecificParkingAreaUsageEnumeration {
 
     NONE("aucun"),
     CARPOOL("covoiturage"),
+    PEDAL_CYCLE("pedalCycle"),
+    TWO_WHEELED_VEHICLE("twoWheeledVehicle"),
     CARSHARE("autopartage"),
     PARD_AND_RIDE("parkAndRide"),
     DISABLED("handicap");

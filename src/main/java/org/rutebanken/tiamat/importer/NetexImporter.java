@@ -78,12 +78,12 @@ public class NetexImporter {
     }
 
     public void importProcessTest(PublicationDeliveryStructure publicationDeliveryStructure, Boolean containsMobiitiIds) {
-        importProcess(publicationDeliveryStructure, containsMobiitiIds);
+        importProcess(publicationDeliveryStructure, new ImportParams(), containsMobiitiIds);
     }
 
 
     @SuppressWarnings("unchecked")
-    public void importProcess(PublicationDeliveryStructure publicationDeliveryStructure, Boolean containsMobiitiIds) {
+    public void importProcess(PublicationDeliveryStructure publicationDeliveryStructure,  ImportParams importParams, Boolean containsMobiitiIds) {
 
         if (publicationDeliveryStructure.getDataObjects() == null) {
             String responseMessage = "Received publication delivery but it does not contain any data objects.";
@@ -91,7 +91,6 @@ public class NetexImporter {
             throw new RuntimeException(responseMessage);
         }
 
-        ImportParams importParams = new ImportParams();
 
         logger.info("Got publication delivery with {} site frames and description {}",
                 publicationDeliveryStructure.getDataObjects().getCompositeFrameOrCommonFrame().size(),
@@ -110,7 +109,7 @@ public class NetexImporter {
             // Première boucle pour traiter GeneralFrame et récupérer les GeneralOrganisations et ResponsibilitySets
             for (JAXBElement<? extends Common_VersionFrameStructure> frameType : findedFrameType) {
                 if (frameType.getValue() instanceof GeneralFrame) {
-                    members = getMembers(publicationDeliveryStructure);
+                    members = NetexUtils.getMembersFromPublicationDelivery(publicationDeliveryStructure);
                     assert members != null;
                     generalOrganisations = NetexUtils.getMembers(GeneralOrganisation.class, members);
                     responsibilitySets = NetexUtils.getMembers(ResponsibilitySet.class, members);
@@ -154,22 +153,6 @@ public class NetexImporter {
 
     private void pointOfInterestImport(ImportParams importParams, AtomicInteger atomicInteger, SiteFrame netexSiteFrame, SiteFrame responseSiteFrame, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {
         pointOfInterestsImportHandler.handlePointOfInterests(netexSiteFrame, importParams, atomicInteger, responseSiteFrame, generalOrganisations, responsibilitySets);
-    }
-
-    private List<JAXBElement<? extends EntityStructure>> getMembers(PublicationDeliveryStructure publicationDeliveryStructure) {
-        GeneralFrame netexGeneralFrame = publicationDeliveryHelper.findGeneralFrame(publicationDeliveryStructure);
-        String requestId = netexGeneralFrame.getId();
-        updateMappingGeneralFrameContext(netexGeneralFrame);
-
-        GeneralFrame responseGeneralFrame = new GeneralFrame();
-        MDC.put(IMPORT_CORRELATION_ID, requestId);
-        logger.info("Publication delivery contains site frame created at {}", netexGeneralFrame.getCreated());
-        responseGeneralFrame.withId(requestId + "-response").withVersion("1");
-
-        if (publicationDeliveryHelper.hasGeneralFrame(netexGeneralFrame)) {
-            return netexGeneralFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity();
-        }
-        return null;
     }
 
     private void generalFrameProcess(List<JAXBElement<? extends EntityStructure>> members, ImportParams importParams, AtomicInteger atomicInteger, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets, Boolean containsMobiitiIds) {

@@ -5,6 +5,7 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.general.ImportJobWorker;
+import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.NetexImporter;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
@@ -15,6 +16,7 @@ import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryU
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -42,6 +44,9 @@ public class ImportStopPlacesNetexResource {
 
     private final PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller;
     private final NetexImporter netexImporter;
+
+    @Value("${netex.validPrefix:MOBIITI}")
+    String validNetexPrefix;
 
     private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("import-%d").build());
@@ -71,7 +76,7 @@ public class ImportStopPlacesNetexResource {
         logger.info("Received Stop Places Netex publication delivery, starting to parse...");
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         try {
-           netexImporter.importProcess(incomingPublicationDelivery,  containsMobiitiIds);
+           netexImporter.importProcess(incomingPublicationDelivery,new ImportParams(), containsMobiitiIds);
            return null;
         } catch (NotAuthenticatedException | NotAuthorizedException e) {
             logger.debug("Access denied for publication delivery: " + e.getMessage(), e);
@@ -92,7 +97,10 @@ public class ImportStopPlacesNetexResource {
                                               @FormDataParam("file_name") String fileName,
                                               @FormDataParam("provider") String provider,
                                               @FormDataParam("folder") String folder,
-                                              @FormDataParam("containsMobiitiIds") Boolean containsMobiitiIds) throws IOException {
+                                              @FormDataParam("containsMobiitiIds") Boolean containsMobiitiIds,
+                                              @FormDataParam("keepStopNames") Boolean keepStopNames,
+                                              @FormDataParam("keepStopGeolocalisation") Boolean keepStopGeolocalisation,
+                                              @FormDataParam("updateStopAccessibility") Boolean updateStopAccessibility) throws IOException {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Response.ResponseBuilder builder = Response.accepted();
@@ -107,6 +115,10 @@ public class ImportStopPlacesNetexResource {
         jobRepository.save(job);
         logger.info("Import stop place netex: {}", fileName);
         ImportJobWorker importJobWorker = new ImportJobWorker(job, publicationDeliveryUnmarshaller, inputStream, containsMobiitiIds, jobRepository, netexImporter, provider, authentication);
+        importJobWorker.setSuperIdPrefix(validNetexPrefix);
+        importJobWorker.setKeepStopNames(keepStopNames);
+        importJobWorker.setKeepStopGeolocalisation(keepStopGeolocalisation);
+        importJobWorker.setUpdateStopAccessibility(updateStopAccessibility);
         importService.submit(importJobWorker);
 
 

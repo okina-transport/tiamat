@@ -21,6 +21,8 @@ import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.filter.ZoneTopographicPlaceFilter;
+import org.rutebanken.tiamat.importer.matching.MatchingAppendingIdStopPlacesImporter;
+import org.rutebanken.tiamat.importer.matching.TransactionalMatchingAppendingStopPlaceImporter;
 import org.rutebanken.tiamat.importer.merging.TransactionalMergingStopPlacesImporter;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.NetexUtils;
@@ -37,12 +39,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 public class StopPlacesImportHandler {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(StopPlacesImportHandler.class);
     /**
      * Hazelcast lock key for merging stop place import.
      */
-    private static final String PARKING_IMPORT_LOCK_KEY = "STOP_PLACE_MERGING_IMPORT_LOCK_KEY";
+    private static final String STOP_PLACE_IMPORT_LOCK_KEY = "STOP_PLACE_MERGING_IMPORT_LOCK_KEY";
 
     @Autowired
     private NetexMapper netexMapper;
@@ -52,6 +54,9 @@ public class StopPlacesImportHandler {
 
     @Autowired
     private TransactionalMergingStopPlacesImporter transactionalMergingStopPlacesImporter;
+
+    @Autowired
+    private MatchingAppendingIdStopPlacesImporter matchingAppendingIdStopPlacesImporter;
 
     @Autowired
     private HazelcastInstance hazelcastInstance;
@@ -73,22 +78,24 @@ public class StopPlacesImportHandler {
             logger.info("Got {} stop places (was {}) after filtering", stopPlacesParsed.size(), numberOfStopPlacesBeforeFiltering);
         }
 
-        Collection<org.rutebanken.netex.model.StopPlace> importedStopPlaces;
-        if (importParams.importType == null || importParams.importType.equals(ImportType.MERGE)) {
-            final FencedLock lock = hazelcastInstance.getCPSubsystem().getLock(PARKING_IMPORT_LOCK_KEY);
-            lock.lock();
-            try {
-                importedStopPlaces = transactionalMergingStopPlacesImporter.importStopPlaces(stopPlacesParsed, atomicInteger, containsMobiitiIds);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            } finally {
-                lock.unlock();
+        Collection<org.rutebanken.netex.model.StopPlace> importedStopPlaces = new ArrayList<>();
+
+        final FencedLock lock = hazelcastInstance.getCPSubsystem().getLock(STOP_PLACE_IMPORT_LOCK_KEY);
+        lock.lock();
+        try {
+            if (containsMobiitiIds) {
+                logger.info("Starting import of stopPlace with Mobiiti Ids");
+                importedStopPlaces = transactionalMergingStopPlacesImporter.importStopPlaces(stopPlacesParsed, atomicInteger, true);
+
+            } else {
+                logger.info("Starting import of stopPlace with external provider Ids");
+                AtomicInteger nbOfCreated = new AtomicInteger();
+                matchingAppendingIdStopPlacesImporter.importStopPlaces(stopPlacesParsed, nbOfCreated, importParams);
             }
-        } else if (importParams.importType.equals(ImportType.INITIAL)) {
-            importedStopPlaces = transactionalMergingStopPlacesImporter.importStopPlaces(stopPlacesParsed, atomicInteger, containsMobiitiIds);
-        } else {
-            logger.warn("Import type " + importParams.importType + " not implemented. Will not match stop places.");
-            importedStopPlaces = new ArrayList<>(0);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            lock.unlock();
         }
 
         if (!importedStopPlaces.isEmpty()) {

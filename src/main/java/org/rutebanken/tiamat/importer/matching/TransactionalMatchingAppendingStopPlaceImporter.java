@@ -266,8 +266,17 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 }
 
                 boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS, importParams);
+                boolean centroidChanged = false;
+                if (!importParams.keepStopGeolocalisation ){
+                    if (incomingStopPlace.getCentroid() != null){
+                        copy.setCentroid(incomingStopPlace.getCentroid());
+                        centroidChanged = true;
+                    }else{
+                        centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
+                    }
 
-                boolean centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
+                }
+
 
 
                 if (quayChanged || keyValuesChanged || centroidChanged || nameChanged || wheelChairChanged || tariffZoneChanged || privateCodeChanged || hasTransportModeChanged) {

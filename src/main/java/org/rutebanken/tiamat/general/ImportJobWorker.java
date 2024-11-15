@@ -15,13 +15,16 @@
 
 package org.rutebanken.tiamat.general;
 
-import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.netex.model.*;
+import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.NetexImporter;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingLayoutEnumeration;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobStatus;
+import org.rutebanken.tiamat.netex.NetexUtils;
+import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
 import org.rutebanken.tiamat.rest.dto.DtoParking;
@@ -38,10 +41,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.xml.sax.SAXException;
 
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ImportJobWorker implements Runnable {
@@ -65,6 +70,11 @@ public class ImportJobWorker implements Runnable {
     private BikeParkingsImportedService bikeParkingsImportedService;
     private RentalBikeParkingsImportedService rentalBikeparkingsImportedService;
     private MissingPostCodeService missingPostalCodeService;
+    private String superIdPrefix;   
+    private PublicationDeliveryHelper publicationDeliveryHelper;
+    private boolean keepStopNames;
+    private boolean keepStopGeolocalisation;
+    private boolean updateStopAccessibility;
 
     public ImportJobWorker(Job job) {
         this.job = job;
@@ -211,20 +221,118 @@ public class ImportJobWorker implements Runnable {
 
     private void launchNetexParkingImport() throws JAXBException, IOException, SAXException{
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
-        netexImporter.importProcess(incomingPublicationDelivery, false);
+        netexImporter.importProcess(incomingPublicationDelivery, new ImportParams(), false);
 
     }
 
     private void launchNetexStopPlaceImport() throws JAXBException, IOException, SAXException{
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
-        netexImporter.importProcess(incomingPublicationDelivery,  containsMobiitiIds);
+        containsMobiitiIds = isUsingSuperIds(incomingPublicationDelivery);
+        if (!containsMobiitiIds){
+            replaceIdsAndRemoveImportedIds(incomingPublicationDelivery);
+        }
+        ImportParams importParams = new ImportParams();
+        importParams.updateStopAccessibility = updateStopAccessibility;
+        importParams.keepStopNames = keepStopNames;
+        importParams.keepStopGeolocalisation = keepStopGeolocalisation;
 
+        netexImporter.importProcess(incomingPublicationDelivery,importParams,  containsMobiitiIds);
+
+    }
+
+    private void replaceIdsAndRemoveImportedIds(PublicationDeliveryStructure incomingPublicationDelivery) {
+        List<javax.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = incomingPublicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame();
+        List<JAXBElement<? extends EntityStructure>> members = null;
+
+        for (JAXBElement<? extends Common_VersionFrameStructure> frameType : findedFrameType) {
+            if (frameType.getValue() instanceof GeneralFrame) {
+                members = NetexUtils.getMembersFromPublicationDelivery(incomingPublicationDelivery);
+
+                for (JAXBElement<? extends EntityStructure> member : members) {
+                    if (member.getValue() instanceof StopPlace){
+                        StopPlace stopPlace = (StopPlace) member.getValue();
+                        stopPlace.setId(replaceId("StopPlace", stopPlace.getId()));
+                        removeImportedIds(stopPlace);
+
+                        for (JAXBElement<?> jaxbElement : stopPlace.getQuays().getQuayRefOrQuay()) {
+                            if (jaxbElement.getValue() instanceof QuayRefStructure){
+                                QuayRefStructure quayRef = (QuayRefStructure) jaxbElement.getValue();
+                                quayRef.setRef(replaceId("Quay", quayRef.getRef()));
+                            }else if (jaxbElement.getValue() instanceof Quay){
+                                Quay quay = (Quay) jaxbElement.getValue();
+                                quay.setId(replaceId("Quay", quay.getId()));
+                                removeImportedIds(quay);
+                                quay.setSiteRef(null);
+                            }
+                        }
+                    }else if(member.getValue() instanceof Quay){
+                        Quay quay = (Quay) member.getValue();
+                        quay.setId(replaceId("Quay", quay.getId()));
+                        removeImportedIds(quay);
+                        quay.setSiteRef(null);
+                    }
+                }
+            }
+        }
+    }
+
+    private void removeImportedIds(DataManagedObjectStructure object){
+        if (object.getKeyList() == null){
+            return ;
+        }
+
+        KeyListStructure originalList = object.getKeyList();
+        KeyListStructure newKeyList = new KeyListStructure();
+
+        List<KeyValueStructure> originalKeys = originalList.getKeyValue();
+        List<KeyValueStructure> newKeyValues = new ArrayList<>();
+
+        for (KeyValueStructure originalKey : originalKeys) {
+            if (!originalKey.getKey().equals("imported-id")){
+                newKeyValues.add(originalKey);
+            }
+        }
+        newKeyList.withKeyValue(newKeyValues);
+        object.setKeyList(newKeyList);
+    }
+
+    private String replaceId(String type, String rawId) {
+        String provider = job.getSubFolder().toUpperCase();
+        return provider + ":" + type + ":" + rawId.replaceAll(":", "##3A##");
+    }
+
+    /**
+     * Detects if the stops are using super id of the current stack or not     *
+     * @param incomingPublicationDelivery
+     * @return
+     *      true : the publication
+     */
+    private boolean isUsingSuperIds(PublicationDeliveryStructure incomingPublicationDelivery) {
+
+        List<javax.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = incomingPublicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame();
+        List<JAXBElement<? extends EntityStructure>> members = null;
+        
+        for (JAXBElement<? extends Common_VersionFrameStructure> frameType : findedFrameType) {
+            if (frameType.getValue() instanceof GeneralFrame) {
+                members = NetexUtils.getMembersFromPublicationDelivery(incomingPublicationDelivery);
+
+                for (JAXBElement<? extends EntityStructure> member : members) {
+                    if (member.getValue() instanceof StopPlace){
+                        StopPlace stopPlace = (StopPlace) member.getValue();
+                        if (stopPlace.getId().startsWith(superIdPrefix + ":StopPlace:")){
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private void launchNetexPoiImport() throws JAXBException, IOException, SAXException {
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         poiHelper.clearClassificationCache();
-        netexImporter.importProcess(incomingPublicationDelivery,   false);
+        netexImporter.importProcess(incomingPublicationDelivery, new ImportParams(),  false);
     }
 
     private void launchCSVPoiImport() throws IOException {
@@ -278,5 +386,37 @@ public class ImportJobWorker implements Runnable {
 
     public void setMissingPostalCodeService(MissingPostCodeService missingPostalCodeService) {
         this.missingPostalCodeService = missingPostalCodeService;
+    }
+
+    public String getSuperIdPrefix() {
+        return superIdPrefix;
+    }
+
+    public void setSuperIdPrefix(String superIdPrefix) {
+        this.superIdPrefix = superIdPrefix;
+    }
+
+    public boolean isKeepStopNames() {
+        return keepStopNames;
+    }
+
+    public void setKeepStopNames(boolean keepStopNames) {
+        this.keepStopNames = keepStopNames;
+    }
+
+    public boolean isKeepStopGeolocalisation() {
+        return keepStopGeolocalisation;
+    }
+
+    public void setKeepStopGeolocalisation(boolean keepStopGeolocalisation) {
+        this.keepStopGeolocalisation = keepStopGeolocalisation;
+    }
+
+    public boolean isUpdateStopAccessibility() {
+        return updateStopAccessibility;
+    }
+
+    public void setUpdateStopAccessibility(boolean updateStopAccessibility) {
+        this.updateStopAccessibility = updateStopAccessibility;
     }
 }

@@ -184,10 +184,10 @@ public class ParkingsCSVHelper {
                 parking.getParkingAreas().add(parkAndRideArea);
             }
 
-            if (parkingLayoutEnumeration.equals(ParkingLayoutEnumeration.UNDEFINED) && parkingDto.getWorkType() != null) {
-                parking.setParkingLayout(ParkingLayoutEnumeration.fromValue(parkingDto.getWorkType()));
-            } else {
+            if (parkingDto.getWorkType().equals("")) {
                 parking.setParkingLayout(parkingLayoutEnumeration);
+            } else {
+                parking.setParkingLayout(ParkingLayoutEnumeration.fromValue(parkingDto.getWorkType()));
             }
 
             parking.setBookingUrl(parkingDto.getUrl());

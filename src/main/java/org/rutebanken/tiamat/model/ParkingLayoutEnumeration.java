@@ -37,7 +37,12 @@ public enum ParkingLayoutEnumeration {
                 return c;
             }
         }
-        throw new IllegalArgumentException(v);
+
+        return switch (v) {
+            case "enclos_en_surface" -> OPEN_SPACE;
+            case "ouvrage" -> MULTISTOREY;
+            default -> throw new IllegalArgumentException(v);
+        };
     }
 
     public String value() {

@@ -74,7 +74,7 @@ public class StopPlaceIdMappingService {
     }
 
     public void launchFileCreation() {
-        logger.info("Starting quay id mapping file creation");
+        logger.info("Starting stopPlace id mapping file creation");
 
         List<JbvCodeMappingDto> mappings = stopPlaceRepository.findIdMappingsForStopPlace();
         List<JbvCodeMappingDto> selectedIdMappings = stopPlaceRepository.findSelectedIdMappingsForStopPlace();

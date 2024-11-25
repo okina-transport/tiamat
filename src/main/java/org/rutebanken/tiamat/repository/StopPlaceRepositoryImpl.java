@@ -1193,11 +1193,22 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
      */
     @Override
     public List<JbvCodeMappingDto> findIdMappingsForStopPlace() {
-        String sql = "SELECT DISTINCT sp_id,vi.items, netex_id FROM " +
-                " (SELECT MAX(id) AS sp_id, netex_id FROM stop_place sp group by netex_id) spref " +
-                " INNER JOIN stop_place_key_values spkv ON spref.sp_id = spkv.stop_place_id  " +
-                " INNER JOIN value_items vi ON vi.value_id = spkv.key_values_id " +
-                "  WHERE spkv.key_values_key = 'imported-id'  ";
+        // there might be multiple entries with same netex_id in stop_place
+        // this will get entry with higher version when there is multiple entries with same netex_id
+        String sql = """
+            SELECT
+                DISTINCT ON (sp.netex_id) vi.items as original_id, sp.netex_id, sp.name_value
+            FROM
+               stop_place sp
+            INNER JOIN
+                stop_place_key_values spkv ON sp.id = spkv.stop_place_id
+            INNER JOIN
+                value_items vi ON vi.value_id = spkv.key_values_id
+            WHERE 
+                spkv.key_values_key = 'imported-id'
+            ORDER BY 
+                sp.netex_id, sp.version DESC;
+            """;
         Query nativeQuery = entityManager.createNativeQuery(sql);
 
 
@@ -1206,7 +1217,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         List<JbvCodeMappingDto> mappingResult = new ArrayList<>();
         for (Object[] row : result) {
-            mappingResult.add(new JbvCodeMappingDto(row[1].toString(), null, row[2].toString(), null));
+            mappingResult.add(new JbvCodeMappingDto(row[0].toString(), null, row[1].toString(), row[2].toString()));
         }
 
         return mappingResult;
@@ -1219,11 +1230,22 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
      */
     @Override
     public List<JbvCodeMappingDto> findSelectedIdMappingsForStopPlace() {
-        String sql = "SELECT DISTINCT sp_id,vi.items, netex_id FROM " +
-                " (SELECT MAX(id) AS sp_id, netex_id FROM stop_place sp group by netex_id) spref " +
-                " INNER JOIN stop_place_key_values spkv ON spref.sp_id = spkv.stop_place_id  " +
-                " INNER JOIN value_items vi ON vi.value_id = spkv.key_values_id " +
-                "  WHERE spkv.key_values_key = 'selected-id'  ";
+        // there might be multiple entries with same netex_id in stop_place
+        // this will get entry with higher version when there is multiple entries with same netex_id
+        String sql = """
+            SELECT
+                DISTINCT ON (sp.netex_id) vi.items as original_id, sp.netex_id, sp.name_value
+            FROM
+               stop_place sp
+            INNER JOIN
+                stop_place_key_values spkv ON sp.id = spkv.stop_place_id
+            INNER JOIN
+                value_items vi ON vi.value_id = spkv.key_values_id
+            WHERE 
+                spkv.key_values_key = 'selected-id'
+            ORDER BY 
+                sp.netex_id, sp.version DESC;
+            """;
         Query nativeQuery = entityManager.createNativeQuery(sql);
 
 
@@ -1232,7 +1254,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         List<JbvCodeMappingDto> mappingResult = new ArrayList<>();
         for (Object[] row : result) {
-            mappingResult.add(new JbvCodeMappingDto(row[1].toString(), null, row[2].toString(), null));
+            mappingResult.add(new JbvCodeMappingDto(row[0].toString(), null, row[1].toString(), row[2].toString()));
         }
 
         return mappingResult;

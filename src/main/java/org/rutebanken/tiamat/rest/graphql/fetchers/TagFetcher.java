@@ -18,10 +18,10 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 import com.google.common.collect.Sets;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 import org.rutebanken.tiamat.model.tag.Tag;
 import org.rutebanken.tiamat.repository.TagRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -31,18 +31,26 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static java.util.stream.Collectors.toSet;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.FIND_STOP_FOR_REPORT;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.TAG_NAME;
 
 @Component
 public class TagFetcher implements DataFetcher<Set<Tag>> {
 
-    @Autowired
-    private TagRepository tagRepository;
+    private final TagRepository tagRepository;
+
+    public TagFetcher(TagRepository tagRepository) {
+        this.tagRepository = tagRepository;
+    }
 
     @Override
     public Set<Tag> get(DataFetchingEnvironment dataFetchingEnvironment) {
         if(dataFetchingEnvironment.getSource() instanceof IdentifiedEntity) {
-            IdentifiedEntity source = (IdentifiedEntity) dataFetchingEnvironment.getSource();
+            IdentifiedEntity source = dataFetchingEnvironment.getSource();
+            if ((source instanceof StopPlace stopPlace) && FIND_STOP_FOR_REPORT.equals(dataFetchingEnvironment.getExecutionContext()
+                    .getOperationDefinition().getName())) {
+                return stopPlace.getTags();
+            }
             if (source != null) {
                 return tagRepository.findByIdReference(source.getNetexId())
                         .stream()

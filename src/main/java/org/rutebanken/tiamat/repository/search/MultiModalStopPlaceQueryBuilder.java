@@ -88,9 +88,8 @@ public class MultiModalStopPlaceQueryBuilder {
     private String generateNearbySelectStatement(StopPlaceSearch stopPlaceSearch) {
         StringBuilder queryBuilder = new StringBuilder();
 
-        queryBuilder.append("  )TMP_STOPS  WHERE exists ( \n" +
-                "            SELECT nearby.id \n" +
-                "            FROM  stop_place nearby \n");
+        queryBuilder.append("  )TMP_STOPS  CROSS JOIN \n" +
+                "            stop_place nearby \n");
 
         return queryBuilder.toString();
     }
@@ -110,7 +109,7 @@ public class MultiModalStopPlaceQueryBuilder {
                 "                nearby.netex_id != TMP_STOPS.netex_id  \n" +
                 "                AND nearby.parent_stop_place = false  \n" +
                 "                AND nearby.stop_place_type != TMP_STOPS.stop_place_type  \n" +
-                "                AND ST_Distance(TMP_STOPS.centroid, nearby.centroid) < :nearbyThreshold               \n" +
+                "                AND ST_DWithin(TMP_STOPS.centroid, nearby.centroid, :nearbyThreshold)               \n" +
                 "                AND (\n" +
                 "                    (                       \n" +
                 "                            (\n" +
@@ -121,7 +120,7 @@ public class MultiModalStopPlaceQueryBuilder {
                 "                                AND ( nearby.to_date IS NULL OR nearby.to_date > :pointInTime  )  \n" +
                 "                            )        \n" +
                 "                    )               \n" +
-                "                )");
+                "                ");
 
 
         queryBuilder.append(" )");

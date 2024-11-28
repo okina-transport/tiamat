@@ -19,33 +19,29 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.rutebanken.helper.organisation.RoleAssignment;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
-import org.rutebanken.netex.model.Organisation;
 import org.rutebanken.tiamat.dtoassembling.dto.BoundingBoxDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
+import org.rutebanken.tiamat.model.tag.Tag;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.repository.TagRepository;
 import org.rutebanken.tiamat.service.stopplace.ParentStopPlacesFetcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -73,14 +69,20 @@ class StopPlaceFetcher implements DataFetcher {
      */
     protected static final String ROLE_ADMIN_PREFIX = "admin";
 
-    @Autowired
-    private StopPlaceRepository stopPlaceRepository;
+    private final StopPlaceRepository stopPlaceRepository;
 
-    @Autowired
-    private ParentStopPlacesFetcher parentStopPlacesFetcher;
+    private final ParentStopPlacesFetcher parentStopPlacesFetcher;
 
-    @Autowired
-    private RoleAssignmentExtractor roleAssignmentExtractor;
+    private final RoleAssignmentExtractor roleAssignmentExtractor;
+
+    private final TagRepository tagRepository;
+
+    StopPlaceFetcher(StopPlaceRepository stopPlaceRepository, ParentStopPlacesFetcher parentStopPlacesFetcher, RoleAssignmentExtractor roleAssignmentExtractor, TagRepository tagRepository) {
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.parentStopPlacesFetcher = parentStopPlacesFetcher;
+        this.roleAssignmentExtractor = roleAssignmentExtractor;
+        this.tagRepository = tagRepository;
+    }
 
     @Override
     @Transactional
@@ -281,14 +283,50 @@ class StopPlaceFetcher implements DataFetcher {
 
         //By default stop should resolve parent stops
         if (nearbyStopPlaceSearch || onlyMonomodalStopplaces || stopPlacesWithoutQuaySearch || stopPlacesWithMultipleProducersSearch || quaysWithMultipleProducersSearch) {
-            return getStopPlaces(environment, stopPlaces, stopPlaces.size());
+           return getStopPlaces(environment, stopPlaces, stopPlaces.size());
         } else {
             List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(stopPlaces, KEEP_CHILDREN);
             return getStopPlaces(environment, parentsResolved, parentsResolved.size());
         }
     }
 
+    protected void fetchTags(List<StopPlace> stopPlaceCollection) {
+        if (!CollectionUtils.isEmpty(stopPlaceCollection)) {
+            int size = stopPlaceCollection.size();
+            Set<Tag> tags = new HashSet<>();
+            Set<String> stopPlaceIdentifiers = new HashSet<>(size);
+            Map<String, Set<Tag>> mapStopPlaceIdentifierToTags = new HashMap<>(size);
+            Map<String, StopPlace> mapIdStopPlace = new HashMap<>(size);
+            int numberOfElementForSqlStatement = 0;
+            for (StopPlace stopPlace : stopPlaceCollection) {
+                String stopPlaceIdentifier = stopPlace.getNetexId();
+                stopPlaceIdentifiers.add(stopPlaceIdentifier);
+                mapIdStopPlace.put(stopPlaceIdentifier, stopPlace);
+                numberOfElementForSqlStatement++;
+                if (numberOfElementForSqlStatement == 999) {
+                    tags.addAll(tagRepository.findAllByIdReference(stopPlaceIdentifiers));
+                    stopPlaceIdentifiers.clear();
+                    numberOfElementForSqlStatement = 0;
+                }
+            }
+            if (numberOfElementForSqlStatement > 0) {
+                tags.addAll(tagRepository.findAllByIdReference(stopPlaceIdentifiers));
+                stopPlaceIdentifiers.clear();
+            }
+            for (Tag tag : tags) {
+                Set<Tag> existingTagsForStopPlace = mapStopPlaceIdentifierToTags.getOrDefault(tag.getIdReference(), new HashSet<>());
+                existingTagsForStopPlace.add(tag);
+                mapStopPlaceIdentifierToTags.put(tag.getIdReference(), existingTagsForStopPlace);
+            }
+            for (Map.Entry<String, Set<Tag>> entry : mapStopPlaceIdentifierToTags.entrySet()) {
+                mapIdStopPlace.get(entry.getKey()).setTags(entry.getValue());
+            }
+
+        }
+    }
+
     private PageImpl<StopPlace> getStopPlaces(DataFetchingEnvironment environment, List<StopPlace> stopPlaces, long size) {
+        fetchTags(stopPlaces);
         return new PageImpl<>(stopPlaces, PageRequest.of(environment.getArgument(PAGE), environment.getArgument(SIZE)), size);
     }
 
@@ -300,4 +338,5 @@ class StopPlaceFetcher implements DataFetcher {
         }
         return null;
     }
+
 }

@@ -21,7 +21,7 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
-import org.rutebanken.tiamat.domain.Provider;
+import org.rutebanken.tiamat.model.tag.Tag;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -105,6 +105,17 @@ public class StopPlace
     private ModificationEnumeration modificationEnumeration;
 
     private String provider;
+
+    @Transient
+    private Set<Tag> tags = new HashSet<>();
+
+    public Set<Tag> getTags() {
+        return tags;
+    }
+
+    public void setTags(Set<Tag> tags) {
+        this.tags = tags;
+    }
 
     public StopPlace(EmbeddableMultilingualString name) {
         super(name);

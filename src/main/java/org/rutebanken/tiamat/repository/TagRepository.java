@@ -17,16 +17,21 @@ package org.rutebanken.tiamat.repository;
 
 import org.rutebanken.tiamat.model.tag.Tag;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
-import org.springframework.stereotype.Component;
+import org.springframework.data.repository.query.Param;
 
 import javax.persistence.QueryHint;
+import java.util.List;
 import java.util.Set;
 
 public interface TagRepository extends JpaRepository<Tag, Long> {
 
     @QueryHints(value = {@QueryHint(name = "org.hibernate.cacheable", value = "true")}, forCounting = false)
     Set<Tag> findByIdReference(String ref);
+
+    @Query("SELECT t from Tag t where t.idReference in :ref")
+    List<Tag> findAllByIdReference(@Param("ref") Set<String> ref);
 
     @QueryHints(value = {@QueryHint(name = "org.hibernate.cacheable", value = "true")}, forCounting = false)
     Set<Tag> findByNameContaining(String name);

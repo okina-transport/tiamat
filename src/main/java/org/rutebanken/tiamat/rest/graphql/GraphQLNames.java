@@ -460,6 +460,7 @@ public class GraphQLNames {
     public static final String FIND_PARKING = "parking";
     public static final String FIND_POI = "pointOfInterest";
     public static final String FIND_POI_BY_BBOX = "pointOfInterestBBox";
+    public static final String FIND_STOP_FOR_REPORT = "findStopForReport";
 
     public static final String IGNORE_STOPS = "ignoreStops";
     public static final String IGNORE_PARKINGS = "ignoreParkings";

@@ -86,9 +86,8 @@ public class NearbyStopPlaceQueryBuilder {
     private String generateNearbySelectStatement(StopPlaceSearch stopPlaceSearch) {
         StringBuilder queryBuilder = new StringBuilder();
 
-        queryBuilder.append("  )TMP_STOPS  WHERE EXISTS ( \n" +
-                "            SELECT nearby.id \n" +
-                "            FROM  stop_place nearby \n");
+        queryBuilder.append("  )TMP_STOPS  CROSS JOIN \n" +
+                "          stop_place nearby \n");
 
         return queryBuilder.toString();
     }
@@ -97,7 +96,7 @@ public class NearbyStopPlaceQueryBuilder {
     private String generateOrderbyStatement() {
         return " \n" +
                 "                \n" +
-                "                group by netex_id) TMP_NETEX_VERS\n" +
+                "                group by TMP_STOPS.netex_id) TMP_NETEX_VERS\n" +
                 "                where (s2.netex_id = TMP_NETEX_VERS.netex_id and s2.version = TMP_NETEX_VERS.max_vers)\n" +
                 "                order by s2.centroid,\n" +
                 "                s2.netex_id,\n" +
@@ -111,7 +110,7 @@ public class NearbyStopPlaceQueryBuilder {
                 "                nearby.netex_id != TMP_STOPS.netex_id  \n" +
                 "                AND nearby.parent_stop_place = false  \n" +
                 "                AND nearby.stop_place_type = TMP_STOPS.stop_place_type  \n" +
-                "                AND ST_Distance(TMP_STOPS.centroid, nearby.centroid) < :nearbyThreshold               \n" +
+                "                AND ST_DWithin(TMP_STOPS.centroid, nearby.centroid,:nearbyThreshold)               \n" +
                 "                          AND (\n" +
                 "                    (                       \n" +
                 "                            (\n" +
@@ -125,8 +124,7 @@ public class NearbyStopPlaceQueryBuilder {
                 "                                    OR nearby.to_date > :pointInTime\n" +
                 "                                )\n" +
                 "                            )                        \n" +
-                "                    )               \n" +
-                "                )");
+                "                    )               \n");
 
 
         queryBuilder.append(" )");
@@ -170,7 +168,7 @@ public class NearbyStopPlaceQueryBuilder {
     private String generateSelectStatement(StopPlaceSearch stopPlaceSearch) {
         StringBuilder selectBuilder = new StringBuilder();
         selectBuilder.append(" SELECT s2.* FROM   stop_place s2, \n" +
-                " (SELECT netex_id,max(version) as max_vers FROM     \n" +
+                " (SELECT TMP_STOPS.netex_id,max(TMP_STOPS.version) as max_vers FROM     \n" +
                 "      (     SELECT distinct\n" +
                 "        s.netex_id, s.version,stop_place_type,centroid\n" +
                 "                FROM \n" +

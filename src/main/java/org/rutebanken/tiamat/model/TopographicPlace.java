@@ -51,6 +51,9 @@ public class TopographicPlace extends Place {
     @Embedded
     protected TopographicPlaceRefStructure parentTopographicPlaceRef;
 
+    @Transient
+    protected TopographicPlace parentTopographicPlace;
+
     public TopographicPlace(EmbeddableMultilingualString name) {
         super(name);
     }
@@ -88,6 +91,14 @@ public class TopographicPlace extends Place {
 
     public void setParentTopographicPlaceRef(TopographicPlaceRefStructure value) {
         this.parentTopographicPlaceRef = value;
+    }
+
+    public TopographicPlace getParentTopographicPlace() {
+        return parentTopographicPlace;
+    }
+
+    public void setParentTopographicPlace(TopographicPlace parentTopographicPlace) {
+        this.parentTopographicPlace = parentTopographicPlace;
     }
 
     @Override

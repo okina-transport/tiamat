@@ -63,11 +63,12 @@ public class TopographicPlaceObjectTypeCreator {
                         .name(PARENT_TOPOGRAPHIC_PLACE)
                         .type(new GraphQLTypeReference(OUTPUT_TYPE_TOPOGRAPHIC_PLACE))
                         .dataFetcher(env -> {
-                            if(env.getSource() instanceof  TopographicPlace) {
-                                TopographicPlace child = (TopographicPlace) env.getSource();
-                                if(child.getParentTopographicPlaceRef() != null) {
-                                    return topographicPlaceRepository.findFirstByNetexIdAndVersion(child.getParentTopographicPlaceRef().getRef(), Long.parseLong(child.getParentTopographicPlaceRef().getVersion()));
-                                }
+                            if(env.getSource() instanceof TopographicPlace child
+                                    && child.getParentTopographicPlaceRef() != null) {
+                                        if (child.getParentTopographicPlace() != null) {
+                                            return child.getParentTopographicPlace();
+                                        }
+                                return topographicPlaceRepository.findFirstByNetexIdAndVersion(child.getParentTopographicPlaceRef().getRef(), Long.parseLong(child.getParentTopographicPlaceRef().getVersion()));
                             }
                             return null;
                         })

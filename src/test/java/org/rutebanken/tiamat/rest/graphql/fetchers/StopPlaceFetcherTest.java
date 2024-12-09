@@ -8,8 +8,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.TopographicPlace;
+import org.rutebanken.tiamat.model.TopographicPlaceRefStructure;
 import org.rutebanken.tiamat.model.tag.Tag;
 import org.rutebanken.tiamat.repository.TagRepository;
+import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +31,18 @@ class StopPlaceFetcherTest {
 
     private static final String STOP_PLACE_IDENTIFIER_2 = "MOBIITI:StopPlace:169982";
 
+    private static final String PLACE_IDENTIFIER_1 = "MOBIITI:TopograpicPlace:169980";
+
+    private static final String PLACE_IDENTIFIER_WITHOUT_PARENT = "MOBIITI:TopograpicPlace:169999";
+
+    private static final String PARENT_PLACE_IDENTIFIER_1 = "MOBIITI:TopograpicPlace:169981";
+
+    private static final Long DATABASE_ID = 898L;
+
+    private static final Long DATABASE_ID_PARENT = 897L;
+
+    private static final Long DATABASE_ID_2 = 896L;
+
     private static final String NAME = "name";
 
     @InjectMocks
@@ -36,8 +51,14 @@ class StopPlaceFetcherTest {
     @Mock
     private TagRepository tagRepository;
 
+    @Mock
+    private TopographicPlaceRepository topographicPlaceRepository;
+
     @Captor
     private ArgumentCaptor<Set<String>> stopPlaceIdentifierCaptor;
+
+    @Captor
+    private ArgumentCaptor<Set<Long>> topographicPlaceIdentifierCaptor;
 
     @Test
     void fetchTags_emptyStopPlaceCollection_test() {
@@ -91,10 +112,58 @@ class StopPlaceFetcherTest {
         assertThat(stopPlaceList.get(1001).getTags()).hasSize(1).containsExactlyInAnyOrder(tag2);
     }
 
+    @Test
+    void fetchParentTopographicPlaces_emptyStopPlaceCollection_test() {
+        stopPlaceFetcher.fetchParentTopographicPlaces(null);
+
+        verify(topographicPlaceRepository, never()).findAllParentByChildIdIn(anySet());
+    }
+
+    @Test
+    void fetchParentTopographicPlaces_someStopPlace_test() {
+        StopPlace stopPlace = new StopPlace();
+        stopPlace.setNetexId(STOP_PLACE_IDENTIFIER_1);
+        StopPlace stopPlace2 = new StopPlace();
+        stopPlace2.setNetexId(STOP_PLACE_IDENTIFIER_2);
+
+        TopographicPlace topographicPlace = buildTopographicPlace(DATABASE_ID, PLACE_IDENTIFIER_1, 1L, PARENT_PLACE_IDENTIFIER_1, "1");
+        TopographicPlace topographicPlace2 = buildTopographicPlace(DATABASE_ID_2, PLACE_IDENTIFIER_WITHOUT_PARENT, 1L, null, null);
+        TopographicPlace parent = buildTopographicPlace(DATABASE_ID_PARENT, PARENT_PLACE_IDENTIFIER_1, 1L, null, null);
+
+        stopPlace.setTopographicPlace(topographicPlace);
+        stopPlace2.setTopographicPlace(topographicPlace2);
+
+        when(topographicPlaceRepository.findAllParentByChildIdIn(anySet())).thenReturn(List.of(parent));
+
+        stopPlaceFetcher.fetchParentTopographicPlaces(List.of(stopPlace, stopPlace2));
+
+        verify(topographicPlaceRepository).findAllParentByChildIdIn(topographicPlaceIdentifierCaptor.capture());
+        assertThat(topographicPlaceIdentifierCaptor.getValue())
+                .isNotNull().isEmpty();
+        assertThat(stopPlace.getTopographicPlace()).isNotNull();
+        assertThat(stopPlace.getTopographicPlace().getParentTopographicPlace()).isEqualTo(parent);
+        assertThat(stopPlace2.getTopographicPlace()).isNotNull();
+        assertThat(stopPlace2.getTopographicPlace().getParentTopographicPlace()).isNull();
+    }
+
     private static Tag buildTag(String identifier, String name) {
         Tag tag1 = new Tag();
         tag1.setName(name);
         tag1.setIdreference(identifier);
         return tag1;
     }
+
+    private static TopographicPlace buildTopographicPlace(Long storageId, String identifier, Long version,
+                                                          String parentIdentifier, String parentVersion) {
+        TopographicPlace place = new TopographicPlace();
+        place.setId(storageId);
+        place.setNetexId(identifier);
+        place.setVersion(version);
+        if (parentIdentifier != null) {
+            TopographicPlaceRefStructure topographicPlaceRefStructure = new TopographicPlaceRefStructure();
+            topographicPlaceRefStructure.setRef(parentIdentifier);
+            topographicPlaceRefStructure.setVersion(parentVersion);
+            place.setParentTopographicPlaceRef(topographicPlaceRefStructure);
+        }
+        return place;    }
 }

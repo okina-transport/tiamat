@@ -24,10 +24,12 @@ import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
+import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.tag.Tag;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.repository.TagRepository;
+import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
 import org.rutebanken.tiamat.service.stopplace.ParentStopPlacesFetcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,11 +79,14 @@ class StopPlaceFetcher implements DataFetcher {
 
     private final TagRepository tagRepository;
 
-    StopPlaceFetcher(StopPlaceRepository stopPlaceRepository, ParentStopPlacesFetcher parentStopPlacesFetcher, RoleAssignmentExtractor roleAssignmentExtractor, TagRepository tagRepository) {
+    private final TopographicPlaceRepository topographicPlaceRepository;
+
+    StopPlaceFetcher(StopPlaceRepository stopPlaceRepository, ParentStopPlacesFetcher parentStopPlacesFetcher, RoleAssignmentExtractor roleAssignmentExtractor, TagRepository tagRepository, TopographicPlaceRepository topographicPlaceRepository) {
         this.stopPlaceRepository = stopPlaceRepository;
         this.parentStopPlacesFetcher = parentStopPlacesFetcher;
         this.roleAssignmentExtractor = roleAssignmentExtractor;
         this.tagRepository = tagRepository;
+        this.topographicPlaceRepository = topographicPlaceRepository;
     }
 
     @Override
@@ -325,8 +330,50 @@ class StopPlaceFetcher implements DataFetcher {
         }
     }
 
+
+    protected void fetchParentTopographicPlaces(List<StopPlace> stopPlaceCollection) {
+        if (!CollectionUtils.isEmpty(stopPlaceCollection)) {
+            int size = stopPlaceCollection.size();
+            Set<TopographicPlace> fetchedParentTopographicPlace = new HashSet<>();
+            Set<Long> topographicPlaceIdentifierSet = new HashSet<>(size);
+            Map<Long, StopPlace> mapTopographicIdToStopPlace = new HashMap<>(size);
+            int numberOfElementForSqlStatement = 0;
+            for (StopPlace stopPlace : stopPlaceCollection) {
+                TopographicPlace topographicPlace = stopPlace.getTopographicPlace();
+                if (topographicPlace != null && topographicPlace.getParentTopographicPlaceRef() != null) {
+                    Long topographicPlaceIdentifier = topographicPlace.getId();
+                    topographicPlaceIdentifierSet.add(topographicPlaceIdentifier);
+                    mapTopographicIdToStopPlace.put(topographicPlaceIdentifier, stopPlace);
+                    numberOfElementForSqlStatement++;
+                }
+
+                if (numberOfElementForSqlStatement == 999) {
+                    fetchedParentTopographicPlace.addAll(topographicPlaceRepository.findAllParentByChildIdIn(topographicPlaceIdentifierSet));
+                    topographicPlaceIdentifierSet.clear();
+                    numberOfElementForSqlStatement = 0;
+                }
+            }
+            if (numberOfElementForSqlStatement > 0) {
+                fetchedParentTopographicPlace.addAll(topographicPlaceRepository.findAllParentByChildIdIn(topographicPlaceIdentifierSet));
+                topographicPlaceIdentifierSet.clear();
+            }
+            Map<String, TopographicPlace> mapParentTopographicPlace = new HashMap<>(fetchedParentTopographicPlace.size());
+            for (TopographicPlace topographicPlace : fetchedParentTopographicPlace) {
+                mapParentTopographicPlace.put(topographicPlace.getNetexId() + topographicPlace.getVersion(), topographicPlace);
+            }
+            for (Map.Entry<Long, StopPlace> entry : mapTopographicIdToStopPlace.entrySet()) {
+                TopographicPlace topographicPlace = entry.getValue().getTopographicPlace();
+                String parentNetexId = topographicPlace.getParentTopographicPlaceRef().getRef();
+                String parentVersion = topographicPlace.getParentTopographicPlaceRef().getVersion();
+                topographicPlace.setParentTopographicPlace(mapParentTopographicPlace.get(parentNetexId + parentVersion));
+            }
+
+        }
+    }
+
     private PageImpl<StopPlace> getStopPlaces(DataFetchingEnvironment environment, List<StopPlace> stopPlaces, long size) {
         fetchTags(stopPlaces);
+        fetchParentTopographicPlaces(stopPlaces);
         return new PageImpl<>(stopPlaces, PageRequest.of(environment.getArgument(PAGE), environment.getArgument(SIZE)), size);
     }
 

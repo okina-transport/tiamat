@@ -16,19 +16,17 @@
 package org.rutebanken.tiamat.repository;
 
 import org.locationtech.jts.geom.Point;
-import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.TopographicPlaceSearch;
 import org.rutebanken.tiamat.model.IanaCountryTldEnumeration;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.TopographicPlaceTypeEnumeration;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
-import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 
 import javax.persistence.QueryHint;
 import java.util.List;
+import java.util.Set;
 
 public interface TopographicPlaceRepository extends EntityInVersionRepository<TopographicPlace>, TopographicPlaceRepositoryCustom {
 
@@ -44,6 +42,10 @@ public interface TopographicPlaceRepository extends EntityInVersionRepository<To
     @QueryHints(value = { @QueryHint(name = "org.hibernate.cacheable", value = "true")}, forCounting = false)
     @Query("select tp from TopographicPlace tp WHERE tp.version = (SELECT MAX(tpv.version) FROM TopographicPlace tpv WHERE tpv.netexId = tp.netexId)")
     List<TopographicPlace> findAllMaxVersion();
+
+    @QueryHints(value = { @QueryHint(name = "org.hibernate.cacheable", value = "true")}, forCounting = false)
+    @Query("select tp2 from TopographicPlace tp left join TopographicPlace tp2 on tp.parentTopographicPlaceRef.ref = tp2.netexId and tp.parentTopographicPlaceRef.version = cast(tp2.version as string) WHERE tp.id in :identifier")
+    List<TopographicPlace> findAllParentByChildIdIn(@Param("identifier") Set<Long> identifier);
 
     int countByTopographicPlaceTypeAndNetexIdStartingWith(TopographicPlaceTypeEnumeration topographicPlaceTypeEnumeration, String idPrefix);
 

@@ -13,6 +13,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.rutebanken.tiamat.repository.utils.NearByStopPlaceQueryConstants.*;
+
 @Component
 public class NearbyStopPlaceQueryBuilder {
 
@@ -28,13 +30,13 @@ public class NearbyStopPlaceQueryBuilder {
 
     public Pair<String, Map<String, Object>> buildNearbyQuery(StopPlaceSearch stopPlaceSearch) {
         Map<String, Object> parameters = generateParametersMap(stopPlaceSearch);
-        String selectStatement = generateSelectStatement(stopPlaceSearch);
-        String whereStatement = generateWhereStatement(stopPlaceSearch);
-        String nearbySelectStatement = generateNearbySelectStatement(stopPlaceSearch);
-        String nearbyWhereStatement = generateNearbyWhereStatement(stopPlaceSearch);
-        String orderByStatement = generateOrderbyStatement();
 
-        String generatedSql = selectStatement + whereStatement + nearbySelectStatement + nearbyWhereStatement + orderByStatement;
+
+        String generatedSql = WITH_CLAUSE_MAX_STOP_PLACE_VERSION_BY_ID +
+                WITH_CLAUSE_STOP_POINT_ONLY_LATEST_VERSION +
+                generateWithClauseTargetStop(stopPlaceSearch) +
+                WITH_CLAUSE_TARGET_STOP_WITHIN_DISTANCE +
+                SELECT_NEARBY_STOP_POINT;
 
 
         searchHelper.logIfLoggable(generatedSql, parameters, stopPlaceSearch, logger);
@@ -83,71 +85,34 @@ public class NearbyStopPlaceQueryBuilder {
         return importedIdPattern.toString();
     }
 
-    private String generateNearbySelectStatement(StopPlaceSearch stopPlaceSearch) {
+
+    private String generateWithClauseTargetStop(StopPlaceSearch stopPlaceSearch) {
         StringBuilder queryBuilder = new StringBuilder();
+        queryBuilder.append("""
+            target_stops AS (
+              SELECT DISTINCT s.netex_id, s.version, stop_place_type, centroid
+              FROM stop_point_without_history s
+        """
+        );
 
-        queryBuilder.append("  )TMP_STOPS  CROSS JOIN \n" +
-                "          stop_place nearby \n");
-
-        return queryBuilder.toString();
-    }
-
-
-    private String generateOrderbyStatement() {
-        return " \n" +
-                "                \n" +
-                "                group by TMP_STOPS.netex_id) TMP_NETEX_VERS\n" +
-                "                where (s2.netex_id = TMP_NETEX_VERS.netex_id and s2.version = TMP_NETEX_VERS.max_vers)\n" +
-                "                order by s2.centroid,\n" +
-                "                s2.netex_id,\n" +
-                "                s2.version asc ";
-    }
-
-    private String generateNearbyWhereStatement(StopPlaceSearch stopPlaceSearch) {
-        StringBuilder queryBuilder = new StringBuilder();
-
-        queryBuilder.append("   WHERE \n" +
-                "                nearby.netex_id != TMP_STOPS.netex_id  \n" +
-                "                AND nearby.parent_stop_place = false  \n" +
-                "                AND nearby.stop_place_type = TMP_STOPS.stop_place_type  \n" +
-                "                AND ST_DWithin(TMP_STOPS.centroid, nearby.centroid,:nearbyThreshold)               \n" +
-                "                          AND (\n" +
-                "                    (                       \n" +
-                "                            (\n" +
-                "                                nearby.from_date IS NULL \n" +
-                "                                AND nearby.to_date IS NULL\n" +
-                "                            ) \n" +
-                "                            OR (\n" +
-                "                                nearby.from_date <= :pointInTime\n" +
-                "                                AND (\n" +
-                "                                    nearby.to_date IS NULL \n" +
-                "                                    OR nearby.to_date > :pointInTime\n" +
-                "                                )\n" +
-                "                            )                        \n" +
-                "                    )               \n");
-
-
-        queryBuilder.append(" )");
-        return queryBuilder.toString();
-    }
-
-    private String generateWhereStatement(StopPlaceSearch stopPlaceSearch) {
-        StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append("  WHERE  s.parent_stop_place = false AND s.parent_site_ref is null \n" +
-                "    AND (            \n" +
-                "                    (\n" +
-                "                        s.from_date IS NULL \n" +
-                "                        AND s.to_date IS NULL\n" +
-                "                    ) \n" +
-                "                    OR (\n" +
-                "                        s.from_date <= :pointInTime\n" +
-                "                        AND (\n" +
-                "                            s.to_date IS NULL \n" +
-                "                            OR s.to_date > :pointInTime\n" +
-                "                        )\n" +
-                "                    )   \n" +
-                "                )  ");
-
+        if (!stopPlaceSearch.getOrganisationName().isEmpty() || !stopPlaceSearch.getQuery().isEmpty()) {
+            queryBuilder.append("""
+              LEFT JOIN stop_place_key_values spkv ON s.id = spkv.stop_place_id
+              LEFT JOIN value_items vi ON vi.value_id = spkv.key_values_id
+            """);
+        }
+        queryBuilder.append("""
+                    WHERE
+                        s.parent_stop_place = false
+                        AND s.parent_site_ref IS NULL
+                        AND (
+                              (s.from_date IS NULL AND s.to_date IS NULL)
+                              OR
+                              (s.from_date <= :pointInTime
+                                AND (s.to_date IS NULL OR s.to_date > :pointInTime)
+                              )
+                        )
+                """);
         if (!stopPlaceSearch.getOrganisationName().isEmpty() || !stopPlaceSearch.getQuery().isEmpty()) {
 
             queryBuilder.append(" AND spkv.key_values_key = 'imported-id' ");
@@ -162,25 +127,8 @@ public class NearbyStopPlaceQueryBuilder {
 
 
         }
+        queryBuilder.append("),");
         return queryBuilder.toString();
     }
 
-    private String generateSelectStatement(StopPlaceSearch stopPlaceSearch) {
-        StringBuilder selectBuilder = new StringBuilder();
-        selectBuilder.append(" SELECT s2.* FROM   stop_place s2, \n" +
-                " (SELECT TMP_STOPS.netex_id,max(TMP_STOPS.version) as max_vers FROM     \n" +
-                "      (     SELECT distinct\n" +
-                "        s.netex_id, s.version,stop_place_type,centroid\n" +
-                "                FROM \n" +
-                "        stop_place s ");
-
-        if (!stopPlaceSearch.getOrganisationName().isEmpty() || !stopPlaceSearch.getQuery().isEmpty()) {
-            selectBuilder.append("    LEFT JOIN    stop_place_key_values spkv  on  s.id = spkv.stop_place_id   \n" +
-                    "    LEFT JOIN    value_items vi on vi.value_id = spkv.key_values_id       ");
-
-
-        }
-
-        return selectBuilder.toString();
-    }
 }

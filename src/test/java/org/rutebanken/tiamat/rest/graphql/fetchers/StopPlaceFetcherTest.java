@@ -37,12 +37,6 @@ class StopPlaceFetcherTest {
 
     private static final String PARENT_PLACE_IDENTIFIER_1 = "MOBIITI:TopograpicPlace:169981";
 
-    private static final Long DATABASE_ID = 898L;
-
-    private static final Long DATABASE_ID_PARENT = 897L;
-
-    private static final Long DATABASE_ID_2 = 896L;
-
     private static final String NAME = "name";
 
     @InjectMocks
@@ -126,9 +120,9 @@ class StopPlaceFetcherTest {
         StopPlace stopPlace2 = new StopPlace();
         stopPlace2.setNetexId(STOP_PLACE_IDENTIFIER_2);
 
-        TopographicPlace topographicPlace = buildTopographicPlace(DATABASE_ID, PLACE_IDENTIFIER_1, 1L, PARENT_PLACE_IDENTIFIER_1, "1");
-        TopographicPlace topographicPlace2 = buildTopographicPlace(DATABASE_ID_2, PLACE_IDENTIFIER_WITHOUT_PARENT, 1L, null, null);
-        TopographicPlace parent = buildTopographicPlace(DATABASE_ID_PARENT, PARENT_PLACE_IDENTIFIER_1, 1L, null, null);
+        TopographicPlace topographicPlace = buildTopographicPlace(PLACE_IDENTIFIER_1, 1L, PARENT_PLACE_IDENTIFIER_1, "1");
+        TopographicPlace topographicPlace2 = buildTopographicPlace(PLACE_IDENTIFIER_WITHOUT_PARENT, 1L, null, null);
+        TopographicPlace parent = buildTopographicPlace(PARENT_PLACE_IDENTIFIER_1, 1L, null, null);
 
         stopPlace.setTopographicPlace(topographicPlace);
         stopPlace2.setTopographicPlace(topographicPlace2);
@@ -153,10 +147,9 @@ class StopPlaceFetcherTest {
         return tag1;
     }
 
-    private static TopographicPlace buildTopographicPlace(Long storageId, String identifier, Long version,
+    private static TopographicPlace buildTopographicPlace(String identifier, Long version,
                                                           String parentIdentifier, String parentVersion) {
         TopographicPlace place = new TopographicPlace();
-        place.setId(storageId);
         place.setNetexId(identifier);
         place.setVersion(version);
         if (parentIdentifier != null) {

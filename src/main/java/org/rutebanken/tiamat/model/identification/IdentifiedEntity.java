@@ -43,7 +43,7 @@ public abstract class IdentifiedEntity {
     }
 
     @JsonIgnore
-    public void setId(Long id) {
+    private void setId(Long id) {
         this.id = id;
     }
 

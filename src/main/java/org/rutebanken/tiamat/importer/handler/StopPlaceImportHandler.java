@@ -108,22 +108,6 @@ public class StopPlaceImportHandler {
                     .map(sp -> (org.rutebanken.netex.model.StopPlace) sp.getValue())
                     .collect(Collectors.toList()));
 
-            // Get the postal codes of the quays from two French public apis
-            tiamatStops
-                    .stream()
-                    .flatMap(stopPlace -> stopPlace.getQuays().stream())
-                    .forEach(quay -> {
-                        DtoGeocode dtoGeocode = null;
-                        try {
-                            dtoGeocode = ImporterUtils.getGeocodeDataByReverseGeocoding(quay.getCentroid().getCoordinate().x, quay.getCentroid().getCoordinate().y);
-                        } catch (Exception e) {
-                            logger.error("Erreur lors de la récupération du code postal du quay = " + quay.getId(), e);
-                        }
-                        if (dtoGeocode != null && StringUtils.isNotEmpty(dtoGeocode.getCity())) {
-                            quay.setZipCode(dtoGeocode.getCityCode());
-                        }
-                    });
-
             if(providerRepository.getProviders().stream().anyMatch(provider -> provider.getChouetteInfo().getReferential().equals(importParams.providerCode))){
                 tiamatStops.forEach(stop -> stop.setProvider(importParams.providerCode));
             }

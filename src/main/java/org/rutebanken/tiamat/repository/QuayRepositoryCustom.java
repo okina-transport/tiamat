@@ -47,6 +47,8 @@ public interface QuayRepositoryCustom extends DataManagedObjectStructureReposito
 
     List<Quay> findAllByImportedId(String importedId);
 
+    List<Quay> findAllLatestVersionByNetexId(List<String> netexIdentifiers);
+
     Optional<Quay> findActiveQuayForImportedId(String importedId);
 
     List<JbvCodeMappingDto> findIdMappingsForQuay();

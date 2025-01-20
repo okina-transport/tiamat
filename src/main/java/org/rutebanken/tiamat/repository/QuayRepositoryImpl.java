@@ -16,16 +16,15 @@
 package org.rutebanken.tiamat.repository;
 
 import com.google.common.collect.Sets;
+import org.apache.commons.collections4.ListUtils;
 import org.hibernate.Hibernate;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
-import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +33,9 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.MERGED_ID_KEY;
@@ -413,6 +415,31 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
         }
 
         return resultList;
+    }
+
+    @Override
+    public List<Quay> findAllLatestVersionByNetexId(List<String> netexIdentifiers) {
+        List<List<String>> partition = ListUtils.partition(netexIdentifiers, 1000);
+        List<Quay> quayCollection = new ArrayList<>(netexIdentifiers.size());
+        for (List<String> subNetexIdentifierPartition : partition) {
+            Query query = entityManager.createNativeQuery(
+                    """
+                    SELECT q.*  
+                    FROM quay q
+                    WHERE q.netex_id in :netexIdentifiers and q.zip_code is null
+                    """, Quay.class );
+
+            query.setParameter("netexIdentifiers", subNetexIdentifierPartition);
+            List<Quay> subQuayCollection = query.getResultList();
+            quayCollection.addAll(subQuayCollection);
+        }
+        Map<String, Quay> mapNetexIdToQuayMaxVersion = quayCollection.stream()
+                .collect(Collectors.toMap(Quay::getNetexId, Function.identity(),
+                        BinaryOperator.maxBy(Comparator.comparing(Quay::getVersion)))
+                );
+
+
+        return new ArrayList<>(mapNetexIdToQuayMaxVersion.values());
     }
 
 

@@ -42,7 +42,7 @@ public class QuayRepositoryImplTest extends TiamatIntegrationTest {
     private Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 
     @Test
-    public void findByKeyValue() throws Exception {
+    public void findByKeyValue() {
 
         Quay version1 = new Quay();
         version1.getOrCreateValues("test").add("value");
@@ -128,6 +128,39 @@ public class QuayRepositoryImplTest extends TiamatIntegrationTest {
     @Test
     public void findKeyValueMappingsForQuayReturnsOnlyQuaysValidAtPointInTimeForMergedId() {
         testFindKeyValueMappingsForQuayReturnsOnlyQuaysValidInInterval(MERGED_ID_KEY);
+    }
+
+    @Test
+    public void findAllLatestVersionByNetexId() {
+        Quay quay1Version1 = new Quay();
+        quay1Version1.setNetexId("MOBIITI:Quay:8");
+        quay1Version1.setVersion(1L);
+        quayRepository.save(quay1Version1);
+
+        Quay quay2Version1 = new Quay();
+        quay2Version1.setNetexId("MOBIITI:Quay:755");
+        quay2Version1.setVersion(1L);
+        quayRepository.save(quay2Version1);
+
+        Quay quay1Version2 = versionCreator.createCopy(quay1Version1, Quay.class);
+        quay1Version2.setVersion(2L);
+
+        quayRepository.save(quay1Version2);
+
+        Quay quay2Version2 = versionCreator.createCopy(quay2Version1, Quay.class);
+        quay2Version2.setVersion(2L);
+
+        quayRepository.save(quay2Version2);
+
+        quayRepository.flush();
+
+        List<String> inputNetexIds = List.of("MOBIITI:Quay:8", "MOBIITI:Quay:755");
+
+        List<Quay> quays = quayRepository.findAllLatestVersionByNetexId(inputNetexIds);
+
+        assertThat(quays).isNotEmpty().hasSize(2);
+        assertThat(quays).extracting("version").containsExactly(2L, 2L);
+        assertThat(quays).extracting("netexId").containsExactlyInAnyOrder("MOBIITI:Quay:8", "MOBIITI:Quay:755");
     }
 
     public void testFindKeyValueMappingsForQuayReturnsOnlyQuaysValidInInterval(String orgIdKey) {

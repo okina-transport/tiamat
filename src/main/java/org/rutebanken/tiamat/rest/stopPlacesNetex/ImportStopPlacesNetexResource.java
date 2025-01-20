@@ -1,12 +1,14 @@
 package org.rutebanken.tiamat.rest.stopPlacesNetex;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.commons.collections4.CollectionUtils;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.general.ImportJobWorker;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.NetexImporter;
+import org.rutebanken.tiamat.importer.handler.StopPlaceGeocodeHandler;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobStatus;
@@ -31,7 +33,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,6 +45,7 @@ public class ImportStopPlacesNetexResource {
 
     private final PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller;
     private final NetexImporter netexImporter;
+    private final StopPlaceGeocodeHandler stopPlaceGeocodeHandler;
 
     @Value("${netex.validPrefix:MOBIITI}")
     String validNetexPrefix;
@@ -56,9 +58,10 @@ public class ImportStopPlacesNetexResource {
 
     @Autowired
     ImportStopPlacesNetexResource(PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller,
-                                  NetexImporter netexImporter){
+                                  NetexImporter netexImporter, StopPlaceGeocodeHandler stopPlaceGeocodeHandler){
         this.publicationDeliveryUnmarshaller = publicationDeliveryUnmarshaller;
         this.netexImporter = netexImporter;
+        this.stopPlaceGeocodeHandler = stopPlaceGeocodeHandler;
     }
 
     @PreAuthorize("@rolesChecker.hasRoleEdit()")
@@ -144,5 +147,16 @@ public class ImportStopPlacesNetexResource {
         }
 
         return Response.status(500).build();
+    }
+
+    @POST
+    @Path("/geocode")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response setPostalCode(List<String> stopPlaceIdentifier) {
+        if (CollectionUtils.isNotEmpty(stopPlaceIdentifier)) {
+            stopPlaceGeocodeHandler.setPostalCode(stopPlaceIdentifier);
+        }
+
+        return Response.status(200).build();
     }
 }

@@ -314,17 +314,18 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
     @Override
     public List<JbvCodeMappingDto> findIdMappingsForQuay() {
         String sql = "WITH qref AS (" +
-                "    SELECT MAX(q.id) AS q_id, q.netex_id, q.name_value" +
+                "    SELECT MAX(q.id) AS q_id, q.netex_id" +
                 "    FROM quay q" +
                 "    INNER JOIN quay_key_values qkv ON q.id = qkv.quay_id" +
                 "    WHERE qkv.key_values_key = 'imported-id'" +
-                "    GROUP BY q.netex_id, q.name_value" +
+                "    GROUP BY q.netex_id " +
                 ")" +
                 "SELECT DISTINCT qref.q_id, vi.items, qref.netex_id," +
-                "    CASE WHEN qref.name_value IS NOT NULL AND qref.name_value <> '' THEN qref.name_value" +
+                "    CASE WHEN q.name_value IS NOT NULL AND q.name_value <> '' THEN q.name_value" +
                 "         ELSE s.name_value END AS name_value" +
                 " FROM qref" +
                 " INNER JOIN quay_key_values qkv ON qref.q_id = qkv.quay_id AND qkv.key_values_key = 'imported-id'" +
+                " INNER JOIN quay q ON qref.q_id = q.id" +
                 " INNER JOIN value_items vi ON vi.value_id = qkv.key_values_id" +
                 " LEFT JOIN stop_place_quays spq ON spq.quays_id = qref.q_id" +
                 " LEFT JOIN stop_place s ON s.id = spq.stop_place_id";

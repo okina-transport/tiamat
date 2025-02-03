@@ -33,8 +33,6 @@ public class Parking
     @Transient
     protected MultilingualStringEntity label;
     @Transient
-    protected List<PaymentMethodEnumeration> paymentMethods;
-    @Transient
     protected String defaultCurrency;
     @Transient
     protected List<String> currenciesAccepted;
@@ -59,6 +57,11 @@ public class Parking
     @LazyCollection(LazyCollectionOption.FALSE)
     @Enumerated(EnumType.STRING)
     protected List<ParkingPaymentProcessEnumeration> parkingPaymentProcess;
+
+    @ElementCollection(targetClass = PaymentMethodEnumeration.class)
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @Enumerated(EnumType.STRING)
+    protected List<PaymentMethodEnumeration> parkingPaymentMethods;
 
     @ElementCollection(targetClass = ParkingVehicleEnumeration.class)
     @LazyCollection(LazyCollectionOption.FALSE)
@@ -92,6 +95,14 @@ public class Parking
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     protected List<ParkingArea> parkingAreas;
+
+    @ManyToOne
+    @JoinColumn(name="organisation_id")
+    private Organisation organisation;
+
+    private String rentalUriIos;
+
+    private String rentalUriAndroid;
 
     public SitePathLinks_RelStructure getPathLinks() {
         return pathLinks;
@@ -247,11 +258,11 @@ public class Parking
         this.parkingPaymentProcess = parkingPaymentProcess;
     }
 
-    public List<PaymentMethodEnumeration> getPaymentMethods() {
-        if (paymentMethods == null) {
-            paymentMethods = new ArrayList<>();
+    public List<PaymentMethodEnumeration> getParkingPaymentMethods() {
+        if (parkingPaymentMethods == null) {
+            parkingPaymentMethods = new ArrayList<>();
         }
-        return this.paymentMethods;
+        return this.parkingPaymentMethods;
     }
 
     public String getDefaultCurrency() {
@@ -364,6 +375,30 @@ public class Parking
 
     public void setOperator(String operator) { this.operator = operator; }
 
+    public Organisation getOrganisation() {
+        return organisation;
+    }
+
+    public void setOrganisation(Organisation organisation) {
+        this.organisation = organisation;
+    }
+
+    public String getRentalUriIos() {
+        return rentalUriIos;
+    }
+
+    public void setRentalUriIos(String rentalUriIos) {
+        this.rentalUriIos = rentalUriIos;
+    }
+
+    public String getRentalUriAndroid() {
+        return rentalUriAndroid;
+    }
+
+    public void setRentalUriAndroid(String rentalUriAndroid) {
+        this.rentalUriAndroid = rentalUriAndroid;
+    }
+
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
@@ -379,7 +414,7 @@ public class Parking
                 .add("siret", siret)
                 .add("label", label)
                 .add("parkingPaymentProcess", parkingPaymentProcess)
-                .add("paymentMethods", paymentMethods)
+                .add("paymentMethods", parkingPaymentMethods)
                 .add("defaultCurrency", defaultCurrency)
                 .add("currenciesAccepted", currenciesAccepted)
                 .add("cardsAccepted", cardsAccepted)

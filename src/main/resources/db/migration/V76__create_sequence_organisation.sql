@@ -1,0 +1,6 @@
+CREATE SEQUENCE organisation_seq
+    START WITH 1
+    INCREMENT BY 10
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;

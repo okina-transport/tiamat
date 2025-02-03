@@ -37,6 +37,7 @@ import org.rutebanken.tiamat.rest.jobs.JobsResources;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ImportResource;
+import org.rutebanken.tiamat.rest.parkings.GbfsImportResource;
 import org.rutebanken.tiamat.rest.parkings.ImportBikeParkingsResource;
 import org.rutebanken.tiamat.rest.parkings.ImportParkingsResource;
 import org.rutebanken.tiamat.rest.parkingsNetex.ImportParkingsNetexResource;
@@ -111,6 +112,7 @@ public class JerseyConfig {
         publicResources.add(JobsResources.class);
         publicResources.add(ImportPointOfInterestsNetexResource.class);
         publicResources.add(ImportStopPlacesNetexResource.class);
+        publicResources.add(GbfsImportResource.class);
 
         publicResources.add(GeneralExceptionMapper.class);
         publicResources.add(TiamatBusinessExceptionMapper.class);

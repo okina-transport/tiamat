@@ -262,7 +262,7 @@ public class StreamingPublicationDelivery {
 
 
         parkingRepository.initExportJobTable(exportJobId);
-        logger.info("Initialization completed for table job_id_list. jobId :" + exportJobId);
+        logger.info("Initialization completed for table job_id_list. jobId : {}", exportJobId);
 
         prepareParkings(mappedParkingCount, listMembers, exportJobId);
         logger.info("Parking preparation completed");
@@ -271,9 +271,9 @@ public class StreamingPublicationDelivery {
         logger.info("Duplicates filtered");
 
         //adding the members to the general Frame
-        General_VersionFrameStructure.Members general_VersionFrameStructure = netexObjectFactory.createGeneral_VersionFrameStructureMembers();
-        general_VersionFrameStructure.withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(filteredListMembers);
-        netexGeneralFrame.withMembers(general_VersionFrameStructure);
+        General_VersionFrameStructure.Members generalVersionFrameStructure = netexObjectFactory.createGeneral_VersionFrameStructureMembers();
+        generalVersionFrameStructure.withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(filteredListMembers);
+        netexGeneralFrame.withMembers(generalVersionFrameStructure);
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame,"idSite",LocalDateTime.now());
 
@@ -631,6 +631,7 @@ public class StreamingPublicationDelivery {
         // ExportParams could be used for parkingExportMode.
 
         int parkingsCount = parkingRepository.countResult();
+        Set<String> organisationIds = new HashSet<>();
         if (parkingsCount > 0) {
             // Only set parkings if they will exist during marshalling.
             logger.info("Parking count is {}, will create parking in publication delivery", parkingsCount);
@@ -673,6 +674,42 @@ public class StreamingPublicationDelivery {
 
                     np.setResponsibilitySetRef(responsibilitySet.getId());
                 }
+                org.rutebanken.tiamat.model.Organisation organisation = tp.getOrganisation();
+                if (organisation != null) {
+                    String organisationId = organisation.getNetexId();
+                    GeneralOrganisation generalOrganisation = new GeneralOrganisation();
+                    generalOrganisation.setId(organisationId);
+                    generalOrganisation.setVersion("any");
+                    generalOrganisation.setName(new MultilingualString().withValue(organisation.getName()));
+                    generalOrganisation.setShortName(new MultilingualString().withValue(organisation.getShortName()));
+                    ContactStructure contactStructure = new ContactStructure();
+                    contactStructure.setEmail(organisation.getEmail());
+                    contactStructure.setPhone(organisation.getPhoneNumber());
+                    contactStructure.setUrl(organisation.getOrganisationUrl());
+
+                    generalOrganisation.setContactDetails(contactStructure);
+                    generalOrganisation.getOrganisationType().add(OrganisationTypeEnumeration.OPERATOR);
+                    generalOrganisation.setCompanyNumber(tp.getNetexId());
+
+                    if (!organisationIds.contains(organisationId)) {
+                        organisationIds.add(organisationId);
+                        listMembers.add(netexObjectFactory.createGeneralOrganisation(generalOrganisation));
+                    }
+
+                    OrganisationRefStructure organisationRefStructure = new OrganisationRefStructure();
+                    organisationRefStructure.setRef(organisationId);
+                    if (np.getLocale() == null) {
+                        LocaleStructure value = new LocaleStructure();
+                        value.setTimeZone(organisation.getTimezone());
+                        value.setDefaultLanguage(organisation.getLanguage());
+                        np.withLocale(value);
+                    }
+                    completeParkingUrl(np, organisation);
+                    np.setBookingUrl(organisation.getPurchaseUrl());
+                    if (tp.getInsee() != null) {
+                        np.setId("FR:"+tp.getInsee()+":Parking:" + tp.getNetexId().replace("MOBIITI:PARKING:", "") + ":LOC");
+                    }
+                }
                 listMembers.add(netexObjectFactory.createParking(np));
             }
 
@@ -697,6 +734,22 @@ public class StreamingPublicationDelivery {
             logger.info("Adding {} typesOfParking in generalFrame");
         } else {
             logger.info("No parkings to export");
+        }
+    }
+
+    private void completeParkingUrl(Parking np, org.rutebanken.tiamat.model.Organisation organisation) {
+        if (np.getPaymentByMobile() == null) {
+            PaymentByMobileStructure paymentByMobileStructure = new PaymentByMobileStructure();
+            if (StringUtils.isNotBlank(organisation.getAndroidStoreUri())) {
+                paymentByMobileStructure.setPaymentAppDownloadUrl(organisation.getAndroidStoreUri());
+            } else if (StringUtils.isNotBlank(organisation.getAndroidDiscoveryUri())) {
+                paymentByMobileStructure.setPaymentAppDownloadUrl(organisation.getAndroidDiscoveryUri());
+            } else if (StringUtils.isNotBlank(organisation.getIosStoreUri())) {
+                paymentByMobileStructure.setPaymentAppDownloadUrl(organisation.getIosStoreUri());
+            } else if (StringUtils.isNotBlank(organisation.getIosDiscoveryUri())) {
+                paymentByMobileStructure.setPaymentAppDownloadUrl(organisation.getIosDiscoveryUri());
+            }
+            np.setPaymentByMobile(paymentByMobileStructure);
         }
     }
 

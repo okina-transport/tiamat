@@ -130,7 +130,6 @@ public class NetexMapper {
                 .register();
 
         mapperFactory.classMap(Parking.class, org.rutebanken.tiamat.model.Parking.class)
-                .exclude("paymentMethods")
                 .exclude("cardsAccepted")
                 .exclude("currenciesAccepted")
                 .exclude("accessModes")

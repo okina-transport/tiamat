@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Component
@@ -67,7 +66,13 @@ public class NetexIdHelper {
             return false;
         }
 
-        return true;
+        String[] splitId = StringUtils.split(netexId, ":");
+        try {
+            Long.valueOf(splitId[2]);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     /**
@@ -115,7 +120,7 @@ public class NetexIdHelper {
             }
 
             logger.debug("Extracted prefix: {}, type: {} and numeric value: {}", prefix, type, numeric);
-            return prefix +":"+type+":"+String.valueOf(numeric);
+            return prefix +":"+type+":"+numeric;
 
         } catch (IllegalArgumentException e) {
             logger.debug("Cannot strip leading zeros from numeric ID in {}. Returning value as is. Message: {}", originalIdValue, e.getMessage());

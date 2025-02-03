@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
@@ -26,11 +27,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.model.Parking> {
 
     private static final ObjectFactory netexObjectFactory = new ObjectFactory();
+
+    private static final Pattern patternStreetNumber = Pattern.compile("^(\\d+)\\s*(.*)$");
 
     @Override
     public void mapAtoB(Parking parking, org.rutebanken.tiamat.model.Parking parking2, MappingContext context) {
@@ -49,6 +51,8 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
     public void mapBtoA(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking, MappingContext context) {
         super.mapBtoA(tiamatParking, netexParking, context);
 
+        mapPaymentMethod(tiamatParking, netexParking);
+
         if (StringUtils.isNotEmpty(tiamatParking.getParkingTypeRef())){
             TypeOfParkingRefStructure typeOfParkingRefStructure = new TypeOfParkingRefStructure();
             typeOfParkingRefStructure.withRef(tiamatParking.getParkingTypeRef());
@@ -56,30 +60,10 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
             netexParking.setTypeOfParkingRef(typeOfParkingRefStructure);
         }
 
-        // todo : vérifier
-        if (tiamatParking.getInsee() != null || tiamatParking.getAddress() != null) {
-            PostalAddress postalAddress = new PostalAddress();
-            postalAddress.setId("MOBIITI:PostalAddress:" + UUID.randomUUID().toString());
-            postalAddress.setVersion("any");
-            if (tiamatParking.getAddress() != null) {
-                // Expression régulière pour capturer les premiers chiffres au début de l'adresse
-                Pattern pattern = Pattern.compile("^(\\d+)\\s*(.*)$");
-                Matcher matcher = pattern.matcher(tiamatParking.getAddress());
+        mapAddress(tiamatParking, netexParking);
 
-                if (matcher.matches()) {
-                    postalAddress.setHouseNumber(matcher.group(1));
-                    postalAddress.setStreet(new MultilingualString().withValue(matcher.group(2)));
-                } else {
-                    postalAddress.setStreet(new MultilingualString().withValue(tiamatParking.getAddress()));
-                }
-            }
-            else if (tiamatParking.getInsee() != null) {
-                postalAddress.setPostalRegion(tiamatParking.getInsee());
-            }
-            netexParking.setPostalAddress(postalAddress);
-        }
+        mapAppDownloadUrl(tiamatParking, netexParking);
 
-        // todo : ok
         if (tiamatParking.getUrl() != null) {
             InfoLinkStructure infoLink = new InfoLinkStructure();
             GroupOfEntities_VersionStructure.InfoLinks infoLinks = new GroupOfEntities_VersionStructure.InfoLinks();
@@ -102,7 +86,7 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
                     parkingAreas.add(mapperFacade.map(pa, ParkingArea.class));
                 }
             }
-            
+
             if (!parkingAreas.isEmpty()) {
                 parkingAreas.forEach(pa -> {
                     if (pa.getSiteRef() == null) {
@@ -111,21 +95,67 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
                         pa.setSiteRef(siteRefStructure);
                     }
                 });
-                ParkingAreas_RelStructure parkingAreas_relStructure = new ParkingAreas_RelStructure();
-                parkingAreas_relStructure.getParkingAreaRefOrParkingArea_().addAll(parkingAreas.stream()
+                ParkingAreas_RelStructure parkingAreasRelStructure = new ParkingAreas_RelStructure();
+                parkingAreasRelStructure.getParkingAreaRefOrParkingArea_().addAll(parkingAreas.stream()
                         .map(pa -> {
-                            if (pa instanceof VehiclePoolingParkingArea) {
-                                return netexObjectFactory.createVehiclePoolingParkingArea((VehiclePoolingParkingArea) pa);
-                            } else if (pa instanceof VehicleSharingParkingArea) {
-                                return netexObjectFactory.createVehicleSharingParkingArea((VehicleSharingParkingArea) pa);
+                            if (pa instanceof VehiclePoolingParkingArea vppa) {
+                                return netexObjectFactory.createVehiclePoolingParkingArea(vppa);
+                            } else if (pa instanceof VehicleSharingParkingArea vspa) {
+                                return netexObjectFactory.createVehicleSharingParkingArea(vspa);
                             } else {
                                 return netexObjectFactory.createParkingArea((ParkingArea) pa);
                             }
                         })
-                        .collect(Collectors.toList()));
+                        .toList());
 
-                netexParking.setParkingAreas(parkingAreas_relStructure);
+                netexParking.setParkingAreas(parkingAreasRelStructure);
             }
+        }
+    }
+
+    private static void mapAppDownloadUrl(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking) {
+        if (StringUtils.isNotBlank(tiamatParking.getRentalUriAndroid())) {
+            PaymentByMobileStructure paymentByMobileStructure = new PaymentByMobileStructure();
+            paymentByMobileStructure.setPaymentAppDownloadUrl(tiamatParking.getRentalUriAndroid());
+            netexParking.setPaymentByMobile(paymentByMobileStructure);
+        } else if (StringUtils.isNotBlank(tiamatParking.getRentalUriIos())) {
+            PaymentByMobileStructure paymentByMobileStructure = new PaymentByMobileStructure();
+            paymentByMobileStructure.setPaymentAppDownloadUrl(tiamatParking.getRentalUriIos());
+            netexParking.setPaymentByMobile(paymentByMobileStructure);
+        }
+    }
+
+    private static void mapAddress(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking) {
+        if (tiamatParking.getInsee() != null || tiamatParking.getAddress() != null) {
+            PostalAddress postalAddress = new PostalAddress();
+            postalAddress.setId("MOBIITI:PostalAddress:" + UUID.randomUUID());
+            postalAddress.setVersion("any");
+            if (tiamatParking.getAddress() != null) {
+                // Expression régulière pour capturer les premiers chiffres au début de l'adresse
+                Matcher matcher = patternStreetNumber.matcher(tiamatParking.getAddress());
+
+                if (matcher.matches()) {
+                    postalAddress.setHouseNumber(matcher.group(1));
+                    postalAddress.setStreet(new MultilingualString().withValue(matcher.group(2)));
+                } else {
+                    postalAddress.setStreet(new MultilingualString().withValue(tiamatParking.getAddress()));
+                }
+            }
+            else if (tiamatParking.getInsee() != null) {
+                postalAddress.setPostalRegion(tiamatParking.getInsee());
+            }
+            if (tiamatParking.getInsee() != null) {
+                postalAddress.setPostCode(tiamatParking.getInsee());
+            }
+            netexParking.setPostalAddress(postalAddress);
+        }
+    }
+
+    private static void mapPaymentMethod(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking) {
+        if (CollectionUtils.isNotEmpty(tiamatParking.getParkingPaymentMethods())) {
+           for (org.rutebanken.tiamat.model.PaymentMethodEnumeration enumeration : tiamatParking.getParkingPaymentMethods()) {
+               netexParking.getPaymentMethods().add(PaymentMethodEnumeration.fromValue(enumeration.value()));
+           }
         }
     }
 }

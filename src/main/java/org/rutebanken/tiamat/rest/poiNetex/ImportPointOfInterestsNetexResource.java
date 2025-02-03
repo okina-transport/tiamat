@@ -91,7 +91,7 @@ public class ImportPointOfInterestsNetexResource {
                                        @FormDataParam("file_name") String fileName,
                                        @FormDataParam("provider") String provider,
                                        @FormDataParam("folder") String folder)
-            throws IOException, IllegalArgumentException, JAXBException, SAXException {
+            throws IOException, IllegalArgumentException {
         logger.info("Lancement de l'import POI netex pour le fichier: " + fileName);
 
         Job job = new Job();
@@ -104,7 +104,7 @@ public class ImportPointOfInterestsNetexResource {
         job = jobRepository.save(job);
         Response.ResponseBuilder builder = Response.accepted();
 
-        ImportJobWorker importJobWorker = new ImportJobWorker(job, publicationDeliveryUnmarshaller, netexImporter, provider,jobRepository ,inputStream, poiHelper);
+        ImportJobWorker importJobWorker = new ImportJobWorker(job, publicationDeliveryUnmarshaller, netexImporter, jobRepository ,inputStream, poiHelper);
         importService.submit(importJobWorker);
 
         if (provider != null) {

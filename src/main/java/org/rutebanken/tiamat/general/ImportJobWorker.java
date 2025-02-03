@@ -15,17 +15,23 @@
 
 package org.rutebanken.tiamat.general;
 
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
+import org.rutebanken.tiamat.externalapis.DtoGeocode;
+import org.rutebanken.tiamat.externalapis.gbfs.mapper.StationInformationMapper;
+import org.rutebanken.tiamat.externalapis.gbfs.mapper.SystemInformationMapper;
 import org.rutebanken.tiamat.importer.ImportParams;
+import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.importer.NetexImporter;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingLayoutEnumeration;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
+import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportData;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.NetexUtils;
-import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.repository.JobRepository;
+import org.rutebanken.tiamat.repository.OrganisationRepository;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
 import org.rutebanken.tiamat.rest.dto.DtoParking;
 import org.rutebanken.tiamat.rest.dto.DtoPointOfInterest;
@@ -48,19 +54,19 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class ImportJobWorker implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportJobWorker.class);
 
     private final Job job;
-    private static JobRepository jobRepository;
+    private JobRepository jobRepository;
 
     private PointOfInterestCSVHelper poiHelper;
     private InputStream inputStream;
     private PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller;
     private NetexImporter netexImporter;
-    private String provider;
     private boolean containsMobiitiIds;
     private Authentication authentication;
     private String parkingLayoutParam;
@@ -70,17 +76,18 @@ public class ImportJobWorker implements Runnable {
     private BikeParkingsImportedService bikeParkingsImportedService;
     private RentalBikeParkingsImportedService rentalBikeparkingsImportedService;
     private MissingPostCodeService missingPostalCodeService;
-    private String superIdPrefix;   
-    private PublicationDeliveryHelper publicationDeliveryHelper;
+    private String superIdPrefix;
     private boolean keepStopNames;
     private boolean keepStopGeolocalisation;
     private boolean updateStopAccessibility;
+    private GbfsParkingImportData gbfsParkingImportData;
+    private OrganisationRepository organisationRepository;
 
     public ImportJobWorker(Job job) {
         this.job = job;
     }
 
-    public ImportJobWorker(Job job, JobRepository jobRepository) throws IOException {
+    public ImportJobWorker(Job job, JobRepository jobRepository) {
         this.job = job;
         this.jobRepository = jobRepository;
     }
@@ -91,7 +98,7 @@ public class ImportJobWorker implements Runnable {
         this.jobRepository = jobRepository;
     }
 
-    public ImportJobWorker(Job job,PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, NetexImporter netexImporter, InputStream inputStream, JobRepository jobRepository) throws IOException {
+    public ImportJobWorker(Job job, PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, NetexImporter netexImporter, InputStream inputStream, JobRepository jobRepository) throws IOException {
         this.job = job;
         this.publicationDeliveryUnmarshaller = publicationDeliveryUnmarshaller;
         this.netexImporter = netexImporter;
@@ -99,24 +106,21 @@ public class ImportJobWorker implements Runnable {
         this.jobRepository = jobRepository;
     }
 
-    public ImportJobWorker(Job job, PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, InputStream inputStream,  boolean containsMobiitiIds, JobRepository jobRepository, NetexImporter netexImporter, String provider, Authentication authentication) throws IOException {
+    public ImportJobWorker(Job job, PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, InputStream inputStream, boolean containsMobiitiIds, JobRepository jobRepository, NetexImporter netexImporter, Authentication authentication) throws IOException {
         this.job = job;
         this.publicationDeliveryUnmarshaller = publicationDeliveryUnmarshaller;
         this.inputStream = StreamUtils.copyToInputStream(inputStream);
         this.containsMobiitiIds = containsMobiitiIds;
         this.jobRepository = jobRepository;
         this.netexImporter = netexImporter;
-        this.provider = provider;
         this.authentication = authentication;
     }
 
 
-
-    public ImportJobWorker(Job job, PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, NetexImporter netexImporter, String provider,JobRepository jobRepository, InputStream inputStream, PointOfInterestCSVHelper poiHelper) throws IOException {
+    public ImportJobWorker(Job job, PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, NetexImporter netexImporter, JobRepository jobRepository, InputStream inputStream, PointOfInterestCSVHelper poiHelper) throws IOException {
         this.job = job;
         this.publicationDeliveryUnmarshaller = publicationDeliveryUnmarshaller;
         this.netexImporter = netexImporter;
-        this.provider = provider;
         this.jobRepository = jobRepository;
         this.inputStream = StreamUtils.copyToInputStream(inputStream);
         this.poiHelper = poiHelper;
@@ -133,13 +137,13 @@ public class ImportJobWorker implements Runnable {
     public void run() {
 
         logger.info("Started import job: {}", job);
-        if (authentication != null){
+        if (authentication != null) {
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
 
         try {
-            switch(job.getType()){
+            switch (job.getType()) {
                 case CSV_SHOP:
                     launchCSVShopImport();
                     break;
@@ -166,6 +170,9 @@ public class ImportJobWorker implements Runnable {
                     break;
                 case MISSING_POSTAL_CODE:
                     launchMissingPostalCodeService();
+                    break;
+                case GBFS_PARKING:
+                    launchGbfsParkingImport();
                     break;
                 default:
                     logger.warn("No process associated to this job type: {}", job.getType());
@@ -219,16 +226,44 @@ public class ImportJobWorker implements Runnable {
         parkingsImportedService.createOrUpdateParkings(parkings);
     }
 
-    private void launchNetexParkingImport() throws JAXBException, IOException, SAXException{
+    private void launchGbfsParkingImport() {
+        SystemInformationMapper systemInformationMapper = new SystemInformationMapper();
+        org.rutebanken.tiamat.model.Organisation organisation = systemInformationMapper.toOrganisation(gbfsParkingImportData.systemInformation());
+        Optional<org.rutebanken.tiamat.model.Organisation> optionalOrganisation = organisationRepository.findByName(organisation.getName());
+        optionalOrganisation.ifPresent(value -> organisation.setId(value.getId()));
+        organisationRepository.save(organisation);
+        StationInformationMapper stationInformationMapper = new StationInformationMapper();
+        List<Parking> parkingList = stationInformationMapper.toParkingList(organisation, gbfsParkingImportData);
+        updateInseeCode(parkingList);
+        parkingsImportedService.createOrUpdateParkings(parkingList);
+    }
+
+    private static void updateInseeCode(List<Parking> parkingList) {
+        for (Parking parking : parkingList) {
+            DtoGeocode dtoGeocode = new DtoGeocode();
+            try {
+                dtoGeocode = ImporterUtils.getGeocodeDataByReverseGeocoding(parking.getCentroid().getCoordinate().x, parking.getCentroid().getCoordinate().y);
+            } catch (Exception e) {
+                logger.error("Erreur lors de la récupération du code postal du parking : {}", parking.getNetexId(), e);
+            }
+            if (StringUtils.isNotBlank(dtoGeocode.getCityCode())) {
+                parking.setInsee(dtoGeocode.getCityCode());
+            } else {
+                logger.error("Code postal non trouvé pour le parking {} ", parking.getNetexId());
+            }
+        }
+    }
+
+    private void launchNetexParkingImport() throws JAXBException, IOException, SAXException {
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         netexImporter.importProcess(incomingPublicationDelivery, new ImportParams(), false);
 
     }
 
-    private void launchNetexStopPlaceImport() throws JAXBException, IOException, SAXException{
+    private void launchNetexStopPlaceImport() throws JAXBException, IOException, SAXException {
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         containsMobiitiIds = isUsingSuperIds(incomingPublicationDelivery);
-        if (!containsMobiitiIds){
+        if (!containsMobiitiIds) {
             replaceIdsAndRemoveImportedIds(incomingPublicationDelivery);
         }
         ImportParams importParams = new ImportParams();
@@ -236,7 +271,7 @@ public class ImportJobWorker implements Runnable {
         importParams.keepStopNames = keepStopNames;
         importParams.keepStopGeolocalisation = keepStopGeolocalisation;
 
-        netexImporter.importProcess(incomingPublicationDelivery,importParams,  containsMobiitiIds);
+        netexImporter.importProcess(incomingPublicationDelivery, importParams, containsMobiitiIds);
 
     }
 
@@ -249,23 +284,23 @@ public class ImportJobWorker implements Runnable {
                 members = NetexUtils.getMembersFromPublicationDelivery(incomingPublicationDelivery);
 
                 for (JAXBElement<? extends EntityStructure> member : members) {
-                    if (member.getValue() instanceof StopPlace){
+                    if (member.getValue() instanceof StopPlace) {
                         StopPlace stopPlace = (StopPlace) member.getValue();
                         stopPlace.setId(replaceId("StopPlace", stopPlace.getId()));
                         removeImportedIds(stopPlace);
 
                         for (JAXBElement<?> jaxbElement : stopPlace.getQuays().getQuayRefOrQuay()) {
-                            if (jaxbElement.getValue() instanceof QuayRefStructure){
+                            if (jaxbElement.getValue() instanceof QuayRefStructure) {
                                 QuayRefStructure quayRef = (QuayRefStructure) jaxbElement.getValue();
                                 quayRef.setRef(replaceId("Quay", quayRef.getRef()));
-                            }else if (jaxbElement.getValue() instanceof Quay){
+                            } else if (jaxbElement.getValue() instanceof Quay) {
                                 Quay quay = (Quay) jaxbElement.getValue();
                                 quay.setId(replaceId("Quay", quay.getId()));
                                 removeImportedIds(quay);
                                 quay.setSiteRef(null);
                             }
                         }
-                    }else if(member.getValue() instanceof Quay){
+                    } else if (member.getValue() instanceof Quay) {
                         Quay quay = (Quay) member.getValue();
                         quay.setId(replaceId("Quay", quay.getId()));
                         removeImportedIds(quay);
@@ -276,9 +311,9 @@ public class ImportJobWorker implements Runnable {
         }
     }
 
-    private void removeImportedIds(DataManagedObjectStructure object){
-        if (object.getKeyList() == null){
-            return ;
+    private void removeImportedIds(DataManagedObjectStructure object) {
+        if (object.getKeyList() == null) {
+            return;
         }
 
         KeyListStructure originalList = object.getKeyList();
@@ -288,7 +323,7 @@ public class ImportJobWorker implements Runnable {
         List<KeyValueStructure> newKeyValues = new ArrayList<>();
 
         for (KeyValueStructure originalKey : originalKeys) {
-            if (!originalKey.getKey().equals("imported-id")){
+            if (!originalKey.getKey().equals("imported-id")) {
                 newKeyValues.add(originalKey);
             }
         }
@@ -303,23 +338,23 @@ public class ImportJobWorker implements Runnable {
 
     /**
      * Detects if the stops are using super id of the current stack or not     *
+     *
      * @param incomingPublicationDelivery
-     * @return
-     *      true : the publication
+     * @return true : the publication
      */
     private boolean isUsingSuperIds(PublicationDeliveryStructure incomingPublicationDelivery) {
 
         List<javax.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = incomingPublicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame();
         List<JAXBElement<? extends EntityStructure>> members = null;
-        
+
         for (JAXBElement<? extends Common_VersionFrameStructure> frameType : findedFrameType) {
             if (frameType.getValue() instanceof GeneralFrame) {
                 members = NetexUtils.getMembersFromPublicationDelivery(incomingPublicationDelivery);
 
                 for (JAXBElement<? extends EntityStructure> member : members) {
-                    if (member.getValue() instanceof StopPlace){
+                    if (member.getValue() instanceof StopPlace) {
                         StopPlace stopPlace = (StopPlace) member.getValue();
-                        if (stopPlace.getId().startsWith(superIdPrefix + ":StopPlace:")){
+                        if (stopPlace.getId().startsWith(superIdPrefix + ":StopPlace:")) {
                             return true;
                         }
                     }
@@ -332,7 +367,7 @@ public class ImportJobWorker implements Runnable {
     private void launchNetexPoiImport() throws JAXBException, IOException, SAXException {
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         poiHelper.clearClassificationCache();
-        netexImporter.importProcess(incomingPublicationDelivery, new ImportParams(),  false);
+        netexImporter.importProcess(incomingPublicationDelivery, new ImportParams(), false);
     }
 
     private void launchCSVPoiImport() throws IOException {
@@ -353,11 +388,9 @@ public class ImportJobWorker implements Runnable {
     }
 
 
-
     public void setParkingTypeParam(String parkingTypeParam) {
         this.parkingTypeParam = parkingTypeParam;
     }
-
 
 
     public void setParkingLayoutParam(String parkingLayoutParam) {
@@ -365,11 +398,9 @@ public class ImportJobWorker implements Runnable {
     }
 
 
-
     public void setParkingsImportedService(ParkingsImportedService parkingsImportedService) {
         this.parkingsImportedService = parkingsImportedService;
     }
-
 
 
     public void setBikeParkingsImportedService(BikeParkingsImportedService bikeParkingsImportedService) {
@@ -418,5 +449,17 @@ public class ImportJobWorker implements Runnable {
 
     public void setUpdateStopAccessibility(boolean updateStopAccessibility) {
         this.updateStopAccessibility = updateStopAccessibility;
+    }
+
+    public GbfsParkingImportData getGbfsParkingImportData() {
+        return gbfsParkingImportData;
+    }
+
+    public void setGbfsParkingImportData(GbfsParkingImportData gbfsParkingImportData) {
+        this.gbfsParkingImportData = gbfsParkingImportData;
+    }
+
+    public void setOrganisationRepository(OrganisationRepository organisationRepository) {
+        this.organisationRepository = organisationRepository;
     }
 }

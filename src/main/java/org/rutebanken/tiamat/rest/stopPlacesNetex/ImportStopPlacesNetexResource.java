@@ -117,7 +117,7 @@ public class ImportStopPlacesNetexResource {
         job.setSubFolder(folder);
         jobRepository.save(job);
         logger.info("Import stop place netex: {}", fileName);
-        ImportJobWorker importJobWorker = new ImportJobWorker(job, publicationDeliveryUnmarshaller, inputStream, containsMobiitiIds, jobRepository, netexImporter, provider, authentication);
+        ImportJobWorker importJobWorker = new ImportJobWorker(job, publicationDeliveryUnmarshaller, inputStream, containsMobiitiIds, jobRepository, netexImporter, authentication);
         importJobWorker.setSuperIdPrefix(validNetexPrefix);
         importJobWorker.setKeepStopNames(keepStopNames);
         importJobWorker.setKeepStopGeolocalisation(keepStopGeolocalisation);

@@ -1,6 +1,5 @@
 package org.rutebanken.tiamat.rest.parkings;
 
-import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.tiamat.general.ImportJobWorker;
@@ -38,17 +37,17 @@ public class ImportParkingsResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportParkingsResource.class);
 
-    private ParkingsImportedService parkingsImportedService;
+    private final ParkingsImportedService parkingsImportedService;
 
-    @Autowired
-    JobRepository jobRepository;
+    private final JobRepository jobRepository;
 
     private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("import-%d").build());
 
     @Autowired
-    ImportParkingsResource(ParkingsImportedService parkingsImportedService){
+    ImportParkingsResource(ParkingsImportedService parkingsImportedService, JobRepository jobRepository){
         this.parkingsImportedService=parkingsImportedService;
+        this.jobRepository = jobRepository;
     }
 
     @POST
@@ -63,7 +62,7 @@ public class ImportParkingsResource {
             ParkingLayoutEnumeration  parkingLayoutEnumeration = ParkingLayoutEnumeration.fromValue(parkingLayoutParam);
             ParkingTypeEnumeration parkingTypeEnumeration = ParkingTypeEnumeration.fromValue(parkingTypeParam);
 
-            logger.info("Import Parkings par " + user + " du fichier " + fileName);
+            logger.info("Import Parkings par {} du fichier {}", user, fileName);
 
             List<DtoParking> dtoParkingCSV = ParkingsCSVHelper.parseDocument(inputStream);
 
@@ -76,10 +75,10 @@ public class ImportParkingsResource {
             return Response.status(200).build();
 
         } catch (IOException e) {
-            logger.debug("Access denied for csv File: " + e.getMessage(), e);
+            logger.debug("Access denied for csv File: {}", e.getMessage(), e);
             throw e;
         }catch (IllegalArgumentException e) {
-            logger.warn("Caught exception while processing data in the cvs file: " + e.getMessage(), e);
+            logger.warn("Caught exception while processing data in the cvs file: {}", e.getMessage(), e);
             throw e;
         }
     }
@@ -88,7 +87,7 @@ public class ImportParkingsResource {
     @Path("/parking_import_list")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getParkingImportList() {
-        List<JobType> poiTypes = Arrays.asList(JobType.NETEX_PARKING, JobType.CSV_PARKING, JobType.CSV_BIKE_PARKING,JobType.CSV_RENTAL_BIKE_PARKING);
+        List<JobType> poiTypes = Arrays.asList(JobType.NETEX_PARKING, JobType.CSV_PARKING, JobType.CSV_BIKE_PARKING,JobType.CSV_RENTAL_BIKE_PARKING, JobType.GBFS_PARKING);
         try {
             List<Job> foundJobs = jobRepository.findByTypesAndAction(poiTypes, JobAction.IMPORT);
             return Response.ok(foundJobs).build();
@@ -110,7 +109,7 @@ public class ImportParkingsResource {
                                           @FormDataParam("parking_type") String parkingTypeParam, @FormDataParam("parking_layout") String parkingLayoutParam,
                                           @FormDataParam("park_and_ride_detection") Boolean parkAndRideDetection) throws IOException {
 
-        logger.info("Import Parkings par " + user + " du fichier " + fileName);
+        logger.info("Import Parkings par {} du fichier {}", user, fileName);
 
         Job job = new Job();
         job.setFileName(fileName);

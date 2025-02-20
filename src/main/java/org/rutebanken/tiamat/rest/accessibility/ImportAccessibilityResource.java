@@ -28,7 +28,7 @@ public class ImportAccessibilityResource {
 
     @Autowired
     ImportAccessibilityResource(AccessibilityImportedService accessibilityImportedService){
-        this.accessibilityImportedService=accessibilityImportedService;
+        this.accessibilityImportedService = accessibilityImportedService;
     }
 
     @POST
@@ -43,10 +43,9 @@ public class ImportAccessibilityResource {
             List<DtoAccessibility> dtoAccessibility = AccessibilityCSVHelper.parseDocument(inputStream);
             AccessibilityCSVHelper.checkDuplicatedQuays(dtoAccessibility);
             List<Quay> quayList = AccessibilityCSVHelper.mapFromDtoToQuayEntity(dtoAccessibility);
-            List<Quay> result = accessibilityImportedService.updateAccessibilityQuays(quayList);
-            accessibilityImportedService.findAndUpdateAccessibilityStopPlacesToQuays(result);
+            accessibilityImportedService.updateAccessibilityQuaysAndStopPlaces(quayList);
 
-            logger.info("End of updating accessibility process");
+            logger.info("End of updating accessibility quay process");
             return Response.status(Response.Status.OK).build();
         } catch (IndexOutOfBoundsException e) {
             String message = "Index error while mapping CSV file\n" + e.getMessage() + "\nThe problem may be due to the type of file chosen (verify the checked type) and/or the columns in the file.";
@@ -70,15 +69,14 @@ public class ImportAccessibilityResource {
     public Response importAccessibilityCommercialCsvFile(@FormDataParam("file") InputStream inputStream,
                                                          @FormDataParam("file_name") String fileName,
                                                          @FormDataParam("user") String user) {
-        logger.info("Import Accessibility Stop Place by : " + user + " of the file : " + fileName);
+        logger.info("Import Accessibility Stop Place by : {} of the file : {}", user, fileName);
         try {
             List<DtoAccessibility> dtoAccessibilities = AccessibilityCSVHelper.parseDocument(inputStream);
             AccessibilityCSVHelper.checkDuplicatedQuays(dtoAccessibilities);
             List<StopPlace> stopPlaceList = AccessibilityCSVHelper.mapFromDtoToStopPlaceEntity(dtoAccessibilities);
-            List<StopPlace> result = accessibilityImportedService.updateAccessibilityStopPlaces(stopPlaceList);
-            accessibilityImportedService.findAndUpdateAccessibilityQuaysToStopPlaces(result);
+            accessibilityImportedService.updateAccessibilityStopPlacesAndQuays(stopPlaceList);
 
-            logger.info("End of updating accessibility process");
+            logger.info("End of updating accessibility commercial process");
             return Response.status(Response.Status.OK).build();
         } catch (IndexOutOfBoundsException e) {
             String message = "Index error while mapping CSV file\n" + e.getMessage() + "\nThe problem may be due to the type of file chosen (verify the checked type) and/or the columns in the file.";

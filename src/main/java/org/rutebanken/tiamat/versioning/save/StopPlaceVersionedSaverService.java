@@ -107,11 +107,11 @@ public class StopPlaceVersionedSaverService {
     private MetricsService metricsService;
 
     public StopPlace saveNewVersion(StopPlace existingVersion, StopPlace newVersion, Instant defaultValidFrom) {
-        return saveNewVersion(existingVersion, newVersion, defaultValidFrom, new HashSet<>());
+        return saveNewVersion(existingVersion, newVersion, defaultValidFrom, new HashSet<>(), true);
     }
 
     public StopPlace saveNewVersion(StopPlace existingVersion, StopPlace newVersion, Set<String> childStopsUpdated) {
-        return saveNewVersion(existingVersion, newVersion, Instant.now(), childStopsUpdated);
+        return saveNewVersion(existingVersion, newVersion, Instant.now(), childStopsUpdated, true);
     }
 
     public StopPlace saveNewVersion(StopPlace existingStopPlace, StopPlace newVersion) {
@@ -122,7 +122,11 @@ public class StopPlaceVersionedSaverService {
         return saveNewVersion(null, newVersion);
     }
 
-    public StopPlace saveNewVersion(StopPlace existingVersion, StopPlace newVersion, Instant defaultValidFrom, Set<String> childStopsUpdated) {
+    public StopPlace saveNewVersion(StopPlace existingStopPlace, StopPlace newVersion, boolean optimizeAccessibilityAssessmentsStopPlace) {
+        return saveNewVersion(existingStopPlace, newVersion, Instant.now(), null, optimizeAccessibilityAssessmentsStopPlace);
+    }
+
+    public StopPlace saveNewVersion(StopPlace existingVersion, StopPlace newVersion, Instant defaultValidFrom, Set<String> childStopsUpdated, boolean optimizeAccessibilityAssessmentsStopPlace) {
 
         if (existingVersion == null) {
             existingVersion = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
@@ -161,8 +165,10 @@ public class StopPlaceVersionedSaverService {
 
         Instant changed = Instant.now();
 
-        logger.debug("Rearrange accessibility assessments for: {}", newVersion);
-        accessibilityAssessmentOptimizer.optimizeAccessibilityAssessmentsStopPlace(newVersion);
+        if(optimizeAccessibilityAssessmentsStopPlace){
+            logger.debug("Rearrange accessibility assessments for: {}", newVersion);
+            accessibilityAssessmentOptimizer.optimizeAccessibilityAssessmentsStopPlace(newVersion);
+        }
 
         Instant newVersionValidFrom = validityUpdater.updateValidBetween(existingVersion, newVersion, defaultValidFrom);
         updateValidBetweenInChildren(newVersion, newVersion.getValidBetween());

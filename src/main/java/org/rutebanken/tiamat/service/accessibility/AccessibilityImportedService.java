@@ -1,17 +1,22 @@
 package org.rutebanken.tiamat.service.accessibility;
 
 import org.rutebanken.tiamat.model.*;
-import org.rutebanken.tiamat.repository.QuayRepository;
+
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.versioning.VersionCreator;
+import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -20,13 +25,15 @@ public class AccessibilityImportedService {
 
     private static final Logger logger = LoggerFactory.getLogger(AccessibilityImportedService.class);
 
-    private final QuayRepository quayRepository;
     private final StopPlaceRepository stopPlaceRepository;
+    private final VersionCreator versionCreator;
+    private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
 
     @Autowired
-    AccessibilityImportedService(QuayRepository quayRepository, StopPlaceRepository stopPlaceRepository){
-        this.quayRepository = quayRepository;
+    AccessibilityImportedService(StopPlaceRepository stopPlaceRepository, VersionCreator versionCreator, StopPlaceVersionedSaverService stopPlaceVersionedSaverService) {
         this.stopPlaceRepository = stopPlaceRepository;
+        this.versionCreator = versionCreator;
+        this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
     }
 
     /**
@@ -34,9 +41,9 @@ public class AccessibilityImportedService {
      * Cette méthode extrait l'évaluation d'accessibilité d'un {@link Quay} ou d'un {@link StopPlace},
      * puis utilise une fonction mapper pour obtenir la valeur de limitation spécifique.
      *
-     * @param quay Le quai pour lequel obtenir la limitation d'accessibilité, peut être {@code null} si stopPlace est utilisé.
+     * @param quay      Le quai pour lequel obtenir la limitation d'accessibilité, peut être {@code null} si stopPlace est utilisé.
      * @param stopPlace L'arrêt commercial pour lequel obtenir la limitation d'accessibilité, peut être {@code null} si quay est utilisé.
-     * @param mapper La fonction qui extrait la valeur spécifique de limitation d'accessibilité d'une {@link AccessibilityLimitation}.
+     * @param mapper    La fonction qui extrait la valeur spécifique de limitation d'accessibilité d'une {@link AccessibilityLimitation}.
      * @return La valeur de la limitation d'accessibilité correspondante, ou UNKNOWN si non trouvée.
      */
     private static LimitationStatusEnumeration getAccessibilityLimitation(Quay quay, StopPlace stopPlace, Function<AccessibilityLimitation, LimitationStatusEnumeration> mapper) {
@@ -53,7 +60,7 @@ public class AccessibilityImportedService {
      * Utilise une série de getters et setters pour appliquer les valeurs d'accessibilité
      * depuis le quai ou l'arrêt commercial au nouvel objet de limitation d'accessibilité.
      *
-     * @param quay Le quai à partir duquel obtenir les informations d'accessibilité, peut être {@code null}.
+     * @param quay      Le quai à partir duquel obtenir les informations d'accessibilité, peut être {@code null}.
      * @param stopPlace L'arrêt commercial à partir duquel obtenir les informations d'accessibilité, peut être {@code null}.
      * @return Une nouvelle instance de {@link AccessibilityLimitation} peuplée avec les informations d'accessibilité appropriées.
      */
@@ -88,246 +95,231 @@ public class AccessibilityImportedService {
         return newAccessibilityLimitation;
     }
 
-    /**
-     * Met à jour les informations d'accessibilité pour une liste de quais.
-     * Pour chaque quai à sauvegarder, cette méthode recherche d'abord les quais correspondants
-     * dans la base de données par leur identifiant Netex. Ensuite, elle met à jour l'évaluation
-     * d'accessibilité de chaque quai trouvé avec les nouvelles informations fournies, et enregistre
-     * les modifications dans la base de données.
-     *
-     * @param quaysToSave La liste des quais dont les informations d'accessibilité doivent être mises à jour.
-     * @return La liste des quais effectivement mis à jour et sauvegardés dans la base de données.
-     */
-    public List<Quay> updateAccessibilityQuays(List<Quay> quaysToSave){
-        List<Quay> quayList = new ArrayList<>();
-        for(Quay quayToSave: quaysToSave){
-            try {
-                List<Quay> quayInBDD = quayRepository.findByNetexId(quayToSave.getNetexId());
-
-                for(Quay quay: quayInBDD) {
-                    AccessibilityLimitation newAccessibilityLimitation = newAccessibilityLimitation(quayToSave, null);
-                    AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
-                    accessibilityAssessment.setMobilityImpairedAccess(quayToSave.getAccessibilityAssessment().getMobilityImpairedAccess());
-                    accessibilityAssessment.setLimitations(List.of(newAccessibilityLimitation));
-                    quay.setAccessibilityAssessment(accessibilityAssessment);
-
-                    try {
-                        quayRepository.save(quay);
-                        quayList.add(quay);
-                    } catch (Exception e) {
-                        logger.warn("Cannot update quay with netexId : " + quay.getNetexId(), e);
-                    }
-                }
-            } catch (Exception e) {
-                logger.warn("Cannot find in BDD quay with netexId : " + quayToSave.getNetexId(), e);
-            }
-        }
-        return quayList;
-    }
 
     /**
      * Met à jour les informations d'accessibilité pour une liste d'arrêts commerciaux.
      * Pour chaque arrêt commercial à sauvegarder, cette méthode recherche d'abord les arrêts commerciaux correspondants
      * dans la base de données par leur identifiant Netex. Ensuite, elle met à jour l'évaluation
-     * d'accessibilité de chaque arrêt commercial trouvé avec les nouvelles informations fournies, et enregistre
+     * d'accessibilité de chaque arrêt commercial trouvé ainsi que de ses quais avec les nouvelles informations fournies, et enregistre
      * les modifications dans la base de données.
      *
      * @param stopPlaces La liste des arrêts commerciaux dont les informations d'accessibilité doivent être mises à jour.
      * @return La liste des arrêts commerciaux effectivement mis à jour et sauvegardés dans la base de données.
      */
-    public List<StopPlace> updateAccessibilityStopPlaces(List<StopPlace> stopPlaces){
-        List<StopPlace> stopPlaceList = new ArrayList<>();
-        for(StopPlace stopPlaceToSave: stopPlaces){
+    public void updateAccessibilityStopPlacesAndQuays(List<StopPlace> stopPlaces) {
+        for (StopPlace stopPlaceToSave : stopPlaces) {
             try {
-                List<StopPlace> inBDD = stopPlaceRepository.findByNetexId(stopPlaceToSave.getNetexId());
+                StopPlace existingStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceToSave.getNetexId());
+                StopPlace newVersionStopPlace = versionCreator.createCopy(existingStopPlace, StopPlace.class);
 
-                for(StopPlace stopPlace: inBDD) {
-                    AccessibilityLimitation newAccessibilityLimitation = newAccessibilityLimitation(null, stopPlaceToSave);
-                    AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
-                    accessibilityAssessment.setMobilityImpairedAccess(stopPlaceToSave.getAccessibilityAssessment().getMobilityImpairedAccess());
-                    accessibilityAssessment.setLimitations(List.of(newAccessibilityLimitation));
-                    stopPlace.setAccessibilityAssessment(accessibilityAssessment);
+                AccessibilityLimitation newAccessibilityLimitation = newAccessibilityLimitation(null, stopPlaceToSave);
+                AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
+                accessibilityAssessment.setMobilityImpairedAccess(stopPlaceToSave.getAccessibilityAssessment().getMobilityImpairedAccess());
+                accessibilityAssessment.setLimitations(List.of(newAccessibilityLimitation));
+                newVersionStopPlace.setAccessibilityAssessment(accessibilityAssessment);
+                newVersionStopPlace.getQuays().forEach(quay -> {
+                    AccessibilityLimitation accessibilityLimitationQuay = new AccessibilityLimitation();
+                    BeanUtils.copyProperties(accessibilityAssessment.getLimitations().get(0), accessibilityLimitationQuay);
+                    AccessibilityAssessment accessibilityAssessmentQuay = new AccessibilityAssessment();
+                    BeanUtils.copyProperties(accessibilityAssessment, accessibilityAssessmentQuay);
+                    accessibilityAssessmentQuay.setLimitations(List.of(accessibilityLimitationQuay));
+                    quay.setAccessibilityAssessment(accessibilityAssessmentQuay);
+                });
 
-                    try {
-                        stopPlaceRepository.save(stopPlace);
-                        stopPlaceList.add(stopPlace);
-                    } catch (Exception e) {
-                        logger.warn("Cannot update stop place with netexId : " + stopPlace.getNetexId(), e);
-                    }
+                try {
+                    saveNewVersionStopPlace(existingStopPlace, newVersionStopPlace, true);
+                } catch (Exception e) {
+                    logger.warn("Cannot update stop place with netexId : {}", existingStopPlace.getNetexId(), e);
                 }
             } catch (Exception e) {
-                logger.warn("Cannot find in BDD stop place with netexId : " + stopPlaceToSave.getNetexId(), e);
+                logger.warn("Cannot find in BDD stop place with netexId : {}", stopPlaceToSave.getNetexId(), e);
             }
         }
-        return stopPlaceList;
+    }
+
+    private void saveNewVersionStopPlace(StopPlace existingStopPlace, StopPlace newVersionStopPlace, boolean optimizeAccessibilityAssessments) {
+        if (existingStopPlace.getParentSiteRef() != null && !existingStopPlace.isParentStopPlace()) {
+            StopPlace existingParentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingStopPlace.getParentSiteRef().getRef());
+            StopPlace copyParentStopPlace = versionCreator.createCopy(existingParentStopPlace, StopPlace.class);
+            copyParentStopPlace.getChildren().removeIf(stopPlace -> stopPlace.getNetexId().equals(newVersionStopPlace.getNetexId()));
+            copyParentStopPlace.getChildren().add(newVersionStopPlace);
+            copyParentStopPlace = stopPlaceVersionedSaverService.saveNewVersion(existingParentStopPlace, copyParentStopPlace, optimizeAccessibilityAssessments);
+            copyParentStopPlace.getChildren().stream().filter(stopPlace -> stopPlace.getNetexId().equals(newVersionStopPlace.getNetexId())).findFirst().get();
+        } else {
+            stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, newVersionStopPlace, optimizeAccessibilityAssessments);
+        }
     }
 
     /**
-     * Identifie les arrêts commerciaux et les quais associés dans la base de données, puis met à jour
-     * leurs évaluations d'accessibilité en fonction des données fournies. Cette méthode utilise
-     * les relations existantes entre les arrêts commerciaux et les quais pour appliquer les mises à jour
-     * nécessaires sur les évaluations d'accessibilité de chaque lieu d'arrêt.
+     * Met à jour les évaluations d'accessibilité des quais et des arrêts commerciaux associés.
+     * - Récupère le StopPlace existant pour chaque quai
+     * - Crée une nouvelle version du StopPlace avec les mises à jour
+     * - Met à jour l'accessibilité du quai et fusionne les valeurs d'accessibilité pour le StopPlace
+     * - Sauvegarde la nouvelle version du StopPlace
      *
-     * @param quays La liste des quais avec des informations d'accessibilité mises à jour.
+     * @param quays Liste des quais contenant des informations mises à jour sur l'accessibilité.
      */
-    public void findAndUpdateAccessibilityStopPlacesToQuays(List<Quay> quays) {
-        Map<StopPlace, List<Quay>> stopPlacesToQuays = stopPlaceRepository.findStopPlacesToQuays(quays);
-        updateAccessibilityStopPlacesAccessibilityQuay(stopPlacesToQuays);
+    public void updateAccessibilityQuaysAndStopPlaces(List<Quay> quays) {
+        for (Quay quay : quays) {
+            StopPlace existingStopPlace = stopPlaceRepository.findFirstStopPlaceByNetexQuayOrderByVersionDesc(quay.getNetexId());
+            StopPlace newVersionStopPlace = versionCreator.createCopy(existingStopPlace, StopPlace.class);
+
+            // Création d'une nouvelle évaluation d'accessibilité pour le quai
+            AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
+            accessibilityAssessment.setMobilityImpairedAccess(quay.getAccessibilityAssessment().getMobilityImpairedAccess());
+            accessibilityAssessment.setLimitations(List.of(newAccessibilityLimitation(quay, null)));
+
+            // Mise à jour du quai dans le StopPlace
+            newVersionStopPlace.getQuays().stream()
+                    .filter(newQuay -> newQuay.getNetexId().equals(quay.getNetexId()))
+                    .forEach(newQuay -> newQuay.setAccessibilityAssessment(accessibilityAssessment));
+
+            // Fusion des accessibilités des quais pour calculer celle du StopPlace
+            aggregateQuayAccessibilitiesToStopPlace(newVersionStopPlace);
+
+            // Sauvegarde du StopPlace avec gestion des erreurs
+            try {
+                saveNewVersionStopPlace(existingStopPlace, newVersionStopPlace, false);
+            } catch (Exception e) {
+                logger.warn("Cannot update stop place with netexId : {}", existingStopPlace.getNetexId(), e);
+            }
+        }
     }
 
     /**
-     * Identifie les quais et les arrêts commerciaux associés dans la base de données, puis met à jour
-     * leurs évaluations d'accessibilité en fonction des données fournies. Cette méthode utilise
-     * les relations existantes entre les quais et les arrêts commerciaux pour appliquer les mises à jour
-     * nécessaires sur les évaluations d'accessibilité de chaque quai.
+     * Agrège les valeurs d'accessibilité des quais pour en déduire celle du StopPlace.
+     * - Applique une règle de fusion pour déterminer la valeur finale
+     * - Gère proprement les valeurs nulles
      *
-     * @param stopPlaces La liste des arrêts commerciaux avec des informations d'accessibilité mises à jour.
+     * @param quayValues Liste des valeurs d'accessibilité des quais
+     * @return La valeur agrégée selon la règle de fusion
      */
-    public void findAndUpdateAccessibilityQuaysToStopPlaces(List<StopPlace> stopPlaces) {
-        Map<Quay, List<StopPlace>> quaysToStopPlaces = stopPlaceRepository.findQuaysToStopPlaces(stopPlaces);
-        updateAccessibilityStopPlacesAccessibilityStopPlace(quaysToStopPlaces);
+    private LimitationStatusEnumeration aggregateQuayAccessibilities(List<LimitationStatusEnumeration> quayValues) {
+        if (quayValues == null || quayValues.isEmpty()) {
+            return LimitationStatusEnumeration.UNKNOWN; // Par défaut si aucun quai n'est renseigné
+        }
+
+        LimitationStatusEnumeration result = quayValues.get(0);
+
+        for (int i = 1; i < quayValues.size(); i++) {
+            result = compareTwoAccessibilities(result, quayValues.get(i));
+        }
+
+        return result;
     }
 
     /**
-     * Compare deux valeurs d'évaluation d'accessibilité et détermine le résultat de la comparaison
-     * en fonction des règles métiers définies. Cette méthode est utilisée pour résoudre les conflits
-     * lors de la fusion des données d'accessibilité provenant de sources multiples.
+     * Applique la règle de fusion entre deux valeurs d'accessibilité en respectant le tableau défini.
+     * - TRUE est prioritaire
+     * - PARTIAL est intermédiaire
+     * - UNKNOWN et FALSE nécessitent une gestion spécifique
      *
-     * @param value1 La première valeur d'évaluation à comparer.
-     * @param value2 La deuxième valeur d'évaluation à comparer.
-     * @return Le résultat de la comparaison en tant que {@link LimitationStatusEnumeration}.
+     * @param value1 Première valeur à comparer
+     * @param value2 Deuxième valeur à comparer
+     * @return La valeur fusionnée selon la logique définie
      */
-    private LimitationStatusEnumeration compareAccessibility(LimitationStatusEnumeration value1, LimitationStatusEnumeration value2) {
-        if (LimitationStatusEnumeration.TRUE.equals(value1)) {
-            if (LimitationStatusEnumeration.TRUE.equals(value2)) return LimitationStatusEnumeration.TRUE;
-            else if (LimitationStatusEnumeration.FALSE.equals(value2)) return LimitationStatusEnumeration.PARTIAL;
-            else if (LimitationStatusEnumeration.PARTIAL.equals(value2)) return LimitationStatusEnumeration.PARTIAL;
-            else if (LimitationStatusEnumeration.UNKNOWN.equals(value2)) return LimitationStatusEnumeration.PARTIAL;
+    private LimitationStatusEnumeration compareTwoAccessibilities(LimitationStatusEnumeration value1, LimitationStatusEnumeration value2) {
+        if (value1 == null) return value2;
+        if (value2 == null) return value1;
+
+        if (value1 == LimitationStatusEnumeration.TRUE && value2 == LimitationStatusEnumeration.TRUE)
+            return LimitationStatusEnumeration.TRUE;
+        if (value1 == LimitationStatusEnumeration.TRUE || value2 == LimitationStatusEnumeration.TRUE)
+            return LimitationStatusEnumeration.PARTIAL;
+
+        if (value1 == LimitationStatusEnumeration.FALSE && value2 == LimitationStatusEnumeration.FALSE)
+            return LimitationStatusEnumeration.FALSE;
+
+        // Si l'un est FALSE et l'autre UNKNOWN, on retourne UNKNOWN
+        if ((value1 == LimitationStatusEnumeration.FALSE && value2 == LimitationStatusEnumeration.UNKNOWN) ||
+                (value1 == LimitationStatusEnumeration.UNKNOWN && value2 == LimitationStatusEnumeration.FALSE)) {
+            return LimitationStatusEnumeration.UNKNOWN;
         }
 
-        else if (LimitationStatusEnumeration.FALSE.equals(value1)) {
-            if (LimitationStatusEnumeration.TRUE.equals(value2)) return LimitationStatusEnumeration.PARTIAL;
-            else if (LimitationStatusEnumeration.FALSE.equals(value2)) return LimitationStatusEnumeration.FALSE;
-            else if (LimitationStatusEnumeration.PARTIAL.equals(value2)) return LimitationStatusEnumeration.PARTIAL;
-            else if (LimitationStatusEnumeration.UNKNOWN.equals(value2)) return LimitationStatusEnumeration.UNKNOWN;
-        }
+        // PARTIAL est prioritaire sur FALSE
+        if (value1 == LimitationStatusEnumeration.PARTIAL || value2 == LimitationStatusEnumeration.PARTIAL)
+            return LimitationStatusEnumeration.PARTIAL;
 
-        else if (LimitationStatusEnumeration.PARTIAL.equals(value1)) {
-            if (LimitationStatusEnumeration.TRUE.equals(value2)) return LimitationStatusEnumeration.PARTIAL;
-            else if (LimitationStatusEnumeration.FALSE.equals(value2)) return LimitationStatusEnumeration.PARTIAL;
-            else if (LimitationStatusEnumeration.PARTIAL.equals(value2)) return LimitationStatusEnumeration.PARTIAL;
-            else if (LimitationStatusEnumeration.UNKNOWN.equals(value2)) return LimitationStatusEnumeration.UNKNOWN;
-
-        }
-
-        else if (LimitationStatusEnumeration.UNKNOWN.equals(value1)) {
-            if (LimitationStatusEnumeration.TRUE.equals(value2)) return LimitationStatusEnumeration.PARTIAL;
-            else if (LimitationStatusEnumeration.FALSE.equals(value2)) return LimitationStatusEnumeration.UNKNOWN;
-            else if (LimitationStatusEnumeration.PARTIAL.equals(value2)) return LimitationStatusEnumeration.PARTIAL;
-            else if (LimitationStatusEnumeration.UNKNOWN.equals(value2)) return LimitationStatusEnumeration.UNKNOWN;
-        }
+        // Si l'un est UNKNOWN et qu'on n'a pas de FALSE, on retourne UNKNOWN
+        if (value1 == LimitationStatusEnumeration.UNKNOWN || value2 == LimitationStatusEnumeration.UNKNOWN)
+            return LimitationStatusEnumeration.UNKNOWN;
 
         return LimitationStatusEnumeration.UNKNOWN;
     }
 
     /**
-     * Met à jour les informations d'accessibilité pour une liste de lieux d'arrêt en fonction
-     * des associations fournies entre les arrêts commerciaux et les quais. Cette méthode applique
-     * les mises à jour d'accessibilité sur chaque arrêt commercial en consolidant les données
-     * d'accessibilité des quais associés.
+     * Fusionne les évaluations d'accessibilité de tous les quais pour mettre à jour le StopPlace.
+     * - Vérifie et initialise `AccessibilityAssessment` et `Limitations` pour chaque quai et le StopPlace
+     * - Agrège les valeurs de chaque critère d'accessibilité à partir des quais
+     * - Met à jour le StopPlace avec les nouvelles valeurs agrégées
      *
-     * @param stopPlaceWithQuays Une carte associant chaque arrêt commercial à la liste de ses quais.
+     * @param newVersionStopPlace StopPlace mis à jour avec les nouvelles valeurs agrégées
      */
-    public void updateAccessibilityStopPlacesAccessibilityQuay(Map<StopPlace, List<Quay>> stopPlaceWithQuays) {
-        stopPlaceWithQuays.forEach((stopPlace, quays) -> {
-            AccessibilityAssessment stopPlaceAccessibility = new AccessibilityAssessment();
-            // Pour simplifier, nous utilisons le premier quai comme référence initiale
-            AccessibilityLimitation stopPlaceLimitation = newAccessibilityLimitation(quays.get(0), null);
+    protected void aggregateQuayAccessibilitiesToStopPlace(StopPlace newVersionStopPlace) {
 
-            if (quays.size() > 1) {
-                // Comparer les limitations des quais suivants et mise à jour des valeurs
-                for (int i = 1; i < quays.size(); i++) {
-                    AccessibilityLimitation currentQuayLimitation = newAccessibilityLimitation(quays.get(i), null);
-                    setLimitationValues(stopPlaceLimitation, currentQuayLimitation);
-                }
-            }
-            else {
-                stopPlaceLimitation.setWheelchairAccess(stopPlaceLimitation.getWheelchairAccess());
-                stopPlaceLimitation.setAudibleSignalsAvailable(stopPlaceLimitation.getAudibleSignalsAvailable());
-                stopPlaceLimitation.setEscalatorFreeAccess(stopPlaceLimitation.getEscalatorFreeAccess());
-                stopPlaceLimitation.setLiftFreeAccess(stopPlaceLimitation.getLiftFreeAccess());
-                stopPlaceLimitation.setStepFreeAccess(stopPlaceLimitation.getStepFreeAccess());
-                stopPlaceLimitation.setVisualSignsAvailable(stopPlaceLimitation.getVisualSignsAvailable());
-            }
+        // Initialiser chaque quai si nécessaire
+        newVersionStopPlace.getQuays().forEach(this::initializeQuayAccessibility);
 
-            stopPlaceAccessibility.setLimitations(List.of(stopPlaceLimitation));
-            stopPlace.setAccessibilityAssessment(stopPlaceAccessibility);
+        // Initialiser l'assessment du StopPlace si nécessaire
+        AccessibilityAssessment stopPlaceAssessment = newVersionStopPlace.getAccessibilityAssessment();
+        if (stopPlaceAssessment == null) {
+            stopPlaceAssessment = new AccessibilityAssessment();
+            newVersionStopPlace.setAccessibilityAssessment(stopPlaceAssessment);
+        }
 
-            try {
-                stopPlaceRepository.save(stopPlace);
-            }
-            catch (Exception e) {
-                logger.warn("Cannot update stop place with netexId : " + stopPlace.getNetexId(), e);
-            }
-        });
+        // Fusion de `MobilityImpairedAccess`
+        stopPlaceAssessment.setMobilityImpairedAccess(aggregateQuayAccessibilities(
+                newVersionStopPlace.getQuays().stream()
+                        .map(quay -> quay.getAccessibilityAssessment().getMobilityImpairedAccess())
+                        .collect(Collectors.toList())
+        ));
+
+        // Vérifier et initialiser les limitations si nécessaire
+        if (stopPlaceAssessment.getLimitations() == null || stopPlaceAssessment.getLimitations().isEmpty()) {
+            stopPlaceAssessment.setLimitations(Collections.singletonList(new AccessibilityLimitation()));
+        }
+
+        AccessibilityLimitation stopPlaceLimitation = stopPlaceAssessment.getLimitations().get(0);
+
+        // Définition des champs à agréger pour chaque critère d'accessibilité
+        Map<Consumer<LimitationStatusEnumeration>, Function<Quay, LimitationStatusEnumeration>> fieldsToAggregate = Map.of(
+                stopPlaceLimitation::setWheelchairAccess, quay -> quay.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess(),
+                stopPlaceLimitation::setAudibleSignalsAvailable, quay -> quay.getAccessibilityAssessment().getLimitations().get(0).getAudibleSignalsAvailable(),
+                stopPlaceLimitation::setEscalatorFreeAccess, quay -> quay.getAccessibilityAssessment().getLimitations().get(0).getEscalatorFreeAccess(),
+                stopPlaceLimitation::setLiftFreeAccess, quay -> quay.getAccessibilityAssessment().getLimitations().get(0).getLiftFreeAccess(),
+                stopPlaceLimitation::setStepFreeAccess, quay -> quay.getAccessibilityAssessment().getLimitations().get(0).getStepFreeAccess(),
+                stopPlaceLimitation::setVisualSignsAvailable, quay -> quay.getAccessibilityAssessment().getLimitations().get(0).getVisualSignsAvailable()
+        );
+
+        // Appliquer l'agrégation pour chaque limitation
+        fieldsToAggregate.forEach((setter, getter) ->
+                setter.accept(aggregateQuayAccessibilities(
+                        newVersionStopPlace.getQuays().stream()
+                                .map(getter)
+                                .collect(Collectors.toList())
+                ))
+        );
     }
 
     /**
-     * Met à jour les informations d'accessibilité pour une liste de quais en fonction
-     * des associations fournies entre les quais et les arrêts commerciaux. Cette méthode applique
-     * les mises à jour d'accessibilité sur chaque quai en consolidant les données
-     * d'accessibilité des arrêts commerciaux associés.
+     * Initialise l'évaluation d'accessibilité (`AccessibilityAssessment`) et les limitations (`Limitations`)
+     * pour un quai donné si ces valeurs sont `null`.
      *
-     * @param quayListMap Une carte associant chaque quai à la liste de ses arrêts commerciaux.
+     * @param quay Le quai dont l'accessibilité doit être initialisée
      */
-    public void updateAccessibilityStopPlacesAccessibilityStopPlace(Map<Quay, List<StopPlace>> quayListMap) {
-        quayListMap.forEach((quay, stopPlaces) -> {
-            AccessibilityAssessment stopPlaceAccessibility = new AccessibilityAssessment();
-            // Pour simplifier, nous utilisons le premier quai comme référence initiale
-            AccessibilityLimitation stopPlaceLimitation = newAccessibilityLimitation(null, stopPlaces.get(0));
+    protected void initializeQuayAccessibility(Quay quay) {
+        if (quay == null) return;
 
-            if (stopPlaces.size() > 1) {
-                // Comparer les limitations des quais suivants et mise à jour des valeurs
-                for (int i = 1; i < stopPlaces.size(); i++) {
-                    AccessibilityLimitation currentQuayLimitation = newAccessibilityLimitation(null, stopPlaces.get(i));
-                    setLimitationValues(stopPlaceLimitation, currentQuayLimitation);
-                }
-            }
-            else {
-                stopPlaceLimitation.setWheelchairAccess(stopPlaceLimitation.getWheelchairAccess());
-                stopPlaceLimitation.setAudibleSignalsAvailable(stopPlaceLimitation.getAudibleSignalsAvailable());
-                stopPlaceLimitation.setEscalatorFreeAccess(stopPlaceLimitation.getEscalatorFreeAccess());
-                stopPlaceLimitation.setLiftFreeAccess(stopPlaceLimitation.getLiftFreeAccess());
-                stopPlaceLimitation.setStepFreeAccess(stopPlaceLimitation.getStepFreeAccess());
-                stopPlaceLimitation.setVisualSignsAvailable(stopPlaceLimitation.getVisualSignsAvailable());
-            }
+        // Vérifier et initialiser l'assessment
+        if (quay.getAccessibilityAssessment() == null) {
+            quay.setAccessibilityAssessment(new AccessibilityAssessment());
+        }
 
-            stopPlaceAccessibility.setLimitations(List.of(stopPlaceLimitation));
-            quay.setAccessibilityAssessment(stopPlaceAccessibility);
+        AccessibilityAssessment assessment = quay.getAccessibilityAssessment();
 
-            try {
-                quayRepository.save(quay);
-            }
-            catch (Exception e) {
-                logger.warn("Cannot update quay with netexId : " + quay.getNetexId(), e);
-            }
-        });
-    }
-
-    /**
-     * Ajuste les valeurs d'accessibilité d'une évaluation en fonction d'une autre. Cette méthode
-     * est utilisée pour fusionner les informations d'accessibilité en provenance de sources multiples,
-     * en appliquant un ensemble de règles définies pour chaque type d'accessibilité.
-     *
-     * @param stopPlaceLimitation Les limitations d'accessibilité actuelles de l'arrêt commercial.
-     * @param currentQuayLimitation Les limitations d'accessibilité à appliquer.
-     */
-    private void setLimitationValues(AccessibilityLimitation stopPlaceLimitation, AccessibilityLimitation currentQuayLimitation) {
-        stopPlaceLimitation.setWheelchairAccess(compareAccessibility(stopPlaceLimitation.getWheelchairAccess(), currentQuayLimitation.getWheelchairAccess()));
-        stopPlaceLimitation.setAudibleSignalsAvailable(compareAccessibility(stopPlaceLimitation.getAudibleSignalsAvailable(), currentQuayLimitation.getAudibleSignalsAvailable()));
-        stopPlaceLimitation.setEscalatorFreeAccess(compareAccessibility(stopPlaceLimitation.getEscalatorFreeAccess(), currentQuayLimitation.getEscalatorFreeAccess()));
-        stopPlaceLimitation.setLiftFreeAccess(compareAccessibility(stopPlaceLimitation.getLiftFreeAccess(), currentQuayLimitation.getLiftFreeAccess()));
-        stopPlaceLimitation.setStepFreeAccess(compareAccessibility(stopPlaceLimitation.getStepFreeAccess(), currentQuayLimitation.getStepFreeAccess()));
-        stopPlaceLimitation.setVisualSignsAvailable(compareAccessibility(stopPlaceLimitation.getVisualSignsAvailable(), currentQuayLimitation.getVisualSignsAvailable()));
+        // Vérifier et initialiser les limitations
+        if (assessment.getLimitations() == null || assessment.getLimitations().isEmpty()) {
+            assessment.setLimitations(Collections.singletonList(new AccessibilityLimitation()));
+        }
     }
 }

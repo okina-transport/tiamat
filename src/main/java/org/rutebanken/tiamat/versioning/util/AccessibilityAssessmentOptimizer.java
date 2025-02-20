@@ -76,45 +76,6 @@ public class AccessibilityAssessmentOptimizer {
         }
     }
 
-    public void optimizeAccessibilityAssessmentsQuay(Quay quay) {
-
-        List<AccessibilityAssessment> allQuayAccessibilityAssessments = new ArrayList<>();
-
-        // Populate assessments on all quays that do not have assessments set
-        if(quay.getAccessibilityAssessment() == null) {
-            quay.setAccessibilityAssessment(deepCopyAccessibilityAssessment(quay.getAccessibilityAssessment()));
-
-            allQuayAccessibilityAssessments.add(quay.getAccessibilityAssessment());
-        }
-
-        if (!allQuayAccessibilityAssessments.isEmpty()) {
-            //Assessments are set
-
-            if (allAccessibilityAssessmentsAreEqual(allQuayAccessibilityAssessments)) {
-                //All quays are equal
-                //Set Assessment on StopPlace
-
-                AccessibilityAssessment firstAccessibilityAssessment = deepCopyAccessibilityAssessment(allQuayAccessibilityAssessments.get(0));
-
-                if (quay.getAccessibilityAssessment() != null) {
-                    // Use existing Assessment instead, but update limitations
-                    AccessibilityAssessment nextVersion = quay.getAccessibilityAssessment();
-                    nextVersion.setLimitations(firstAccessibilityAssessment.getLimitations());
-                    firstAccessibilityAssessment = nextVersion;
-                }
-
-                quay.setAccessibilityAssessment(firstAccessibilityAssessment);
-            } else {
-                // Assessments are different - remove from StopPlace
-                quay.setAccessibilityAssessment(null);
-            }
-        }
-
-        if (quay.getAccessibilityAssessment() != null) {
-            calculateAndSetMobilityImpairedAccess(quay.getAccessibilityAssessment());
-        }
-    }
-
     private AccessibilityAssessment deepCopyAccessibilityAssessment(AccessibilityAssessment accessibilityAssessment) {
         if (accessibilityAssessment == null) {
             return createDefaultAccessibilityAssessment();

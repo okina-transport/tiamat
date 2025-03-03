@@ -15,6 +15,9 @@
 
 package org.rutebanken.tiamat.model;
 
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+
 import javax.persistence.*;
 import javax.xml.datatype.Duration;
 import java.util.ArrayList;
@@ -27,9 +30,13 @@ public class ParkingProperties
 
     @Enumerated(EnumType.STRING)
     @ElementCollection(targetClass = ParkingUserEnumeration.class, fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
+    // @Fetch(FetchMode.SUBSELECT) required otherwise hibernate fails at start with exception
+    // org.hibernate.loader.MultipleBagFetchException: cannot simultaneously fetch multiple bags
     protected List<ParkingUserEnumeration> parkingUserTypes;
 
-    @Transient
+    @Enumerated(EnumType.STRING)
+    @ElementCollection(targetClass = ParkingVehicleEnumeration.class, fetch = FetchType.EAGER)
     protected List<ParkingVehicleEnumeration> parkingVehicleTypes;
 
     @Transient

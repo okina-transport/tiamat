@@ -6,6 +6,7 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.general.ImportJobWorker;
+import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.NetexImporter;
 import org.rutebanken.tiamat.importer.handler.StopPlaceGeocodeHandler;
@@ -23,6 +24,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
 import javax.ws.rs.*;
@@ -42,26 +44,24 @@ import java.util.concurrent.Executors;
 public class ImportStopPlacesNetexResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportStopPlacesNetexResource.class);
-
+    private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
+            .setNameFormat("import-%d").build());
     private final PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller;
     private final NetexImporter netexImporter;
     private final StopPlaceGeocodeHandler stopPlaceGeocodeHandler;
-
+    private final ImportJobWorkerBuilder importJobWorkerBuilder;
     @Value("${netex.validPrefix:MOBIITI}")
     String validNetexPrefix;
-
-    private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
-            .setNameFormat("import-%d").build());
-
     @Autowired
     JobRepository jobRepository;
 
     @Autowired
     ImportStopPlacesNetexResource(PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller,
-                                  NetexImporter netexImporter, StopPlaceGeocodeHandler stopPlaceGeocodeHandler){
+                                  NetexImporter netexImporter, StopPlaceGeocodeHandler stopPlaceGeocodeHandler, ImportJobWorkerBuilder importJobWorkerBuilder) {
         this.publicationDeliveryUnmarshaller = publicationDeliveryUnmarshaller;
         this.netexImporter = netexImporter;
         this.stopPlaceGeocodeHandler = stopPlaceGeocodeHandler;
+        this.importJobWorkerBuilder = importJobWorkerBuilder;
     }
 
     @PreAuthorize("@rolesChecker.hasRoleEdit()")
@@ -70,17 +70,17 @@ public class ImportStopPlacesNetexResource {
     @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)
     public Response importStopPlacesNetexFile(@FormDataParam("file") InputStream inputStream,
-                                          @FormDataParam("file_name") String fileName,
-                                          @FormDataParam("provider") String provider,
-                                          @FormDataParam("folder") String folder,
-                                          @FormDataParam("containsMobiitiIds") Boolean containsMobiitiIds)
-            throws IOException, IllegalArgumentException, JAXBException, SAXException {
+                                              @FormDataParam("file_name") String fileName,
+                                              @FormDataParam("provider") String provider,
+                                              @FormDataParam("folder") String folder,
+                                              @FormDataParam("containsMobiitiIds") Boolean containsMobiitiIds)
+            throws IOException, IllegalArgumentException, JAXBException, SAXException, BindException {
 
         logger.info("Received Stop Places Netex publication delivery, starting to parse...");
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         try {
-           netexImporter.importProcess(incomingPublicationDelivery,new ImportParams(), containsMobiitiIds);
-           return null;
+            netexImporter.importProcess(incomingPublicationDelivery, new ImportParams(), containsMobiitiIds);
+            return null;
         } catch (NotAuthenticatedException | NotAuthorizedException e) {
             logger.debug("Access denied for publication delivery: " + e.getMessage(), e);
             throw e;
@@ -97,13 +97,13 @@ public class ImportStopPlacesNetexResource {
     @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)
     public Response importAsyncStopPlacesNetexFile(@FormDataParam("file") InputStream inputStream,
-                                              @FormDataParam("file_name") String fileName,
-                                              @FormDataParam("provider") String provider,
-                                              @FormDataParam("folder") String folder,
-                                              @FormDataParam("containsMobiitiIds") Boolean containsMobiitiIds,
-                                              @FormDataParam("keepStopNames") Boolean keepStopNames,
-                                              @FormDataParam("keepStopGeolocalisation") Boolean keepStopGeolocalisation,
-                                              @FormDataParam("updateStopAccessibility") Boolean updateStopAccessibility) throws IOException {
+                                                   @FormDataParam("file_name") String fileName,
+                                                   @FormDataParam("provider") String provider,
+                                                   @FormDataParam("folder") String folder,
+                                                   @FormDataParam("containsMobiitiIds") Boolean containsMobiitiIds,
+                                                   @FormDataParam("keepStopNames") Boolean keepStopNames,
+                                                   @FormDataParam("keepStopGeolocalisation") Boolean keepStopGeolocalisation,
+                                                   @FormDataParam("updateStopAccessibility") Boolean updateStopAccessibility) throws IOException {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Response.ResponseBuilder builder = Response.accepted();
@@ -117,14 +117,18 @@ public class ImportStopPlacesNetexResource {
         job.setSubFolder(folder);
         jobRepository.save(job);
         logger.info("Import stop place netex: {}", fileName);
-        ImportJobWorker importJobWorker = new ImportJobWorker(job, publicationDeliveryUnmarshaller, inputStream, containsMobiitiIds, jobRepository, netexImporter, authentication);
-        importJobWorker.setSuperIdPrefix(validNetexPrefix);
-        importJobWorker.setKeepStopNames(keepStopNames);
-        importJobWorker.setKeepStopGeolocalisation(keepStopGeolocalisation);
-        importJobWorker.setUpdateStopAccessibility(updateStopAccessibility);
+
+        ImportJobWorker importJobWorker = importJobWorkerBuilder
+                .init(job)
+                .withInputStream(inputStream)
+                .withContainsMobiitiIds(containsMobiitiIds)
+                .withAuthentication(authentication)
+                .withSuperIdPrefix(validNetexPrefix)
+                .withKeepStopNames(keepStopNames)
+                .withKeepStopGeolocalisation(keepStopGeolocalisation)
+                .withUpdateStopAccessibility(updateStopAccessibility)
+                .build();
         importService.submit(importJobWorker);
-
-
 
         if (provider != null) {
             return builder.location(URI.create(String.format("/services/stop_places/jobs/%s/scheduled_jobs/%d", folder, job.getId()))).build();
@@ -141,7 +145,7 @@ public class ImportStopPlacesNetexResource {
         try {
             List<Job> foundJobs = jobRepository.findByTypesAndAction(poiTypes, JobAction.IMPORT);
             return Response.ok(foundJobs).build();
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.error("Error while getting poi import list", e);
 
         }

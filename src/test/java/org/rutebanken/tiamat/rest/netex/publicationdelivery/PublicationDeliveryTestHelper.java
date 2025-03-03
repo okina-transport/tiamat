@@ -16,26 +16,7 @@
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 
-import org.rutebanken.netex.model.Common_VersionFrameStructure;
-import org.rutebanken.netex.model.CompositeFrame;
-import org.rutebanken.netex.model.DataManagedObjectStructure;
-import org.rutebanken.netex.model.EntityStructure;
-import org.rutebanken.netex.model.GeneralFrame;
-import org.rutebanken.netex.model.General_VersionFrameStructure;
-import org.rutebanken.netex.model.GroupOfStopPlaces;
-import org.rutebanken.netex.model.LocaleStructure;
-import org.rutebanken.netex.model.ObjectFactory;
-import org.rutebanken.netex.model.Parking;
-import org.rutebanken.netex.model.PathLink;
-import org.rutebanken.netex.model.PathLinksInFrame_RelStructure;
-import org.rutebanken.netex.model.PublicationDeliveryStructure;
-import org.rutebanken.netex.model.Quay;
-import org.rutebanken.netex.model.SiteFrame;
-import org.rutebanken.netex.model.StopPlace;
-import org.rutebanken.netex.model.StopPlacesInFrame_RelStructure;
-import org.rutebanken.netex.model.TopographicPlace;
-import org.rutebanken.netex.model.TopographicPlacesInFrame_RelStructure;
-import org.rutebanken.netex.model.VersionFrameDefaultsStructure;
+import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
@@ -44,26 +25,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -110,7 +84,7 @@ public class PublicationDeliveryTestHelper {
                         .withCompositeFrameOrCommonFrame(new ObjectFactory().createSiteFrame(siteFrame)));
     }
 
-    public PublicationDeliveryStructure publicationDelivery(GeneralFrame generalFrame){
+    public PublicationDeliveryStructure publicationDelivery(GeneralFrame generalFrame) {
         return new PublicationDeliveryStructure()
                 .withPublicationTimestamp(LocalDateTime.now())
                 .withVersion("1")
@@ -118,6 +92,7 @@ public class PublicationDeliveryTestHelper {
                 .withDataObjects(new PublicationDeliveryStructure.DataObjects()
                         .withCompositeFrameOrCommonFrame(new ObjectFactory().createGeneralFrame(generalFrame)));
     }
+
     public SiteFrame siteFrame() {
         SiteFrame siteFrame = new SiteFrame();
         siteFrame.setVersion("1");
@@ -140,7 +115,7 @@ public class PublicationDeliveryTestHelper {
 
     public PublicationDeliveryStructure createPublicationDeliveryWithStopPlaceInAGeneralFrame(StopPlace... stopPlaces) {
 
-        List <JAXBElement<? extends EntityStructure>> listMembers = new ArrayList<>();
+        List<JAXBElement<? extends EntityStructure>> listMembers = new ArrayList<>();
         Arrays.asList(stopPlaces).stream().forEach(stop -> listMembers.add(netexObjectFactory.createStopPlace(stop)));
 
         GeneralFrame netexGeneralFrame = new GeneralFrame();
@@ -153,7 +128,7 @@ public class PublicationDeliveryTestHelper {
         return publicationDelivery(netexGeneralFrame);
     }
 
-        public void addPathLinks(PublicationDeliveryStructure publicationDeliveryStructure, PathLink... pathLink) {
+    public void addPathLinks(PublicationDeliveryStructure publicationDeliveryStructure, PathLink... pathLink) {
         findSiteFrame(publicationDeliveryStructure)
                 .withPathLinks(new PathLinksInFrame_RelStructure().withPathLink(pathLink));
     }
@@ -219,10 +194,10 @@ public class PublicationDeliveryTestHelper {
     }
 
     public List<StopPlace> extractStopPlacesFromGeneralFrame(GeneralFrame generalFrame, boolean verifyNotNull) {
-        if(verifyNotNull){
+        if (verifyNotNull) {
             assertThat(generalFrame.getMembers()).isNotNull();
             assertThat(generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity()).isNotNull();
-        }else{
+        } else {
             return new ArrayList<>();
         }
         List<JAXBElement> jaxStopPlaces = generalFrame.getMembers()
@@ -261,6 +236,7 @@ public class PublicationDeliveryTestHelper {
         return jaxGroupStopPlaces.stream().map(jaxGroupStopPlace -> (GroupOfStopPlaces) jaxGroupStopPlace.getValue()).collect(Collectors.toList()).get(0);
 
     }
+
     public GroupOfStopPlaces extractGroupOfStopPlaces(SiteFrame siteFrame) {
         assertThat(siteFrame.getGroupsOfStopPlaces()).as("site frame groups of stop places").isNotNull();
         assertThat(siteFrame.getGroupsOfStopPlaces().getGroupOfStopPlaces())
@@ -310,7 +286,7 @@ public class PublicationDeliveryTestHelper {
                 .findFirst().get().getValue();
     }
 
-    public PublicationDeliveryStructure postAndReturnPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure) throws JAXBException, IOException, SAXException, TiamatBusinessException {
+    public PublicationDeliveryStructure postAndReturnPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure) throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
         ImportParams importParams = new ImportParams();
         importParams.providerCode = "PROV1";
         importParams.importType = ImportType.MATCH;
@@ -318,7 +294,7 @@ public class PublicationDeliveryTestHelper {
         return postAndReturnPublicationDelivery(publicationDeliveryStructure, importParams);
     }
 
-    public PublicationDeliveryStructure postAndReturnPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams) throws JAXBException, IOException, SAXException, TiamatBusinessException {
+    public PublicationDeliveryStructure postAndReturnPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams) throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
         Response response = postPublicationDelivery(publicationDeliveryStructure, importParams);
 
         if (!(response.getEntity() instanceof StreamingOutput)) {
@@ -327,11 +303,11 @@ public class PublicationDeliveryTestHelper {
         return fromResponse(response);
     }
 
-    public PublicationDeliveryStructure postAndReturnPublicationDelivery(String publicationDeliveryXml) throws JAXBException, IOException, SAXException, TiamatBusinessException {
+    public PublicationDeliveryStructure postAndReturnPublicationDelivery(String publicationDeliveryXml) throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
         return postAndReturnPublicationDelivery(publicationDeliveryXml, null);
     }
 
-    public PublicationDeliveryStructure postAndReturnPublicationDelivery(String publicationDeliveryXml, ImportParams importParams) throws JAXBException, IOException, SAXException, TiamatBusinessException {
+    public PublicationDeliveryStructure postAndReturnPublicationDelivery(String publicationDeliveryXml, ImportParams importParams) throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
 
         InputStream stream = new ByteArrayInputStream(publicationDeliveryXml.getBytes(StandardCharsets.UTF_8));
 
@@ -362,7 +338,7 @@ public class PublicationDeliveryTestHelper {
         return fromString(new String(outputStream.toByteArray()));
     }
 
-    public Response postPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams) throws JAXBException, IOException, SAXException, TiamatBusinessException {
+    public Response postPublicationDelivery(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams) throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
         Marshaller marshaller = jaxbContext.createMarshaller();
 
         JAXBElement<PublicationDeliveryStructure> jaxPublicationDelivery = new ObjectFactory().createPublicationDelivery(publicationDeliveryStructure);
@@ -370,20 +346,21 @@ public class PublicationDeliveryTestHelper {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         marshaller.marshal(jaxPublicationDelivery, outputStream);
-        InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());        
+        InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
 
         return importResource.importPublicationDelivery(inputStream, importParams);
     }
-    public GeneralFrame findGeneralFrame(PublicationDeliveryStructure incomingPublicationDelivery){
+
+    public GeneralFrame findGeneralFrame(PublicationDeliveryStructure incomingPublicationDelivery) {
 
         List<JAXBElement<? extends Common_VersionFrameStructure>> compositeFrameOrCommonFrame = incomingPublicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame();
 
         Optional<GeneralFrame> optionalGeneralFrame = compositeFrameOrCommonFrame.stream()
                 .filter(element -> element.getValue() instanceof GeneralFrame)
-                .map(element -> (GeneralFrame)element.getValue())
+                .map(element -> (GeneralFrame) element.getValue())
                 .findFirst();
 
-        if(optionalGeneralFrame.isPresent()){
+        if (optionalGeneralFrame.isPresent()) {
             return optionalGeneralFrame.get();
         }
 
@@ -397,6 +374,7 @@ public class PublicationDeliveryTestHelper {
                 .map(jaxbElement -> (GeneralFrame) jaxbElement.getValue())
                 .findAny().get();
     }
+
     public SiteFrame findSiteFrame(PublicationDeliveryStructure publicationDelivery) {
 
         List<JAXBElement<? extends Common_VersionFrameStructure>> compositeFrameOrCommonFrame = publicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame();
@@ -423,7 +401,7 @@ public class PublicationDeliveryTestHelper {
                 .findAny().get();
     }
 
-    public StopPlace findStopPlace(PublicationDeliveryStructure publicationDeliveryStructure, String stopPlaceId,  boolean isGeneralFrame) {
+    public StopPlace findStopPlace(PublicationDeliveryStructure publicationDeliveryStructure, String stopPlaceId, boolean isGeneralFrame) {
         return findStopPlace(publicationDeliveryStructure, stopPlaceId, true, isGeneralFrame);
     }
 

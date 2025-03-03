@@ -41,7 +41,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
-import static org.rutebanken.tiamat.config.Messages.ERROR_QUAY_DOES_NOT_EXIST_ON_STOP_PLACE;
+import static org.rutebanken.tiamat.config.Messages.ERRORS_QUAY_DOES_NOT_EXIST_ON_STOP_PLACE;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.MERGED_ID_KEY;
 import static org.rutebanken.tiamat.service.stopplace.StopPlaceMerger.IGNORE_PROPERTIES_ON_MERGE;
 
@@ -101,8 +101,8 @@ public class StopPlaceQuayMerger {
             Optional<Quay> fromQuayOpt = stopPlaceCopies.getCopiedEntity().getQuays().stream().filter(quay -> quay.getNetexId().equals(fromQuayId)).findFirst();
             Optional<Quay> toQuayOpt = stopPlaceCopies.getCopiedEntity().getQuays().stream().filter(quay -> quay.getNetexId().equals(toQuayId)).findFirst();
 
-            Preconditions.checkArgument(fromQuayOpt.isPresent(), messages.get(ERROR_QUAY_DOES_NOT_EXIST_ON_STOP_PLACE, fromQuayId));
-            Preconditions.checkArgument(toQuayOpt.isPresent(), messages.get(ERROR_QUAY_DOES_NOT_EXIST_ON_STOP_PLACE, toQuayId));
+            Preconditions.checkArgument(fromQuayOpt.isPresent(), messages.get(ERRORS_QUAY_DOES_NOT_EXIST_ON_STOP_PLACE, fromQuayId));
+            Preconditions.checkArgument(toQuayOpt.isPresent(), messages.get(ERRORS_QUAY_DOES_NOT_EXIST_ON_STOP_PLACE, toQuayId));
 
             Quay fromQuay = fromQuayOpt.get();
             Quay toQuay = toQuayOpt.get();

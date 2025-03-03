@@ -16,10 +16,14 @@
 package org.rutebanken.tiamat.rest.exception;
 
 import com.google.common.collect.Sets;
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
+import org.rutebanken.tiamat.config.Messages;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Component;
+import org.springframework.validation.BindException;
 
 import javax.persistence.EntityExistsException;
 import javax.persistence.EntityNotFoundException;
@@ -35,14 +39,17 @@ import java.util.Map;
 import java.util.Set;
 
 @Provider
+@Component
 public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
 
-    private Map<Response.Status, Set<Class<?>>> mapping;
+    private final Messages messages;
+    private final Map<Response.Status, Set<Class<?>>> mapping;
 
-    public GeneralExceptionMapper() {
+    public GeneralExceptionMapper(Messages messages) {
+        this.messages = messages;
         mapping = new HashMap<>();
         mapping.put(Response.Status.BAD_REQUEST,
-                Sets.newHashSet(ValidationException.class, OptimisticLockException.class, EntityNotFoundException.class, DataIntegrityViolationException.class));
+                Sets.newHashSet(ValidationException.class, OptimisticLockException.class, EntityNotFoundException.class, DataIntegrityViolationException.class, BindException.class));
         mapping.put(Response.Status.CONFLICT, Sets.newHashSet(EntityExistsException.class));
         mapping.put(Response.Status.FORBIDDEN, Sets.newHashSet(AccessDeniedException.class));
         mapping.put(Response.Status.UNAUTHORIZED, Sets.newHashSet(NotAuthorizedException.class, NotAuthenticatedException.class));
@@ -51,33 +58,42 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
 
     public Response toResponse(Exception ex) {
         Throwable rootCause = getRootCause(ex);
-        int status;
-        if (rootCause instanceof WebApplicationException) {
-            status = ((WebApplicationException) rootCause).getResponse().getStatus();
-        } else {
-            status = toStatus(rootCause);
-        }
+        int status = toStatus(rootCause);
+        var entity = toErrorResponseEntity(rootCause);
 
         return Response.status(status)
-                       .entity(new ErrorResponseEntity(rootCause.getMessage()))
-                       .build();
+                .entity(entity)
+                .build();
     }
 
-    protected int toStatus(Throwable e) {
+    protected int toStatus(Throwable rootCause) {
+        if (rootCause instanceof WebApplicationException e) {
+            return e.getResponse().getStatus();
+        }
         for (Map.Entry<Response.Status, Set<Class<?>>> entry : mapping.entrySet()) {
-            if (entry.getValue().stream().anyMatch(c -> c.isAssignableFrom(e.getClass()))) {
+            if (entry.getValue().stream().anyMatch(c -> c.isAssignableFrom(rootCause.getClass()))) {
                 return entry.getKey().getStatusCode();
             }
         }
-
         return Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
+    }
+
+    private ErrorResponseEntity toErrorResponseEntity(Throwable rootCause) {
+        if (rootCause instanceof BindException bindException) {
+            if (CollectionUtils.isNotEmpty(bindException.getAllErrors())) {
+                var errors = bindException.getAllErrors().stream()
+                        .map(e -> new ErrorResponseEntity.Error(messages.get(e.getCode(), e.getArguments())))
+                        .toList();
+                return new ErrorResponseEntity(errors);
+            }
+        }
+        return new ErrorResponseEntity(rootCause.getMessage());
     }
 
     private Throwable getRootCause(Throwable e) {
         Throwable rootCause = e;
 
-        if (e instanceof NestedRuntimeException) {
-            NestedRuntimeException nestedRuntimeException = ((NestedRuntimeException) e);
+        if (e instanceof NestedRuntimeException nestedRuntimeException) {
             if (nestedRuntimeException.getRootCause() != null) {
                 rootCause = nestedRuntimeException.getRootCause();
             }

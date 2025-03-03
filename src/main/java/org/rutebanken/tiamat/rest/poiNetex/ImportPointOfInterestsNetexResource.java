@@ -4,8 +4,8 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.general.ImportJobWorker;
+import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
 import org.rutebanken.tiamat.general.PointOfInterestCSVHelper;
-import org.rutebanken.tiamat.importer.NetexImporter;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobStatus;
@@ -14,7 +14,6 @@ import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
@@ -38,24 +37,19 @@ import java.util.concurrent.Executors;
 public class ImportPointOfInterestsNetexResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportPointOfInterestsNetexResource.class);
-    private final PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller;
-    private final NetexImporter netexImporter;
-
     private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("import-%d").build());
+    private final PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller;
+    private final ImportJobWorkerBuilder importJobWorkerBuilder;
+    private final PointOfInterestCSVHelper poiHelper;
+    private final JobRepository jobRepository;
 
 
-
-    @Autowired
-    PointOfInterestCSVHelper poiHelper;
-
-    @Autowired
-    JobRepository jobRepository;
-
-    public ImportPointOfInterestsNetexResource(PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller,
-                                               NetexImporter netexImporter) {
+    public ImportPointOfInterestsNetexResource(PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, ImportJobWorkerBuilder importJobWorkerBuilder, PointOfInterestCSVHelper poiHelper, JobRepository jobRepository) {
         this.publicationDeliveryUnmarshaller = publicationDeliveryUnmarshaller;
-        this.netexImporter = netexImporter;
+        this.importJobWorkerBuilder = importJobWorkerBuilder;
+        this.poiHelper = poiHelper;
+        this.jobRepository = jobRepository;
     }
 
     @PreAuthorize("@rolesChecker.hasRoleEdit()")
@@ -72,10 +66,10 @@ public class ImportPointOfInterestsNetexResource {
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         poiHelper.clearClassificationCache();
         try {
-           // Response.ResponseBuilder builder = netexImporter.importProcess(incomingPublicationDelivery, provider, fileName, folder, false, JobType.NETEX_POI);
+            // Response.ResponseBuilder builder = netexImporter.importProcess(incomingPublicationDelivery, provider, fileName, folder, false, JobType.NETEX_POI);
             return null;
-        } catch(Exception e){
-            logger.error(e.getMessage(),e);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
         }
         logger.info("Import point of interest par " + provider + " du fichier " + fileName + " terminé");
         return Response.status(200).build();
@@ -88,9 +82,9 @@ public class ImportPointOfInterestsNetexResource {
     @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)
     public Response importAsyncPOINetexFile(@FormDataParam("file") InputStream inputStream,
-                                       @FormDataParam("file_name") String fileName,
-                                       @FormDataParam("provider") String provider,
-                                       @FormDataParam("folder") String folder)
+                                            @FormDataParam("file_name") String fileName,
+                                            @FormDataParam("provider") String provider,
+                                            @FormDataParam("folder") String folder)
             throws IOException, IllegalArgumentException {
         logger.info("Lancement de l'import POI netex pour le fichier: " + fileName);
 
@@ -104,7 +98,10 @@ public class ImportPointOfInterestsNetexResource {
         job = jobRepository.save(job);
         Response.ResponseBuilder builder = Response.accepted();
 
-        ImportJobWorker importJobWorker = new ImportJobWorker(job, publicationDeliveryUnmarshaller, netexImporter, jobRepository ,inputStream, poiHelper);
+        ImportJobWorker importJobWorker = importJobWorkerBuilder
+                .init(job)
+                .withInputStream(inputStream)
+                .build();
         importService.submit(importJobWorker);
 
         if (provider != null) {

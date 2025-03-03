@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.tiamat.general.BikesCSVHelper;
 import org.rutebanken.tiamat.general.ImportJobWorker;
+import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
@@ -15,7 +16,6 @@ import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
 import org.rutebanken.tiamat.service.parking.RentalBikeParkingsImportedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.Consumes;
@@ -35,35 +35,29 @@ import java.util.concurrent.Executors;
 @Path("/rental_bike")
 public class ImportRentalBikeResource {
 
-    @Autowired
-    private RentalBikeParkingsImportedService rentalBikeparkingsImportedService;
-
-
-    @Autowired
-    JobRepository jobRepository;
-
     private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("import-%d").build());
-
     private static final Logger logger = LoggerFactory.getLogger(ImportRentalBikeResource.class);
+    private final JobRepository jobRepository;
+    private final RentalBikeParkingsImportedService rentalBikeparkingsImportedService;
+    private final ImportJobWorkerBuilder importJobWorkerBuilder;
+
+    public ImportRentalBikeResource(JobRepository jobRepository, RentalBikeParkingsImportedService rentalBikeparkingsImportedService, ImportJobWorkerBuilder importJobWorkerBuilder) {
+        this.jobRepository = jobRepository;
+        this.rentalBikeparkingsImportedService = rentalBikeparkingsImportedService;
+        this.importJobWorkerBuilder = importJobWorkerBuilder;
+    }
 
     @POST
     @Path("/rental_bike_import_csv")
     @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)
     public Response importRentalBikesFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
-
         logger.info("Import VLS par " + user + " du fichier " + fileName);
-
-
         List<DtoBikeParking> dtoParkingCSV = BikesCSVHelper.parseDocument(inputStream);
         BikesCSVHelper.checkDuplicatedBikeParkings(dtoParkingCSV);
-
-
         List<Parking> parkings = BikesCSVHelper.mapFromDtoToEntityParking(dtoParkingCSV, true);
         rentalBikeparkingsImportedService.createOrUpdateParkings(parkings);
-
-
         return Response.status(200).build();
     }
 
@@ -72,10 +66,8 @@ public class ImportRentalBikeResource {
     @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)
     public Response importAsyncRentalBikesFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
-
         logger.info("Import VLS par " + user + " du fichier " + fileName);
-
-
+        
         Job job = new Job();
         job.setFileName(fileName);
         job.setType(JobType.CSV_RENTAL_BIKE_PARKING);
@@ -84,13 +76,13 @@ public class ImportRentalBikeResource {
         job.setStarted(Instant.now());
         jobRepository.save(job);
 
-        ImportJobWorker importJobWorker = new ImportJobWorker(job, inputStream, jobRepository);
-        importJobWorker.setRentalBikeparkingsImportedService(rentalBikeparkingsImportedService);
+        ImportJobWorker importJobWorker = importJobWorkerBuilder.init(job)
+                .withInputStream(inputStream)
+                .build();
         importService.submit(importJobWorker);
 
         return Response.status(200).build();
     }
-
 
 
 }

@@ -15,7 +15,6 @@
 
 package org.rutebanken.tiamat.netex.id;
 
-import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.model.PathLinkEnd;
 import org.rutebanken.tiamat.model.Quay;
@@ -32,18 +31,64 @@ import java.util.regex.Pattern;
 @Component
 public class NetexIdHelper {
 
-    private static final Logger logger = LoggerFactory.getLogger(NetexIdHelper.class);
-
     // TODO: make it configurable, maybe in ValidPrefixList
     public static final String NSR = "NSR";
-
-    private static Pattern NETEX_ID_PATTERN = Pattern.compile("\\w{3}:\\w{3,}:\\w+");
-
+    public static final String CITY_INSEE_CODE_RE = "\\d{5}(-\\d{1,2})?";
+    public static final String PARKING_ID_RE = String.format("FR:%s:Parking:[^:]+:[^:]+",
+            CITY_INSEE_CODE_RE);
+    public static final Pattern PARKING_ID_PATTERN = Pattern.compile(PARKING_ID_RE);
+    public static final String PARKING_AREA_ID_RE = "[^:]+:ParkingArea:[^:]+:LOC";
+    public static final Pattern PARKING_AREA_ID_PATTERN = Pattern.compile(PARKING_AREA_ID_RE);
+    public static final String PARKING_PAN_ID_RE = CITY_INSEE_CODE_RE + "-P-[^:-]+";
+    public static final Pattern PARKING_PAN_ID_PATTERN = Pattern.compile(PARKING_PAN_ID_RE);
+    private static final Logger logger = LoggerFactory.getLogger(NetexIdHelper.class);
+    private static final Pattern NETEX_ID_PATTERN = Pattern.compile("\\w{3}:\\w{3,}:\\w+");
     private final ValidPrefixList validPrefixList;
 
     @Autowired
     public NetexIdHelper(ValidPrefixList validPrefixList) {
         this.validPrefixList = validPrefixList;
+    }
+
+    public static boolean isNetexId(String string) {
+        return NETEX_ID_PATTERN.matcher(string).matches();
+    }
+
+    public static String determineIdType(IdentifiedEntity identifiedEntity) {
+        if (identifiedEntity instanceof StopPlace) {
+            return "StopPlace";
+        } else if (identifiedEntity instanceof Quay) {
+            return "Quay";
+        } else if (identifiedEntity instanceof SiteFrame) {
+            return "SiteFrame";
+        } else if (identifiedEntity instanceof PathLinkEnd) {
+            return "PathLinkEnd";
+        } else {
+            return identifiedEntity.getClass().getSimpleName();
+        }
+    }
+
+    public static boolean isParkingNetexId(String netexId) {
+        return PARKING_ID_PATTERN.matcher(netexId).matches();
+    }
+
+    public static boolean isParkingAreaNetexId(String netexId) {
+        return PARKING_AREA_ID_PATTERN.matcher(netexId).matches();
+    }
+
+    /**
+     * @param panParkingId parking ID from PAN, format is {insee}-P-{id}
+     * @return FR:{insee}:Parking:{id}:NAP
+     */
+    public static String panParkingIdToNetexParkingId(String panParkingId) {
+        var split = panParkingId.split(Pattern.quote("-P-"));
+        String insee = split[0];
+        String id = split[1];
+        return String.format("FR:%s:Parking:%s:NAP", insee, id);
+    }
+
+    public static String otherParkingIdToNetexParkingId(String parkingOriginalId, String parkingInsee) {
+        return String.format("FR:%s:Parking:%s:LOC", parkingInsee, parkingOriginalId);
     }
 
     public String getNetexId(String type, long id) {
@@ -56,12 +101,12 @@ public class NetexIdHelper {
     }
 
     public boolean isNsrId(String netexId) {
-        if(!netexId.contains(validPrefixList.getValidNetexPrefix())) {
+        if (!netexId.contains(validPrefixList.getValidNetexPrefix())) {
             logger.debug("The netexId: {} does not start with {}", netexId, validPrefixList.getValidNetexPrefix());
             return false;
         }
 
-        if(StringUtils.countMatches(netexId, ":") != 2) {
+        if (StringUtils.countMatches(netexId, ":") != 2) {
             logger.warn("Expected number of colons is two. {}", netexId);
             return false;
         }
@@ -76,7 +121,6 @@ public class NetexIdHelper {
     }
 
     /**
-     *
      * @param netexId Id with long value after last colon.
      * @return long value
      */
@@ -84,7 +128,7 @@ public class NetexIdHelper {
         try {
             return Long.valueOf(extractIdPostfix(netexId));
         } catch (NumberFormatException e) {
-            throw new NumberFormatException("Cannot parse NeTEx ID postfix into numeric valueID: '" + netexId +"'");
+            throw new NumberFormatException("Cannot parse NeTEx ID postfix into numeric valueID: '" + netexId + "'");
         }
     }
 
@@ -93,57 +137,28 @@ public class NetexIdHelper {
     }
 
     public String extractIdType(String netexId) {
+        if (isParkingNetexId(netexId)) {
+            return "Parking";
+        } else if (isParkingAreaNetexId(netexId)) {
+            return "ParkingArea";
+        }
         try {
             return netexId.substring(netexId.indexOf(':') + 1, netexId.lastIndexOf(':'));
         } catch (StringIndexOutOfBoundsException e) {
-
-            throw new StringIndexOutOfBoundsException("Cannot extract ID type for netexId: "+ netexId);
-
+            throw new StringIndexOutOfBoundsException("Cannot extract ID type for netexId: " + netexId);
         }
     }
 
     public String extractIdPrefix(String netexId) {
-        if(StringUtils.countMatches(netexId, ":") != 2) {
+        if (isParkingNetexId(netexId)) {
+            return netexId.split(":Parking:")[0];
+        } else if (isParkingAreaNetexId(netexId)) {
+            return netexId.split(":ParkingArea:")[0];
+        }
+        if (StringUtils.countMatches(netexId, ":") != 2) {
             throw new IllegalArgumentException("Number of colons in ID is not two: " + netexId);
         }
-
         return netexId.substring(0, netexId.indexOf(':'));
     }
 
-    public String stripLeadingZeros(String originalIdValue) {
-        try {
-            long numeric = extractIdPostfixNumeric(originalIdValue);
-            String type = extractIdType(originalIdValue);
-            String prefix = extractIdPrefix(originalIdValue);
-            if(numeric == 0L || Strings.isNullOrEmpty(type) || Strings.isNullOrEmpty(prefix)) {
-                logger.warn("Cannot parse original ID '{}' into preifx:type:number. Keeping value as is", originalIdValue);
-            }
-
-            logger.debug("Extracted prefix: {}, type: {} and numeric value: {}", prefix, type, numeric);
-            return prefix +":"+type+":"+numeric;
-
-        } catch (IllegalArgumentException e) {
-            logger.debug("Cannot strip leading zeros from numeric ID in {}. Returning value as is. Message: {}", originalIdValue, e.getMessage());
-            return originalIdValue;
-        }
-    }
-
-    public static boolean isNetexId(String string) {
-        return NETEX_ID_PATTERN.matcher(string).matches();
-    }
-
-    public static String determineIdType(IdentifiedEntity identifiedEntity) {
-
-        if(identifiedEntity instanceof StopPlace) {
-            return "StopPlace";
-        } else if (identifiedEntity instanceof Quay){
-            return "Quay";
-        } else if (identifiedEntity instanceof SiteFrame) {
-            return "SiteFrame";
-        } else if (identifiedEntity instanceof PathLinkEnd) {
-            return "PathLinkEnd";
-        } else {
-            return identifiedEntity.getClass().getSimpleName();
-        }
-    }
 }

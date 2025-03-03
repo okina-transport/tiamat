@@ -95,14 +95,31 @@ public class Parking
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     protected List<ParkingArea> parkingAreas;
-
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    protected List<TransportType> transportTypes;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    protected List<TypeOfPaymentMethod> typeOfPaymentMethods;
     @ManyToOne
-    @JoinColumn(name="organisation_id")
+    @JoinColumn(name = "organisation_id")
     private Organisation organisation;
-
     private String rentalUriIos;
-
     private String rentalUriAndroid;
+
+    public List<TypeOfPaymentMethod> getTypeOfPaymentMethods() {
+        return typeOfPaymentMethods;
+    }
+
+    public void setTypeOfPaymentMethods(List<TypeOfPaymentMethod> typeOfPaymentMethods) {
+        this.typeOfPaymentMethods = typeOfPaymentMethods;
+    }
+
+    public List<TransportType> getTransportTypes() {
+        return transportTypes;
+    }
+
+    public void setTransportTypes(List<TransportType> transportTypes) {
+        this.transportTypes = transportTypes;
+    }
 
     public SitePathLinks_RelStructure getPathLinks() {
         return pathLinks;
@@ -343,13 +360,21 @@ public class Parking
         this.vehicleEntrances = value;
     }
 
-    public String getInsee() { return insee; }
+    public String getInsee() {
+        return insee;
+    }
 
-    public void setInsee(String insee) { this.insee = insee; }
+    public void setInsee(String insee) {
+        this.insee = insee;
+    }
 
-    public String getSiret() { return siret; }
+    public String getSiret() {
+        return siret;
+    }
 
-    public void setSiret(String siret) { this.siret = siret; }
+    public void setSiret(String siret) {
+        this.siret = siret;
+    }
 
     public void setTypeOfParkingRef(String typeOfParkingRef) {
         this.typeOfParkingRef = typeOfParkingRef;
@@ -359,21 +384,29 @@ public class Parking
         return typeOfParkingRef;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
     public String getAddress() {
         return address;
     }
 
-    public void setOriginalId(String originalId) { this.originalId = originalId; }
+    public void setAddress(String address) {
+        this.address = address;
+    }
 
-    public String getOriginalId() { return originalId; }
+    public String getOriginalId() {
+        return originalId;
+    }
 
-    public String getOperator() { return operator; }
+    public void setOriginalId(String originalId) {
+        this.originalId = originalId;
+    }
 
-    public void setOperator(String operator) { this.operator = operator; }
+    public String getOperator() {
+        return operator;
+    }
+
+    public void setOperator(String operator) {
+        this.operator = operator;
+    }
 
     public Organisation getOrganisation() {
         return organisation;

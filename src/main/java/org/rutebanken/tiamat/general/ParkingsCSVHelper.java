@@ -5,7 +5,6 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
-
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
@@ -19,7 +18,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -27,15 +26,11 @@ import java.util.stream.Collectors;
 
 public class ParkingsCSVHelper {
 
-    private static final Logger logger = LoggerFactory.getLogger(ParkingsCSVHelper.class);
-
     public final static String DELIMETER_PARKING_ID_NAME = " : ";
-
-
-
+    private static final Logger logger = LoggerFactory.getLogger(ParkingsCSVHelper.class);
     private final static Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
 
-    private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
+    private static final GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
 
     public static List<DtoParking> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
@@ -88,17 +83,18 @@ public class ParkingsCSVHelper {
     }
 
     private static void validateParking(DtoParking parking) throws IllegalArgumentException {
-        Preconditions.checkArgument(!parking.getId().isEmpty(), "ID is required in all your parkings");
-        Preconditions.checkArgument(!parking.getName().isEmpty(), "NAME is required to parking with Id " + parking.getId());
-        Preconditions.checkArgument(patternXlongYlat.matcher(parking.getXlong()).matches(), "X Longitud is not correct in the parking with " + parking.getId());
-        Preconditions.checkArgument(patternXlongYlat.matcher(parking.getYlat()).matches(), "Y Latitud is not correct in the parking with " + parking.getId());
+        Preconditions.checkArgument(StringUtils.isNotBlank(parking.getId()), "ID is required in all your parkings");
+        Preconditions.checkArgument(StringUtils.isNotBlank(parking.getInsee()), "INSEE is required for parking with id " + parking.getId());
+        Preconditions.checkArgument(StringUtils.isNotBlank(parking.getName()), "NAME is required for parking with id " + parking.getId());
+        Preconditions.checkArgument(patternXlongYlat.matcher(parking.getXlong()).matches(), "X Longitude is not correct for parking with id " + parking.getId());
+        Preconditions.checkArgument(patternXlongYlat.matcher(parking.getYlat()).matches(), "Y Latitude is not correct for parking with id " + parking.getId());
     }
 
     public static void checkDuplicatedParkings(List<DtoParking> parkings) throws IllegalArgumentException {
         List<String> compositeKey = parkings.stream().map(parking -> parking.getId() + parking.getName()).collect(Collectors.toList());
         List<String> duplicates = foundDuplicates(compositeKey);
-        
-        if (duplicates.size() > 0){
+
+        if (duplicates.size() > 0) {
             String duplicatesMsg = duplicates.stream()
                     .collect(Collectors.joining(","));
 
@@ -107,15 +103,15 @@ public class ParkingsCSVHelper {
 
     }
 
-    private static List<String> foundDuplicates(List<String> fullList){
+    private static List<String> foundDuplicates(List<String> fullList) {
         List<String> alreadyReadList = new ArrayList<>();
         List<String> duplicateList = new ArrayList<>();
 
         fullList.stream()
                 .forEach(id -> {
-                    if (alreadyReadList.contains(id)){
+                    if (alreadyReadList.contains(id)) {
                         duplicateList.add(id);
-                    }else{
+                    } else {
                         alreadyReadList.add(id);
                     }
                 });
@@ -126,7 +122,7 @@ public class ParkingsCSVHelper {
 
     public static List<Parking> mapFromDtoToEntity(List<DtoParking> dtoParkingsCSV, ParkingLayoutEnumeration parkingLayoutEnumeration,
                                                    ParkingTypeEnumeration parkingTypeEnumeration, Boolean parkAndRideDetection) {
-        return  dtoParkingsCSV.stream().map(parkingDto -> {
+        return dtoParkingsCSV.stream().map(parkingDto -> {
 
             Parking parking = new Parking();
             parking.setParkingAreas(new ArrayList<>());
@@ -154,14 +150,14 @@ public class ParkingsCSVHelper {
             BigInteger nbPMR = parkingDto.getDisabledParkingNb().isEmpty() ? BigInteger.ZERO : new BigInteger(parkingDto.getDisabledParkingNb());
 
 
-            if (parkAndRideDetection){
+            if (parkAndRideDetection) {
                 // detection based on field : nb_pr
                 parking.setParkingType(parkAndRideCapacity.equals(BigInteger.ZERO) ? ParkingTypeEnumeration.PARKING_ZONE : ParkingTypeEnumeration.PARK_AND_RIDE);
-            } else{
+            } else {
                 parking.setParkingType(parkingTypeEnumeration);
             }
 
-            if (ParkingTypeEnumeration.PARK_AND_RIDE.equals(parking.getParkingType())){
+            if (ParkingTypeEnumeration.PARK_AND_RIDE.equals(parking.getParkingType())) {
                 ParkingArea parkAndRideArea = new ParkingArea();
                 parkAndRideArea.setVersion(1L);
                 parkAndRideArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.PARD_AND_RIDE);
@@ -174,7 +170,7 @@ public class ParkingsCSVHelper {
 
                     AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
                     accessibilityLimitation.setWheelchairAccess(LimitationStatusEnumeration.TRUE);
-                    accessibilityAssessment.setLimitations(Arrays.asList(accessibilityLimitation));
+                    accessibilityAssessment.setLimitations(Collections.singletonList(accessibilityLimitation));
 
                     parking.setAccessibilityAssessment(accessibilityAssessment);
                 } else {
@@ -208,7 +204,7 @@ public class ParkingsCSVHelper {
 
 
             //Hauteur maximum
-            if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")){
+            if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")) {
                 parkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
             }
 
@@ -226,37 +222,33 @@ public class ParkingsCSVHelper {
             parkingArea.setTotalCapacity(totalCapacityInt);
 
             //Nombre de places destinées aux personnes handicapées (à soustraire du nombre total de places)
-            if(!totalCapacityInt.equals(BigInteger.ZERO) && !parkingDto.getDisabledParkingNb().isEmpty()) {
-                if (parkingDto.getDisabledParkingNb().equals(parkingDto.getNbOfPlaces())) {
-                    parking.setAllAreasWheelchairAccessible(true);
-                } else {
-                    parking.setAllAreasWheelchairAccessible(false);
-                }
+            if (!totalCapacityInt.equals(BigInteger.ZERO) && !parkingDto.getDisabledParkingNb().isEmpty()) {
+                parking.setAllAreasWheelchairAccessible(parkingDto.getDisabledParkingNb().equals(parkingDto.getNbOfPlaces()));
                 pmrCapacity.setNumberOfSpaces(new BigInteger(parkingDto.getDisabledParkingNb()));
 
                 ParkingArea pmrParkingArea = new ParkingArea();
                 pmrParkingArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.DISABLED);
                 pmrParkingArea.setPublicUse(PublicUseEnumeration.DISABLED_PUBLIC_ONLY);
                 pmrParkingArea.setVersion(1L);
-                if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")){
+                if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")) {
                     pmrParkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
                 }
                 pmrParkingArea.setName(new EmbeddableMultilingualString("Zone PMR", "FR"));
                 pmrParkingArea.setTotalCapacity(new BigInteger(parkingDto.getDisabledParkingNb()));
                 parking.getParkingAreas().add(pmrParkingArea);
-            }else{
+            } else {
                 parking.setAllAreasWheelchairAccessible(false);
             }
             parkingProperties.getSpaces().add(pmrCapacity);
 
 
             //Nombre de places pour véhicules électriques
-            if(!parkingDto.getElectricVehicleNb().isEmpty() && Integer.parseInt(parkingDto.getElectricVehicleNb())>=1){
+            if (!parkingDto.getElectricVehicleNb().isEmpty() && Integer.parseInt(parkingDto.getElectricVehicleNb()) >= 1) {
                 parking.setRechargingAvailable(true);
                 totalCapacity.setNumberOfSpacesWithRechargePoint(BigInteger.valueOf(Long.parseLong(parkingDto.getElectricVehicleNb())));
             }
 
-            if(!parkingDto.getElectricVehicleNb().isEmpty() && Integer.parseInt(parkingDto.getElectricVehicleNb()) == 0){
+            if (!parkingDto.getElectricVehicleNb().isEmpty() && Integer.parseInt(parkingDto.getElectricVehicleNb()) == 0) {
                 parking.setRechargingAvailable(false);
                 totalCapacity.setNumberOfSpacesWithRechargePoint(BigInteger.valueOf(Long.parseLong(parkingDto.getElectricVehicleNb())));
             }
@@ -269,7 +261,7 @@ public class ParkingsCSVHelper {
                 carPoolParkingArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.CARPOOL);
                 carPoolParkingArea.setPublicUse(PublicUseEnumeration.ALL);
                 carPoolParkingArea.setVersion(1L);
-                if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")){
+                if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")) {
                     carPoolParkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
                 }
                 carPoolParkingArea.setName(new EmbeddableMultilingualString("Zone réservée aux covoitureurs", "FR"));
@@ -288,7 +280,7 @@ public class ParkingsCSVHelper {
                 carSharingArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.CARSHARE);
                 carSharingArea.setPublicUse(PublicUseEnumeration.ALL);
                 carSharingArea.setVersion(1L);
-                if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")){
+                if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")) {
                     carSharingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
                 }
                 carSharingArea.setName(new EmbeddableMultilingualString("Zone Autopartage", "FR"));
@@ -301,7 +293,7 @@ public class ParkingsCSVHelper {
             //Nombre de places pour les vélos
             if (!parkingDto.getBikeNb().isEmpty() && Integer.parseInt(parkingDto.getBikeNb()) >= 1) {
                 BigInteger numberValue = BigInteger.valueOf(Long.parseLong(parkingDto.getBikeNb()));
-                
+
                 createBikeOrTwoWheeledArea(parkingDto, parking, parkingProperties, totalCapacity,
                         ParkingVehicleEnumeration.PEDAL_CYCLE,
                         SpecificParkingAreaUsageEnumeration.PEDAL_CYCLE, numberValue,
@@ -341,7 +333,7 @@ public class ParkingsCSVHelper {
             parking.getParkingAreas().add(parkingArea);
             parking.getParkingProperties().add(parkingProperties);
 
-            if(StringUtils.isNotEmpty(parkingDto.getOperator())){
+            if (StringUtils.isNotEmpty(parkingDto.getOperator())) {
                 parking.setOperator(parkingDto.getOperator());
             }
 
@@ -360,13 +352,13 @@ public class ParkingsCSVHelper {
                                                    SpecificParkingAreaUsageEnumeration specificParkingAreaUsageEnumeration,
                                                    BigInteger numberValue,
                                                    String areaName) {
-        
+
         ParkingArea newArea = new ParkingArea();
         newArea.setSpecificParkingAreaUsage(specificParkingAreaUsageEnumeration);
         newArea.setPublicUse(PublicUseEnumeration.ALL);
         newArea.setVersion(1L);
 
-        if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")){
+        if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")) {
             newArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
         }
         newArea.setName(new EmbeddableMultilingualString(areaName, "FR"));

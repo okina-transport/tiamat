@@ -17,7 +17,6 @@ package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 import org.glassfish.jersey.uri.internal.JerseyUriBuilder;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
@@ -33,6 +32,7 @@ import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
 import javax.ws.rs.core.Link;
@@ -62,13 +62,13 @@ public class ExportResourceTest extends TiamatIntegrationTest {
 
     @Autowired
     private PublicationDeliveryTestHelper publicationDeliveryTestHelper;
+    private boolean testStopInserted = false;
 
-
-    public void exportStopPlacesWithoutTopographicPlaces() throws JAXBException, IOException, SAXException, TiamatBusinessException {
+    public void exportStopPlacesWithoutTopographicPlaces() throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
         exportStopPlacesAndVerify(ExportParams.ExportMode.NONE);
     }
 
-    private void exportStopPlacesAndVerify(ExportParams.ExportMode includeTopographicPlaces) throws JAXBException, IOException, SAXException, TiamatBusinessException {
+    private void exportStopPlacesAndVerify(ExportParams.ExportMode includeTopographicPlaces) throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
         // Import stop to make sure we have something to export, although other tests might have populated the test database.
         // Make ids and search string unique
 
@@ -95,7 +95,6 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         List<StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlaces(publicationDeliveryStructure, true);
         assertThat(stopPlaces).hasSize(1);
     }
-
 
     public void verifyPaging() throws Exception {
         org.rutebanken.tiamat.model.StopPlace stopPlace = new org.rutebanken.tiamat.model.StopPlace();
@@ -278,19 +277,19 @@ public class ExportResourceTest extends TiamatIntegrationTest {
     @Test
     public void exportTADtest() throws Exception {
 
-        StopPlace inAreaFullTAD = createStopPlace("1","inAreaFullTAD" , "47.284571", "0.7819685");
-        addKeyValue(inAreaFullTAD,"zonalStopPlace", "yes" );
+        StopPlace inAreaFullTAD = createStopPlace("1", "inAreaFullTAD", "47.284571", "0.7819685");
+        addKeyValue(inAreaFullTAD, "zonalStopPlace", "yes");
 
-        StopPlace inAreaPartialTAD = createStopPlace("2","inAreaPartialTAD" , "47.284571", "0.7819685");
-        addKeyValue(inAreaPartialTAD,"zonalStopPlace", "partial" );
+        StopPlace inAreaPartialTAD = createStopPlace("2", "inAreaPartialTAD", "47.284571", "0.7819685");
+        addKeyValue(inAreaPartialTAD, "zonalStopPlace", "partial");
 
-        StopPlace inAreaNoTAD = createStopPlace("3","inAreaNoTAD" , "47.284571", "0.7819685");
-        addKeyValue(inAreaNoTAD,"zonalStopPlace", "no" );
+        StopPlace inAreaNoTAD = createStopPlace("3", "inAreaNoTAD", "47.284571", "0.7819685");
+        addKeyValue(inAreaNoTAD, "zonalStopPlace", "no");
 
-        StopPlace outOfAreaFullTAD = createStopPlace("4","outOfAreaFullTAD" , "22.284571", "0.5819685");
-        addKeyValue(outOfAreaFullTAD,"zonalStopPlace", "yes" );
+        StopPlace outOfAreaFullTAD = createStopPlace("4", "outOfAreaFullTAD", "22.284571", "0.5819685");
+        addKeyValue(outOfAreaFullTAD, "zonalStopPlace", "yes");
 
-        PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(inAreaFullTAD, inAreaPartialTAD, inAreaNoTAD,outOfAreaFullTAD);
+        PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(inAreaFullTAD, inAreaPartialTAD, inAreaNoTAD, outOfAreaFullTAD);
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
 
         String area = "POLYGON ((0.7411875 47.280809, 0.781822 47.288727, 0.789707 47.286915, 0.7986116 47.269591, 0.7411875 47.280809))";
@@ -303,7 +302,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
 
     }
 
-    private StopPlace createStopPlace(String netexId, String name, String latitude, String longitude){
+    private StopPlace createStopPlace(String netexId, String name, String latitude, String longitude) {
 
         LocalDateTime validFrom = LocalDateTime.now().minusDays(3);
         return new StopPlace()
@@ -329,7 +328,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
                                         .withLongitude(new BigDecimal(longitude)))))));
     }
 
-    private void addKeyValue(StopPlace stopPlace, String key, String value){
+    private void addKeyValue(StopPlace stopPlace, String key, String value) {
         KeyListStructure keyListStruct = new KeyListStructure();
         KeyValueStructure keyValueStruct = new KeyValueStructure();
         keyValueStruct.setValue(value);
@@ -348,9 +347,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         Assert.assertEquals(response.getStatus(), HttpStatus.NO_CONTENT.value());
     }
 
-    private boolean testStopInserted = false;
-
-    private void insertTestStopsWithTopographicPlace() throws JAXBException, IOException, SAXException, TiamatBusinessException {
+    private void insertTestStopsWithTopographicPlace() throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
         if (testStopInserted) {
             return;
         }

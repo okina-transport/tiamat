@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<PublicationDelivery xmlns="http://www.netex.org.uk/netex"
+                     version="1.1:FR-NETEX-2.2">
+    <PublicationTimestamp>2024-04-03T13:08:54.78Z</PublicationTimestamp>
+    <ParticipantRef>MOBIITI</ParticipantRef>
+    <dataObjects>
+        <GeneralFrame id="MOBI-ITI:GeneralFrame:NETEX_PARKING_20240403T130854Z:LOC" modification="revise" version="1">
+            <TypeOfFrameRef ref="FR:TypeOfFrame:1"/>
+            <members>
+                <Parking changed="2024-04-03T13:18:04.368" created="2024-04-03T12:13:43.094"
+                         id="FR:75056:Parking:1:LOC"
+                         modification="new" version="2">
+                </Parking>
+            </members>
+        </GeneralFrame>
+    </dataObjects>
+</PublicationDelivery>

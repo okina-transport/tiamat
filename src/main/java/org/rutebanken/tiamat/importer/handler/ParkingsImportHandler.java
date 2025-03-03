@@ -18,11 +18,11 @@ package org.rutebanken.tiamat.importer.handler;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
 import org.rutebanken.netex.model.*;
-import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.ImportParams;
-import org.rutebanken.tiamat.importer.merging.TransactionalMergingParkingsImporter;
+import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.filter.ZoneTopographicPlaceFilter;
 import org.rutebanken.tiamat.importer.initial.ParallelInitialParkingImporter;
+import org.rutebanken.tiamat.importer.merging.TransactionalMergingParkingsImporter;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.netex.NetexUtils;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
@@ -33,19 +33,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.xml.bind.JAXBElement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Component
 public class ParkingsImportHandler {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ParkingsImportHandler.class);
     /**
      * Hazelcast lock key for merging stop place import.
      */
     private static final String PARKING_IMPORT_LOCK_KEY = "STOP_PLACE_MERGING_IMPORT_LOCK_KEY";
-
     @Autowired
     private PublicationDeliveryHelper publicationDeliveryHelper;
 
@@ -65,54 +67,53 @@ public class ParkingsImportHandler {
     private HazelcastInstance hazelcastInstance;
 
     public void handleParkings(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger parkingsCreatedOrUpdated, SiteFrame responseSiteframe) {
-
-        if (publicationDeliveryHelper.hasParkings(netexSiteFrame)) {
-
-            List<Parking> tiamatParking = netexMapper.mapParkingsToTiamatModel(netexSiteFrame.getParkings().getParking());
-
-            int numberOfParkingsBeforeFiltering = tiamatParking.size();
-            logger.info("About to filter {} parkings based on topographic references: {}", tiamatParking.size(), importParams.targetTopographicPlaces);
-            tiamatParking = zoneTopographicPlaceFilter.filterByTopographicPlaceMatch(importParams.targetTopographicPlaces, tiamatParking);
-            logger.info("Got {} parkings (was {}) after filtering by: {}", tiamatParking.size(), numberOfParkingsBeforeFiltering, importParams.targetTopographicPlaces);
-
-            if (importParams.onlyMatchOutsideTopographicPlaces != null && !importParams.onlyMatchOutsideTopographicPlaces.isEmpty()) {
-                numberOfParkingsBeforeFiltering = tiamatParking.size();
-                logger.info("Filtering parkings outside given list of topographic places: {}", importParams.onlyMatchOutsideTopographicPlaces);
-                tiamatParking = zoneTopographicPlaceFilter.filterByTopographicPlaceMatch(importParams.onlyMatchOutsideTopographicPlaces, tiamatParking, true);
-                logger.info("Got {} parkings (was {}) after filtering", tiamatParking.size(), numberOfParkingsBeforeFiltering);
-            }
-
-
-            Collection<org.rutebanken.netex.model.Parking> importedParkings;
-
-            if (importParams.importType == null || importParams.importType.equals(ImportType.MERGE)) {
-                final FencedLock lock = hazelcastInstance.getCPSubsystem().getLock(PARKING_IMPORT_LOCK_KEY);
-                lock.lock();
-                try {
-                    importedParkings = transactionalMergingParkingsImporter.importParkings(tiamatParking, parkingsCreatedOrUpdated);
-                } finally {
-                    lock.unlock();
-                }
-            } else if (importParams.importType.equals(ImportType.INITIAL)) {
-                importedParkings = parallelInitialParkingImporter.importParkings(tiamatParking, parkingsCreatedOrUpdated);
-            } else {
-                logger.warn("Import type " + importParams.importType + " not implemented. Will not match parking.");
-                importedParkings = new ArrayList<>(0);
-            }
-
-            if (!importedParkings.isEmpty()) {
-                responseSiteframe.withParkings(
-                        new ParkingsInFrame_RelStructure()
-                                .withParking(importedParkings));
-            }
-
-            logger.info("Mapped {} parkings!!", tiamatParking.size());
-
+        if (!publicationDeliveryHelper.hasParkings(netexSiteFrame)) {
+            logger.info("No parkings found, skip.");
+            return;
         }
+        List<Parking> tiamatParking = netexMapper.mapParkingsToTiamatModel(netexSiteFrame.getParkings().getParking());
+
+        int numberOfParkingsBeforeFiltering = tiamatParking.size();
+        logger.info("About to filter {} parkings based on topographic references: {}", tiamatParking.size(), importParams.targetTopographicPlaces);
+        tiamatParking = zoneTopographicPlaceFilter.filterByTopographicPlaceMatch(importParams.targetTopographicPlaces, tiamatParking);
+        logger.info("Got {} parkings (was {}) after filtering by: {}", tiamatParking.size(), numberOfParkingsBeforeFiltering, importParams.targetTopographicPlaces);
+
+        if (importParams.onlyMatchOutsideTopographicPlaces != null && !importParams.onlyMatchOutsideTopographicPlaces.isEmpty()) {
+            numberOfParkingsBeforeFiltering = tiamatParking.size();
+            logger.info("Filtering parkings outside given list of topographic places: {}", importParams.onlyMatchOutsideTopographicPlaces);
+            tiamatParking = zoneTopographicPlaceFilter.filterByTopographicPlaceMatch(importParams.onlyMatchOutsideTopographicPlaces, tiamatParking, true);
+            logger.info("Got {} parkings (was {}) after filtering", tiamatParking.size(), numberOfParkingsBeforeFiltering);
+        }
+
+
+        Collection<org.rutebanken.netex.model.Parking> importedParkings;
+
+        if (importParams.importType == null || importParams.importType.equals(ImportType.MERGE)) {
+            final FencedLock lock = hazelcastInstance.getCPSubsystem().getLock(PARKING_IMPORT_LOCK_KEY);
+            lock.lock();
+            try {
+                importedParkings = transactionalMergingParkingsImporter.importParkings(tiamatParking, parkingsCreatedOrUpdated);
+            } finally {
+                lock.unlock();
+            }
+        } else if (importParams.importType.equals(ImportType.INITIAL)) {
+            importedParkings = parallelInitialParkingImporter.importParkings(tiamatParking, parkingsCreatedOrUpdated);
+        } else {
+            logger.warn("Import type " + importParams.importType + " not implemented. Will not match parking.");
+            importedParkings = new ArrayList<>(0);
+        }
+
+        if (!importedParkings.isEmpty()) {
+            responseSiteframe.withParkings(
+                    new ParkingsInFrame_RelStructure()
+                            .withParking(importedParkings));
+        }
+
+        logger.info("Mapped {} parkings!!", tiamatParking.size());
     }
 
-    public void handleParkingsGeneralFrame(List<org.rutebanken.netex.model.Parking> tiamatParking, ImportParams importParams, List<JAXBElement<? extends EntityStructure>> members, AtomicInteger parkingsCreatedOrUpdated, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {
-        List<Parking> parkingsParsed = parseParkings(tiamatParking, generalOrganisations, responsibilitySets);
+    public void handleParkingsGeneralFrame(List<org.rutebanken.netex.model.Parking> tiamatParking, ImportParams importParams, List<JAXBElement<? extends EntityStructure>> members, AtomicInteger parkingsCreatedOrUpdated, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets, List<TransportType> transportTypes, List<TypeOfPaymentMethod> topms) {
+        List<Parking> parkingsParsed = parseParkings(tiamatParking, generalOrganisations, responsibilitySets, transportTypes, topms);
 
         int numberOfParkingsBeforeFiltering = parkingsParsed.size();
         logger.info("About to filter {} parkings based on topographic references: {}", parkingsParsed.size(), importParams.targetTopographicPlaces);
@@ -152,7 +153,7 @@ public class ParkingsImportHandler {
         logger.info("Mapped {} parkings !!", tiamatParking.size());
     }
 
-    private List<Parking> parseParkings(List<org.rutebanken.netex.model.Parking> netexParkingsInFrame, List<org.rutebanken.netex.model.GeneralOrganisation> generalOrganisations, List<org.rutebanken.netex.model.ResponsibilitySet> responsibilitySets) {
+    private List<Parking> parseParkings(List<org.rutebanken.netex.model.Parking> netexParkingsInFrame, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets, List<TransportType> transportTypes, List<TypeOfPaymentMethod> topms) {
         if (netexParkingsInFrame.isEmpty())
             return null;
 
@@ -162,11 +163,16 @@ public class ParkingsImportHandler {
         Map<String, GeneralOrganisation> generalOrganisationMap = generalOrganisations.stream()
                 .collect(Collectors.toMap(GeneralOrganisation::getId, go -> go));
 
+        Map<String, TransportType> transportTypeMap = transportTypes.stream()
+                .collect(Collectors.toMap(TransportType::getId, top -> top));
+
+        Map<String, TypeOfPaymentMethod> topmMap = topms.stream()
+                .collect(Collectors.toMap(TypeOfPaymentMethod::getId, top -> top));
+
         List<Parking> parkingsList = new ArrayList<>();
 
         new ArrayList<>(netexParkingsInFrame).forEach(netexParking -> {
             Parking parkingTiamat = netexMapper.mapToTiamatModel(netexParking);
-            if (parkingTiamat.getNetexId() == null) parkingTiamat.setNetexId(netexParking.getId());
 
             // Mapper l'opérateur
             String responsibilitySetRef = netexParking.getResponsibilitySetRef();
@@ -182,7 +188,12 @@ public class ParkingsImportHandler {
                     }
                 }
             }
-
+            if (netexParking.getTypesOfPaymentMethod() != null) {
+                netexMapper.parseToSetTypeOfPaymentMethods(netexParking, parkingTiamat, topmMap);
+            }
+            if (netexParking.getVehicleTypes() != null) {
+                netexMapper.parseToSetTransportTypes(netexParking, parkingTiamat, transportTypeMap);
+            }
             if (netexParking.getParkingProperties() != null) {
                 netexMapper.parseToSetParkingProperties(netexParking, parkingTiamat);
             }

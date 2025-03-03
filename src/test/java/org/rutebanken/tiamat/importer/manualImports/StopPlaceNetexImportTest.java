@@ -5,13 +5,13 @@ import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.importer.NetexImporter;
-import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.rutebanken.tiamat.rest.parkingsNetex.ImportParkingsNetexResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;
@@ -36,28 +36,28 @@ public class StopPlaceNetexImportTest extends TiamatIntegrationTest {
     private NetexImporter netexImporter;
 
     @Test
-    public void testStopPlaceNetex() throws IOException, JAXBException, SAXException, TiamatBusinessException {
+    public void testStopPlaceNetex() throws IOException, JAXBException, SAXException, TiamatBusinessException, BindException {
         launchImportForFile("stop_place.xml");
     }
 
     @Test
-    public void testStopPlaceNetexWithoutName() throws IOException, JAXBException, SAXException, TiamatBusinessException {
+    public void testStopPlaceNetexWithoutName() throws IOException, JAXBException, SAXException, TiamatBusinessException, BindException {
         launchImportForFile("stop_place_without_name.xml");
     }
 
     /**
      * Launch a manual import of the file given as parameter
-     * @param fileName
-     * the file to import
+     *
+     * @param fileName the file to import
      * @throws IOException
      */
-    private void launchImportForFile(String fileName) throws IOException, JAXBException, SAXException, TiamatBusinessException {
+    private void launchImportForFile(String fileName) throws IOException, JAXBException, SAXException, TiamatBusinessException, BindException {
         File file = new File("src/test/resources/manualImports/stopPlaceNetex/" + fileName);
 
         try (InputStream testInputStream = new FileInputStream(file)) {
             PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(testInputStream);
             Provider provider = Collections.singletonList(providerRepository.getProvider(1L)).get(0);
-            netexImporter.importProcessTest(incomingPublicationDelivery,  true);
+            netexImporter.importProcessTest(incomingPublicationDelivery, true);
         }
     }
 

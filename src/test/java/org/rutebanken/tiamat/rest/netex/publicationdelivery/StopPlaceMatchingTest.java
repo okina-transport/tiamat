@@ -29,6 +29,7 @@ import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;
@@ -55,13 +56,13 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
     }
 
 
-    private Quay createQuay(String quayId, BigDecimal latitude, BigDecimal longitude){
+    private Quay createQuay(String quayId, BigDecimal latitude, BigDecimal longitude) {
 
         org.rutebanken.netex.model.SiteRefStructure siteRef = new SiteRefStructure();
         siteRef.withRef("stopRef");
 
         LocationStructure locationStruct = new LocationStructure().withLatitude(latitude)
-                                                                  .withLongitude(longitude);
+                .withLongitude(longitude);
 
         SimplePoint_VersionStructure centroid = new SimplePoint_VersionStructure().withLocation(locationStruct);
 
@@ -86,7 +87,6 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
     }
 
 
-
     @Test
     public void matchImportedStopOnId() throws Exception {
 
@@ -97,7 +97,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
                 .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                 .withName(new MultilingualString().withValue("I don't care"))
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NSR:Quay:1", new BigDecimal("10"),new BigDecimal("74")))))
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NSR:Quay:1", new BigDecimal("10"), new BigDecimal("74")))))
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("10"))
@@ -117,7 +117,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         System.out.println("Got response: \n" + response);
 
-        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response,false);
+        List<StopPlace> result = publicationDeliveryTestHelper.extractStopPlaces(response, false);
 
         assertThat(result).hasSize(1);
         publicationDeliveryTestHelper.hasOriginalId(stopPlaceToBeMatched.getId(), result.get(0));
@@ -125,9 +125,8 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
     /**
      * Incoming stop matches two stops with different modality. Choose the right one based on modality.
-     *
+     * <p>
      * https://rutebanken.atlassian.net/browse/NRP-1718
-     *
      */
     @Test
     public void matchMultipleStopsAndDifferentStopPlaceType() throws Exception {
@@ -139,7 +138,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
                 .withTransportMode(AllVehicleModesOfTransportEnumeration.RAIL)
                 .withName(new MultilingualString().withValue("Vennesla"))
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NSR:Quay:1", new BigDecimal("10"),new BigDecimal("74")))))
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NSR:Quay:1", new BigDecimal("10"), new BigDecimal("74")))))
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("10"))
@@ -147,7 +146,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         ImportParams importParams = new ImportParams();
         importParams.importType = ImportType.MATCH;
-        importParams.providerCode ="PROV1";
+        importParams.providerCode = "PROV1";
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(railstationStopPlace);
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery, importParams);
 
@@ -159,7 +158,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
                 .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                 .withName(new MultilingualString().withValue("Vennesla"))
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NSR:Quay:2", new BigDecimal("10"),new BigDecimal("74")))))
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NSR:Quay:2", new BigDecimal("10"), new BigDecimal("74")))))
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("10"))
@@ -186,7 +185,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
      * Incoming stop matches two stops.
      * Incoming stop has two quays, where each quay matches in separate stop place.
      * Both stop places should be returned.
-     *
+     * <p>
      * https://rutebanken.atlassian.net/browse/NRP-1718
      */
     @Test
@@ -204,7 +203,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
                                 .withLatitude(new BigDecimal("10"))
                                 .withLongitude(new BigDecimal("74"))))
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NTR:Quay:11",new BigDecimal("10"), new BigDecimal("74")))));
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NTR:Quay:11", new BigDecimal("10"), new BigDecimal("74")))));
 
         ImportParams importParams = new ImportParams();
         importParams.importType = ImportType.MATCH;
@@ -224,7 +223,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
                                 .withLatitude(new BigDecimal("10"))
                                 .withLongitude(new BigDecimal("74"))))
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NTR:Quay:12",new BigDecimal("10"), new BigDecimal("74")))));
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NTR:Quay:12", new BigDecimal("10"), new BigDecimal("74")))));
 
 
         PublicationDeliveryStructure secondInitialPublicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(secondStopPlace);
@@ -242,10 +241,10 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
                                 .withLongitude(new BigDecimal("74"))))
                 .withQuays(new Quays_RelStructure()
                         .withQuayRefOrQuay(
-                                netexObjectFactory.createQuay(createQuay("NTR:Quay:12",new BigDecimal("10"),new BigDecimal("74")))                                )
+                                netexObjectFactory.createQuay(createQuay("NTR:Quay:12", new BigDecimal("10"), new BigDecimal("74"))))
                         .withQuayRefOrQuay(
-                                netexObjectFactory.createQuay(createQuay("NTR:Quay:11",new BigDecimal("10"),new BigDecimal("74")))                                )
-                                );
+                                netexObjectFactory.createQuay(createQuay("NTR:Quay:11", new BigDecimal("10"), new BigDecimal("74"))))
+                );
 
         importParams.importType = ImportType.MATCH;
         PublicationDeliveryStructure matchingPublicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(incomingStopPlace);
@@ -260,7 +259,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
     /**
      * DEACTIVATED TEST : MERGE MODE NO LONGER USED
      * See https://rutebanken.atlassian.net/browse/NRP-1601
-     *
+     * <p>
      * IDs might match incorrectly because of bad data.
      * Make sure if we got a ID match, the distance should be checked.
      * If the existing stop place and the incoming stop place is too far away from each other,
@@ -294,7 +293,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         ImportParams importParams = new ImportParams();
         importParams.importType = ImportType.INITIAL;
-        importParams.providerCode ="PROV1";
+        importParams.providerCode = "PROV1";
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(tooFarAwayStopPlace, nearbyStopPlace);
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery, importParams);
 
@@ -327,6 +326,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
     /**
      * DEACTIVATED TEST : ID_MATCH NO LONGER USED
+     *
      * @throws Exception
      */
     @Test
@@ -347,7 +347,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         ImportParams importParams = new ImportParams();
         importParams.importType = ImportType.INITIAL;
-        importParams.providerCode ="PROV1";
+        importParams.providerCode = "PROV1";
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlaceToBeMatched);
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery, importParams);
 
@@ -366,6 +366,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
     /**
      * DEACTIVATED TEST : ID_MATCH no longer used
+     *
      * @throws Exception
      */
 
@@ -387,7 +388,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         ImportParams importParams = new ImportParams();
         importParams.importType = ImportType.INITIAL;
-        importParams.providerCode ="PROV1";
+        importParams.providerCode = "PROV1";
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlaceNotToBeMatched);
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery, importParams);
 
@@ -407,6 +408,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
     /**
      * DEACTIVATED TEST : no longer used
+     *
      * @throws Exception
      */
     @Test
@@ -426,7 +428,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         ImportParams importParams = new ImportParams();
         importParams.importType = ImportType.INITIAL;
-        importParams.providerCode ="PROV1";
+        importParams.providerCode = "PROV1";
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlaceToBeMatched);
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery, importParams);
 
@@ -459,7 +461,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
                 .withTransportMode(AllVehicleModesOfTransportEnumeration.BUS)
                 .withName(new MultilingualString().withValue("somewhere"))
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NSR:Quay:1", new BigDecimal("9"),new BigDecimal("71")))))
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NSR:Quay:1", new BigDecimal("9"), new BigDecimal("71")))))
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("11"))
@@ -468,7 +470,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         ImportParams importParams = new ImportParams();
         importParams.importType = ImportType.INITIAL;
-        importParams.providerCode ="PROV1";
+        importParams.providerCode = "PROV1";
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlaceToBeMatched);
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery, importParams);
 
@@ -510,7 +512,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
                 .withVersion("1")
                 .withName(new MultilingualString().withValue("somewhere"))
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NSR:Quay:1", new BigDecimal("9"),new BigDecimal("71")))))
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NSR:Quay:1", new BigDecimal("9"), new BigDecimal("71")))))
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
                                 .withLatitude(new BigDecimal("9"))
@@ -530,7 +532,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
                 .withStopPlaceType(StopTypeEnumeration.BUS_STATION)
                 .withVersion("1")
                 .withQuays(new Quays_RelStructure()
-                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NSR:Quay:2", new BigDecimal("9"),new BigDecimal("71")))))
+                        .withQuayRefOrQuay(netexObjectFactory.createQuay(createQuay("NSR:Quay:2", new BigDecimal("9"), new BigDecimal("71")))))
                 .withName(new MultilingualString().withValue("somewhere"))
                 .withCentroid(new SimplePoint_VersionStructure()
                         .withLocation(new LocationStructure()
@@ -540,7 +542,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         ImportParams importParams = new ImportParams();
         importParams.importType = ImportType.INITIAL;
-        importParams.providerCode ="PROV1";
+        importParams.providerCode = "PROV1";
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace1);
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery, importParams);
 
@@ -565,7 +567,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
                 .withName(new MultilingualString().withValue("somewhere"))
                 .withQuays(new Quays_RelStructure()
                         .withQuayRefOrQuay(
-                                netexObjectFactory.createQuay(createQuay("RUT:Quay:0136068001",new BigDecimal(10),new BigDecimal(40))
+                                netexObjectFactory.createQuay(createQuay("RUT:Quay:0136068001", new BigDecimal(10), new BigDecimal(40))
                                 )));
 
         StopPlace stopPlace2 = new StopPlace()
@@ -575,11 +577,11 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
                 .withVersion("1")
                 .withQuays(new Quays_RelStructure()
                         .withQuayRefOrQuay(
-                                netexObjectFactory.createQuay(createQuay("RUT:Quay:0136068001",new BigDecimal(10),new BigDecimal(41)))));
+                                netexObjectFactory.createQuay(createQuay("RUT:Quay:0136068001", new BigDecimal(10), new BigDecimal(41)))));
 
         ImportParams importParams = new ImportParams();
         importParams.importType = ImportType.INITIAL;
-        importParams.providerCode ="PROV1";
+        importParams.providerCode = "PROV1";
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace1);
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery, importParams);
 
@@ -596,6 +598,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
     /**
      * DEACTIVATED TEST : ID_MATCH mode no longer used
+     *
      * @throws Exception
      */
     @Test
@@ -624,7 +627,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         ImportParams importParams = new ImportParams();
         importParams.importType = ImportType.INITIAL;
-        importParams.providerCode ="PROV1";
+        importParams.providerCode = "PROV1";
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace1);
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery, importParams);
 
@@ -640,6 +643,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
     /**
      * DEACTIVATED TEST : ID_MATCH NO LONGER USED
+     *
      * @throws Exception
      */
     @Test
@@ -668,7 +672,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         ImportParams importParams = new ImportParams();
         importParams.importType = ImportType.INITIAL;
-        importParams.providerCode ="PROV1";
+        importParams.providerCode = "PROV1";
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace1);
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery, importParams);
 
@@ -685,6 +689,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
     /**
      * DEACTIVATED TEST : ID_MATCH no longer used
+     *
      * @throws Exception
      */
     @Test
@@ -713,7 +718,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         ImportParams importParams = new ImportParams();
         importParams.importType = ImportType.INITIAL;
-        importParams.providerCode ="PROV1";
+        importParams.providerCode = "PROV1";
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace1);
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery, importParams);
 
@@ -733,7 +738,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
      */
     @Test
     @Ignore
-    public void matchOneIncomingStopToMultipleTiamatStops() throws JAXBException, IOException, SAXException, TiamatBusinessException {
+    public void matchOneIncomingStopToMultipleTiamatStops() throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
 
         String initiallyImportedStops = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<PublicationDelivery xmlns=\"http://www.netex.org.uk/netex\">\n" +
@@ -932,7 +937,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
 
         ImportParams importParams = new ImportParams();
         importParams.importType = ImportType.INITIAL;
-        importParams.providerCode ="PROV1";
+        importParams.providerCode = "PROV1";
         publicationDeliveryTestHelper.postAndReturnPublicationDelivery(initiallyImportedStops, importParams);
 
         importParams.importType = ImportType.ID_MATCH;

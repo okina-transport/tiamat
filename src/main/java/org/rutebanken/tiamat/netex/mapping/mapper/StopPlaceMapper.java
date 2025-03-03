@@ -20,10 +20,8 @@ import ma.glasnost.orika.MappingContext;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
-import org.rutebanken.tiamat.repository.StopPlaceRepositoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,14 +34,13 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
 
     private final PublicationDeliveryHelper publicationDeliveryHelper;
 
-    @Autowired
     public StopPlaceMapper(PublicationDeliveryHelper publicationDeliveryHelper) {
         this.publicationDeliveryHelper = publicationDeliveryHelper;
     }
 
     @Override
     public void mapAtoB(StopPlace netexStopPlace, org.rutebanken.tiamat.model.StopPlace stopPlace, MappingContext context) {
-        try{
+        try {
             super.mapAtoB(netexStopPlace, stopPlace, context);
             if (netexStopPlace.getPlaceEquipments() != null &&
                     netexStopPlace.getPlaceEquipments().getInstalledEquipmentRefOrInstalledEquipment() != null &&
@@ -77,22 +74,21 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
             }
 
             String isParentStopPlaceStringValue = publicationDeliveryHelper.getValueByKey(netexStopPlace, IS_PARENT_STOP_PLACE);
-            if(isParentStopPlaceStringValue != null) {
-                if(isParentStopPlaceStringValue.equalsIgnoreCase("true")) {
+            if (isParentStopPlaceStringValue != null) {
+                if (isParentStopPlaceStringValue.equalsIgnoreCase("true")) {
                     stopPlace.setParentStopPlace(true);
                 }
             }
-        }catch(Exception e ){
+        } catch (Exception e) {
             logger.error("Can't map to tiamat stop place:" + netexStopPlace.getId());
         }
-
 
 
     }
 
     @Override
     public void mapBtoA(org.rutebanken.tiamat.model.StopPlace stopPlace, StopPlace netexStopPlace, MappingContext context) {
-        try{
+        try {
             super.mapBtoA(stopPlace, netexStopPlace, context);
             if (stopPlace.getPlaceEquipments() != null &&
                     stopPlace.getPlaceEquipments().getInstalledEquipment() != null &&
@@ -128,7 +124,7 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
                 netexStopPlace.setAlternativeNames(null);
             }
 
-            if(netexStopPlace.getKeyList() == null) {
+            if (netexStopPlace.getKeyList() == null) {
                 netexStopPlace.withKeyList(new KeyListStructure());
             }
 
@@ -139,7 +135,7 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
 
             // TODO voir si le isParentStopPlace est false si il faut valoriser un typeOfPlaceRef de type monomodalStopPlace
 
-            if(stopPlace.isParentStopPlace()){
+            if (stopPlace.isParentStopPlace()) {
                 TypeOfPlaceRefs_RelStructure typeOfPlaceRefs_relStructure = new TypeOfPlaceRefs_RelStructure();
                 TypeOfPlaceRefStructure typeOfPlaceRefStructure = new TypeOfPlaceRefStructure();
                 typeOfPlaceRefStructure.setRef("multimodalStopPlace");
@@ -147,24 +143,24 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
                 netexStopPlace.setPlaceTypes(typeOfPlaceRefs_relStructure);
             }
 
-            if (stopPlace.getTransportMode() == null){
-                feedTransportMode(stopPlace,netexStopPlace);
+            if (stopPlace.getTransportMode() == null) {
+                feedTransportMode(stopPlace, netexStopPlace);
             }
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.error("Can't map to netex stop place:" + stopPlace.getNetexId());
         }
 
     }
 
 
-    private void feedTransportMode(org.rutebanken.tiamat.model.StopPlace stopPlace, StopPlace netexStopPlace){
-        if(stopPlace.getStopPlaceType() != null ){
+    private void feedTransportMode(org.rutebanken.tiamat.model.StopPlace stopPlace, StopPlace netexStopPlace) {
+        if (stopPlace.getStopPlaceType() != null) {
             org.rutebanken.tiamat.model.VehicleModeEnumeration transportMode = TiamatVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(stopPlace.getStopPlaceType());
-            if (transportMode == null ){
+            if (transportMode == null) {
                 logger.error("Unable to find transportMode for stopPlaceType:" + stopPlace.getStopPlaceType() + ", on stopPlace:" + stopPlace.getNetexId());
             }
             netexStopPlace.setTransportMode(AllVehicleModesOfTransportEnumeration.fromValue(transportMode.value()));
-        }else{
+        } else {
             //Neither transportMode or stop place type is filled. Filling transport mode with "other" type
             netexStopPlace.setTransportMode(AllVehicleModesOfTransportEnumeration.OTHER);
         }

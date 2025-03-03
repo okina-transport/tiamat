@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<PublicationDelivery xmlns="http://www.netex.org.uk/netex"
+                     version="1.1:FR-NETEX-2.2">
+    <PublicationTimestamp>2024-04-03T13:08:54.78Z</PublicationTimestamp>
+    <ParticipantRef>MOBIITI</ParticipantRef>
+    <dataObjects>
+        <GeneralFrame id="MOBI-ITI:GeneralFrame:NETEX_PARKING_20240403T130854Z:LOC" modification="revise" version="1">
+            <TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_PARKING">version="1.1:FR-NETEX_PARKING-2.2"</TypeOfFrameRef>
+            <members>
+                <Parking changed="2024-04-03T13:18:04.368" created="2024-04-03T12:13:43.094"
+                         id="FR:75056:Parking:1:LOC"
+                         modification="new" version="2">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test Parc-relais Henri Dunant</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>63000-PRelais1</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-stopcode</Key>
+                            <Value/>
+                        </KeyValue>
+                    </keyList>
+                    <Name/>
+                    <AllAreasWheelchairAccessible>false</AllAreasWheelchairAccessible>
+                    <ParkingVehicleTypes/>
+                    <BookingUrl>
+                        https://www.clermontmetropole.eu/fr/habiter-se-deplacer/deplacement-et-mobilite/en-voiture/stationnement/
+                    </BookingUrl>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:1" version="0">
+                            <ParkingUserTypes>all</ParkingUserTypes>
+                            <spaces modificationSet="all">
+                                <ParkingCapacity id="MOBIITI:ParkingCapacity:1" version="0">
+                                    <ParkingUserType>registeredDisabled</ParkingUserType>
+                                    <NumberOfSpaces>22</NumberOfSpaces>
+                                </ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                    <parkingAreas>
+                        <ParkingArea id="MOBIITI:ParkingArea:1:LOC" modification="new" version="1">
+                            <Name lang="FR">Zone P+R</Name>
+                            <placeTypes>
+                                <TypeOfPlaceRef ref="parkAndRide"/>
+                            </placeTypes>
+                            <PublicUse>all</PublicUse>
+                            <SiteRef ref="FR:75056:Parking:1:LOC"/>
+                            <TotalCapacity>1</TotalCapacity>
+                            <bays>
+                            </bays>
+                        </ParkingArea>
+                    </parkingAreas>
+                </Parking>
+            </members>
+        </GeneralFrame>
+    </dataObjects>
+</PublicationDelivery>

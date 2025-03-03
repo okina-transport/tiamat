@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.exporter;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.rutebanken.netex.model.*;
@@ -27,6 +28,7 @@ import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMappi
 import org.rutebanken.tiamat.model.TariffZone;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.VehicleModeEnumeration;
+import org.rutebanken.tiamat.netex.NetexConstants;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.repository.*;
 import org.slf4j.Logger;
@@ -55,6 +57,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -119,10 +122,55 @@ public class StreamingPublicationDelivery {
         this.validateAgainstSchema = validateAgainstSchema;
     }
 
+    private static JAXBContext createContext(Class clazz) {
+        try {
+            JAXBContext jaxbContext = newInstance(clazz);
+            logger.info("Created context {}", jaxbContext.getClass());
+            return jaxbContext;
+        } catch (JAXBException e) {
+            String message = "Could not create instance of jaxb context for class " + clazz;
+            logger.warn(message, e);
+            throw new RuntimeException("Could not create instance of jaxb context for class " + clazz, e);
+        }
+    }
+
+    private static String documentToString(Document doc) {
+        String output = null;
+        try {
+            TransformerFactory tf = TransformerFactory.newInstance();
+            Transformer transformer = tf.newTransformer();
+            StringWriter writer = new StringWriter();
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            transformer.transform(new DOMSource(doc), new StreamResult(writer));
+            output = writer.getBuffer().toString();
+        } catch (Exception e) {
+            logger.error("error", e);
+
+            return null;
+        }
+        return output;
+    }
+
+    private static Document stringToDocument(String strXml) {
+
+        Document doc = null;
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            StringReader strReader = new StringReader(strXml);
+            InputSource is = new InputSource(strReader);
+            doc = builder.parse(is);
+            doc.setXmlStandalone(false);
+        } catch (Exception e) {
+            return null;
+        }
+
+        return doc;
+    }
+
     public void stream(OutputStream outputStream, Provider provider, LocalDateTime localDateTime, Long exportJobId) throws JAXBException, IOException, SAXException {
         streamForAsyncExportJob(outputStream, provider, localDateTime, exportJobId);
     }
-
 
     /**
      * Do the last steps at the end of the export
@@ -154,7 +202,7 @@ public class StreamingPublicationDelivery {
         general_VersionFrameStructure.withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(filteredListMembers);
         netexGeneralFrame.withMembers(general_VersionFrameStructure);
 
-        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame,StringUtils.isNotEmpty(nameNetexStop) ? nameNetexStop : "MOBIITI", LocalDateTime.now());
+        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame, StringUtils.isNotEmpty(nameNetexStop) ? nameNetexStop : "MOBIITI", LocalDateTime.now());
 
         Marshaller marshaller = createMarshaller();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -214,7 +262,7 @@ public class StreamingPublicationDelivery {
         int totalStopsProcessed = 0;
         Set<Long> totalIdsToExport = new HashSet<>();
 
-        while (isDataToExport){
+        while (isDataToExport) {
 
             Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(exportJobId);
             totalIdsToExport = batchIdsToExport.size() > totalIdsToExport.size() ? batchIdsToExport : totalIdsToExport;
@@ -243,6 +291,7 @@ public class StreamingPublicationDelivery {
 
     /**
      * Launch a stream of the object, for netex export launched by user
+     *
      * @param outputStream
      * @param localDateTime
      * @param exportJobId
@@ -256,7 +305,7 @@ public class StreamingPublicationDelivery {
         AtomicInteger mappedParkingCount = new AtomicInteger();
 
         //List that will contain all the members in the General Frame
-        List <JAXBElement<? extends EntityStructure>> listMembers = new ArrayList<>();
+        List<JAXBElement<? extends EntityStructure>> listMembers = new ArrayList<>();
 
         GeneralFrame netexGeneralFrame = netexMapper.mapToNetexModel(generalFrame);
 
@@ -275,7 +324,7 @@ public class StreamingPublicationDelivery {
         generalVersionFrameStructure.withGeneralFrameMemberOrDataManagedObjectOrEntity_Entity(filteredListMembers);
         netexGeneralFrame.withMembers(generalVersionFrameStructure);
 
-        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame,"idSite",LocalDateTime.now());
+        PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryExporter.createPublicationDelivery(netexGeneralFrame, "idSite", LocalDateTime.now());
 
         Marshaller marshaller = createMarshaller();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -293,13 +342,13 @@ public class StreamingPublicationDelivery {
 
     /**
      * Read objects and replace sanitized code for : (##3A) by : character
+     *
      * @param listMembers
      */
-    private void desanitizeImportedIds( List <JAXBElement<? extends EntityStructure>> listMembers, String prefix){
+    private void desanitizeImportedIds(List<JAXBElement<? extends EntityStructure>> listMembers, String prefix) {
         for (JAXBElement<? extends EntityStructure> listMember : listMembers) {
             EntityStructure entity = listMember.getValue();
-            if (entity instanceof Zone_VersionStructure){
-                Zone_VersionStructure zone = (Zone_VersionStructure) entity;
+            if (entity instanceof Zone_VersionStructure zone) {
 
                 KeyListStructure keyList = zone.getKeyList();
                 if (keyList != null && keyList.getKeyValue() != null) {
@@ -314,7 +363,7 @@ public class StreamingPublicationDelivery {
                                 structure.setValue(structure.getValue().replace(oldString, prefix));
                             }
                         }
-                        if (structure != null && StringUtils.isEmpty(structure.getValue())){
+                        if (structure != null && StringUtils.isEmpty(structure.getValue())) {
                             iterator.remove();
                         }
                     }
@@ -323,34 +372,29 @@ public class StreamingPublicationDelivery {
         }
     }
 
-
-
     /**
      * Filter duplicates objects to avoid xsd errors while marshaling the xml file
-     * @param originalList
-     *  The original list that might contain duplicates
-     * @return
-     *  The list without duplicates
+     *
+     * @param originalList The original list that might contain duplicates
+     * @return The list without duplicates
      */
-    private  List <JAXBElement<? extends EntityStructure>> filterDuplicates( List <JAXBElement<? extends EntityStructure>> originalList){
-        List <JAXBElement<? extends EntityStructure>> filteredList = new ArrayList<>();
+    private List<JAXBElement<? extends EntityStructure>> filterDuplicates(List<JAXBElement<? extends EntityStructure>> originalList) {
+        List<JAXBElement<? extends EntityStructure>> filteredList = new ArrayList<>();
         Set<String> alreadyProcessedMembers = new HashSet<>();
         for (JAXBElement<? extends EntityStructure> jaxbElement : originalList) {
             String key;
 
-            if (jaxbElement.getValue() instanceof StopPlace){
-                StopPlace sp = (StopPlace) jaxbElement.getValue();
+            if (jaxbElement.getValue() instanceof StopPlace sp) {
                 key = sp.getId() + "-" + sp.getVersion();
-            }else if(jaxbElement.getValue() instanceof Quay){
-                Quay quay = (Quay) jaxbElement.getValue();
+            } else if (jaxbElement.getValue() instanceof Quay quay) {
                 key = quay.getId() + "-" + quay.getVersion();
-            }else{
+            } else {
                 //all other objects are not filtered
                 filteredList.add(jaxbElement);
                 continue;
             }
 
-            if (!alreadyProcessedMembers.contains(key)){
+            if (!alreadyProcessedMembers.contains(key)) {
                 alreadyProcessedMembers.add(key);
                 filteredList.add(jaxbElement);
             }
@@ -504,16 +548,12 @@ public class StreamingPublicationDelivery {
     // TODO: okina 07/11/19
     private void doLastModifications(OutputStream outputStreamOut, OutputStream byteArrayOutputIn) {
         String s = null;
-        try {
-            s = new String(((ByteArrayOutputStream) byteArrayOutputIn).toByteArray(), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        s = ((ByteArrayOutputStream) byteArrayOutputIn).toString(StandardCharsets.UTF_8);
         s = s.replace("ns2:pos", "gml:pos");
-        s = s.replace("ns2:Polygon ns2:id","gml:Polygon gml:id");
-        s = s.replace("/ns2:Polygon","/gml:Polygon");
-        s = s.replace("ns2:exterior","gml:exterior");
-        s = s.replace("ns2:LinearRing","gml:LinearRing");
+        s = s.replace("ns2:Polygon ns2:id", "gml:Polygon gml:id");
+        s = s.replace("/ns2:Polygon", "/gml:Polygon");
+        s = s.replace("ns2:exterior", "gml:exterior");
+        s = s.replace("ns2:LinearRing", "gml:LinearRing");
         s = s.replace("ns3:", "siri:");
 
         Document document = stringToDocument(s);
@@ -535,9 +575,9 @@ public class StreamingPublicationDelivery {
         element.getElementsByTagName("PublicationTimestamp").item(0).getChildNodes().item(0).setNodeValue(nv + "Z");
 
         try {
-            outputStreamOut.write(documentToString(document).getBytes("UTF-8"));
+            outputStreamOut.write(documentToString(document).getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
-            ; // SWALLOW
+            // SWALLOW
         }
     }
 
@@ -580,7 +620,7 @@ public class StreamingPublicationDelivery {
                 generalOrganisation.setId(organisationId);
                 generalOrganisation.setVersion("any");
                 generalOrganisation.getOrganisationType().add(OrganisationTypeEnumeration.OTHER);
-                if(StringUtils.isNotEmpty(tp.getOperator())){
+                if (StringUtils.isNotEmpty(tp.getOperator())) {
                     generalOrganisation.setName(new MultilingualString().withValue(tp.getOperator()));
                 }
                 listMembers.add(netexObjectFactory.createGeneralOrganisation(generalOrganisation));
@@ -628,8 +668,22 @@ public class StreamingPublicationDelivery {
             parkingResultsIterator = getIteratorForParkingManualExport(exportJobId);
         }
 
-        // ExportParams could be used for parkingExportMode.
+        TypeOfFrame typeOfFrame = new TypeOfFrame();
+        MultilingualString name = new MultilingualString();
+        name.withValue(NetexConstants.NETEX_PARKING_TOF_NAME);
+        MultilingualString description = new MultilingualString();
+        description.withValue(NetexConstants.NETEX_PARKING_TOF_DESCRIPTION);
+        typeOfFrame.withId(NetexConstants.NETEX_PARKING_TOF_ID)
+                .withVersion(NetexConstants.NETEX_PARKING_TOF_VERSION)
+                .withName(name)
+                .withDescription(description);
+        listMembers.add(netexObjectFactory.createTypeOfFrame(typeOfFrame));
+        Map<String, JAXBElement<TransportTypeRefStructure>> refToTransportTypeRef = new HashMap<>();
+        Map<String, JAXBElement<TransportType>> refToTransportType = new HashMap<>();
+        Map<String, TypeOfPaymentMethodRef> refToTypeOfPaymentMethodRef = new HashMap<>();
+        Map<String, JAXBElement<TypeOfPaymentMethod>> refToTypeOfPaymentMethod = new HashMap<>();
 
+        // ExportParams could be used for parkingExportMode.
         int parkingsCount = parkingRepository.countResult();
         Set<String> organisationIds = new HashSet<>();
         if (parkingsCount > 0) {
@@ -649,7 +703,7 @@ public class StreamingPublicationDelivery {
                     generalOrganisation.setVersion("any");
                     generalOrganisation.getOrganisationType().add(OrganisationTypeEnumeration.OTHER);
                     generalOrganisation.setCompanyNumber(tp.getSiret());
-                    if(StringUtils.isNotEmpty(tp.getOperator())){
+                    if (StringUtils.isNotEmpty(tp.getOperator())) {
                         generalOrganisation.setName(new MultilingualString().withValue(tp.getOperator()));
                     }
                     listMembers.add(netexObjectFactory.createGeneralOrganisation(generalOrganisation));
@@ -707,8 +761,37 @@ public class StreamingPublicationDelivery {
                     completeParkingUrl(np, organisation);
                     np.setBookingUrl(organisation.getPurchaseUrl());
                     if (tp.getInsee() != null) {
-                        np.setId("FR:"+tp.getInsee()+":Parking:" + tp.getNetexId().replace("MOBIITI:PARKING:", "") + ":LOC");
+                        np.setId("FR:" + tp.getInsee() + ":Parking:" + tp.getNetexId().replace("MOBIITI:PARKING:", "") + ":LOC");
                     }
+                }
+                if (CollectionUtils.isNotEmpty(tp.getTransportTypes())) {
+                    TransportTypeRefs_RelStructure transportTypeRefs = netexObjectFactory.createTransportTypeRefs_RelStructure();
+                    for (var transportType : tp.getTransportTypes()) {
+                        refToTransportType.computeIfAbsent(transportType.getNetexId(), (k) ->
+                                netexObjectFactory.createTransportType(netexMapper.mapToNetexModel(transportType)));
+                        var ttrs = refToTransportTypeRef.computeIfAbsent(transportType.getNetexId(), (k) ->
+                                netexObjectFactory.createTransportTypeRef(
+                                        netexObjectFactory.createTransportTypeRefStructure()
+                                                .withRef(k)
+                                                .withVersion(Long.toString(transportType.getVersion())))
+                        );
+                        transportTypeRefs.getTransportTypeRef().add(ttrs);
+                    }
+                    np.setVehicleTypes(transportTypeRefs);
+                }
+                if (CollectionUtils.isNotEmpty(tp.getTypeOfPaymentMethods())) {
+                    var topmRefs = netexObjectFactory.createTypeOfPaymentMethodRefs_RelStructure();
+                    for (var topm : tp.getTypeOfPaymentMethods()) {
+                        refToTypeOfPaymentMethod.computeIfAbsent(topm.getNetexId(), (k) ->
+                                netexObjectFactory.createTypeOfPaymentMethod(netexMapper.mapToNetexModel(topm)));
+                        var ttrs = refToTypeOfPaymentMethodRef.computeIfAbsent(topm.getNetexId(), (k) ->
+                                netexObjectFactory.createTypeOfPaymentMethodRef()
+                                        .withRef(k)
+                                        .withVersion(Long.toString(topm.getVersion()))
+                        );
+                        topmRefs.getTypeOfPaymentMethodRef().add(ttrs);
+                    }
+                    np.setTypesOfPaymentMethod(topmRefs);
                 }
                 listMembers.add(netexObjectFactory.createParking(np));
             }
@@ -731,6 +814,15 @@ public class StreamingPublicationDelivery {
             listMembers.add(netexObjectFactory.createTypeOfParking(typeBikeParking));
             listMembers.add(netexObjectFactory.createTypeOfParking(typeOfParkingSecureBikeParking));
             listMembers.add(netexObjectFactory.createTypeOfParking(typeOfParkingIndividualBox));
+
+            if (!refToTransportType.isEmpty()) {
+                listMembers.addAll(refToTransportType.values());
+            }
+
+            if (!refToTypeOfPaymentMethod.isEmpty()) {
+                listMembers.addAll(refToTypeOfPaymentMethod.values());
+            }
+
             logger.info("Adding {} typesOfParking in generalFrame");
         } else {
             logger.info("No parkings to export");
@@ -753,7 +845,7 @@ public class StreamingPublicationDelivery {
         }
     }
 
-    private Iterator<org.rutebanken.tiamat.model.Parking> getIteratorForParkingManualExport(Long exportJobId){
+    private Iterator<org.rutebanken.tiamat.model.Parking> getIteratorForParkingManualExport(Long exportJobId) {
         parkingRepository.initExportJobTable(exportJobId);
         int totalNbOfParkings = stopPlaceRepository.countStopsInExport(exportJobId);
         logger.info("Total nb of parkings to export:" + totalNbOfParkings);
@@ -764,7 +856,7 @@ public class StreamingPublicationDelivery {
 
         List<org.rutebanken.tiamat.model.Parking> completeParkingList = new ArrayList<>();
 
-        while (isDataToExport){
+        while (isDataToExport) {
 
             Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(exportJobId);
             if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
@@ -782,7 +874,7 @@ public class StreamingPublicationDelivery {
         return completeParkingList.iterator();
     }
 
-    private Iterator<org.rutebanken.tiamat.model.PointOfInterest> getIteratorForPointOfInterestManualExport(Long exportJobId){
+    private Iterator<org.rutebanken.tiamat.model.PointOfInterest> getIteratorForPointOfInterestManualExport(Long exportJobId) {
         pointOfInterestRepository.initExportJobTable(exportJobId);
         int totalNbOfPointOfInterests = pointOfInterestRepository.countPOIInExport(exportJobId);
         logger.info("Total nb of point of interest to export:" + totalNbOfPointOfInterests);
@@ -792,7 +884,7 @@ public class StreamingPublicationDelivery {
 
         List<org.rutebanken.tiamat.model.PointOfInterest> completeList = new ArrayList<>();
 
-        while (isDataToExport){
+        while (isDataToExport) {
             Set<Long> batchIdsToExport = pointOfInterestRepository.getNextBatchToProcess(exportJobId);
             if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
                 logger.info("no more point of interests to export");
@@ -848,7 +940,7 @@ public class StreamingPublicationDelivery {
         org.rutebanken.netex.model.PointOfInterestClassificationHierarchyMembers_RelStructure pointOfInterestClassificationHierarchyMembers_relStructure = new org.rutebanken.netex.model.PointOfInterestClassificationHierarchyMembers_RelStructure();
 
         pointOfInterestClassificationList.forEach(pointOfInterestClassification -> {
-            if(pointOfInterestClassification.getParent() != null && pointOfInterestClassification.getParent().getNetexId() != null){
+            if (pointOfInterestClassification.getParent() != null && pointOfInterestClassification.getParent().getNetexId() != null) {
                 org.rutebanken.netex.model.PointOfInterestClassificationHierarchyMemberStructure pointOfInterestClassificationHierarchyMemberStructure = new org.rutebanken.netex.model.PointOfInterestClassificationHierarchyMemberStructure();
                 org.rutebanken.netex.model.PointOfInterestClassificationRefStructure parentClassificationRef = new org.rutebanken.netex.model.PointOfInterestClassificationRefStructure();
                 parentClassificationRef.setVersion("any");
@@ -864,7 +956,7 @@ public class StreamingPublicationDelivery {
             }
         });
 
-        if(pointOfInterestClassificationHierarchyMembers_relStructure.getClassificationHierarchyMember().size() > 0){
+        if (pointOfInterestClassificationHierarchyMembers_relStructure.getClassificationHierarchyMember().size() > 0) {
             org.rutebanken.netex.model.PointOfInterestClassificationHierarchiesInFrame_RelStructure pointOfInterestClassificationHierarchiesInFrame_RelStructure = new org.rutebanken.netex.model.PointOfInterestClassificationHierarchiesInFrame_RelStructure();
 
             org.rutebanken.netex.model.PointOfInterestClassificationHierarchy pointOfInterestClassificationHierarchy = new org.rutebanken.netex.model.PointOfInterestClassificationHierarchy();
@@ -877,8 +969,7 @@ public class StreamingPublicationDelivery {
             pointOfInterestClassificationHierarchy.setMembers(pointOfInterestClassificationHierarchyMembers_relStructure);
             pointOfInterestClassificationHierarchiesInFrame_RelStructure.withPointOfInterestClassificationHierarchy(pointOfInterestClassificationHierarchy);
             netexSiteFrame.setPointOfInterestClassificationHierarchies(pointOfInterestClassificationHierarchiesInFrame_RelStructure);
-        }
-        else {
+        } else {
             logger.info("No poi classification hierarchies to export");
         }
     }
@@ -933,8 +1024,8 @@ public class StreamingPublicationDelivery {
         logger.info("Feed of listmembers completed.");
     }
 
-    private void addAdditionalInfo(org.rutebanken.tiamat.model.StopPlace stopPlace){
-        if(stopPlace.getTransportMode() == null) {
+    private void addAdditionalInfo(org.rutebanken.tiamat.model.StopPlace stopPlace) {
+        if (stopPlace.getTransportMode() == null) {
             VehicleModeEnumeration transportMode = TiamatVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(stopPlace.getStopPlaceType());
             stopPlace.setTransportMode(transportMode);
         }
@@ -985,7 +1076,7 @@ public class StreamingPublicationDelivery {
 
         List<org.rutebanken.tiamat.model.TopographicPlace> completeTopographicPlacesList = new ArrayList<>();
 
-        while (isDataToExport){
+        while (isDataToExport) {
             Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(jobid);
             if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
                 logger.info("no more topographic places to export");
@@ -1039,7 +1130,7 @@ public class StreamingPublicationDelivery {
 
         List<org.rutebanken.tiamat.model.TariffZone> completeTariffZonesList = new ArrayList<>();
 
-        while (isDataToExport){
+        while (isDataToExport) {
             Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(jobid);
             if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
                 logger.info("no more tariff zones to export");
@@ -1058,6 +1149,11 @@ public class StreamingPublicationDelivery {
     }
 
 
+    /*
+     * SI possible tout ça à mettre en amont de la génération du xml
+     * NB : la suppression de standalone ok en amont
+     */
+
     /**
      * Set field value with reflection.
      * Used for setting list values in netex model.
@@ -1069,18 +1165,6 @@ public class StreamingPublicationDelivery {
             field.set(instance, fieldValue);
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new RuntimeException("Cannot set field " + fieldName + " of " + instance, e);
-        }
-    }
-
-    private static JAXBContext createContext(Class clazz) {
-        try {
-            JAXBContext jaxbContext = newInstance(clazz);
-            logger.info("Created context {}", jaxbContext.getClass());
-            return jaxbContext;
-        } catch (JAXBException e) {
-            String message = "Could not create instance of jaxb context for class " + clazz;
-            logger.warn(message, e);
-            throw new RuntimeException("Could not create instance of jaxb context for class " + clazz, e);
         }
     }
 
@@ -1097,45 +1181,5 @@ public class StreamingPublicationDelivery {
         }
 
         return marshaller;
-    }
-
-
-    /*
-     * SI possible tout ça à mettre en amont de la génération du xml
-     * NB : la suppression de standalone ok en amont
-     */
-
-    private static String documentToString(Document doc) {
-        String output = null;
-        try {
-            TransformerFactory tf = TransformerFactory.newInstance();
-            Transformer transformer = tf.newTransformer();
-            StringWriter writer = new StringWriter();
-            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-            transformer.transform(new DOMSource(doc), new StreamResult(writer));
-            output = writer.getBuffer().toString();
-        } catch (Exception e) {
-            logger.error("error",e);
-
-            return null;
-        }
-        return output;
-    }
-
-    private static Document stringToDocument(String strXml) {
-
-        Document doc = null;
-        try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            StringReader strReader = new StringReader(strXml);
-            InputSource is = new InputSource(strReader);
-            doc = (Document) builder.parse(is);
-            doc.setXmlStandalone(false);
-        } catch (Exception e) {
-            return null;
-        }
-
-        return doc;
     }
 }

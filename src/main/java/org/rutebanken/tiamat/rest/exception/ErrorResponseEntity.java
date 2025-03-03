@@ -15,11 +15,14 @@
 
 package org.rutebanken.tiamat.rest.exception;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
 
 @XmlRootElement
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponseEntity {
 
     public List<Error> errors = new ArrayList<>();
@@ -36,19 +39,19 @@ public class ErrorResponseEntity {
         errors.add(new Error(message, errorCode));
     }
 
-
-
+    public ErrorResponseEntity(List<Error> errors) {
+        this.errors = errors;
+    }
 
     public static class Error {
         public String message;
-        public int errorCode;
+        public Integer errorCode;
 
         public Error(String message) {
             this.message = message;
         }
 
-        public Error(String message, int errorCode)
-        {
+        public Error(String message, int errorCode) {
             this.message = message;
             this.errorCode = errorCode;
         }

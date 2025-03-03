@@ -19,15 +19,16 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.PublicationDeliveryImporter;
-import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
 import javax.ws.rs.*;
@@ -60,9 +61,9 @@ public class ImportResource {
 
     @Autowired
     public ImportResource(PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller,
-                                 PublicationDeliveryStreamingOutput publicationDeliveryStreamingOutput,
-                                 PublicationDeliveryImporter publicationDeliveryImporter,
-                                 @Value("#{'${netex.import.enabled.types:ID_MATCH}'.split(',')}") Set<ImportType> enabledImportTypes) {
+                          PublicationDeliveryStreamingOutput publicationDeliveryStreamingOutput,
+                          PublicationDeliveryImporter publicationDeliveryImporter,
+                          @Value("#{'${netex.import.enabled.types:ID_MATCH}'.split(',')}") Set<ImportType> enabledImportTypes) {
 
         this.publicationDeliveryUnmarshaller = publicationDeliveryUnmarshaller;
         this.publicationDeliveryStreamingOutput = publicationDeliveryStreamingOutput;
@@ -70,16 +71,16 @@ public class ImportResource {
         this.enabledImportTypes = enabledImportTypes;
     }
 
-    public Response importPublicationDelivery(InputStream inputStream) throws IOException, JAXBException, SAXException, TiamatBusinessException {
+    public Response importPublicationDelivery(InputStream inputStream) throws IOException, JAXBException, SAXException, TiamatBusinessException, BindException {
         return importPublicationDelivery(inputStream, null);
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
-    public Response importPublicationDelivery(@ApiParam(hidden = true) InputStream inputStream, @BeanParam ImportParams importParams) throws IOException, JAXBException, SAXException, TiamatBusinessException {
+    public Response importPublicationDelivery(@ApiParam(hidden = true) InputStream inputStream, @BeanParam ImportParams importParams) throws IOException, JAXBException, SAXException, TiamatBusinessException, BindException {
         logger.info("Received Netex publication delivery, starting to parse...");
-        logger.info(".........................................................(importParams.providerCode = " + importParams.providerCode +")");
+        logger.info(".........................................................(importParams.providerCode = " + importParams.providerCode + ")");
 
         ImportType effectiveImportType = safeGetImportType(importParams);
         if (!enabledImportTypes.contains(effectiveImportType)) {

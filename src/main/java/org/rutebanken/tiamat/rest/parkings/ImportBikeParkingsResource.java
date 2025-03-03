@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.tiamat.general.BikesCSVHelper;
 import org.rutebanken.tiamat.general.ImportJobWorker;
+import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
@@ -36,20 +37,18 @@ import java.util.concurrent.Executors;
 public class ImportBikeParkingsResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportBikeParkingsResource.class);
-
-    private BikeParkingsImportedService bikeParkingsImportedService;
-
-
-    @Autowired
-    JobRepository jobRepository;
-
     private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("import-%d").build());
+    private final BikeParkingsImportedService bikeParkingsImportedService;
+    private final JobRepository jobRepository;
+    private final ImportJobWorkerBuilder importJobWorkerBuilder;
 
 
     @Autowired
-    ImportBikeParkingsResource(BikeParkingsImportedService bikeParkingsImportedService){
+    ImportBikeParkingsResource(BikeParkingsImportedService bikeParkingsImportedService, JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder) {
         this.bikeParkingsImportedService = bikeParkingsImportedService;
+        this.jobRepository = jobRepository;
+        this.importJobWorkerBuilder = importJobWorkerBuilder;
     }
 
     @POST
@@ -58,23 +57,17 @@ public class ImportBikeParkingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response importBikeParkingsCsvFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
         try {
-
             logger.info("Import Parkings Velo par " + user + " du fichier " + fileName);
-
             List<DtoBikeParking> dtoBikeParkingsCSV = BikesCSVHelper.parseDocument(inputStream);
-
             BikesCSVHelper.checkDuplicatedBikeParkings(dtoBikeParkingsCSV);
-
             List<Parking> bikeParkings = BikesCSVHelper.mapFromDtoToEntityParking(dtoBikeParkingsCSV, false);
-
             bikeParkingsImportedService.createBikeParkings(bikeParkings);
-
             return Response.status(200).build();
 
         } catch (IOException e) {
             logger.debug("Access denied for csv File: " + e.getMessage(), e);
             throw e;
-        }catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             logger.warn("Caught exception while processing data in the cvs file: " + e.getMessage(), e);
             throw e;
         }
@@ -87,7 +80,6 @@ public class ImportBikeParkingsResource {
     public Response importAsyncBikeParkingsCsvFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
         logger.info("Import Parkings Velo par " + user + " du fichier " + fileName);
 
-
         Job job = new Job();
         job.setFileName(fileName);
         job.setType(JobType.CSV_BIKE_PARKING);
@@ -96,14 +88,15 @@ public class ImportBikeParkingsResource {
         job.setStarted(Instant.now());
         jobRepository.save(job);
 
-        ImportJobWorker importJobWorker = new ImportJobWorker(job, inputStream, jobRepository);
-        importJobWorker.setBikeParkingsImportedService(bikeParkingsImportedService);
+        ImportJobWorker importJobWorker = importJobWorkerBuilder
+                .init(job)
+                .withInputStream(inputStream)
+                .build();
         importService.submit(importJobWorker);
 
         return Response.status(200).build();
 
-        }
-
+    }
 
 
 }

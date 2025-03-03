@@ -4,6 +4,7 @@ package org.rutebanken.tiamat.rest.poi;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.tiamat.general.ImportJobWorker;
+import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
 import org.rutebanken.tiamat.general.PointOfInterestCSVHelper;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
@@ -13,7 +14,6 @@ import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.rest.dto.DtoPointOfInterest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.*;
@@ -32,17 +32,18 @@ import java.util.concurrent.Executors;
 public class ImportPOIResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportPOIResource.class);
-
-    @Autowired
-    PointOfInterestCSVHelper poiHelper;
-
-    @Autowired
-    JobRepository jobRepository;
-
     private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("import-%d").build());
 
+    private final PointOfInterestCSVHelper poiHelper;
+    private final JobRepository jobRepository;
+    private final ImportJobWorkerBuilder importJobWorkerBuilder;
 
+    public ImportPOIResource(PointOfInterestCSVHelper poiHelper, JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder) {
+        this.poiHelper = poiHelper;
+        this.jobRepository = jobRepository;
+        this.importJobWorkerBuilder = importJobWorkerBuilder;
+    }
 
     @POST
     @Path("/poi_import_csv")
@@ -61,8 +62,8 @@ public class ImportPOIResource {
 
         try {
             poiHelper.persistPointsOfInterest(poiWithClassification);
-        }catch(Exception e){
-            logger.error(e.getMessage(),e);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
         }
 
         logger.info("Import POI par " + user + " du fichier " + fileName + " terminé");
@@ -74,27 +75,27 @@ public class ImportPOIResource {
     @Path("/poi_import_list")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPOIImportList() {
-        List<JobType> poiTypes = Arrays.asList(JobType.CSV_POI,JobType.NETEX_POI);
+        List<JobType> poiTypes = Arrays.asList(JobType.CSV_POI, JobType.NETEX_POI);
         try {
             List<Job> foundJobs = jobRepository.findByTypesAndAction(poiTypes, JobAction.IMPORT);
             return Response.ok(foundJobs).build();
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.error("Error while getting poi import list", e);
 
         }
 
-      return Response.status(500).build();
+        return Response.status(500).build();
     }
 
     @GET
     @Path("/shop_import_list")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getShopImportList() {
-        List<JobType> poiTypes = Arrays.asList(JobType.CSV_SHOP);
+        List<JobType> poiTypes = List.of(JobType.CSV_SHOP);
         try {
             List<Job> foundJobs = jobRepository.findByTypesAndAction(poiTypes, JobAction.IMPORT);
             return Response.ok(foundJobs).build();
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.error("Error while getting shop import list", e);
 
         }
@@ -117,10 +118,11 @@ public class ImportPOIResource {
         jobRepository.save(job);
         logger.info("Import points de vente par " + user + " du fichier " + fileName);
 
-        ImportJobWorker importJobWorker = new ImportJobWorker(job, poiHelper, inputStream, jobRepository);
+        ImportJobWorker importJobWorker = importJobWorkerBuilder
+                .init(job)
+                .withInputStream(inputStream)
+                .build();
         importService.submit(importJobWorker);
-
-
 
         return Response.status(200).build();
     }
@@ -141,8 +143,8 @@ public class ImportPOIResource {
 
         try {
             poiHelper.persistPointsOfInterest(dtoPointOfInterest);
-        }catch(Exception e){
-            logger.error(e.getMessage(),e);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
         }
         return Response.status(200).build();
     }
@@ -161,9 +163,11 @@ public class ImportPOIResource {
         job.setStarted(Instant.now());
         jobRepository.save(job);
 
-        ImportJobWorker importJobWorker = new ImportJobWorker(job, poiHelper, inputStream, jobRepository);
+        ImportJobWorker importJobWorker = importJobWorkerBuilder
+                .init(job)
+                .withInputStream(inputStream)
+                .build();
         importService.submit(importJobWorker);
-
 
         return Response.status(200).build();
     }

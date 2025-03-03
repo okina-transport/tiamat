@@ -17,23 +17,28 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
-import org.rutebanken.tiamat.model.ParkingCapacity;
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.model.ParkingProperties;
+import org.rutebanken.tiamat.model.ParkingVehicleEnumeration;
 
-import java.util.ArrayList;
-import java.util.List;
 
 public class ParkingPropertyMapper extends CustomMapper<org.rutebanken.netex.model.ParkingProperties, ParkingProperties> {
 
     @Override
     public void mapAtoB(org.rutebanken.netex.model.ParkingProperties netexParkingProperties, ParkingProperties tiamatParkingProperties, MappingContext context) {
         super.mapAtoB(netexParkingProperties, tiamatParkingProperties, context);
+        if (CollectionUtils.isEmpty(netexParkingProperties.getParkingVehicleTypes())) {
+            return;
+        }
+        tiamatParkingProperties.getParkingVehicleTypes().addAll(netexParkingProperties.getParkingVehicleTypes().stream().map(ppt -> ParkingVehicleEnumeration.fromValue(ppt.value())).toList());
     }
 
     @Override
     public void mapBtoA(ParkingProperties tiamatParkingProperties, org.rutebanken.netex.model.ParkingProperties netexParkingProperties, MappingContext context) {
         super.mapBtoA(tiamatParkingProperties, netexParkingProperties, context);
-
-
+        if (CollectionUtils.isEmpty(tiamatParkingProperties.getParkingVehicleTypes())) {
+            return;
+        }
+        netexParkingProperties.getParkingVehicleTypes().addAll(tiamatParkingProperties.getParkingVehicleTypes().stream().map(ppt -> org.rutebanken.netex.model.ParkingVehicleEnumeration.fromValue(ppt.value())).toList());
     }
 }

@@ -18,32 +18,30 @@ package org.rutebanken.tiamat.importer.handler;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
 import org.rutebanken.netex.model.*;
-import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.filter.ZoneTopographicPlaceFilter;
 import org.rutebanken.tiamat.importer.finder.PointOfInterestFromOriginalIdFinder;
 import org.rutebanken.tiamat.importer.initial.ParallelInitialPointOfInterestImporter;
 import org.rutebanken.tiamat.importer.merging.TransactionalMergingPointOfInterestssImporter;
-import org.rutebanken.tiamat.model.job.Job;
-import org.rutebanken.tiamat.model.job.JobType;
-import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.repository.JobRepository;
-import org.rutebanken.tiamat.rest.utils.Importer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
 public class PointOfInterestsImportHandler {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(PointOfInterestsImportHandler.class);
     /**
      * Hazelcast lock key for merging stop place import.

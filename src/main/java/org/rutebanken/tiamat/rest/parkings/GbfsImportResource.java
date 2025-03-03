@@ -3,6 +3,7 @@ package org.rutebanken.tiamat.rest.parkings;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.general.ImportJobWorker;
+import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.model.gbfs.GbfsImportLinks;
 import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportData;
@@ -12,9 +13,7 @@ import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.repository.JobRepository;
-import org.rutebanken.tiamat.repository.OrganisationRepository;
 import org.rutebanken.tiamat.service.parking.GbfsInputValidator;
-import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -40,18 +39,21 @@ public class GbfsImportResource {
             .setNameFormat("import-%d").build());
 
     private final JobRepository jobRepository;
-
     private final GbfsInputValidator gbfsInputValidator;
+    private final ImportJobWorkerBuilder importJobWorkerBuilder;
 
-    private final ParkingsImportedService parkingsImportedService;
-
-    private final OrganisationRepository organisationRepository;
-
-    public GbfsImportResource(JobRepository jobRepository, GbfsInputValidator gbfsInputValidator, ParkingsImportedService parkingsImportedService, OrganisationRepository organisationRepository) {
+    public GbfsImportResource(JobRepository jobRepository, GbfsInputValidator gbfsInputValidator, ImportJobWorkerBuilder importJobWorkerBuilder) {
         this.jobRepository = jobRepository;
         this.gbfsInputValidator = gbfsInputValidator;
-        this.parkingsImportedService = parkingsImportedService;
-        this.organisationRepository = organisationRepository;
+        this.importJobWorkerBuilder = importJobWorkerBuilder;
+    }
+
+    public static String getLastPartOfUrl(String url) {
+        int lastSlashIndex = url.lastIndexOf('/');
+        if (lastSlashIndex != -1 && lastSlashIndex < url.length() - 1) {
+            return url.substring(lastSlashIndex + 1);
+        }
+        return "";
     }
 
     @POST
@@ -79,20 +81,12 @@ public class GbfsImportResource {
         }
         jobRepository.save(job);
 
-        ImportJobWorker importJobWorker = new ImportJobWorker(job, jobRepository);
-        importJobWorker.setGbfsParkingImportData(new GbfsParkingImportData(validation.getStations(), validation.getVehicleTypes(), validation.getSystemInformation(), parkingTypeEnumeration));
-        importJobWorker.setParkingsImportedService(parkingsImportedService);
-        importJobWorker.setOrganisationRepository(organisationRepository);
+        ImportJobWorker importJobWorker = importJobWorkerBuilder
+                .init(job)
+                .withGbfsParkingImportData(new GbfsParkingImportData(validation.getStations(), validation.getVehicleTypes(), validation.getSystemInformation(), parkingTypeEnumeration))
+                .build();
         importService.submit(importJobWorker);
 
         return Response.status(Response.Status.OK).build();
-    }
-
-    public static String getLastPartOfUrl(String url) {
-        int lastSlashIndex = url.lastIndexOf('/');
-        if (lastSlashIndex != -1 && lastSlashIndex < url.length() - 1) {
-            return url.substring(lastSlashIndex + 1);
-        }
-        return "";
     }
 }

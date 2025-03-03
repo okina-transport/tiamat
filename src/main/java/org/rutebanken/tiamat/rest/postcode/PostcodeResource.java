@@ -3,13 +3,12 @@ package org.rutebanken.tiamat.rest.postcode;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.rutebanken.tiamat.general.ImportJobWorker;
+import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.repository.JobRepository;
-import org.rutebanken.tiamat.service.batch.MissingPostCodeService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,11 +31,13 @@ public class PostcodeResource {
     private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("import-%d").build());
 
-    @Autowired
-    private MissingPostCodeService missingPostCodeService;
+    private final JobRepository jobRepository;
+    private final ImportJobWorkerBuilder importJobWorkerBuilder;
 
-    @Autowired
-    JobRepository jobRepository;
+    public PostcodeResource(JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder) {
+        this.jobRepository = jobRepository;
+        this.importJobWorkerBuilder = importJobWorkerBuilder;
+    }
 
     @POST
     @PreAuthorize("@rolesChecker.hasRoleEdit()")
@@ -49,8 +50,9 @@ public class PostcodeResource {
         job.setStarted(Instant.now());
         jobRepository.save(job);
 
-        ImportJobWorker importJobWorker = new ImportJobWorker(job, jobRepository);
-        importJobWorker.setMissingPostalCodeService(missingPostCodeService);
+        ImportJobWorker importJobWorker = importJobWorkerBuilder
+                .init(job)
+                .build();
         importService.submit(importJobWorker);
 
         return Response.status(200).build();

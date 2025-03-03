@@ -37,6 +37,15 @@ public class ParkingCapacity
     protected BigInteger numberOfBikeSpaces;
     protected BigInteger numberOfElectricBikesWithRechargePoint;
     protected BigInteger numberOfTwoWheeledVehicle;
+    protected String transportTypeRef;
+
+    public String getTransportTypeRef() {
+        return transportTypeRef;
+    }
+
+    public void setTransportTypeRef(String transportTypeRef) {
+        this.transportTypeRef = transportTypeRef;
+    }
 
     public SiteElementRefStructure getParentRef() {
         return parentRef;
@@ -86,25 +95,33 @@ public class ParkingCapacity
         this.numberOfSpacesWithRechargePoint = numberOfSpacesWithRechargePoint;
     }
 
-    public BigInteger getNumberOfCarsharingSpaces() { return numberOfCarsharingSpaces; }
+    public BigInteger getNumberOfCarsharingSpaces() {
+        return numberOfCarsharingSpaces;
+    }
 
     public void setNumberOfCarsharingSpaces(BigInteger numberOfCarsharingSpaces) {
         this.numberOfCarsharingSpaces = numberOfCarsharingSpaces;
     }
 
-    public BigInteger getNumberOfBikeSpaces() { return numberOfBikeSpaces; }
+    public BigInteger getNumberOfBikeSpaces() {
+        return numberOfBikeSpaces;
+    }
 
     public void setNumberOfBikeSpaces(BigInteger numberOfBikeSpaces) {
         this.numberOfBikeSpaces = numberOfBikeSpaces;
     }
 
-    public BigInteger getNumberOfElectricBikesWithRechargePoint() { return numberOfElectricBikesWithRechargePoint; }
+    public BigInteger getNumberOfElectricBikesWithRechargePoint() {
+        return numberOfElectricBikesWithRechargePoint;
+    }
 
     public void setNumberOfElectricBikesWithRechargePoint(BigInteger numberOfElectricBikesWithRechargePoint) {
         this.numberOfElectricBikesWithRechargePoint = numberOfElectricBikesWithRechargePoint;
     }
 
-    public BigInteger getNumberOfTwoWheeledVehicle() { return numberOfTwoWheeledVehicle; }
+    public BigInteger getNumberOfTwoWheeledVehicle() {
+        return numberOfTwoWheeledVehicle;
+    }
 
     public void setNumberOfTwoWheeledVehicle(BigInteger numberOfTwoWheeledVehicle) {
         this.numberOfTwoWheeledVehicle = numberOfTwoWheeledVehicle;

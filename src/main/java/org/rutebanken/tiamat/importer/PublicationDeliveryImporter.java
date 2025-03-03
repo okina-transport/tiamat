@@ -18,15 +18,10 @@ package org.rutebanken.tiamat.importer;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
-import org.rutebanken.netex.model.ServiceFrame;
 import org.rutebanken.netex.model.SiteFrame;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.PublicationDeliveryExporter;
-import org.rutebanken.tiamat.importer.handler.ParkingsImportHandler;
-import org.rutebanken.tiamat.importer.handler.PathLinkImportHandler;
-import org.rutebanken.tiamat.importer.handler.StopPlaceImportHandler;
-import org.rutebanken.tiamat.importer.handler.TariffZoneImportHandler;
-import org.rutebanken.tiamat.importer.handler.TopographicPlaceImportHandler;
+import org.rutebanken.tiamat.importer.handler.*;
 import org.rutebanken.tiamat.importer.log.ImportLogger;
 import org.rutebanken.tiamat.importer.log.ImportLoggerTask;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
@@ -34,12 +29,15 @@ import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.repository.CacheProviderRepository;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.rutebanken.tiamat.service.batch.BackgroundJobs;
+import org.rutebanken.tiamat.validator.PublicationDeliveryValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindException;
 
 import java.util.Timer;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,15 +48,9 @@ import static org.rutebanken.tiamat.netex.mapping.NetexMappingContextThreadLocal
 @Service
 public class PublicationDeliveryImporter {
 
-    @Autowired
-    protected CacheProviderRepository providerRepository;
-
-    private static final Logger logger = LoggerFactory.getLogger(PublicationDeliveryImporter.class);
-
     public static final String IMPORT_CORRELATION_ID = "importCorrelationId";
     public static final String KC_ROLE_PREFIX = "ROLE_";
-
-
+    private static final Logger logger = LoggerFactory.getLogger(PublicationDeliveryImporter.class);
     private final PublicationDeliveryHelper publicationDeliveryHelper;
     private final PublicationDeliveryExporter publicationDeliveryExporter;
     private final PathLinkImportHandler pathLinkImportHandler;
@@ -68,6 +60,9 @@ public class PublicationDeliveryImporter {
     private final TopographicPlaceImportHandler topographicPlaceImportHandler;
     private final RoleAssignmentExtractor roleAssignmentExtractor;
     private final BackgroundJobs backgroundJobs;
+    private final PublicationDeliveryValidator publicationDeliveryValidator;
+    @Autowired
+    protected CacheProviderRepository providerRepository;
 
     @Autowired
     public PublicationDeliveryImporter(PublicationDeliveryHelper publicationDeliveryHelper, NetexMapper netexMapper,
@@ -78,7 +73,9 @@ public class PublicationDeliveryImporter {
                                        StopPlaceImportHandler stopPlaceImportHandler,
                                        ParkingsImportHandler parkingsImportHandler,
                                        RoleAssignmentExtractor roleAssignmentExtractor,
-                                       BackgroundJobs backgroundJobs) {
+                                       BackgroundJobs backgroundJobs,
+                                       PublicationDeliveryValidator publicationDeliveryValidator
+    ) {
         this.publicationDeliveryHelper = publicationDeliveryHelper;
         this.parkingsImportHandler = parkingsImportHandler;
         this.publicationDeliveryExporter = publicationDeliveryExporter;
@@ -88,15 +85,11 @@ public class PublicationDeliveryImporter {
         this.stopPlaceImportHandler = stopPlaceImportHandler;
         this.roleAssignmentExtractor = roleAssignmentExtractor;
         this.backgroundJobs = backgroundJobs;
-    }
-
-
-    public PublicationDeliveryStructure importPublicationDelivery(PublicationDeliveryStructure incomingPublicationDelivery) throws TiamatBusinessException {
-        return importPublicationDelivery(incomingPublicationDelivery, null);
+        this.publicationDeliveryValidator = publicationDeliveryValidator;
     }
 
     @SuppressWarnings("unchecked")
-    public PublicationDeliveryStructure importPublicationDelivery(PublicationDeliveryStructure incomingPublicationDelivery, ImportParams importParams) throws TiamatBusinessException {
+    public PublicationDeliveryStructure importPublicationDelivery(PublicationDeliveryStructure incomingPublicationDelivery, ImportParams importParams) throws TiamatBusinessException, BindException {
 
         if (roleAssignmentExtractor.getRoleAssignmentsForUser()
                 .stream()
@@ -111,6 +104,13 @@ public class PublicationDeliveryImporter {
             String responseMessage = "Received publication delivery but it does not contain any data objects.";
             logger.warn(responseMessage);
             throw new RuntimeException(responseMessage);
+        }
+
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(incomingPublicationDelivery, "publicationDelivery");
+        publicationDeliveryValidator.validate(incomingPublicationDelivery, bindingResult);
+
+        if (bindingResult.hasErrors()) {
+            throw new BindException(bindingResult);
         }
 
         if (importParams == null) {

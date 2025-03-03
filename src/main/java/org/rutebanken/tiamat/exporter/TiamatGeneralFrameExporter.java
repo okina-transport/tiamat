@@ -6,19 +6,17 @@ import org.rutebanken.tiamat.model.ModificationEnumeration;
 import org.rutebanken.tiamat.model.TypeOfFrameRefStructure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+
+import static org.rutebanken.tiamat.netex.NetexConstants.NETEX_PARKING_TOF_ID;
+import static org.rutebanken.tiamat.netex.NetexConstants.NETEX_PARKING_TOF_VERSION;
 
 @Service
 public class TiamatGeneralFrameExporter {
 
     private static final Logger logger = LoggerFactory.getLogger(TiamatGeneralFrameExporter.class);
-
-    @Autowired
-    public TiamatGeneralFrameExporter(){
-    }
 
     public org.rutebanken.tiamat.model.GeneralFrame createTiamatGeneralFrame(String siteName, LocalDateTime localDateTime, TypeEnumeration exportType) {
         // Frame <GeneralFrame>
@@ -60,10 +58,9 @@ public class TiamatGeneralFrameExporter {
     public void setFramesParking(GeneralFrame generalFrame) {
         // Frame <TypeOfFrameRef>
         TypeOfFrameRefStructure typeOfFrameRefStructure = new TypeOfFrameRefStructure();
-        typeOfFrameRefStructure.setRef("FR:TypeOfFrame:NETEX_PARKING");
-        typeOfFrameRefStructure.setValue("version=\"1.1:FR-NETEX_PARKING-2.2\"");
+        typeOfFrameRefStructure.setRef(NETEX_PARKING_TOF_ID);
+        typeOfFrameRefStructure.setVersion(NETEX_PARKING_TOF_VERSION);
         generalFrame.setTypeOfFrameRef(typeOfFrameRefStructure);
-
         logger.info("Adding {} typeOfFrameRefStructure in generalFrame", typeOfFrameRefStructure);
 
         // Frame <members>

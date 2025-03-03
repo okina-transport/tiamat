@@ -27,6 +27,7 @@ import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
 import javax.ws.rs.core.Response;
@@ -38,16 +39,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
+
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class ImportResourceTest extends TiamatIntegrationTest {
 
@@ -65,10 +64,10 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     private LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 
 
-    private ImportParams createStandardParamsForImport(){
+    private ImportParams createStandardParamsForImport() {
         ImportParams importParams = new ImportParams();
         importParams.importType = ImportType.MATCH;
-        importParams.providerCode ="PROV1";
+        importParams.providerCode = "PROV1";
         return importParams;
     }
 
@@ -179,7 +178,6 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                                 .withCentroid(new SimplePoint_VersionStructure().withLocation(new LocationStructure()
                                         .withLatitude(new BigDecimal("58.966910"))
                                         .withLongitude(new BigDecimal("5.732949")))))));
-
 
 
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace);
@@ -336,7 +334,6 @@ public class ImportResourceTest extends TiamatIntegrationTest {
         publicationDeliveryTestHelper.hasOriginalId(stopPlaceToBeMatched.getId(), result.get(0));
         publicationDeliveryTestHelper.hasOriginalId(incomingStopPlace.getId(), result.get(0));
     }
-
 
 
     /**
@@ -559,7 +556,6 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                                         .withName(new MultilingualString().withValue("Skaret").withLang("no")))));
 
 
-
         PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryWithStopPlace(stopPlace);
 
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
@@ -600,7 +596,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
 
         //Created field in quays are no longer initialized
         //List<Quay> actualQuays = publicationDeliveryTestHelper.extractQuays(actualStopPlace);
-       // assertThat(actualQuays.get(0).getCreated()).as("The imported quay's created date must not be null").isNotNull();
+        // assertThat(actualQuays.get(0).getCreated()).as("The imported quay's created date must not be null").isNotNull();
     }
 
     @Test
@@ -1038,7 +1034,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                            </Centroid>\n" +
                 "                            <Covered>outdoors</Covered>\n" +
                 "                            <Lighting>wellLit</Lighting>\n" +
-                "    <SiteRef ref=\"nhr:sp:\"/> \n"+
+                "    <SiteRef ref=\"nhr:sp:\"/> \n" +
                 "                    <TransportMode>bus</TransportMode>\n" +
                 "                            <QuayType>busStop</QuayType>\n" +
                 "                        </Quay>\n" +
@@ -1109,7 +1105,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
      */
     @Test
     @Ignore
-    public void importBasicStopPlace() throws JAXBException, IOException, SAXException, TiamatBusinessException {
+    public void importBasicStopPlace() throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
 
         String xml = "<PublicationDelivery\n" +
                 " version=\"any\"\n" +
@@ -1142,7 +1138,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
 
         InputStream stream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
         ImportParams importParams = createStandardParamsForImport();
-        Response response = importResource.importPublicationDelivery(stream,importParams);
+        Response response = importResource.importPublicationDelivery(stream, importParams);
         assertThat(response.getStatus()).isEqualTo(200);
 
         StreamingOutput streamingOutput = (StreamingOutput) response.getEntity();
@@ -1152,7 +1148,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void importNSBStopPlace() throws JAXBException, IOException, SAXException, TiamatBusinessException {
+    public void importNSBStopPlace() throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<PublicationDelivery xmlns=\"http://www.netex.org.uk/netex\">\n" +
                 "   <PublicationTimestamp>2017-04-18T12:57:27.796+02:00</PublicationTimestamp>\n" +
@@ -1261,7 +1257,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                           <Latitude>58.465256</Latitude>\n" +
                 "                        </Location>\n" +
                 "                     </Centroid>\n" +
-                "    <SiteRef ref=\"NSB:StopPlace:007602146\"/> \n"+
+                "    <SiteRef ref=\"NSB:StopPlace:007602146\"/> \n" +
                 "         <TransportMode>bus</TransportMode>\n" +
                 "                     <PublicCode>1</PublicCode>\n" +
                 "                  </Quay>\n" +
@@ -1286,7 +1282,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void importNSBStopPlaceWithTicketValidatorEquipment() throws JAXBException, IOException, SAXException, TiamatBusinessException {
+    public void importNSBStopPlaceWithTicketValidatorEquipment() throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<PublicationDelivery xmlns=\"http://www.netex.org.uk/netex\">\n" +
                 "   <PublicationTimestamp>2017-04-18T12:57:27.796+02:00</PublicationTimestamp>\n" +
@@ -1366,7 +1362,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                           <Latitude>58.465256</Latitude>\n" +
                 "                        </Location>\n" +
                 "                     </Centroid>\n" +
-                "    <SiteRef ref=\"NSR:StopPlace:2\"/> \n"+
+                "    <SiteRef ref=\"NSR:StopPlace:2\"/> \n" +
                 "         <TransportMode>bus</TransportMode>\n" +
                 "                     <PublicCode>1</PublicCode>\n" +
                 "                  </Quay>\n" +
@@ -1392,7 +1388,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void importBrakarStopPlaceWithGeneralSignEquipment() throws JAXBException, IOException, SAXException, TiamatBusinessException {
+    public void importBrakarStopPlaceWithGeneralSignEquipment() throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<PublicationDelivery xmlns=\"http://www.netex.org.uk/netex\">\n" +
                 "   <PublicationTimestamp>2017-04-18T12:57:27.796+02:00</PublicationTimestamp>\n" +
@@ -1457,7 +1453,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                        </limitations>\n" +
                 "                     </AccessibilityAssessment>\n" +
                 "                     <Lighting>wellLit</Lighting>\n" +
-                "    <SiteRef ref=\"BRA:StopPlace:06021002\"/> \n"+
+                "    <SiteRef ref=\"BRA:StopPlace:06021002\"/> \n" +
                 "                     <placeEquipments>\n" +
                 "                        <ShelterEquipment id=\"BRA:ShelterEquipment:0602100201\" version=\"1\">\n" +
                 "                           <Enclosed>true</Enclosed>\n" +
@@ -1500,7 +1496,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                        </limitations>\n" +
                 "                     </AccessibilityAssessment>\n" +
                 "                     <Lighting>wellLit</Lighting>\n" +
-                "    <SiteRef ref=\"BRA:StopPlace:06021002\"/> \n"+
+                "    <SiteRef ref=\"BRA:StopPlace:06021002\"/> \n" +
                 "                     <placeEquipments>\n" +
                 "                        <GeneralSign id=\"BRA:GeneralSign:0602100202\" version=\"1\">\n" +
                 "                           <PrivateCode>512</PrivateCode>\n" +
@@ -1540,7 +1536,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                        </limitations>\n" +
                 "                     </AccessibilityAssessment>\n" +
                 "                     <Lighting>wellLit</Lighting>\n" +
-                "    <SiteRef ref=\"BRA:StopPlace:06021002\"/> \n"+
+                "    <SiteRef ref=\"BRA:StopPlace:06021002\"/> \n" +
                 "                     <placeEquipments>\n" +
                 "                        <ShelterEquipment id=\"BRA:ShelterEquipment:0602100203\" version=\"1\">\n" +
                 "                           <Enclosed>true</Enclosed>\n" +
@@ -1583,7 +1579,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
                 "                        </limitations>\n" +
                 "                     </AccessibilityAssessment>\n" +
                 "                     <Lighting>wellLit</Lighting>\n" +
-                "    <SiteRef ref=\"BRA:StopPlace:06021002\"/> \n"+
+                "    <SiteRef ref=\"BRA:StopPlace:06021002\"/> \n" +
                 "                     <placeEquipments>\n" +
                 "                        <ShelterEquipment id=\"BRA:ShelterEquipment:0602100204\" version=\"1\">\n" +
                 "                           <Enclosed>true</Enclosed>\n" +
@@ -1611,7 +1607,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
 
         ImportParams importParams = createStandardParamsForImport();
 
-        Response response = importResource.importPublicationDelivery(stream,importParams);
+        Response response = importResource.importPublicationDelivery(stream, importParams);
         assertThat(response.getStatus()).isEqualTo(200);
 
         StreamingOutput streamingOutput = (StreamingOutput) response.getEntity();

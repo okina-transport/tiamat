@@ -15,15 +15,16 @@
 
 package org.rutebanken.tiamat.repository;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
+import org.hibernate.ScrollMode;
+import org.hibernate.ScrollableResults;
+import org.hibernate.Session;
 import org.hibernate.query.NativeQuery;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.apache.commons.lang3.StringUtils;
-import org.hibernate.ScrollMode;
-import org.hibernate.ScrollableResults;
-import org.hibernate.Session;
 import org.rutebanken.tiamat.exporter.params.ParkingSearch;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingArea;
@@ -56,21 +57,15 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
      * When selecting parkings and there are multiple versions of the same parking by netex_id, and you only need the highest version by number.
      */
     protected static final String SQL_MAX_VERSION_OF_PARKING = "p.version = (select max(pv.version) from parking pv where pv.netex_id = p.netex_id) ";
-
+    private static final Logger logger = LoggerFactory.getLogger(ParkingRepositoryImpl.class);
     @PersistenceContext
     private EntityManager entityManager;
-
     @Autowired
     private GeometryFactory geometryFactory;
-
     @Autowired
     private SearchHelper searchHelper;
-
     @Autowired
     private ParkingQueryFromSearchBuilder parkingQueryFromSearchBuilder;
-
-    private static final Logger logger = LoggerFactory.getLogger(ParkingRepositoryImpl.class);
-
 
     /**
      * Find parking's netex ID by key value
@@ -83,14 +78,14 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     public String findFirstByKeyValues(String key, Set<String> values) {
 
         Query query = entityManager.createNativeQuery("SELECT p.netex_id " +
-                                                        "FROM parking p " +
-                                                        "INNER JOIN parking_key_values pkv " +
-                                                        "ON pkv.parking_id = p.id " +
-                                                        "INNER JOIN value_items v " +
-                                                        "ON pkv.key_values_id = v.value_id " +
-                                                        "WHERE pkv.key_values_key = :key " +
-                                                        "AND v.items IN ( :values ) " +
-                                                        "AND p.version = (SELECT MAX(pv.version) FROM parking pv WHERE pv.netex_id = p.netex_id)");
+                "FROM parking p " +
+                "INNER JOIN parking_key_values pkv " +
+                "ON pkv.parking_id = p.id " +
+                "INNER JOIN value_items v " +
+                "ON pkv.key_values_id = v.value_id " +
+                "WHERE pkv.key_values_key = :key " +
+                "AND v.items IN ( :values ) " +
+                "AND p.version = (SELECT MAX(pv.version) FROM parking pv WHERE pv.netex_id = p.netex_id)");
 
         query.setParameter("key", key);
         query.setParameter("values", values);
@@ -136,7 +131,7 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
 
     @Override
     public int countResult(Set<Long> stopPlaceIds) {
-        if(stopPlaceIds == null || stopPlaceIds.isEmpty()) {
+        if (stopPlaceIds == null || stopPlaceIds.isEmpty()) {
             return 0;
         }
         return countResult(getParkingsByStopPlaceIdsSQL(stopPlaceIds));
@@ -174,7 +169,7 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
 
     private Pair<String, Map<String, Object>> getParkingsByStopPlaceIdsSQL(Set<Long> stopPlaceIds) {
 
-        StringBuilder sql = new StringBuilder("SELECT p.* " +
+        String sql = "SELECT p.* " +
                 "FROM (SELECT p2.id, " +
                 "           p2.netex_id, " +
                 "           p2.version " +
@@ -184,18 +179,16 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
                 "           AND ( Cast(sp.version AS TEXT) = " +
                 "                   p2.parent_site_ref_version " +
                 "                 OR p2.parent_site_ref_version IS NULL ) " +
-                "      WHERE sp.id in (");
+                "      WHERE sp.id in (" + StringUtils.join(stopPlaceIds, ',') +
+                ')' +
+                "   GROUP  BY p2.id) p2 " +
+                "JOIN parking p " +
+                "ON p2.id = p.id " +
+                "WHERE " +
+                SQL_MAX_VERSION_OF_PARKING +
+                "ORDER BY p.netex_id, p.version";
 
-        sql.append(StringUtils.join(stopPlaceIds, ','));
-        sql.append(')');
-        sql.append("   GROUP  BY p2.id) p2 ")
-                .append("JOIN parking p ")
-                .append("ON p2.id = p.id ")
-                .append("WHERE ")
-                .append(SQL_MAX_VERSION_OF_PARKING)
-                .append("ORDER BY p.netex_id, p.version");
-
-        return Pair.of(sql.toString(), new HashMap<String, Object>(0));
+        return Pair.of(sql, new HashMap<String, Object>(0));
     }
 
     private Pair<String, Map<String, Object>> getParkings() {
@@ -210,12 +203,12 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         Geometry geometryFilter = geometryFactory.toGeometry(envelope);
 
         String queryString = "SELECT * FROM parking p " +
-                        "WHERE ST_within(p.centroid, :filter) = true " +
-                        "AND p.parent_site_ref IS NULL " +
-                        "AND p.version = (SELECT MAX(pv.version) FROM parking pv WHERE pv.netex_id = p.netex_id) " +
-                        (name != null ? "AND p.name_value = :name":"") +
-                        (parkingTypeEnumeration != null ? " AND p.parking_type = :parkingType":"") +
-                        (ignoreParkingId != null ? " AND (p.netex_id != :ignoreParkingId)":"");
+                "WHERE ST_within(p.centroid, :filter) = true " +
+                "AND p.parent_site_ref IS NULL " +
+                "AND p.version = (SELECT MAX(pv.version) FROM parking pv WHERE pv.netex_id = p.netex_id) " +
+                (name != null ? "AND p.name_value = :name" : "") +
+                (parkingTypeEnumeration != null ? " AND p.parking_type = :parkingType" : "") +
+                (ignoreParkingId != null ? " AND (p.netex_id != :ignoreParkingId)" : "");
 
 
         logger.debug("Finding parking within bounding box with query: {}", queryString);
@@ -223,13 +216,13 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         final Query query = entityManager.createNativeQuery(queryString, Parking.class);
         query.setParameter("filter", geometryFilter);
 
-        if(name != null){
+        if (name != null) {
             query.setParameter("name", name);
         }
         if (parkingTypeEnumeration != null) {
             query.setParameter("parkingType", parkingTypeEnumeration);
         }
-        if(ignoreParkingId != null) {
+        if (ignoreParkingId != null) {
             query.setParameter("ignoreParkingId", ignoreParkingId);
         }
 
@@ -248,7 +241,7 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
                                 "WHERE within(p.centroid, :filter) = true " +
                                 "AND p.version = (SELECT MAX(pv.version) FROM Parking pv WHERE pv.netexId = p.netexId) " +
                                 "AND p.name.value = :name " +
-                                (parkingTypeEnumeration != null ? "AND p.parkingType = :parkingType":""),
+                                (parkingTypeEnumeration != null ? "AND p.parkingType = :parkingType" : ""),
                         String.class);
 
         query.setParameter("filter", geometryFilter);
@@ -260,18 +253,18 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     }
 
     @Override
-    public Page<Parking> findByName(String name, Pageable pageable){
+    public Page<Parking> findByName(String name, Pageable pageable) {
         String queryString = "SELECT * FROM parking p " +
                 "WHERE p.parent_site_ref IS NULL " +
                 "AND p.version = (SELECT MAX(pv.version) FROM parking pv WHERE pv.netex_id = p.netex_id) " +
-                (name != null ? "AND LOWER(p.name_value) LIKE concat('%', LOWER(:name), '%')":"");
+                (name != null ? "AND LOWER(p.name_value) LIKE concat('%', LOWER(:name), '%')" : "");
 
 
         logger.debug("Finding parking by similarity name: {}", queryString);
 
         final Query query = entityManager.createNativeQuery(queryString, Parking.class);
 
-        if(query != null){
+        if (query != null) {
             query.setParameter("name", name);
         }
 
@@ -282,26 +275,26 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     }
 
     @Override
-    public Optional<Parking> findByIdLocAndOsm(String idLoc, String idOsm){
+    public Optional<Parking> findByIdLocAndOsm(String idLoc, String idOsm) {
         String queryString = "SELECT * FROM parking p ";
 
-        if (StringUtils.isNotEmpty(idOsm)){
-            queryString = queryString +  " INNER JOIN parking_key_values pkv on p.id=pkv.parking_id ";
+        if (StringUtils.isNotEmpty(idOsm)) {
+            queryString = queryString + " INNER JOIN parking_key_values pkv on p.id=pkv.parking_id ";
         }
 
         queryString = queryString + " WHERE p.parent_site_ref IS NULL " +
                 " AND p.version = (SELECT MAX(pv.version) FROM parking pv WHERE pv.netex_id = p.netex_id) " +
-                (idLoc != null ? "AND LOWER(p.name_value) LIKE concat('%', LOWER(:name), '%')":"");
+                (idLoc != null ? "AND LOWER(p.name_value) LIKE concat('%', LOWER(:name), '%')" : "");
 
 
-        if (StringUtils.isNotEmpty(idOsm)){
+        if (StringUtils.isNotEmpty(idOsm)) {
             queryString = queryString + " AND pkv.key_values_key = 'id_osm'";
         }
 
 
-        if (StringUtils.isNotEmpty(idOsm)){
+        if (StringUtils.isNotEmpty(idOsm)) {
             queryString = queryString + " AND EXISTS ( SELECT 1 FROM value_items vi WHERE vi.items = :idOsm AND pkv.key_values_id = vi.value_id)";
-        }else{
+        } else {
             queryString = queryString + " AND NOT EXISTS ( SELECT 1 FROM parking_key_values pkv WHERE pkv.key_values_key = 'id_osm' AND pkv.parking_id = p.id)";
         }
 
@@ -309,16 +302,16 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
 
         final Query query = entityManager.createNativeQuery(queryString, Parking.class);
 
-        if(query != null){
+        if (query != null) {
             query.setParameter("name", idLoc);
         }
 
-        if (StringUtils.isNotEmpty(idOsm)){
+        if (StringUtils.isNotEmpty(idOsm)) {
             query.setParameter("idOsm", idOsm);
         }
 
         List<Parking> results = query.getResultList();
-        if (results.isEmpty()){
+        if (results.isEmpty()) {
             return Optional.empty();
         }
 
@@ -333,8 +326,7 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         String sql = "SELECT p.netex_id " +
                 "FROM parking p " +
                 "WHERE p.parent_site_ref = :netexStopPlaceId " +
-                "AND p.version = (SELECT MAX(pv.version) FROM Parking pv WHERE pv.netex_id = p.netex_id) "
-                ;
+                "AND p.version = (SELECT MAX(pv.version) FROM Parking pv WHERE pv.netex_id = p.netex_id) ";
 
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("netexStopPlaceId", netexStopPlaceId);
@@ -359,25 +351,25 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     }
 
     @Override
-    public void clearAllRentalbikeParkings(){
+    public void clearAllRentalbikeParkings() {
 
         String parkingIdQuery = "SELECT id FROM parking p WHERE p.parking_type = 'CYCLE_RENTAL'";
 
         entityManager.createNativeQuery("DELETE FROM value_items WHERE value_id in ( " +
                 "                           SELECT key_values_id FROM parking_key_values pkv JOIN parking p on p.id = pkv.parking_id WHERE p.parking_type = 'CYCLE_RENTAL') ").executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM parking_key_values WHERE parking_id  in ( " + parkingIdQuery + ")" ).executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM parking_parking_payment_process WHERE parking_id  in ( " + parkingIdQuery + ")" ).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM parking_key_values WHERE parking_id  in ( " + parkingIdQuery + ")").executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM parking_parking_payment_process WHERE parking_id  in ( " + parkingIdQuery + ")").executeUpdate();
 
         entityManager.createNativeQuery("DELETE FROM parking WHERE parking_type = 'CYCLE_RENTAL'").executeUpdate();
     }
 
     /**
      * Initialize export job table with stop ids that must be exported
-     * @param exportJobId
-     *  id of the export job
+     *
+     * @param exportJobId id of the export job
      */
     @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void initExportJobTable( Long exportJobId){
+    public void initExportJobTable(Long exportJobId) {
 
         Map<String, Object> parameters = new HashMap<>();
 
@@ -404,16 +396,15 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         Set<String> parkingIdStrings = parkingIds.stream().map(lvalue -> String.valueOf(lvalue)).collect(Collectors.toSet());
 
         String joinedParkingIds = String.join(",", parkingIdStrings);
-        StringBuilder sql = new StringBuilder("SELECT p FROM Parking p WHERE p.id IN(");
-        sql.append(joinedParkingIds);
-        sql.append(")");
+        String sql = "SELECT p FROM Parking p WHERE p.id IN(" + joinedParkingIds +
+                ")";
 
 
-        TypedQuery<Parking> q = entityManager.createQuery(sql.toString(), Parking.class);
+        TypedQuery<Parking> q = entityManager.createQuery(sql, Parking.class);
 
         List<Parking> results = q.getResultList();
 
-        results.forEach(parking-> {
+        results.forEach(parking -> {
 
             Hibernate.initialize(parking.getPlaceEquipments());
             if (parking.getPlaceEquipments() != null) {
@@ -426,14 +417,16 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
             Hibernate.initialize(parking.getParkingAreas());
             Hibernate.initialize(parking.getParkingProperties());
             Hibernate.initialize(parking.getPolygon());
+            Hibernate.initialize(parking.getTransportTypes());
+            Hibernate.initialize(parking.getTypeOfPaymentMethods());
 
-            if (parking.getParkingProperties() != null){
+            if (parking.getParkingProperties() != null) {
                 parking.getParkingProperties().forEach(parkProp -> {
                     Hibernate.initialize(parkProp.getSpaces());
                 });
             }
 
-            if (parking.getParkingAreas() != null){
+            if (parking.getParkingAreas() != null) {
                 for (ParkingArea parkingArea : parking.getParkingAreas()) {
                     Hibernate.initialize(parkingArea.getAlternativeNames());
                     Hibernate.initialize(parkingArea.getAccessibilityAssessment());
@@ -441,14 +434,14 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
                     parkingArea.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
                     Hibernate.initialize(parkingArea.getPolygon());
 
-                    if (parkingArea.getAccessibilityAssessment() != null){
+                    if (parkingArea.getAccessibilityAssessment() != null) {
                         Hibernate.initialize(parkingArea.getAccessibilityAssessment().getLimitations());
                     }
                 }
 
             }
 
-            if (parking.getParkingProperties() != null){
+            if (parking.getParkingProperties() != null) {
                 parking.getParkingProperties().forEach(parkProp -> {
                     Hibernate.initialize(parkProp.getSpaces());
 
@@ -459,10 +452,25 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
             Hibernate.initialize(parking.getKeyValues());
             parking.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
 
-            if (parking.getAccessibilityAssessment() != null){
+            if (parking.getAccessibilityAssessment() != null) {
                 Hibernate.initialize(parking.getAccessibilityAssessment().getLimitations());
             }
 
+            if (CollectionUtils.isNotEmpty(parking.getTransportTypes())) {
+                for (var transportType : parking.getTransportTypes()) {
+                    Hibernate.initialize(transportType.getKeyValues());
+                    transportType.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+                    Hibernate.initialize(transportType.getPassengerCapacity());
+                    transportType.getPassengerCapacity().getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+                }
+            }
+
+            if (CollectionUtils.isNotEmpty(parking.getTypeOfPaymentMethods())) {
+                for (var typeOfPaymentMethod : parking.getTypeOfPaymentMethods()) {
+                    Hibernate.initialize(typeOfPaymentMethod.getKeyValues());
+                    typeOfPaymentMethod.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
+                }
+            }
 
         });
         return results;

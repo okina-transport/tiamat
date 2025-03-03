@@ -3,6 +3,7 @@ package org.rutebanken.tiamat.rest.parkings;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.tiamat.general.ImportJobWorker;
+import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
 import org.rutebanken.tiamat.general.ParkingsCSVHelper;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingLayoutEnumeration;
@@ -36,18 +37,17 @@ import java.util.concurrent.Executors;
 public class ImportParkingsResource {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportParkingsResource.class);
-
-    private final ParkingsImportedService parkingsImportedService;
-
-    private final JobRepository jobRepository;
-
     private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("import-%d").build());
+    private final ParkingsImportedService parkingsImportedService;
+    private final JobRepository jobRepository;
+    private final ImportJobWorkerBuilder importJobWorkerBuilder;
 
     @Autowired
-    ImportParkingsResource(ParkingsImportedService parkingsImportedService, JobRepository jobRepository){
-        this.parkingsImportedService=parkingsImportedService;
+    ImportParkingsResource(ParkingsImportedService parkingsImportedService, JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder) {
+        this.parkingsImportedService = parkingsImportedService;
         this.jobRepository = jobRepository;
+        this.importJobWorkerBuilder = importJobWorkerBuilder;
     }
 
     @POST
@@ -58,26 +58,18 @@ public class ImportParkingsResource {
                                           @FormDataParam("parking_type") String parkingTypeParam, @FormDataParam("parking_layout") String parkingLayoutParam,
                                           @FormDataParam("park_and_ride_detection") Boolean parkAndRideDetection) throws IOException, IllegalArgumentException {
         try {
-
-            ParkingLayoutEnumeration  parkingLayoutEnumeration = ParkingLayoutEnumeration.fromValue(parkingLayoutParam);
-            ParkingTypeEnumeration parkingTypeEnumeration = ParkingTypeEnumeration.fromValue(parkingTypeParam);
-
             logger.info("Import Parkings par {} du fichier {}", user, fileName);
-
+            ParkingLayoutEnumeration parkingLayoutEnumeration = ParkingLayoutEnumeration.fromValue(parkingLayoutParam);
+            ParkingTypeEnumeration parkingTypeEnumeration = ParkingTypeEnumeration.fromValue(parkingTypeParam);
             List<DtoParking> dtoParkingCSV = ParkingsCSVHelper.parseDocument(inputStream);
-
             ParkingsCSVHelper.checkDuplicatedParkings(dtoParkingCSV);
-
             List<Parking> parkings = ParkingsCSVHelper.mapFromDtoToEntity(dtoParkingCSV, parkingLayoutEnumeration, parkingTypeEnumeration, parkAndRideDetection);
-
             parkingsImportedService.createOrUpdateParkings(parkings);
-
             return Response.status(200).build();
-
         } catch (IOException e) {
             logger.debug("Access denied for csv File: {}", e.getMessage(), e);
             throw e;
-        }catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             logger.warn("Caught exception while processing data in the cvs file: {}", e.getMessage(), e);
             throw e;
         }
@@ -87,18 +79,15 @@ public class ImportParkingsResource {
     @Path("/parking_import_list")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getParkingImportList() {
-        List<JobType> poiTypes = Arrays.asList(JobType.NETEX_PARKING, JobType.CSV_PARKING, JobType.CSV_BIKE_PARKING,JobType.CSV_RENTAL_BIKE_PARKING, JobType.GBFS_PARKING);
+        List<JobType> poiTypes = Arrays.asList(JobType.NETEX_PARKING, JobType.CSV_PARKING, JobType.CSV_BIKE_PARKING, JobType.CSV_RENTAL_BIKE_PARKING, JobType.GBFS_PARKING);
         try {
             List<Job> foundJobs = jobRepository.findByTypesAndAction(poiTypes, JobAction.IMPORT);
             return Response.ok(foundJobs).build();
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.error("Error while getting poi import list", e);
-
         }
-
         return Response.status(500).build();
     }
-
 
 
     @POST
@@ -106,9 +95,8 @@ public class ImportParkingsResource {
     @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)
     public Response importAsyncParkingsCsvFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user,
-                                          @FormDataParam("parking_type") String parkingTypeParam, @FormDataParam("parking_layout") String parkingLayoutParam,
-                                          @FormDataParam("park_and_ride_detection") Boolean parkAndRideDetection) throws IOException {
-
+                                               @FormDataParam("parking_type") String parkingTypeParam, @FormDataParam("parking_layout") String parkingLayoutParam,
+                                               @FormDataParam("park_and_ride_detection") Boolean parkAndRideDetection) throws IOException {
         logger.info("Import Parkings par {} du fichier {}", user, fileName);
 
         Job job = new Job();
@@ -119,11 +107,13 @@ public class ImportParkingsResource {
         job.setStarted(Instant.now());
         jobRepository.save(job);
 
-        ImportJobWorker importJobWorker = new ImportJobWorker(job, inputStream, jobRepository);
-        importJobWorker.setParkingLayoutParam(parkingLayoutParam);
-        importJobWorker.setParkingTypeParam(parkingTypeParam);
-        importJobWorker.setParkAndRideDetection(parkAndRideDetection);
-        importJobWorker.setParkingsImportedService(parkingsImportedService);
+        ImportJobWorker importJobWorker = importJobWorkerBuilder
+                .init(job)
+                .withInputStream(inputStream)
+                .withParkingLayoutParam(parkingLayoutParam)
+                .withParkingTypeParam(parkingTypeParam)
+                .withParkAndRideDetection(parkAndRideDetection)
+                .build();
         importService.submit(importJobWorker);
 
         return Response.status(200).build();

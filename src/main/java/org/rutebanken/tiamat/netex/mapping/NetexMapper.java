@@ -15,7 +15,9 @@
 
 package org.rutebanken.tiamat.netex.mapping;
 
-import ma.glasnost.orika.*;
+import ma.glasnost.orika.Converter;
+import ma.glasnost.orika.MapperFacade;
+import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.PlaceEquipment;
@@ -65,7 +67,7 @@ public class NetexMapper {
 
         logger.info("Creating netex mapperFacade with {} converters ", converters.size());
 
-        if(logger.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             logger.debug("Converters: {}", converters);
         }
 
@@ -133,15 +135,15 @@ public class NetexMapper {
                 .exclude("cardsAccepted")
                 .exclude("currenciesAccepted")
                 .exclude("accessModes")
+                .exclude("vehicleTypes")
+                .exclude("typesOfPaymentMethod")
 //                .exclude("parkingProperties")
-                .fieldBToA("netexId", "id")
                 .customize(new ParkingMapper())
                 .byDefault()
                 .register();
 
         mapperFactory.classMap(ParkingArea.class, org.rutebanken.tiamat.model.ParkingArea.class)
                 .customize(new ParkingAreaMapper())
-                .fieldBToA("netexId", "id")
                 .byDefault()
                 .register();
 
@@ -166,6 +168,7 @@ public class NetexMapper {
 
         mapperFactory.classMap(ParkingCapacity.class, org.rutebanken.tiamat.model.ParkingCapacity.class)
                 .fieldBToA("netexId", "id")
+                .customize(new ParkingCapacityMapper())
                 .byDefault()
                 .register();
 
@@ -236,7 +239,62 @@ public class NetexMapper {
                 .byDefault()
                 .register();
 
+        mapperFactory.classMap(PassengerCapacity.class, org.rutebanken.tiamat.model.PassengerCapacity.class)
+                .fieldBToA("netexId", "id")
+                .byDefault()
+                .register();
+
+        mapperFactory.classMap(PassengerCapacityStructure.class, org.rutebanken.tiamat.model.PassengerCapacity.class)
+                .fieldBToA("netexId", "id")
+                .byDefault()
+                .register();
+
+        mapperFactory.classMap(TypeOfPaymentMethod.class, org.rutebanken.tiamat.model.TypeOfPaymentMethod.class)
+                .fieldBToA("netexId", "id")
+                .byDefault()
+                .register();
+
+        mapperFactory.classMap(TransportType.class, org.rutebanken.tiamat.model.TransportType.class)
+                .fieldBToA("netexId", "id")
+                .byDefault()
+                .register();
+
         facade = mapperFactory.getMapperFacade();
+    }
+
+    public static Optional<String> getImportedName(Zone_VersionStructure stopPlace) {
+
+        KeyListStructure keyList = stopPlace.getKeyList();
+        if (keyList != null && keyList.getKeyValue() != null) {
+            List<KeyValueStructure> keyValue = keyList.getKeyValue();
+            for (KeyValueStructure structure : keyValue) {
+                if (structure != null && "imported-name".equals(structure.getKey())) {
+
+                    String rawIds = structure.getValue();
+                    List<String> idList = Arrays.stream(rawIds.split(","))
+                            .distinct()
+                            .collect(Collectors.toList());
+
+                    return Optional.of(idList.get(0));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    public static Optional<String> getImportedId(Zone_VersionStructure stopPlace) {
+
+        KeyListStructure keyList = stopPlace.getKeyList();
+        if (keyList != null && keyList.getKeyValue() != null) {
+            List<KeyValueStructure> keyValue = keyList.getKeyValue();
+            for (KeyValueStructure structure : keyValue) {
+                if (structure != null && "imported-id".equals(structure.getKey())) {
+
+                    return Optional.of(structure.getValue());
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     public TopographicPlace mapToNetexModel(org.rutebanken.tiamat.model.TopographicPlace topographicPlace) {
@@ -254,7 +312,7 @@ public class NetexMapper {
     }
 
     public AllVehicleModesOfTransportEnumeration mapTiamatTransportModeToNetex(org.rutebanken.tiamat.model.VehicleModeEnumeration transportMode) {
-        if(transportMode != null) {
+        if (transportMode != null) {
             switch (transportMode) {
                 case AIR:
                     return AllVehicleModesOfTransportEnumeration.AIR;
@@ -303,12 +361,12 @@ public class NetexMapper {
         return netexStopPlace;
     }
 
-    private void initTypeOfPlace(StopPlace netexStopPlace){
+    private void initTypeOfPlace(StopPlace netexStopPlace) {
 
         List<AllVehicleModesOfTransportEnumeration> tranportModeList = new ArrayList<>();
 
-        if (netexStopPlace.getQuays() != null){
-            tranportModeList    = netexStopPlace.getQuays().getQuayRefOrQuay().stream()
+        if (netexStopPlace.getQuays() != null) {
+            tranportModeList = netexStopPlace.getQuays().getQuayRefOrQuay().stream()
                     .map(obj -> ((Quay) obj.getValue()).getTransportMode())
                     .filter(transportMode -> transportMode != null)
                     .distinct()
@@ -318,19 +376,19 @@ public class NetexMapper {
 
         TypeOfPlaceRefs_RelStructure placeRefs = new TypeOfPlaceRefs_RelStructure();
         TypeOfPlaceRefStructure typeOfPlace = new TypeOfPlaceRefStructure();
-        if (tranportModeList.size() > 1){
+        if (tranportModeList.size() > 1) {
             typeOfPlace.withRef("multimodalStopPlace");
-        }else{
+        } else {
             typeOfPlace.withRef("monomodalStopPlace");
         }
         placeRefs.withTypeOfPlaceRef(typeOfPlace);
         netexStopPlace.setPlaceTypes(placeRefs);
     }
 
-    private void initQuayProperties(StopPlace stopPlace, Quay quay){
+    private void initQuayProperties(StopPlace stopPlace, Quay quay) {
         MultilingualString multilingualString = new MultilingualString();
         Optional<String> importedNameOpt = getImportedName(quay);
-        if (!importedNameOpt.isPresent()){
+        if (!importedNameOpt.isPresent()) {
             logger.error("Unable to find importedName for quay:" + quay.getId());
         }
         multilingualString.setValue(importedNameOpt.get());
@@ -358,46 +416,11 @@ public class NetexMapper {
             quay.getPostalAddress().setCountryRef(cr);
             quay.getPostalAddress().setPlaceTypes(placeRefs);
             MultilingualString multilingualStringAddressShortName = new MultilingualString();
-            multilingualStringAddressShortName.setValue(quay.getId()+"-address");
+            multilingualStringAddressShortName.setValue(quay.getId() + "-address");
             multilingualStringAddressShortName.setLang("fr");
             quay.getPostalAddress().setShortName(multilingualStringAddressShortName);
             quay.getPostalAddress().setName(multilingualStringAddressShortName);
         }
-    }
-
-    public static Optional<String> getImportedName(Zone_VersionStructure stopPlace){
-
-        KeyListStructure keyList = stopPlace.getKeyList();
-        if (keyList != null && keyList.getKeyValue() != null) {
-            List<KeyValueStructure> keyValue = keyList.getKeyValue();
-            for (KeyValueStructure structure : keyValue) {
-                if (structure != null && "imported-name".equals(structure.getKey())) {
-
-                    String rawIds = structure.getValue();
-                    List<String> idList = Arrays.stream(rawIds.split(","))
-                            .distinct()
-                            .collect(Collectors.toList());
-
-                    return Optional.of(idList.get(0));
-                }
-            }
-        }
-        return Optional.empty();
-    }
-
-    public static Optional<String> getImportedId(Zone_VersionStructure stopPlace){
-
-        KeyListStructure keyList = stopPlace.getKeyList();
-        if (keyList != null && keyList.getKeyValue() != null) {
-            List<KeyValueStructure> keyValue = keyList.getKeyValue();
-            for (KeyValueStructure structure : keyValue) {
-                if (structure != null && "imported-id".equals(structure.getKey())) {
-
-                    return Optional.of(structure.getValue());
-                }
-            }
-        }
-        return Optional.empty();
     }
 
     public org.rutebanken.tiamat.model.StopPlace parseToTiamatStopPlace(org.rutebanken.netex.model.StopPlace netexStopPlace, List<org.rutebanken.tiamat.model.Quay> quaysParsed) {
@@ -485,13 +508,15 @@ public class NetexMapper {
         PlaceEquipment placeEquipment = new PlaceEquipment();
 
         for (JAXBElement<?> parkingEquipmentElement : netexParking.getPlaceEquipments().getInstalledEquipmentRefOrInstalledEquipment()) {
-            if (parkingEquipmentElement.getValue() instanceof CycleStorageEquipment) {
-                CycleStorageEquipment equipment = (CycleStorageEquipment) parkingEquipmentElement.getValue();
-                org.rutebanken.tiamat.model.CycleStorageEquipment cycleStorageEquipment = mapToNetexModel((CycleStorageEquipment) parkingEquipmentElement.getValue());
+            if (parkingEquipmentElement.getValue() instanceof CycleStorageEquipment equipment) {
+                org.rutebanken.tiamat.model.CycleStorageEquipment cycleStorageEquipment = mapToNetexModel(equipment);
 
-                if (netexParking.getPlaceEquipments() != null) cycleStorageEquipment.setNetexId(netexParking.getPlaceEquipments().getId());
-                if (equipment.getNumberOfSpaces() != null) cycleStorageEquipment.setNumberOfSpaces(equipment.getNumberOfSpaces());
-                if (equipment.getCycleStorageType() != null) cycleStorageEquipment.setCycleStorageType(org.rutebanken.tiamat.model.CycleStorageEnumeration.fromValue(equipment.getCycleStorageType().value()));
+                if (netexParking.getPlaceEquipments() != null)
+                    cycleStorageEquipment.setNetexId(netexParking.getPlaceEquipments().getId());
+                if (equipment.getNumberOfSpaces() != null)
+                    cycleStorageEquipment.setNumberOfSpaces(equipment.getNumberOfSpaces());
+                if (equipment.getCycleStorageType() != null)
+                    cycleStorageEquipment.setCycleStorageType(org.rutebanken.tiamat.model.CycleStorageEnumeration.fromValue(equipment.getCycleStorageType().value()));
 
                 placeEquipment.setNetexId(null);
                 placeEquipment.getInstalledEquipment().add(cycleStorageEquipment);
@@ -523,6 +548,34 @@ public class NetexMapper {
             }
         }
         parking.setParkingAreas(parkingAreas);
+    }
+
+    public void parseToSetTransportTypes(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking, Map<String, TransportType> transportTypeRefToTransportType) {
+        List<org.rutebanken.tiamat.model.TransportType> transportTypes = new ArrayList<>();
+
+        for (var transportTypeRef : netexParking.getVehicleTypes().getTransportTypeRef()) {
+            var netexTransportType = transportTypeRefToTransportType.get(transportTypeRef.getValue().getRef());
+            if (netexTransportType != null) {
+                transportTypes.add(facade.map(netexTransportType, org.rutebanken.tiamat.model.TransportType.class));
+            }
+        }
+
+        parking.setTransportTypes(transportTypes);
+    }
+
+    public void parseToSetTypeOfPaymentMethods(org.rutebanken.netex.model.Parking netexParking,
+                                               org.rutebanken.tiamat.model.Parking parking,
+                                               Map<String, TypeOfPaymentMethod> topmRefToTopm) {
+        List<org.rutebanken.tiamat.model.TypeOfPaymentMethod> tpoms = new ArrayList<>();
+
+        for (var topmRef : netexParking.getTypesOfPaymentMethod().getTypeOfPaymentMethodRef()) {
+            var netexTopm = topmRefToTopm.get(topmRef.getRef());
+            if (netexTopm != null) {
+                tpoms.add(facade.map(netexTopm, org.rutebanken.tiamat.model.TypeOfPaymentMethod.class));
+            }
+        }
+
+        parking.setTypeOfPaymentMethods(tpoms);
     }
 
     public Parking mapToNetexModel(org.rutebanken.tiamat.model.Parking tiamatParking) {
@@ -640,6 +693,7 @@ public class NetexMapper {
         return facade.map(siteRefStructure, org.rutebanken.tiamat.model.SiteRefStructure.class);
     }
 
+
     public org.rutebanken.tiamat.model.PointOfInterest mapToTiamatModel(PointOfInterest netexPointOfInterest) {
         return facade.map(netexPointOfInterest, org.rutebanken.tiamat.model.PointOfInterest.class);
     }
@@ -658,6 +712,14 @@ public class NetexMapper {
 
     public PathLink mapToNetexModel(org.rutebanken.tiamat.model.PathLink pathLink) {
         return facade.map(pathLink, PathLink.class);
+    }
+
+    public TransportType mapToNetexModel(org.rutebanken.tiamat.model.TransportType transportType) {
+        return facade.map(transportType, TransportType.class);
+    }
+
+    public TypeOfPaymentMethod mapToNetexModel(org.rutebanken.tiamat.model.TypeOfPaymentMethod typeOfPaymentMethod) {
+        return facade.map(typeOfPaymentMethod, TypeOfPaymentMethod.class);
     }
 
     public MapperFacade getFacade() {

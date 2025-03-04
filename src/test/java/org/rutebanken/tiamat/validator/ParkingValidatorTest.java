@@ -53,7 +53,6 @@ public class ParkingValidatorTest {
                 new FieldErrorRecord("parkingLayout", VALIDATION_PARKING_LAYOUT_REQUIRED, new Object[]{PARKING_ID}),
                 new FieldErrorRecord("totalCapacity", VALIDATION_PARKING_TOTAL_CAPACITY_REQUIRED, new Object[]{PARKING_ID}),
                 new FieldErrorRecord("parkingPaymentProcess", VALIDATION_PARKING_PAYMENT_PROCESS_REQUIRED, new Object[]{PARKING_ID}),
-                new FieldErrorRecord("paymentMethods", VALIDATION_PAYMENT_METHODS_REQUIRED, new Object[]{PARKING_ID}),
                 new FieldErrorRecord("parkingProperties.parkingProperties[0].parkingVehicleTypes", VALIDATION_PARKING_VEHICLE_TYPES_REQUIRED, new Object[]{PARKING_PROPERTIES_ID}),
                 new FieldErrorRecord("parkingAreas.parkingAreaRefOrParkingArea_[0].value.maximumHeight", VALIDATION_MAXIMUM_HEIGHT_REQUIRED, new Object[]{PARKING_AREA_ID}),
                 new FieldErrorRecord("postalAddress.postalRegion", VALIDATION_POSTAL_ADDRESS_POSTAL_REGION_REQUIRED, new Object[]{PARKING_ID})

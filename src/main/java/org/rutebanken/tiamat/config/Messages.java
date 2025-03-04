@@ -33,8 +33,6 @@ public class Messages {
     public static final String VALIDATION_PARKING_LAYOUT_REQUIRED = "validation.parking-layout-required";
     public static final String VALIDATION_PARKING_TOTAL_CAPACITY_REQUIRED = "validation.total-capacity-required";
     public static final String VALIDATION_PARKING_PAYMENT_PROCESS_REQUIRED = "validation.parking-payment-process-required";
-    public static final String VALIDATION_PAYMENT_METHODS_REQUIRED = "validation.payment-methods-required";
-    public static final String VALIDATION_TOPM_REQUIRED = "validation.type-of-payment-method-required";
     public static final String VALIDATION_MAXIMUM_PARKING_PROPERTIES_EXCEEDED = "validation.maximum-parking-properties-exceeded";
     public static final String VALIDATION_MUST_NOT_CONTAIN_REFS = "validation.must-not-contain-refs";
     public static final String VALIDATION_MAXIMUM_HEIGHT_REQUIRED = "validation.maximum-height-required";

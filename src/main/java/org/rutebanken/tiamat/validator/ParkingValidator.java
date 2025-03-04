@@ -1,6 +1,7 @@
 package org.rutebanken.tiamat.validator;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.rutebanken.netex.model.*;
 import org.springframework.stereotype.Component;
@@ -50,13 +51,6 @@ public class ParkingValidator implements Validator {
         rejectIfEmpty(errors, "totalCapacity", VALIDATION_PARKING_TOTAL_CAPACITY_REQUIRED, pIdArgs, null);
         if (CollectionUtils.isEmpty(p.getParkingPaymentProcess())) {
             errors.rejectValue("parkingPaymentProcess", VALIDATION_PARKING_PAYMENT_PROCESS_REQUIRED, pIdArgs, null);
-        }
-        if (CollectionUtils.isEmpty(p.getPaymentMethods())) {
-            errors.rejectValue("paymentMethods", VALIDATION_PAYMENT_METHODS_REQUIRED, pIdArgs, null);
-        } else if (p.getPaymentMethods().contains(PaymentMethodEnumeration.OTHER)) {
-            if (p.getTypesOfPaymentMethod() == null || CollectionUtils.isEmpty(p.getTypesOfPaymentMethod().getTypeOfPaymentMethodRef())) {
-                errors.rejectValue("typesOfPaymentMethod", VALIDATION_TOPM_REQUIRED, pIdArgs, null);
-            }
         }
         rejectIfEmptyOrWhitespace(errors, "postalAddress.postalRegion", VALIDATION_POSTAL_ADDRESS_POSTAL_REGION_REQUIRED, pIdArgs, null);
         validateParkingProperties(p, errors);

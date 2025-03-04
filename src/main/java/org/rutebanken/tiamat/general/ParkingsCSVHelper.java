@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.general;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -339,6 +340,16 @@ public class ParkingsCSVHelper {
 
             parking.setDescription(new EmbeddableMultilingualString(parkingDto.getInfo()));
             parking.setAddress(parkingDto.getAddress());
+
+            if (CollectionUtils.isEmpty(parking.getParkingVehicleTypes())) {
+                parking.getParkingVehicleTypes().add(ParkingVehicleEnumeration.UNDEFINED);
+            }
+
+            if (CollectionUtils.isNotEmpty(parking.getParkingProperties())) {
+                parking.getParkingProperties().stream()
+                        .filter(pp -> CollectionUtils.isEmpty(pp.getParkingVehicleTypes()))
+                        .forEach(pp -> pp.getParkingVehicleTypes().add(ParkingVehicleEnumeration.UNDEFINED));
+            }
 
             return parking;
         }).collect(Collectors.toList());

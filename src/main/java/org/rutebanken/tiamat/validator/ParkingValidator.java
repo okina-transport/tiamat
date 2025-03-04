@@ -185,7 +185,10 @@ public class ParkingValidator implements Validator {
 
     private void validateParkingCapacity(@NotNull ParkingCapacity_VersionedChildStructure parkingCapacity, @NotNull Errors errors) {
         if (parkingCapacity.getParkingVehicleType() == ParkingVehicleEnumeration.OTHER) {
-            rejectIfEmptyOrWhitespace(errors, "transportTypeRef.value.ref", VALIDATION_TRANSPORT_TYPE_REF_REQUIRED, new Object[]{parkingCapacity.getId()});
+            if (parkingCapacity.getTransportTypeRef() == null || parkingCapacity.getTransportTypeRef().getValue() ==
+                    null || StringUtils.isBlank(parkingCapacity.getTransportTypeRef().getValue().getRef()))
+                errors.rejectValue("transportTypeRef", VALIDATION_TRANSPORT_TYPE_REF_REQUIRED,
+                        new Object[]{parkingCapacity.getId()}, null);
         }
     }
 

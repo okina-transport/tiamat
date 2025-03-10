@@ -1,25 +1,29 @@
 package org.rutebanken.tiamat.service.job;
 
 import com.amazonaws.services.directory.model.ServiceException;
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobStatus;
+import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.repository.JobRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.util.*;
+import java.util.List;
 
 
 @Service
 @Transactional
 public class JobService {
 
-    @Autowired
-    JobRepository jobRepository;
+    private final JobRepository jobRepository;
 
-    @Autowired
-    JobService(){
+    JobService(JobRepository jobRepository){
+        this.jobRepository = jobRepository;
+    }
+
+    public Job getJobById(long id) {
+        return jobRepository.findById(id).orElse(null);
     }
 
     public List<Job> jobs(String referential, List<String> actions, JobStatus status) throws ServiceException {
@@ -45,5 +49,17 @@ public class JobService {
             return job;
         }
         throw new ServiceException("subFolder = " + subFolder + " ,id = " + id);
+    }
+
+    public Job findLatestJobBy(String referential, JobType jobType, JobStatus jobStatus) {
+        List<Job> matchingJobs = jobRepository.findAllExportBy(referential, jobType, jobStatus);
+        if (CollectionUtils.isNotEmpty(matchingJobs)) {
+            return matchingJobs.get(0);
+        }
+        return null;
+    }
+
+    public List<Job> findAllJobBy(String referential, JobType jobType, int maxSize) {
+        return jobRepository.findAllExportBy(referential, jobType, maxSize);
     }
 }

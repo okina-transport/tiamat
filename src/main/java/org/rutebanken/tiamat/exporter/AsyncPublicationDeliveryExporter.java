@@ -174,6 +174,8 @@ public class AsyncPublicationDeliveryExporter {
                 job.setStarted(Instant.now());
                 job.setExportParams(exportParams);
                 job.setSubFolder(provider.name);
+                job.setType(JobType.NETEX_PARKING);
+                job.setAction(JobAction.EXPORT);
 
                 LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
                 jobRepository.save(job);
@@ -223,6 +225,8 @@ public class AsyncPublicationDeliveryExporter {
                 job.setStarted(Instant.now());
                 job.setExportParams(exportParams);
                 job.setSubFolder(provider.name);
+                job.setType(JobType.NETEX_POI);
+                job.setAction(JobAction.EXPORT);
 
                 LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
                 jobRepository.save(job);

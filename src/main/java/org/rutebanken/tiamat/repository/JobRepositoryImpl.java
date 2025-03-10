@@ -15,6 +15,10 @@ import java.util.List;
 
 public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
 
+    private static final String ACTION = "action";
+    private static final String SUBFOLDER = "subFolder";
+    public static final String STATUS = "status";
+
     @PersistenceContext
     private EntityManager em;
 
@@ -26,7 +30,7 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
         cq.select(jobRoot);
 
         Predicate referentialPredicate = cb.equal(jobRoot.get("referential"), referential);
-        Predicate statusPredicate = cb.equal(jobRoot.get("status"), status);
+        Predicate statusPredicate = cb.equal(jobRoot.get(STATUS), status);
 
         Predicate finalPredicate = cb.and(referentialPredicate, statusPredicate);
         cq.where(finalPredicate);
@@ -42,7 +46,7 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
         cq.select(jobRoot);
 
         Predicate typePredicate = jobRoot.get("type").in(types);
-        Predicate statusPredicate = cb.equal(jobRoot.get("action"), jobAction);
+        Predicate statusPredicate = cb.equal(jobRoot.get(ACTION), jobAction);
 
         Predicate finalPredicate = cb.and(typePredicate, statusPredicate);
         cq.where(finalPredicate);
@@ -60,13 +64,54 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
         cq.select(jobRoot);
 
         Predicate referentialPredicate = cb.equal(jobRoot.get("referential"), referential);
-        Predicate actionPredicate = jobRoot.get("action").in(actions);
-        Predicate statusPredicate = cb.equal(jobRoot.get("status"), status);
+        Predicate actionPredicate = jobRoot.get(ACTION).in(actions);
+        Predicate statusPredicate = cb.equal(jobRoot.get(STATUS), status);
 
         Predicate finalPredicate = cb.and(referentialPredicate, actionPredicate, statusPredicate);
         cq.where(finalPredicate);
 
         return em.createQuery(cq).getResultList();
+    }
+
+    public List<Job> findAllExportBy(String referential, JobType jobType, JobStatus status) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Job> cq = cb.createQuery(Job.class);
+        Root<Job> jobRoot = cq.from(Job.class);
+
+        cq.select(jobRoot);
+
+        Predicate referentialPredicate = cb.equal(jobRoot.get(SUBFOLDER), referential);
+        Predicate actionPredicate = cb.equal(jobRoot.get(ACTION), JobAction.EXPORT);
+        Predicate typePredicate = cb.equal(jobRoot.get("type"), jobType);
+        Predicate finalPredicate;
+        if (status != null) {
+            Predicate statusPredicate = cb.equal(jobRoot.get(STATUS), status);
+            finalPredicate = cb.and(referentialPredicate, actionPredicate, statusPredicate, typePredicate);
+        } else {
+            finalPredicate = cb.and(referentialPredicate, actionPredicate, typePredicate);
+        }
+
+        cq.where(finalPredicate).orderBy(cb.desc(jobRoot.get("id")));
+
+        return em.createQuery(cq).getResultList();
+    }
+
+
+    public List<Job> findAllExportBy(String referential, JobType jobType, int maxSize) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Job> cq = cb.createQuery(Job.class);
+        Root<Job> jobRoot = cq.from(Job.class);
+
+        cq.select(jobRoot);
+
+        Predicate referentialPredicate = cb.equal(jobRoot.get(SUBFOLDER), referential);
+        Predicate actionPredicate = cb.equal(jobRoot.get(ACTION), JobAction.EXPORT);
+        Predicate typePredicate = cb.equal(jobRoot.get("type"), jobType);
+        Predicate finalPredicate = cb.and(referentialPredicate, actionPredicate, typePredicate);
+
+        cq.where(finalPredicate).orderBy(cb.desc(jobRoot.get("id")));
+
+        return em.createQuery(cq).setMaxResults(maxSize).getResultList();
     }
 
     public Job findBySubFolderLikeReferentialAndId(String subFolder, Long id) {
@@ -76,7 +121,7 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
 
         cq.select(jobRoot);
 
-        Predicate referentialPredicate = cb.equal(jobRoot.get("subFolder"), subFolder);
+        Predicate referentialPredicate = cb.equal(jobRoot.get(SUBFOLDER), subFolder);
         Predicate idPredicate = jobRoot.get("id").in(id);
 
         Predicate finalPredicate = cb.and(referentialPredicate, idPredicate);

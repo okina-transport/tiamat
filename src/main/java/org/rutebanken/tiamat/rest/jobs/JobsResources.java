@@ -1,9 +1,7 @@
 package org.rutebanken.tiamat.rest.jobs;
 
 import com.amazonaws.services.directory.model.ServiceException;
-import org.rutebanken.tiamat.model.job.Job;
-import org.rutebanken.tiamat.model.job.JobInfo;
-import org.rutebanken.tiamat.model.job.JobStatus;
+import org.rutebanken.tiamat.model.job.*;
 import org.rutebanken.tiamat.model.job.Link;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.service.job.JobService;
@@ -34,6 +32,44 @@ public class JobsResources {
                          JobRepository jobRepository){
         this.jobService = jobService;
         this.jobRepository = jobRepository;
+    }
+
+
+    @GET
+    @Path("/exports/latest")
+    @Produces({ MediaType.APPLICATION_JSON })
+    public Response getJob(@HeaderParam("x-okina-referential") String referential, @QueryParam("jobType") JobType jobType, @QueryParam("jobStatus") JobStatus jobStatus) {
+        try {
+            Job result = jobService.findLatestJobBy(referential, jobType, jobStatus);
+            Response.ResponseBuilder builder;
+            if (result != null) {
+                builder = Response.ok(result);
+            } else {
+                builder = Response.status(Response.Status.NOT_FOUND);
+            }
+
+            return builder.build();
+        } catch (Exception ex) {
+            logger.error(ex.getMessage(), ex);
+            throw new WebApplicationException("INTERNAL_ERROR", Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GET
+    @Path("/exports")
+    @Produces({ MediaType.APPLICATION_JSON })
+    public Response getJob(@HeaderParam("x-okina-referential") String referential, @QueryParam("jobType") JobType jobType,  @QueryParam("maxSize") Integer maxSize) {
+        try {
+            if (maxSize == null) {
+                maxSize = 20;
+            }
+            List<Job> result = jobService.findAllJobBy(referential, jobType, maxSize);
+            Response.ResponseBuilder builder = Response.ok(result);
+            return builder.build();
+        } catch (Exception ex) {
+            logger.error(ex.getMessage(), ex);
+            throw new WebApplicationException("INTERNAL_ERROR", Response.Status.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @GET

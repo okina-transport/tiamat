@@ -5,6 +5,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.general.ImportJobWorker;
 import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
+import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
 import org.rutebanken.tiamat.model.gbfs.GbfsImportLinks;
 import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportData;
 import org.rutebanken.tiamat.model.gbfs.GbfsValidationOutput;
@@ -69,7 +70,8 @@ public class GbfsImportResource {
             }
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
-        ParkingTypeEnumeration parkingTypeEnumeration = ParkingTypeEnumeration.fromValue(gbfsImportLinks.getParkingType());
+        ParkingTypeEnumeration parkingType = ParkingTypeEnumeration.fromValue(gbfsImportLinks.getParkingType());
+        SpecificParkingAreaUsageEnumeration parkingAreaType = SpecificParkingAreaUsageEnumeration.fromValue(gbfsImportLinks.getParkingAreaType());
         Job job = new Job();
         job.setFileName(getLastPartOfUrl(gbfsImportLinks.getGlobalUrl()));
         job.setType(JobType.GBFS_PARKING);
@@ -83,7 +85,7 @@ public class GbfsImportResource {
 
         ImportJobWorker importJobWorker = importJobWorkerBuilder
                 .init(job)
-                .withGbfsParkingImportData(new GbfsParkingImportData(validation.getStations(), validation.getVehicleTypes(), validation.getSystemInformation(), parkingTypeEnumeration))
+                .withGbfsParkingImportData(new GbfsParkingImportData(validation.getStations(), validation.getVehicleTypes(), validation.getSystemInformation(), parkingType, parkingAreaType))
                 .build();
         importService.submit(importJobWorker);
 

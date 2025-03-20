@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.rutebanken.tiamat.externalapis.gbfs.mapper.StationInformationMapper.*;
+import static org.rutebanken.tiamat.externalapis.gbfs.mapper.StationInformationMapper.mapVehicleCapacity;
 
 public class StationInformationMapperTest {
 
@@ -33,20 +33,20 @@ public class StationInformationMapperTest {
 
     @Test
     public void toParkingPaymentMethodEnumeration_noRentalMethod_test() {
-        Set<PaymentMethodEnumeration> parkingPaymentMethodEnumeration = mapper.toParkingPaymentMethodEnumeration(new StationInformation());
+        Set<PaymentMethodEnumeration> parkingPaymentMethodEnumeration = StationInformationMapper.toParkingPaymentMethods(new StationInformation());
 
         assertThat(parkingPaymentMethodEnumeration).isEmpty();
     }
 
     @Test
-    public void toParkingPaymentMethodEnumeration_multipleRentalMethods_test() {
+    public void toParkingPaymentMethods_multipleRentalMethods_test() {
         StationInformation stationInformation = new StationInformation();
         stationInformation.setRentalMethods(List.of("creditcard",
                 "paypass",
                 "applepay", "androidpay", "phone",
                 "transitcard"
         ));
-        Set<PaymentMethodEnumeration> parkingPaymentMethodEnumeration = mapper.toParkingPaymentMethodEnumeration(stationInformation);
+        Set<PaymentMethodEnumeration> parkingPaymentMethodEnumeration = StationInformationMapper.toParkingPaymentMethods(stationInformation);
 
         assertThat(parkingPaymentMethodEnumeration).hasSize(4).containsExactlyInAnyOrder(
                 PaymentMethodEnumeration.CREDIT_CARD,
@@ -57,8 +57,8 @@ public class StationInformationMapperTest {
     }
 
     @Test
-    public void toParkingLayoutEnumeration_emptyInformation_test() {
-        ParkingLayoutEnumeration parkingLayoutEnumeration = mapper.toParkingLayoutEnumeration(new StationInformation());
+    public void toParkingLayout_emptyInformation_test() {
+        ParkingLayoutEnumeration parkingLayoutEnumeration = StationInformationMapper.toParkingLayout(new StationInformation());
 
         assertThat(parkingLayoutEnumeration).isNull();
     }
@@ -67,7 +67,7 @@ public class StationInformationMapperTest {
     public void toParkingLayoutEnumeration_parkingTypeDefined_test() {
         StationInformation stationInformation = new StationInformation();
         stationInformation.setParkingType("parking_lot");
-        ParkingLayoutEnumeration parkingLayoutEnumeration = mapper.toParkingLayoutEnumeration(stationInformation);
+        ParkingLayoutEnumeration parkingLayoutEnumeration = StationInformationMapper.toParkingLayout(stationInformation);
 
         assertThat(parkingLayoutEnumeration).isEqualTo(ParkingLayoutEnumeration.OPEN_SPACE);
     }
@@ -76,7 +76,7 @@ public class StationInformationMapperTest {
     public void toParkingLayoutEnumeration_parkingTypeDefined2_test() {
         StationInformation stationInformation = new StationInformation();
         stationInformation.setParkingType("street_parking");
-        ParkingLayoutEnumeration parkingLayoutEnumeration = mapper.toParkingLayoutEnumeration(stationInformation);
+        ParkingLayoutEnumeration parkingLayoutEnumeration = StationInformationMapper.toParkingLayout(stationInformation);
 
         assertThat(parkingLayoutEnumeration).isEqualTo(ParkingLayoutEnumeration.ROADSIDE);
     }
@@ -85,7 +85,7 @@ public class StationInformationMapperTest {
     public void toParkingLayoutEnumeration_parkingTypeDefined3_test() {
         StationInformation stationInformation = new StationInformation();
         stationInformation.setParkingType("underground_parking");
-        ParkingLayoutEnumeration parkingLayoutEnumeration = mapper.toParkingLayoutEnumeration(stationInformation);
+        ParkingLayoutEnumeration parkingLayoutEnumeration = StationInformationMapper.toParkingLayout(stationInformation);
 
         assertThat(parkingLayoutEnumeration).isEqualTo(ParkingLayoutEnumeration.UNDERGROUND);
     }
@@ -110,10 +110,10 @@ public class StationInformationMapperTest {
 
     @Test
     public void toParking_stationIdMapping_test() {
-       StationInformation stationInformation = new StationInformation();
-       stationInformation.setStationId(STATION_ID);
+        StationInformation stationInformation = new StationInformation();
+        stationInformation.setStationId(STATION_ID);
 
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of());
+        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
 
         assertThat(parking.getNetexId()).isEqualTo("MOBIITI:PARKING:station_id");
     }
@@ -123,7 +123,7 @@ public class StationInformationMapperTest {
         StationInformation stationInformation = new StationInformation();
         stationInformation.setName(STATION_NAME);
 
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of());
+        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
 
         assertThat(parking.getName().getValue()).isEqualTo(stationInformation.getName());
     }
@@ -133,7 +133,7 @@ public class StationInformationMapperTest {
         StationInformation stationInformation = new StationInformation();
         stationInformation.setShortName(STATION_NAME);
 
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of());
+        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
 
         assertThat(parking.getShortName().getValue()).isEqualTo(stationInformation.getShortName());
     }
@@ -143,7 +143,7 @@ public class StationInformationMapperTest {
         StationInformation stationInformation = new StationInformation();
         stationInformation.setAddress(ADDRESS);
 
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of());
+        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
 
         assertThat(parking.getAddress()).isEqualTo(stationInformation.getAddress());
     }
@@ -153,7 +153,7 @@ public class StationInformationMapperTest {
         StationInformation stationInformation = new StationInformation();
         stationInformation.setCrossStreet(CROSS_STREET);
 
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of());
+        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
 
         assertThat(parking.getCrossRoad().getValue()).isEqualTo(stationInformation.getCrossStreet());
     }
@@ -162,7 +162,7 @@ public class StationInformationMapperTest {
     public void toParking_capacityMapping_test() {
         StationInformation stationInformation = new StationInformation();
 
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of());
+        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
 
         assertThat(parking.getTotalCapacity()).isZero();
     }
@@ -172,7 +172,7 @@ public class StationInformationMapperTest {
         StationInformation stationInformation = new StationInformation();
         stationInformation.setChargingStation(Boolean.TRUE);
 
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of());
+        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
 
         assertThat(parking.isRechargingAvailable()).isEqualTo(stationInformation.getChargingStation());
     }
@@ -184,7 +184,7 @@ public class StationInformationMapperTest {
         rentalUri.setBookingUri(BOOKING_URL);
         stationInformation.setRentalUri(rentalUri);
 
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of());
+        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
 
         assertThat(parking.getBookingUrl()).isEqualTo(stationInformation.getRentalUri().getBookingUri());
     }
@@ -196,7 +196,7 @@ public class StationInformationMapperTest {
         rentalUri.setRentalUriIos(RENTAL_URI_IOS);
         stationInformation.setRentalUri(rentalUri);
 
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of());
+        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
 
         assertThat(parking.getRentalUriIos()).isEqualTo(stationInformation.getRentalUri().getRentalUriIos());
     }
@@ -208,7 +208,7 @@ public class StationInformationMapperTest {
         rentalUri.setRentalUriAndroid(RENTAL_URI_ANDROID);
         stationInformation.setRentalUri(rentalUri);
 
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of());
+        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
 
         assertThat(parking.getRentalUriAndroid()).isEqualTo(stationInformation.getRentalUri().getRentalUriAndroid());
     }
@@ -216,9 +216,9 @@ public class StationInformationMapperTest {
     @Test
     public void toParking_organisationMapping_test() {
         StationInformation stationInformation = new StationInformation();
-       Organisation organisation = new Organisation();
+        Organisation organisation = new Organisation();
 
-        Parking parking = mapper.toParking(organisation, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of());
+        Parking parking = mapper.toParking(organisation, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
 
         assertThat(parking.getOrganisation()).isEqualTo(organisation);
     }
@@ -228,9 +228,19 @@ public class StationInformationMapperTest {
         StationInformation stationInformation = new StationInformation();
         Organisation organisation = new Organisation();
 
-        Parking parking = mapper.toParking(organisation, stationInformation, ParkingTypeEnumeration.PARKING_ZONE, List.of());
+        Parking parking = mapper.toParking(organisation, stationInformation, ParkingTypeEnumeration.PARKING_ZONE, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
 
         assertThat(parking.getParkingType()).isEqualTo(ParkingTypeEnumeration.PARKING_ZONE);
+    }
+
+    @Test
+    public void toParking_parkingAreaTypeMapping_test() {
+        StationInformation stationInformation = new StationInformation();
+        Organisation organisation = new Organisation();
+
+        Parking parking = mapper.toParking(organisation, stationInformation, ParkingTypeEnumeration.PARKING_ZONE, List.of(), SpecificParkingAreaUsageEnumeration.CARPOOL);
+
+        assertThat(parking.getParkingAreas().get(0).getSpecificParkingAreaUsage()).isEqualTo(SpecificParkingAreaUsageEnumeration.CARPOOL);
     }
 
 }

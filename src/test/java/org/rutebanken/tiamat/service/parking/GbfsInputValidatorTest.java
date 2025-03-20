@@ -7,6 +7,7 @@ import org.rutebanken.tiamat.model.gbfs.GbfsImportLinks;
 import org.rutebanken.tiamat.model.gbfs.GbfsValidationOutput;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.rutebanken.tiamat.model.ParkingTypeEnumeration.PARK_AND_RIDE;
 
 public class GbfsInputValidatorTest {
 
@@ -56,6 +57,30 @@ public class GbfsInputValidatorTest {
 
         assertThat(gbfsValidationOutput).isNotNull();
         assertThat(gbfsValidationOutput.getErrors()).hasSize(1).containsExactly("Parking type is invalid");
+    }
+
+    @Test
+    public void emptyParkingAreaType_shouldReturnError_test() {
+        GbfsImportLinks gbfsImportLinks = new GbfsImportLinks();
+        gbfsImportLinks.setGlobalUrl("http://test.com");
+        gbfsImportLinks.setParkingType(PARK_AND_RIDE.value());
+        gbfsImportLinks.setParkingAreaType(null);
+        GbfsValidationOutput gbfsValidationOutput = validator.validateInput(gbfsImportLinks);
+
+        assertThat(gbfsValidationOutput).isNotNull();
+        assertThat(gbfsValidationOutput.getErrors()).hasSize(1).containsExactly("Parking area type is blank");
+    }
+
+    @Test
+    public void invalidParkingAreaType_shouldReturnError_test() {
+        GbfsImportLinks gbfsImportLinks = new GbfsImportLinks();
+        gbfsImportLinks.setGlobalUrl("http://test.com");
+        gbfsImportLinks.setParkingType(PARK_AND_RIDE.value());
+        gbfsImportLinks.setParkingAreaType("wrong");
+        GbfsValidationOutput gbfsValidationOutput = validator.validateInput(gbfsImportLinks);
+
+        assertThat(gbfsValidationOutput).isNotNull();
+        assertThat(gbfsValidationOutput.getErrors()).hasSize(1).containsExactly("Parking area type is invalid");
     }
 
 }

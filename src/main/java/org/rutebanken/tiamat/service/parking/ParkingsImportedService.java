@@ -1,18 +1,20 @@
 package org.rutebanken.tiamat.service.parking;
 
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -21,42 +23,40 @@ import java.util.function.Supplier;
 @Transactional
 public class ParkingsImportedService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ParkingsImportedService.class);
-
-    private ParkingRepository parkingRepository;
-    private NetexIdMapper netexIdMapper;
-    private ParkingVersionedSaverService parkingVersionedSaverService;
-    private VersionCreator versionCreator;
+    private final ParkingRepository parkingRepository;
+    private final NetexIdMapper netexIdMapper;
+    private final ParkingVersionedSaverService parkingVersionedSaverService;
+    private final VersionCreator versionCreator;
 
     @Autowired
-    ParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, VersionCreator versionCreator){
+    ParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, VersionCreator versionCreator) {
         this.parkingRepository = parkingRepository;
         this.netexIdMapper = netexIdMapper;
         this.parkingVersionedSaverService = parkingVersionedSaverService;
         this.versionCreator = versionCreator;
     }
 
-    public void createOrUpdateParkings(List<Parking> parkingsToSave){
+    public void createOrUpdateParkings(List<Parking> parkingsToSave) {
 
         Parking updatedParking;
         boolean founded = false;
 
-        for(Parking parkingToSave: parkingsToSave){
+        for (Parking parkingToSave : parkingsToSave) {
 
             Parking parkingInBDD = retrieveParkingInBDD(parkingToSave);
 
-            if(parkingInBDD != null && parkingInBDD.getNetexId() != null){
+            if (parkingInBDD != null && parkingInBDD.getNetexId() != null) {
                 founded = true;
                 updatedParking = versionCreator.createCopy(parkingInBDD, Parking.class);
 
                 boolean isParkingUpdated = populateParking(parkingToSave, updatedParking);
 
-                if(isParkingUpdated) {
+                if (isParkingUpdated) {
                     parkingVersionedSaverService.saveNewVersion(updatedParking);
                 }
             }
 
-            if(!founded){
+            if (!founded) {
                 netexIdMapper.moveOriginalIdToKeyValueList(parkingToSave, parkingToSave.getOriginalId());
                 netexIdMapper.moveOriginalNameToKeyValueList(parkingToSave, parkingToSave.getName().getValue());
 
@@ -66,15 +66,12 @@ public class ParkingsImportedService {
         }
     }
 
-    private Parking retrieveParkingInBDD(Parking parking){
-
-        Set values = new HashSet(Arrays.asList(parking.getOriginalId()));
-
-        String parkingNetexId = parkingRepository.findFirstByKeyValues(NetexIdMapper.ORIGINAL_ID_KEY, values);
-
-        if(parkingNetexId != null && !parkingNetexId.isEmpty()) {
+    private Parking retrieveParkingInBDD(Parking parking) {
+        String parkingNetexId = parkingRepository.findFirstByKeyValues(NetexIdMapper.ORIGINAL_ID_KEY,
+                Set.of(parking.getOriginalId()));
+        if (StringUtils.isNotBlank(parkingNetexId)) {
             Parking foundParking = parkingRepository.findFirstByNetexIdOrderByVersionDesc(parkingNetexId);
-            if (areAtTheSamePlace(foundParking, parking)){
+            if (areAtTheSamePlace(foundParking, parking)) {
                 return foundParking;
             }
         }
@@ -83,21 +80,19 @@ public class ParkingsImportedService {
 
     /**
      * Check if the 2 parkings are located at the same place (coordinates are rounded with 4 digits)
-     * @param p1
-     *      first parking
-     * @param p2
-     *      second parking
-     * @return
-     *      true : parking are at the same place
-     *      false : parking are not at the same place
+     *
+     * @param p1 first parking
+     * @param p2 second parking
+     * @return true : parking are at the same place
+     * false : parking are not at the same place
      */
-    private boolean areAtTheSamePlace(Parking p1, Parking p2){
-       return roundFourDigits(p1.getCentroid().getX()) == roundFourDigits(p2.getCentroid().getX()) &&
+    private boolean areAtTheSamePlace(Parking p1, Parking p2) {
+        return roundFourDigits(p1.getCentroid().getX()) == roundFourDigits(p2.getCentroid().getX()) &&
                 roundFourDigits(p1.getCentroid().getY()) == roundFourDigits(p2.getCentroid().getY());
     }
 
-    private double roundFourDigits(double inputValue){
-        return Math.round(inputValue*10000.0)/10000.0;
+    private double roundFourDigits(double inputValue) {
+        return Math.round(inputValue * 10000.0) / 10000.0;
     }
 
     private boolean populateParking(Parking existingParking, Parking updatedParking) {
@@ -107,7 +102,7 @@ public class ParkingsImportedService {
             isUpdated = true;
         }
 
-        if (existingParking.getValidBetween()!= null) {
+        if (existingParking.getValidBetween() != null) {
             updatedParking.setValidBetween(existingParking.getValidBetween());
             isUpdated = true;
         }
@@ -222,7 +217,7 @@ public class ParkingsImportedService {
             isUpdated = true;
         }
 
-        if(existingParking.getAccessibilityAssessment() != null){
+        if (existingParking.getAccessibilityAssessment() != null) {
 
             List<AccessibilityLimitation> limitations = existingParking.getAccessibilityAssessment().getLimitations();
 
@@ -238,44 +233,46 @@ public class ParkingsImportedService {
             accessibilityLimitation.setStepFreeAccess(limitations.stream().findFirst().get().getStepFreeAccess());
             accessibilityLimitation.setVisualSignsAvailable(limitations.stream().findFirst().get().getVisualSignsAvailable());
 
-            accessibilityAssessment.setLimitations(Arrays.asList(accessibilityLimitation));
+            accessibilityAssessment.setLimitations(List.of(accessibilityLimitation));
 
             updatedParking.setAccessibilityAssessment(accessibilityAssessment);
             isUpdated = true;
 
         }
 
-        if(existingParking.getOperator() != null){
+        if (existingParking.getOperator() != null) {
             updatedParking.setOperator(existingParking.getOperator());
             isUpdated = true;
         }
 
-        if(existingParking.getDescription() != null){
+        if (existingParking.getDescription() != null) {
             updatedParking.setDescription(existingParking.getDescription());
             isUpdated = true;
         }
 
-        if(existingParking.getParkingLayout() != null){
+        if (existingParking.getParkingLayout() != null) {
             updatedParking.setParkingLayout(existingParking.getParkingLayout());
             isUpdated = true;
         }
 
-        if(existingParking.getAddress() != null){
+        if (existingParking.getAddress() != null) {
             updatedParking.setAddress(existingParking.getAddress());
             isUpdated = true;
         }
 
-        for (int i = 0; i < existingParking.getParkingProperties().size(); i++) {
-            for (int j = 0; j < existingParking.getParkingProperties().get(i).getSpaces().size(); j++) {
+        if (existingParking.getParkingProperties() != null) {
+            for (int i = 0; i < existingParking.getParkingProperties().size(); i++) {
+                for (int j = 0; j < existingParking.getParkingProperties().get(i).getSpaces().size(); j++) {
 
-                // Récupération des espaces des parkings pour existing et updated
-                var existingSpace = existingParking.getParkingProperties().get(i).getSpaces().get(j);
-                var updatedSpace = updatedParking.getParkingProperties().get(i).getSpaces().get(j);
+                    // Récupération des espaces des parkings pour existing et updated
+                    var existingSpace = existingParking.getParkingProperties().get(i).getSpaces().get(j);
+                    var updatedSpace = updatedParking.getParkingProperties().get(i).getSpaces().get(j);
 
-                // Mise à jour des propriétés si nécessaire
-                isUpdated |= updateIfDifferent(existingSpace::getNumberOfElectricBikesWithRechargePoint, updatedSpace::getNumberOfElectricBikesWithRechargePoint, existingSpace::setNumberOfElectricBikesWithRechargePoint);
-                isUpdated |= updateIfDifferent(existingSpace::getNumberOfBikeSpaces, updatedSpace::getNumberOfBikeSpaces, existingSpace::setNumberOfBikeSpaces);
-                isUpdated |= updateIfDifferent(existingSpace::getNumberOfTwoWheeledVehicle, updatedSpace::getNumberOfTwoWheeledVehicle, existingSpace::setNumberOfTwoWheeledVehicle);
+                    // Mise à jour des propriétés si nécessaire
+                    isUpdated |= updateIfDifferent(existingSpace::getNumberOfElectricBikesWithRechargePoint, updatedSpace::getNumberOfElectricBikesWithRechargePoint, existingSpace::setNumberOfElectricBikesWithRechargePoint);
+                    isUpdated |= updateIfDifferent(existingSpace::getNumberOfBikeSpaces, updatedSpace::getNumberOfBikeSpaces, existingSpace::setNumberOfBikeSpaces);
+                    isUpdated |= updateIfDifferent(existingSpace::getNumberOfTwoWheeledVehicle, updatedSpace::getNumberOfTwoWheeledVehicle, existingSpace::setNumberOfTwoWheeledVehicle);
+                }
             }
         }
 

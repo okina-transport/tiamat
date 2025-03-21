@@ -60,7 +60,7 @@ public class StationInformationMapperTest {
     public void toParkingLayout_emptyInformation_test() {
         ParkingLayoutEnumeration parkingLayoutEnumeration = StationInformationMapper.toParkingLayout(new StationInformation());
 
-        assertThat(parkingLayoutEnumeration).isNull();
+        assertThat(parkingLayoutEnumeration).isEqualTo(ParkingLayoutEnumeration.UNDEFINED);
     }
 
     @Test
@@ -94,7 +94,7 @@ public class StationInformationMapperTest {
     public void mapVehicleCapacity_test() {
         VehicleType vehicleType = new VehicleType();
         vehicleType.setVehicleTypeId("bike");
-        vehicleType.setFormFactor(ParkingVehicleEnumeration.PEDAL_CYCLE.value());
+        vehicleType.setFormFactor("bicycle");
         Parking parking = new Parking();
         StationInformation stationInformation = new StationInformation();
         stationInformation.setVehicleCapacity(Map.of("bike", 10));

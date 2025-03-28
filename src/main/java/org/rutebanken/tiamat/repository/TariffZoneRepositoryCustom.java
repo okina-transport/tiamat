@@ -16,7 +16,6 @@
 package org.rutebanken.tiamat.repository;
 
 import org.rutebanken.tiamat.exporter.params.TariffZoneSearch;
-import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.TariffZone;
 
 import java.util.Iterator;

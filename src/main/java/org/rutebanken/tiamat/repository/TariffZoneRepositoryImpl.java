@@ -25,7 +25,6 @@ import org.hibernate.Session;
 import org.hibernate.internal.SessionImpl;
 import org.hibernate.query.NativeQuery;
 import org.rutebanken.tiamat.exporter.params.TariffZoneSearch;
-import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.model.TariffZone;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.SearchHelper;

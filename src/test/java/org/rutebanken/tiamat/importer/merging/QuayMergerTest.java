@@ -51,6 +51,7 @@ public class QuayMergerTest {
     private GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
     private NetexIdHelper netexIdHelper = new NetexIdHelper(new ValidPrefixList("NSR", new HashMap<>()));
+
     @InjectMocks
     private QuayMerger quayMerger = new QuayMerger(new OriginalIdMatcher(netexIdHelper));
 

@@ -19,13 +19,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.operation.TransformException;
-import org.rutebanken.netex.model.Quays_RelStructure;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.matching.OriginalIdMatcher;
-import org.rutebanken.tiamat.model.AccessibilityAssessment;
-import org.rutebanken.tiamat.model.AccessibilityLimitation;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
 import org.rutebanken.tiamat.model.MultilingualString;
@@ -70,6 +67,7 @@ public class QuayMerger {
     public QuayMerger(OriginalIdMatcher originalIdMatcher) {
         this.originalIdMatcher = originalIdMatcher;
     }
+
 
     public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, ImportParams importParams) {
         return mergeQuays(newStopPlace, existingStopPlace, addNewQuays, false, importParams);
@@ -185,9 +183,9 @@ public class QuayMerger {
 
     private Optional<Quay> findMatchOnOriginalId(Quay incomingQuay, Set<Quay> result) {
         for (Quay alreadyAdded : result) {
-            for(String originalIdAlreadyExisting : alreadyAdded.getOriginalIds()){
-                for(String newOriginalId : incomingQuay.getOriginalIds()){
-                    if(newOriginalId.equals(originalIdAlreadyExisting)){
+            for (String originalIdAlreadyExisting : alreadyAdded.getOriginalIds()) {
+                for (String newOriginalId : incomingQuay.getOriginalIds()) {
+                    if (newOriginalId.equals(originalIdAlreadyExisting)) {
                         return Optional.of(alreadyAdded);
                     }
                 }
@@ -207,7 +205,6 @@ public class QuayMerger {
         boolean zipCodeUpdated;
         boolean urlUpdated;
         boolean descUpdated;
-        boolean wheelchairBoardingUpdated;
         boolean nameUpdated = false;
         boolean keyValueExternalRefUpdated;
         boolean keyValueFareZoneUpdated;
@@ -220,18 +217,17 @@ public class QuayMerger {
         zipCodeUpdated = updateZipCode(alreadyAdded, incomingQuay);
         urlUpdated = updateUrl(alreadyAdded, incomingQuay);
         descUpdated = updateDesc(alreadyAdded, incomingQuay);
-        wheelchairBoardingUpdated = false;
         centroidUpdated = false;
 
-        if(!importParams.keepStopGeolocalisation && quayAlone){
+        if (!importParams.keepStopGeolocalisation && quayAlone) {
             centroidUpdated = updateCentroid(alreadyAdded, incomingQuay);
         }
 
-        if (!importParams.keepStopNames){
+        if (!importParams.keepStopNames) {
             nameUpdated = updatePropName(alreadyAdded, incomingQuay);
         }
 
-        if (importParams.updateStopAccessibility){
+        if (importParams.updateStopAccessibility) {
             accessibilityUpdated = updateAccessibility(alreadyAdded, incomingQuay);
         }
 
@@ -239,51 +235,12 @@ public class QuayMerger {
 
         keyValueFareZoneUpdated = keyValueListAppender.appendKeyValue(NetexIdMapper.FARE_ZONE, incomingQuay, alreadyAdded);
 
-        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated ||  zipCodeUpdated || urlUpdated || descUpdated || wheelchairBoardingUpdated || nameUpdated || keyValueExternalRefUpdated || accessibilityUpdated || keyValueFareZoneUpdated) {
-            logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, wheelchairBoardingUpdated:{}, nameUpdated:{}, keyValueExternalRefUpdated:{}, accessibilityUpdated:{}, keyValueFareZoneUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, wheelchairBoardingUpdated, nameUpdated, keyValueExternalRefUpdated, accessibilityUpdated, keyValueFareZoneUpdated);
+        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || zipCodeUpdated || urlUpdated || descUpdated || nameUpdated || keyValueExternalRefUpdated || accessibilityUpdated || keyValueFareZoneUpdated) {
+            logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, nameUpdated:{}, keyValueExternalRefUpdated:{}, accessibilityUpdated:{}, keyValueFareZoneUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, nameUpdated, keyValueExternalRefUpdated, accessibilityUpdated, keyValueFareZoneUpdated);
 
             alreadyAdded.setChanged(Instant.now());
             updatedQuaysCounter.incrementAndGet();
         }
-    }
-
-    private boolean updateWheelchairBoarding(Quay alreadyAdded, Quay incomingQuay) {
-        LimitationStatusEnumeration wheelchairBoardingAlreadyPresent = null;
-        if(alreadyAdded.getAccessibilityAssessment() != null){
-            if(alreadyAdded.getAccessibilityAssessment().getLimitations() != null && !alreadyAdded.getAccessibilityAssessment().getLimitations().isEmpty()){
-                if(alreadyAdded.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess() != null){
-                    wheelchairBoardingAlreadyPresent = alreadyAdded.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess();
-                }
-            }
-        }
-
-        if(incomingQuay.getAccessibilityAssessment() != null){
-            if(incomingQuay.getAccessibilityAssessment().getLimitations() != null && !incomingQuay.getAccessibilityAssessment().getLimitations().isEmpty()){
-                if(incomingQuay.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess() != null){
-                    if(!incomingQuay.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess().equals(wheelchairBoardingAlreadyPresent) && wheelchairBoardingAlreadyPresent != null){
-                        alreadyAdded.getAccessibilityAssessment().getLimitations().get(0).setWheelchairAccess(incomingQuay.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess());
-                        return true;
-                    }
-                    if(wheelchairBoardingAlreadyPresent == null){
-                        AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
-                        AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
-                        ArrayList<AccessibilityLimitation> accessibilityLimitations = new ArrayList<>();
-                        accessibilityLimitations.add(accessibilityLimitation);
-                        accessibilityLimitation.setWheelchairAccess(incomingQuay.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess());
-                        accessibilityLimitation.setAudibleSignalsAvailable(LimitationStatusEnumeration.UNKNOWN);
-                        accessibilityLimitation.setStepFreeAccess(LimitationStatusEnumeration.UNKNOWN);
-                        accessibilityLimitation.setEscalatorFreeAccess(LimitationStatusEnumeration.UNKNOWN);
-                        accessibilityLimitation.setLiftFreeAccess(LimitationStatusEnumeration.UNKNOWN);
-                        accessibilityLimitation.setAudibleSignalsAvailable(LimitationStatusEnumeration.UNKNOWN);
-                        accessibilityLimitation.setVisualSignsAvailable(LimitationStatusEnumeration.UNKNOWN);
-
-                        accessibilityAssessment.setLimitations(accessibilityLimitations);
-                        alreadyAdded.setAccessibilityAssessment(accessibilityAssessment);
-                    }
-                }
-            }
-        }
-        return false;
     }
 
     private boolean updateDesc(Quay alreadyAdded, Quay incomingQuay) {
@@ -349,22 +306,20 @@ public class QuayMerger {
 
     /**
      * Update wheelchair accessibility, if needed
-     * @param alreadyAdded
-     *  existing quay
-     * @param incomingQuay
-     *  incoming quay from user's file
-     * @return
-     *  true : quay has been updated
-     *  false : no update has been done on the quay
+     *
+     * @param alreadyAdded existing quay
+     * @param incomingQuay incoming quay from user's file
+     * @return true : quay has been updated
+     * false : no update has been done on the quay
      */
     private boolean updateAccessibility(Quay alreadyAdded, Quay incomingQuay) {
         boolean updated = false;
 
-        Optional<LimitationStatusEnumeration> existingWheelchairLimitationOpt =  ImporterUtils.getWheelchairLimitation(alreadyAdded);
-        Optional<LimitationStatusEnumeration> incomingWheelchairLimitationOpt =  ImporterUtils.getWheelchairLimitation(incomingQuay);
+        Optional<LimitationStatusEnumeration> existingWheelchairLimitationOpt = ImporterUtils.getWheelchairLimitation(alreadyAdded);
+        Optional<LimitationStatusEnumeration> incomingWheelchairLimitationOpt = ImporterUtils.getWheelchairLimitation(incomingQuay);
 
 
-        if (!existingWheelchairLimitationOpt.equals(incomingWheelchairLimitationOpt)){
+        if (incomingWheelchairLimitationOpt.isPresent() && !existingWheelchairLimitationOpt.equals(incomingWheelchairLimitationOpt)) {
             updated = true;
             ImporterUtils.updateWheelchairLimitation(alreadyAdded, incomingWheelchairLimitationOpt.get());
         }
@@ -372,27 +327,20 @@ public class QuayMerger {
         return updated;
     }
 
-
-
-
-
     private boolean updatePropName(Quay alreadyAdded, Quay incomingQuay) {
-
         boolean updated = false;
         List<String> oldList = new ArrayList<>(alreadyAdded.getOriginalNames());
         List<String> newList = new ArrayList<>(incomingQuay.getOriginalNames());
 
 
-        if (alreadyAdded.getOriginalNames().size() != incomingQuay.getOriginalNames().size()){
+        if (alreadyAdded.getOriginalNames().size() != incomingQuay.getOriginalNames().size()) {
             updated = true;
-        }else{
-
-
+        } else {
             Collections.sort(oldList);
             Collections.sort(newList);
 
-            for (int i = 0; i < oldList.size(); i++){
-                if (!oldList.get(i).equals(newList.get(i))){
+            for (int i = 0; i < oldList.size(); i++) {
+                if (!oldList.get(i).equals(newList.get(i))) {
                     updated = true;
                 }
             }
@@ -428,16 +376,6 @@ public class QuayMerger {
         }
 
         return prefixProducersList.size() == 1;
-    }
-
-
-    public boolean checkNumberId(Map<String, org.rutebanken.tiamat.model.Value> existing, Map<String, org.rutebanken.tiamat.model.Value> incoming) {
-        Set<String> idsList = new HashSet<>();
-
-        idsList.addAll(existing.get(ORIGINAL_ID_KEY).getItems());
-        idsList.addAll(incoming.get(ORIGINAL_ID_KEY).getItems());
-
-        return idsList.size() == 1;
     }
 
 

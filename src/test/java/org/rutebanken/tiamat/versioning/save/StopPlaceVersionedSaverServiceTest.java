@@ -22,9 +22,7 @@ import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.CleanTablesTools;
-import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.rutebanken.tiamat.versioning.save.DefaultVersionedSaverService.MILLIS_BETWEEN_VERSIONS;
@@ -131,7 +128,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
      * @throws Exception
      */
     @Test
-    public void newVersionVerifyValidFrom() throws Exception {
+    public void newVersionVerifyValidFrom() {
 
         StopPlace oldVersion = new StopPlace(new EmbeddableMultilingualString("Espa"));
 
@@ -158,7 +155,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void terminateStopPlaceValidityVerifyValidity() throws Exception {
+    public void terminateStopPlaceValidityVerifyValidity() {
 
         StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("About to get terminated"));
         stopPlace.setVersion(1L);
@@ -182,7 +179,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
     }
 
     @Test(expected = Exception.class)
-    public void saveStopWithAdjacentSiteTooFarAwayFromEachOther() throws Exception {
+    public void saveStopWithAdjacentSiteTooFarAwayFromEachOther() {
         StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Adjacent"));
         stopPlace.setVersion(1L);
         stopPlace.setCentroid(point(60.000, 10.78));
@@ -198,7 +195,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
     }
 
     @Test(expected = Exception.class)
-    public void saveStopWithAdjacentSiteWithSameId() throws Exception {
+    public void saveStopWithAdjacentSiteWithSameId() {
         StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Adjacent"));
         stopPlace.setVersion(1L);
         stopPlace.setCentroid(point(60.000, 10.78));
@@ -209,7 +206,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void newVersionDefaultFromDateIsSet() throws Exception {
+    public void newVersionDefaultFromDateIsSet() {
 
         StopPlace oldVersion = new StopPlace(new EmbeddableMultilingualString("About to get a new version where default from date is set"));
         oldVersion.setVersion(1L);

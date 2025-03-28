@@ -71,16 +71,12 @@ public class ImportResource {
         this.enabledImportTypes = enabledImportTypes;
     }
 
-    public Response importPublicationDelivery(InputStream inputStream) throws IOException, JAXBException, SAXException, TiamatBusinessException, BindException {
-        return importPublicationDelivery(inputStream, null);
-    }
-
     @POST
     @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
     public Response importPublicationDelivery(@ApiParam(hidden = true) InputStream inputStream, @BeanParam ImportParams importParams) throws IOException, JAXBException, SAXException, TiamatBusinessException, BindException {
         logger.info("Received Netex publication delivery, starting to parse...");
-        logger.info(".........................................................(importParams.providerCode = " + importParams.providerCode + ")");
+        logger.info(".........................................................(importParams.providerCode = {})", importParams.providerCode);
 
         ImportType effectiveImportType = safeGetImportType(importParams);
         if (!enabledImportTypes.contains(effectiveImportType)) {

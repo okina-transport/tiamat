@@ -18,10 +18,7 @@ package org.rutebanken.tiamat.importer.matching;
 import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
-import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
 import org.rutebanken.tiamat.importer.*;
-import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
-import org.rutebanken.tiamat.importer.finder.SimpleNearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByIdFinder;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
 import org.rutebanken.tiamat.importer.merging.QuayMerger;
@@ -31,25 +28,22 @@ import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.repository.TariffZoneRepository;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
-import org.rutebanken.tiamat.service.stopplace.StopPlaceDeleter;
-import org.rutebanken.tiamat.service.stopplace.StopPlaceQuayMover;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -57,6 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
+import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.FARE_ZONE;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.RAIL_UIC_KEY;
 
 @Component
@@ -66,8 +61,6 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     private static final Logger logger = LoggerFactory.getLogger(TransactionalMatchingAppendingStopPlaceImporter.class);
 
     private static final boolean CREATE_NEW_QUAYS = true;
-
-    private static final boolean ALLOW_OTHER_TYPE_AS_ANY_MATCH = true;
 
     @Autowired
     private KeyValueListAppender keyValueListAppender;
@@ -85,25 +78,13 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     private NetexMapper netexMapper;
 
     @Autowired
-    private NearbyStopPlaceFinder nearbyStopPlaceFinder;
-
-    @Autowired
     private StopPlaceByIdFinder stopPlaceByIdFinder;
-
-    @Autowired
-    private SimpleNearbyStopPlaceFinder simpleNearbyStopPlaceFinder;
-
-    @Autowired
-    private ZoneDistanceChecker zoneDistanceChecker;
 
     @Autowired
     private AlternativeStopTypes alternativeStopTypes;
 
     @Autowired
     private MergingStopPlaceImporter mergingStopPlaceImporter;
-
-    @Value("${onMoveOnly.modeMatch.noMergeSeveralProducers:false}")
-    boolean noMergeOnMoveOnly;
 
     @Autowired
     protected VersionCreator versionCreator;
@@ -116,9 +97,6 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
     @Autowired
     private QuayMover quayMover;
-
-    @Value("${stopPlace.sharing.policy}")
-    protected StopPlaceSharingPolicy sharingPolicy;
 
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
@@ -230,26 +208,10 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 boolean wheelChairChanged = false;
                 boolean tariffZoneChanged = false;
                 boolean privateCodeChanged = false;
-                boolean hasTransportModeChanged = false;
+                boolean hasTransportModeChanged = updateTransportMode(incomingStopPlace, copy);
 
 
-                hasTransportModeChanged = updateTransportMode(incomingStopPlace, copy);
-
-
-                if (incomingStopPlace.getTariffZones() != null) {
-                    if (copy.getTariffZones() == null) {
-                        copy.setTariffZones(new HashSet<>());
-                        tariffZoneChanged = true;
-                    } else {
-                        tariffZoneChanged = !incomingStopPlace.getTariffZones().equals(copy.getTariffZones());
-                        for (TariffZoneRef tariffZoneRef : incomingStopPlace.getTariffZones()) {
-                            String netexId = tariffZoneRepository.findFirstByKeyValue(NetexIdMapper.FARE_ZONE, tariffZoneRef.getRef());
-                            tariffZoneRef.setRef(netexId);
-                            copy.getTariffZones().add(tariffZoneRef);
-                        }
-                    }
-
-                }
+                tariffZoneChanged = updateTariffZone(incomingStopPlace, copy, tariffZoneChanged);
 
                 if (!importParams.keepStopNames && !incomingStopPlace.getName().getValue().equals(copy.getName().getValue())) {
                     nameChanged = true;
@@ -267,17 +229,15 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
                 boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS, importParams);
                 boolean centroidChanged = false;
-                if (!importParams.keepStopGeolocalisation ){
-                    if (incomingStopPlace.getCentroid() != null){
+                if (!importParams.keepStopGeolocalisation){
+                    if (incomingStopPlace.getCentroid() != null && !incomingStopPlace.getCentroid().equalsExact(copy.getCentroid(), 0.0001)) {
                         copy.setCentroid(incomingStopPlace.getCentroid());
                         centroidChanged = true;
-                    }else{
+                    }
+                    else {
                         centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
                     }
-
                 }
-
-
 
                 if (quayChanged || keyValuesChanged || centroidChanged || nameChanged || wheelChairChanged || tariffZoneChanged || privateCodeChanged || hasTransportModeChanged) {
                     if (existingStopPlace.getParentSiteRef() != null && !existingStopPlace.isParentStopPlace()) {
@@ -307,8 +267,35 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
         }
     }
 
-    private List<org.rutebanken.tiamat.model.StopPlace> removeExpiredVersions(List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces) {
+    private boolean updateTariffZone(org.rutebanken.tiamat.model.StopPlace incomingStopPlace, org.rutebanken.tiamat.model.StopPlace copy, boolean tariffZoneChanged) {
+        if (incomingStopPlace.getTariffZones() != null) {
+            if (copy.getTariffZones() == null) {
+                copy.setTariffZones(new HashSet<>());
+            }
+            for (TariffZoneRef tariffZoneRef : incomingStopPlace.getTariffZones()) {
+                String netexId = tariffZoneRepository.findFirstByKeyValue(NetexIdMapper.FARE_ZONE, tariffZoneRef.getRef());
+                if(netexId == null) {
+                    copy.getTariffZones().add(tariffZoneRef);
+                    tariffZoneChanged = true;
+                }
+                else {
+                    for(TariffZoneRef tariffZoneRefCopy : copy.getTariffZones()){
+                        TariffZone tariffZone = tariffZoneRepository.findFirstByNetexIdOrderByVersionDesc(tariffZoneRefCopy.getRef());
+                        for(String ref : tariffZone.getKeyValues().get(FARE_ZONE).getItems()){
+                            if(!ref.equals(tariffZoneRef.getRef())){
+                                tariffZoneRef.setRef(netexId);
+                                copy.getTariffZones().add(tariffZoneRef);
+                                tariffZoneChanged = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return tariffZoneChanged;
+    }
 
+    private List<org.rutebanken.tiamat.model.StopPlace> removeExpiredVersions(List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces) {
         if (foundStopPlaces == null || foundStopPlaces.isEmpty()){
             return new ArrayList<>();
         }
@@ -324,7 +311,6 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     }
 
     private boolean updateTransportMode(org.rutebanken.tiamat.model.StopPlace incomingStopPlace, org.rutebanken.tiamat.model.StopPlace existingStopPlace) {
-
         StopTypeEnumeration incomingStopPlaceType = incomingStopPlace.getStopPlaceType();
         VehicleModeEnumeration incomingTransportMode = TiamatVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(incomingStopPlaceType);
         if (isVehicleModeAlreadyExisting(existingStopPlace, incomingTransportMode)) {
@@ -354,7 +340,6 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
             existingStopPlace.setStopPlaceType(incomingStopPlace.getStopPlaceType());
         }
         return true;
-
     }
 
     private void fillEmptyTransportMode(org.rutebanken.tiamat.model.StopPlace existingStopPlace) {
@@ -534,7 +519,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
         Set<String> importedIds = dataObj.getOrCreateValues(NetexIdMapper.ORIGINAL_ID_KEY);
         for (String importedId : importedIds) {
             if (importedIdMap.containsKey(importedId) && importedIdMap.get(importedId) != netexId) {
-                logger.error("DUPLICATE USE OF IMPORTED-ID:" + importedId + " (" + netexId + "," + importedIdMap.get(importedId) + ")");
+                logger.error("DUPLICATE USE OF IMPORTED-ID:{} ({},{})", importedId, netexId, importedIdMap.get(importedId));
                 isDuplicateImportedIds = true;
             } else {
                 importedIdMap.put(importedId, netexId);

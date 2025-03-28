@@ -102,18 +102,24 @@ public class ImportJobWorkerBuilder {
         return this;
     }
 
-    public ImportJobWorkerBuilder withKeepStopNames(boolean keepStopNames) {
-        this.importJobWorker.setKeepStopNames(keepStopNames);
+    public ImportJobWorkerBuilder withKeepStopNames(Boolean keepStopNames) {
+        if (keepStopNames != null){
+            this.importJobWorker.setKeepStopNames(keepStopNames);
+        }
         return this;
     }
 
-    public ImportJobWorkerBuilder withKeepStopGeolocalisation(boolean keepStopGeolocalisation) {
-        this.importJobWorker.setKeepStopGeolocalisation(keepStopGeolocalisation);
+    public ImportJobWorkerBuilder withKeepStopGeolocalisation(Boolean keepStopGeolocalisation) {
+        if (keepStopGeolocalisation != null){
+            this.importJobWorker.setKeepStopGeolocalisation(keepStopGeolocalisation);
+        }
         return this;
     }
 
-    public ImportJobWorkerBuilder withUpdateStopAccessibility(boolean updateStopAccessibility) {
-        this.importJobWorker.setUpdateStopAccessibility(updateStopAccessibility);
+    public ImportJobWorkerBuilder withUpdateStopAccessibility(Boolean updateStopAccessibility) {
+        if (updateStopAccessibility != null){
+            this.importJobWorker.setUpdateStopAccessibility(updateStopAccessibility);
+        }
         return this;
     }
 

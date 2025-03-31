@@ -29,15 +29,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Component
@@ -74,7 +70,8 @@ public class MergingStopPlaceImporter {
                                     VersionCreator versionCreator,
                                     ReferenceResolver referenceResolver,
                                     MergingUtils mergingUtils,
-                                    QuaysVersionedSaverService quaysVersionedSaverService) {
+                                    QuaysVersionedSaverService quaysVersionedSaverService
+    ) {
         this.stopPlaceFromOriginalIdFinder = stopPlaceFromOriginalIdFinder;
         this.nearbyStopPlaceFinder = nearbyStopPlaceFinder;
         this.stopPlaceCentroidComputer = stopPlaceCentroidComputer;
@@ -110,7 +107,7 @@ public class MergingStopPlaceImporter {
         return netexMapper.mapToNetexModel(importStopPlaceWithoutNetexMapping(newStopPlace));
     }
 
-    public StopPlace importStopPlaceWithoutNetexMapping(StopPlace incomingStopPlace) throws InterruptedException, ExecutionException {
+    public StopPlace importStopPlaceWithoutNetexMapping(StopPlace incomingStopPlace) {
         return handleCompletelyNewStopPlace(incomingStopPlace);
     }
 
@@ -130,7 +127,7 @@ public class MergingStopPlaceImporter {
         return stopPlace;
     }
 
-    public StopPlace handleCompletelyNewStopPlace(StopPlace incomingStopPlace) throws ExecutionException {
+    public StopPlace handleCompletelyNewStopPlace(StopPlace incomingStopPlace) {
 
         if (incomingStopPlace.getNetexId() != null) {
             // This should not be necesarry.

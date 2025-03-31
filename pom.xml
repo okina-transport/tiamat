@@ -66,6 +66,7 @@
         <docker.maven.plugin.version>0.21.0</docker.maven.plugin.version>
         <spring-boot-plugin.version>2.7.18</spring-boot-plugin.version>
         <spring-boot.version>2.7.18</spring-boot.version>
+        <spring-cloud.version>2021.0.9</spring-cloud.version>
         <spring.security.version>5.3.5.RELEASE</spring.security.version>
         <keycloak.version>19.0.3</keycloak.version>
         <postgresql.version>42.7.2</postgresql.version>
@@ -120,7 +121,7 @@
         <!--TODO temporary manual upgrade of Logback-->
         <logback.version>1.2.12</logback.version>
         <log4j2.version>2.17.1</log4j2.version>
-
+        <feign-okhttp.version>13.5</feign-okhttp.version>
         <sonar.projectKey>mobi-iti:tiamat</sonar.projectKey>
         <maven.compiler.args>--add-opens java.base/java.lang=ALL-UNNAMED</maven.compiler.args>
     </properties>
@@ -212,6 +213,13 @@
                 <scope>import</scope>
             </dependency>
 
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
             <dependency>
                 <groupId>com.okina.helpers</groupId>
@@ -487,6 +495,22 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-okhttp</artifactId>
+            <version>${feign-okhttp.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-httpclient</artifactId>
+            <version>${feign-okhttp.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>com.sun.xml.bind</groupId>

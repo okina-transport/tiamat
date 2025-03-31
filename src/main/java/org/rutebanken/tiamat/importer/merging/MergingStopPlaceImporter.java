@@ -33,9 +33,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Component
@@ -72,7 +70,8 @@ public class MergingStopPlaceImporter {
                                     VersionCreator versionCreator,
                                     ReferenceResolver referenceResolver,
                                     MergingUtils mergingUtils,
-                                    QuaysVersionedSaverService quaysVersionedSaverService) {
+                                    QuaysVersionedSaverService quaysVersionedSaverService
+    ) {
         this.stopPlaceFromOriginalIdFinder = stopPlaceFromOriginalIdFinder;
         this.nearbyStopPlaceFinder = nearbyStopPlaceFinder;
         this.stopPlaceCentroidComputer = stopPlaceCentroidComputer;

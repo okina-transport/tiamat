@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 
 import static org.rutebanken.tiamat.netex.NetexConstants.NETEX_PARKING_TOF_ID;
 import static org.rutebanken.tiamat.netex.NetexConstants.NETEX_PARKING_TOF_VERSION;
+import static org.rutebanken.tiamat.netex.NetexConstants.NETEX_POI_TOF_ID;
+import static org.rutebanken.tiamat.netex.NetexConstants.NETEX_POI_TOF_VERSION;
 
 @Service
 public class TiamatGeneralFrameExporter {
@@ -31,7 +33,11 @@ public class TiamatGeneralFrameExporter {
         if (TypeEnumeration.PARKING.equals(exportType)) {
             generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_PARKING_" + localDateTimeString + ":LOC");
             setFramesParking(generalFrame);
-        } else {
+        } else if (TypeEnumeration.POI.equals(exportType)) {
+            generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_POI_" + localDateTimeString + ":LOC");
+            setFramesPOI(generalFrame);
+        }
+        else {
             generalFrame.setNetexId(siteName + ":GeneralFrame:NETEX_ARRET_" + localDateTimeString + ":LOC");
             setFramesDefault(generalFrame);
         }
@@ -60,6 +66,21 @@ public class TiamatGeneralFrameExporter {
         TypeOfFrameRefStructure typeOfFrameRefStructure = new TypeOfFrameRefStructure();
         typeOfFrameRefStructure.setRef(NETEX_PARKING_TOF_ID);
         typeOfFrameRefStructure.setVersion(NETEX_PARKING_TOF_VERSION);
+        generalFrame.setTypeOfFrameRef(typeOfFrameRefStructure);
+        logger.info("Adding {} typeOfFrameRefStructure in generalFrame", typeOfFrameRefStructure);
+
+        // Frame <members>
+        Members members = new Members();
+        generalFrame.setMembers(members);
+
+        logger.info("Adding {} members in generalFrame", members);
+    }
+
+    public void setFramesPOI(GeneralFrame generalFrame) {
+        // Frame <TypeOfFrameRef>
+        TypeOfFrameRefStructure typeOfFrameRefStructure = new TypeOfFrameRefStructure();
+        typeOfFrameRefStructure.setRef(NETEX_POI_TOF_ID);
+        typeOfFrameRefStructure.setVersion(NETEX_POI_TOF_VERSION);
         generalFrame.setTypeOfFrameRef(typeOfFrameRefStructure);
         logger.info("Adding {} typeOfFrameRefStructure in generalFrame", typeOfFrameRefStructure);
 

@@ -478,11 +478,25 @@ public class StreamingPublicationDelivery {
 
         logger.info("Publication delivery creation");
 
-        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime, TypeEnumeration.PARKING);
+        org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime, TypeEnumeration.POI);
         GeneralFrame netexGeneralFrame = netexMapper.mapToNetexModel(generalFrame);
 
         // Préparation des organisations POI
         List<JAXBElement<? extends EntityStructure>> listMembers = new ArrayList<>();
+
+        TypeOfFrame typeOfFrame = new TypeOfFrame();
+        MultilingualString name = new MultilingualString();
+        name.withValue(NetexConstants.NETEX_POI_TOF_NAME);
+        MultilingualString description = new MultilingualString();
+        description.withValue(NetexConstants.NETEX_POI_TOF_DESCRIPTION);
+        typeOfFrame.withId(NetexConstants.NETEX_POI_TOF_ID)
+                .withVersion(NetexConstants.NETEX_POI_TOF_VERSION)
+                .withName(name)
+                .withDescription(description);
+
+        JAXBElement<TypeOfFrame> typeOfFrameElement = netexObjectFactory.createTypeOfFrame(typeOfFrame);
+        listMembers.add(typeOfFrameElement);
+
         prepareGeneralOrganisationForPointsOfInterest(mappedPointOfInterestCount, listMembers, netexSiteFrame, exportJobId);
         logger.info("Point of interest preparation completed");
 

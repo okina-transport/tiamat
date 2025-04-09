@@ -22,12 +22,14 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
+import java.math.*;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class BikesCSVHelper {
+
+    private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
     private static final Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
 
     private final static String DATA_GOUV_ENDPOINT = "https://api-adresse.data.gouv.fr/reverse/?lat=%s&lon=%s";
@@ -164,7 +166,6 @@ public class BikesCSVHelper {
                 parking.setSecure(true);
             }
 
-
             //Capacité totale du parking
             ParkingCapacity totalCapacity = new ParkingCapacity();
             totalCapacity.setParkingUserType(ParkingUserEnumeration.ALL_USERS);
@@ -201,7 +202,6 @@ public class BikesCSVHelper {
                     break;
             }
 
-
             if ("BOX INDIVIDUEL FERME".equals(bikeParkingDto.getProtection())) {
                 cycleStorageEquipment.setCage(true);
             }
@@ -233,6 +233,7 @@ public class BikesCSVHelper {
                 }
             }
 
+            parking.setParkingAreas(List.of(toParkingArea(parking, SpecificParkingAreaUsageEnumeration.PEDAL_CYCLE)));
 
             // Parking key values
             Set<String> existingIdLocal = parking.getOrCreateValues("id_local");
@@ -266,6 +267,21 @@ public class BikesCSVHelper {
 
             return parking;
         }).collect(Collectors.toList());
+    }
+
+    private static ParkingArea toParkingArea(Parking parking, SpecificParkingAreaUsageEnumeration specificParkingAreaUsage) {
+        ParkingArea parkingArea = new ParkingArea();
+        parkingArea.setName(new EmbeddableMultilingualString(parking.getName().toString()));
+        parkingArea.setTotalCapacity(parking.getTotalCapacity());
+        parkingArea.setSpecificParkingAreaUsage(specificParkingAreaUsage);
+        // maximumHeight is required by Netex Parking FRANCE profile v1.2
+        // We put 3 meters as default value to be compliant
+        parkingArea.setMaximumHeight(DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT);
+        // siteRef.ref is also required by Netex Parking FRANCE profile v1.2
+        SiteRefStructure siteRefStructure = new SiteRefStructure();
+        siteRefStructure.setRef(parking.getNetexId());
+        parkingArea.setSiteRef(new SiteRefStructure());
+        return parkingArea;
     }
 
     private static String buildBikeParkingName(DtoBikeParking bikeParkingDto, Boolean isRentalBike) {

@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 public class ParkingsCSVHelper {
 
+    private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
     public final static String DELIMETER_PARKING_ID_NAME = " : ";
     private static final Logger logger = LoggerFactory.getLogger(ParkingsCSVHelper.class);
     private final static Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
@@ -207,6 +208,8 @@ public class ParkingsCSVHelper {
             //Hauteur maximum
             if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")) {
                 parkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+            } else {
+                parkingArea.setMaximumHeight(DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT);
             }
 
 
@@ -233,6 +236,8 @@ public class ParkingsCSVHelper {
                 pmrParkingArea.setVersion(1L);
                 if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")) {
                     pmrParkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+                }  else {
+                    pmrParkingArea.setMaximumHeight(DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT);
                 }
                 pmrParkingArea.setName(new EmbeddableMultilingualString("Zone PMR", "FR"));
                 pmrParkingArea.setTotalCapacity(new BigInteger(parkingDto.getDisabledParkingNb()));
@@ -264,6 +269,8 @@ public class ParkingsCSVHelper {
                 carPoolParkingArea.setVersion(1L);
                 if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")) {
                     carPoolParkingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+                } else {
+                    carPoolParkingArea.setMaximumHeight(DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT);
                 }
                 carPoolParkingArea.setName(new EmbeddableMultilingualString("Zone réservée aux covoitureurs", "FR"));
                 carPoolParkingArea.setTotalCapacity(BigInteger.valueOf(Long.parseLong(parkingDto.getCarPoolingNb())));
@@ -283,6 +290,8 @@ public class ParkingsCSVHelper {
                 carSharingArea.setVersion(1L);
                 if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")) {
                     carSharingArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+                } else {
+                    carSharingArea.setMaximumHeight(DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT);
                 }
                 carSharingArea.setName(new EmbeddableMultilingualString("Zone Autopartage", "FR"));
                 carSharingArea.setTotalCapacity(BigInteger.valueOf(Long.parseLong(parkingDto.getCarSharingNb())));
@@ -371,6 +380,8 @@ public class ParkingsCSVHelper {
 
         if (parkingDto.getMaxHeight() != null && !parkingDto.getMaxHeight().equalsIgnoreCase("N/A")) {
             newArea.setMaximumHeight(new BigDecimal(parkingDto.getMaxHeight()));
+        } else {
+            newArea.setMaximumHeight(DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT);
         }
         newArea.setName(new EmbeddableMultilingualString(areaName, "FR"));
         newArea.setTotalCapacity(numberValue);

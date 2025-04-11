@@ -133,15 +133,17 @@ public class StopPlaceVersionedSaverService {
 
         }
 
-        if (existingVersion != null && existingVersion.getNetexId() != null && newVersion.getNetexId() != null && !newVersion.getNetexId().equals(existingVersion.getNetexId())) {
-            throw new IllegalArgumentException("Saving new version of different object is not allowed");
+        if (newVersion.getParentSiteRef() != null && !newVersion.isParentStopPlace()) {
+            StopPlace findedParent = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getParentSiteRef().getRef());
+            if (findedParent != null && findedParent.getNetexId().equals(newVersion.getParentSiteRef().getRef())) {
+                newVersion.getParentSiteRef().setVersion(String.valueOf(findedParent.getVersion()));
+            } else {
+                throw new IllegalArgumentException(String.format("The child stop : %s , has a ParentSiteRef %S that is not described in the file or is not in the database", newVersion.getNetexId(), newVersion.getParentSiteRef().getRef()));
+            }
         }
 
-        if (newVersion.getParentSiteRef() != null && !newVersion.isParentStopPlace()) {
-            throw new IllegalArgumentException("StopPlace " +
-                                                       newVersion.getNetexId() +
-                                                       " seems to be a child stop. Save the parent stop place instead: "
-                                                       + newVersion.getParentSiteRef());
+        if (existingVersion != null && existingVersion.getNetexId() != null && newVersion.getNetexId() != null && !newVersion.getNetexId().equals(existingVersion.getNetexId())) {
+            throw new IllegalArgumentException("Saving new version of different object is not allowed");
         }
 
         if (newVersion.getTariffZones() != null) {

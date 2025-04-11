@@ -62,6 +62,8 @@ public class StopPlacesImportHandler {
                                              List<JAXBElement<? extends EntityStructure>> members, AtomicInteger atomicInteger,
                                              List<org.rutebanken.tiamat.model.Quay> quaysParsed, Boolean containsMobiitiIds) {
         List<StopPlace> stopPlacesParsed = mapStopPlacesToTiamatModel(tiamatStopPlaces, quaysParsed);
+        // on trie la liste des stopplaces pour commencer l'enregistrement en bdd par les parents
+        stopPlacesParsed.sort(Comparator.comparing(stopPlace -> !stopPlace.isParentStopPlace()));
 
         int numberOfStopPlacesBeforeFiltering = stopPlacesParsed.size();
         logger.info("About to filter {} stop places based on topographic references: {}", stopPlacesParsed.size(), importParams.targetTopographicPlaces);

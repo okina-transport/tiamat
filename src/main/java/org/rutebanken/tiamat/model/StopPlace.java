@@ -25,6 +25,7 @@ import org.rutebanken.tiamat.model.tag.Tag;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.util.*;
 
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -105,6 +106,9 @@ public class StopPlace
     private ModificationEnumeration modificationEnumeration;
 
     private String provider;
+
+    @Column(name = "mdm_id")
+    protected Long mdmId;
 
     @Transient
     private Set<Tag> tags = new HashSet<>();
@@ -321,6 +325,14 @@ public class StopPlace
 
     public void setModificationEnumeration(ModificationEnumeration modificationEnumeration) {
         this.modificationEnumeration = modificationEnumeration;
+    }
+
+    public Long getMdmId() {
+        return mdmId;
+    }
+
+    public void setMdmId(Long mdmId) {
+        this.mdmId = mdmId;
     }
 
     public String getProvider() {

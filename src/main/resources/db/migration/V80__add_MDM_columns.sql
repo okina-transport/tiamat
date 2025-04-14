@@ -1,0 +1,2 @@
+ALTER TABLE quay ADD COLUMN mdm_id BIGINT;
+ALTER TABLE stop_place ADD COLUMN mdm_id BIGINT;

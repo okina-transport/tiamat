@@ -21,6 +21,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 
 import javax.persistence.*;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -42,6 +43,9 @@ public class Quay extends StopPlaceSpace_VersionStructure {
 
     @Column(name = "url")
     protected String url;
+
+    @Column(name = "mdm_id")
+    protected Long mdmId;
 
     /**
      * TODO: reconsider data type for compass bearing.
@@ -86,6 +90,14 @@ public class Quay extends StopPlaceSpace_VersionStructure {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public Long getMdmId() {
+        return mdmId;
+    }
+
+    public void setMdmId(Long mdmId) {
+        this.mdmId = mdmId;
     }
 
     @Override

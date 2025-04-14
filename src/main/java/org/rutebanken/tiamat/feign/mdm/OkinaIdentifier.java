@@ -1,12 +1,14 @@
 package org.rutebanken.tiamat.feign.mdm;
 
+import java.math.BigInteger;
+
 public class OkinaIdentifier {
 
     private String dataset;
 
     private String originalId;
 
-    private String superId;
+    private Long superId;
 
     public String getDataset() {
         return dataset;
@@ -24,11 +26,11 @@ public class OkinaIdentifier {
         this.originalId = originalId;
     }
 
-    public String getSuperId() {
+    public Long getSuperId() {
         return superId;
     }
 
-    public void setSuperId(String superId) {
+    public void setSuperId(Long superId) {
         this.superId = superId;
     }
 }

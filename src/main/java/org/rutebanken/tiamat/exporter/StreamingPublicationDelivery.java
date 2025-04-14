@@ -25,6 +25,7 @@ import org.rutebanken.tiamat.exporter.async.NetexMappingIterator;
 import org.rutebanken.tiamat.exporter.async.ParentStopFetchingIterator;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.TariffZone;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.VehicleModeEnumeration;
@@ -94,6 +95,9 @@ public class StreamingPublicationDelivery {
      * Enabling this for large xml files can lead to high memory consumption and/or massive performance impact.
      */
     private final boolean validateAgainstSchema;
+
+    @Autowired
+    private MdmService mdmService;
 
     @Autowired
     public StreamingPublicationDelivery(StopPlaceRepository stopPlaceRepository,
@@ -979,6 +983,7 @@ public class StreamingPublicationDelivery {
         logger.info("There are stop places to export");
 
         List<org.rutebanken.tiamat.model.StopPlace> recoveredStopPlaces = stopPlaceRepository.getStopPlaceInitializedForExport(stopPlacePrimaryIds);
+        mdmService.replaceTiamatIdByMdmId(recoveredStopPlaces);
 
         recoveredStopPlaces.forEach(this::addAdditionalInfo);
         logger.info("Feed of addAdditionalInfo completed");
@@ -1023,6 +1028,8 @@ public class StreamingPublicationDelivery {
 
         logger.info("Feed of listmembers completed.");
     }
+
+
 
     private void addAdditionalInfo(org.rutebanken.tiamat.model.StopPlace stopPlace) {
         if (stopPlace.getTransportMode() == null) {

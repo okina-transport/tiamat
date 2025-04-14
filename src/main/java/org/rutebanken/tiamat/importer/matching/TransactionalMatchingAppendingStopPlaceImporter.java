@@ -16,15 +16,19 @@
 package org.rutebanken.tiamat.importer.matching;
 
 import org.rutebanken.netex.model.StopPlace;
+import org.rutebanken.tiamat.config.TiamatProperties;
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
+import org.rutebanken.tiamat.feign.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
 import org.rutebanken.tiamat.importer.*;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByIdFinder;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
 import org.rutebanken.tiamat.importer.merging.QuayMerger;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.repository.TariffZoneRepository;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
@@ -38,14 +42,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -67,6 +64,9 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
     @Autowired
     private StopPlaceRepository stopPlaceRepository;
+
+    @Autowired
+    private QuayRepository quayRepository;
 
     @Autowired
     private TariffZoneRepository tariffZoneRepository;
@@ -98,13 +98,26 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     @Autowired
     private QuayMover quayMover;
 
+    @Autowired
+    private MdmService mdmService;
+
+    @Autowired
+    private TiamatProperties tiamatProperties;
+
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
                                  AtomicInteger stopPlacesCreatedOrUpdated, ImportParams importParams) throws TiamatBusinessException {
 
 
         stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
-        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
+
+        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces;
+        if (tiamatProperties.isMdmEnabled()){
+            foundStopPlaces = foundStopPlacesFromMDM(incomingStopPlace).stream().toList();
+        }else{
+            foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
+        }
+
         foundStopPlaces = removeExpiredVersions(foundStopPlaces);
 
 
@@ -265,6 +278,40 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             }
         }
+    }
+
+    private Set<org.rutebanken.tiamat.model.StopPlace> foundStopPlacesFromMDM( org.rutebanken.tiamat.model.StopPlace incomingStopPlace) {
+        Set<org.rutebanken.tiamat.model.StopPlace> results = new HashSet<>();
+        Optional<Long> stopPlaceOpt = mdmService.getExistingStopPlaceMdmIds(incomingStopPlace);
+        if (stopPlaceOpt.isPresent()) {
+            org.rutebanken.tiamat.model.StopPlace existingStopPlace = stopPlaceRepository.findFirstByMdmIdOrderByVersionDesc(stopPlaceOpt.get());
+            if (existingStopPlace != null){
+                results.add(existingStopPlace);
+            }
+        }
+
+        if (incomingStopPlace.getQuays() != null && !incomingStopPlace.getQuays().isEmpty()) {
+            List<OkinaIdentifier> quayMdmIds = mdmService.getExistingQuaysMdmIds(incomingStopPlace.getProvider().toUpperCase(), incomingStopPlace.getQuays());
+            List<Quay> existingQuays = foundQuaysFromMdmIds(quayMdmIds);
+            List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceRepository.findStopPlaceByQuays(existingQuays);
+            if (foundStopPlaces != null && !foundStopPlaces.isEmpty()) {
+                results.addAll(foundStopPlaces);
+            }
+        }
+        return results;
+    }
+
+    private List<Quay> foundQuaysFromMdmIds(List<OkinaIdentifier> quayMdmIds) {
+
+        if (quayMdmIds == null || quayMdmIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return quayMdmIds.stream()
+                        .map(okinaIdentifier -> quayRepository.findFirstByMdmIdOrderByVersionDesc(okinaIdentifier.getSuperId()))
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+
     }
 
     private boolean updateTariffZone(org.rutebanken.tiamat.model.StopPlace incomingStopPlace, org.rutebanken.tiamat.model.StopPlace copy, boolean tariffZoneChanged) {

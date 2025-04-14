@@ -49,5 +49,8 @@ public interface StopPlaceRepository extends StopPlaceRepositoryCustom, EntityIn
     Iterator<StopPlace> scrollStopPlaces(Set<Long> stopPlacePrimaryIds);
 
     List<StopPlace> getStopPlaceWithQuaysWithoutPostCode();
+
+
+    StopPlace findFirstByMdmIdOrderByVersionDesc(Long mdmId);
 }
 

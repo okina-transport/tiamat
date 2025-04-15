@@ -203,15 +203,14 @@ public class MergingParkingImporter {
                 (!new HashSet<>(copyParking.getPlaceEquipments().getInstalledEquipment()).containsAll(incomingParking.getPlaceEquipments().getInstalledEquipment()) ||
                 !new HashSet<>(incomingParking.getPlaceEquipments().getInstalledEquipment()).containsAll(copyParking.getPlaceEquipments().getInstalledEquipment()))) {
 
-            for (InstalledEquipment_VersionStructure cycleStorageEquipment : incomingParking.getPlaceEquipments().getInstalledEquipment()) {
-                copyEquipments.add(parkingInstalledEquipmentsVersionedSaverService.saveNewVersion(cycleStorageEquipment));
-            }
             copyParking.getPlaceEquipments().getInstalledEquipment().clear();
-            for (InstalledEquipment_VersionStructure equip : copyEquipments) {
-                copyParking.getPlaceEquipments().getInstalledEquipment().add(equip);
-            }
 
             copyParking.setPlaceEquipments(parkingPlaceEquipmentsVersionedSaverService.saveNewVersion(copyParking.getPlaceEquipments()));
+
+            for (InstalledEquipment_VersionStructure cycleStorageEquipment : incomingParking.getPlaceEquipments().getInstalledEquipment()) {
+                copyParking.getPlaceEquipments().getInstalledEquipment().add(parkingInstalledEquipmentsVersionedSaverService.saveNewVersion(cycleStorageEquipment));
+            }
+
             logger.info("Updated equipments to {} for parking {}", copyParking.getPlaceEquipments(), copyParking);
             equipmentChanged = true;
         }

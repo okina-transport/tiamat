@@ -10,7 +10,6 @@ import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
-import org.rutebanken.tiamat.rest.dto.DtoQuayResource;
 import org.rutebanken.tiamat.service.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,6 +151,8 @@ public class BikesCSVHelper {
                 parking.setParkingType(ParkingTypeEnumeration.OTHER);
             }
 
+            parking.setParkingLayout(ParkingLayoutEnumeration.UNDEFINED);
+            parking.getParkingVehicleTypes().add(ParkingVehicleEnumeration.PEDAL_CYCLE);
 
             // Parking type ref
             if ("CONSIGNE COLLECTIVE FERMEE".equals(bikeParkingDto.getProtection())) {
@@ -175,6 +176,7 @@ public class BikesCSVHelper {
 
 
             ParkingProperties parkingProps = new ParkingProperties();
+            parkingProps.getParkingVehicleTypes().add(ParkingVehicleEnumeration.PEDAL_CYCLE);
             parkingProps.setSpaces(new ArrayList<>());
             parkingProps.getSpaces().add(totalCapacity);
             parking.setParkingProperties(new ArrayList<>());

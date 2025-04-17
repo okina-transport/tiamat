@@ -19,6 +19,7 @@ import org.rutebanken.tiamat.importer.finder.NearbyParkingFinder;
 import org.rutebanken.tiamat.importer.finder.ParkingFromOriginalIdFinder;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
+import org.rutebanken.tiamat.repository.*;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
 import org.rutebanken.tiamat.versioning.save.*;
 import org.rutebanken.tiamat.versioning.VersionCreator;
@@ -63,16 +64,17 @@ public class MergingParkingImporter {
 
     @Autowired
     public MergingParkingImporter(ParkingFromOriginalIdFinder parkingFromOriginalIdFinder,
-                                  NearbyParkingFinder nearbyParkingFinder,
-                                  ReferenceResolver referenceResolver,
-                                  NetexMapper netexMapper,
-                                  ParkingVersionedSaverService parkingVersionedSaverService,
-                                  ParkingPropertiesVersionedSaverService parkingPropertiesVersionedSaverService,
-                                  ParkingAreasVersionedSaverService parkingAreasVersionedSaverService,
-                                  ParkingPlaceEquipmentsVersionedSaverService parkingPlaceEquipmentsVersionedSaverService,
-                                  ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService,
-                                  VersionCreator versionCreator,
-                                  MergingUtils mergingUtils) {
+								  NearbyParkingFinder nearbyParkingFinder,
+								  ReferenceResolver referenceResolver,
+								  NetexMapper netexMapper,
+								  ParkingVersionedSaverService parkingVersionedSaverService,
+								  ParkingPropertiesVersionedSaverService parkingPropertiesVersionedSaverService,
+                                  AccessibilityVersionedSaverService accessibilityVersionedSaverService,
+								  ParkingAreasVersionedSaverService parkingAreasVersionedSaverService,
+								  ParkingPlaceEquipmentsVersionedSaverService parkingPlaceEquipmentsVersionedSaverService,
+								  ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService,
+								  VersionCreator versionCreator,
+								  MergingUtils mergingUtils, AccessibilityAssessmentRepository accessibilityAssessmentRepository) {
         this.parkingFromOriginalIdFinder = parkingFromOriginalIdFinder;
         this.nearbyParkingFinder = nearbyParkingFinder;
         this.referenceResolver = referenceResolver;
@@ -182,6 +184,12 @@ public class MergingParkingImporter {
             propertiesChanged = true;
         }
 
+        boolean accessibilityChanged = false;
+        if (incomingParking.getAccessibilityAssessment() != null) {
+            mergingUtils.updateAccessibilityAccessment(copyParking, incomingParking, netexId);
+            accessibilityChanged = true;
+        }
+
         boolean areasChanged = false;
         List<ParkingArea> copyParkingAreas = new ArrayList<>();
         if (incomingParking.getParkingAreas() != null &&
@@ -217,7 +225,7 @@ public class MergingParkingImporter {
 
         if (keyValuesChanged || nameChanged || allAreasWheelchairAccessibleChanged || typeChanged || centroidChanged ||
                 operatorChanged ||vehicleType || totalCapacityChanged || paymentProcessChanged || rechargingAvailableChanged ||
-                bookingUrlChanged || propertiesChanged || areasChanged || equipmentChanged) {
+                bookingUrlChanged || propertiesChanged || areasChanged || equipmentChanged || accessibilityChanged) {
             logger.info("Updated existing parking {}. ", copyParking);
             copyParking = parkingVersionedSaverService.saveNewVersion(copyParking);
             return updateCache(copyParking);

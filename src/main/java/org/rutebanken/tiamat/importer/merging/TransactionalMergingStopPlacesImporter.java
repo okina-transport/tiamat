@@ -17,7 +17,6 @@ package org.rutebanken.tiamat.importer.merging;
 
 import org.rutebanken.tiamat.importer.StopPlaceTopographicPlaceReferenceUpdater;
 import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +48,10 @@ public class TransactionalMergingStopPlacesImporter {
         this.topographicPlaceReferenceUpdater = topographicPlaceReferenceUpdater;
     }
 
-    public Collection<org.rutebanken.netex.model.StopPlace> importStopPlaces(List<StopPlace> stopPlaces, AtomicInteger stopPlacesCreated, Boolean containsMobiitiIds) {
+    public Collection<org.rutebanken.netex.model.StopPlace> importStopPlaces(List<StopPlace> stopPlaces,
+                                                                             AtomicInteger stopPlacesCreated,
+                                                                             Boolean containsMobiitiIds,
+                                                                             boolean recomputeStopPlacesLocation) {
 
         List<org.rutebanken.netex.model.StopPlace> createdStopPlaces = stopPlaces
                 .stream()
@@ -58,7 +60,7 @@ public class TransactionalMergingStopPlacesImporter {
                     org.rutebanken.netex.model.StopPlace importedStop;
                     try {
                         topographicPlaceReferenceUpdater.updateTopographicReference(stopPlace);
-                        importedStop = mergingStopPlaceImporter.importStopPlace(stopPlace, containsMobiitiIds);
+                        importedStop = mergingStopPlaceImporter.importStopPlace(stopPlace, containsMobiitiIds, recomputeStopPlacesLocation);
                     } catch (Exception e) {
                         throw new RuntimeException("Could not import stop place " + stopPlace, e);
                     }

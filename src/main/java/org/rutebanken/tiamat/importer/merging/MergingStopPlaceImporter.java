@@ -93,7 +93,7 @@ public class MergingStopPlaceImporter {
      * <p>
      * Attempts to use saveAndFlush or hibernate flush mode always have not been successful.
      */
-    public org.rutebanken.netex.model.StopPlace importStopPlace(StopPlace newStopPlace, Boolean containsMobiitiIds) throws InterruptedException, ExecutionException {
+    public org.rutebanken.netex.model.StopPlace importStopPlace(StopPlace newStopPlace, Boolean containsMobiitiIds, boolean recomputeStopPlacesLocation) throws InterruptedException, ExecutionException {
 
         logger.debug("Transaction active: {}. Isolation level: {}", TransactionSynchronizationManager.isActualTransactionActive(), TransactionSynchronizationManager.getCurrentTransactionIsolationLevel());
 
@@ -103,24 +103,26 @@ public class MergingStopPlaceImporter {
         }
 
         if (containsMobiitiIds) {
-            return netexMapper.mapToNetexModel(importStopPlaceContainsMobiitiIdsWithoutNetexMapping(newStopPlace));
+            return netexMapper.mapToNetexModel(importStopPlaceContainsMobiitiIdsWithoutNetexMapping(newStopPlace, recomputeStopPlacesLocation));
         }
-        return netexMapper.mapToNetexModel(importStopPlaceWithoutNetexMapping(newStopPlace));
+        return netexMapper.mapToNetexModel(importStopPlaceWithoutNetexMapping(newStopPlace, recomputeStopPlacesLocation));
     }
 
-    public StopPlace importStopPlaceWithoutNetexMapping(StopPlace incomingStopPlace) throws InterruptedException, ExecutionException {
-        return handleCompletelyNewStopPlace(incomingStopPlace);
+    public StopPlace importStopPlaceWithoutNetexMapping(StopPlace incomingStopPlace,
+                                                        boolean recomputeStopPlacesLocation) throws InterruptedException,
+            ExecutionException {
+        return handleCompletelyNewStopPlace(incomingStopPlace, recomputeStopPlacesLocation);
     }
 
-    public StopPlace importStopPlaceContainsMobiitiIdsWithoutNetexMapping(StopPlace incomingStopPlace) {
+    public StopPlace importStopPlaceContainsMobiitiIdsWithoutNetexMapping(StopPlace incomingStopPlace, boolean recomputeStopPlacesLocation) {
         final StopPlace foundStopPlace = stopPlaceFromOriginalIdFinder.findStopPlace(incomingStopPlace);
 
         final StopPlace stopPlace;
         if (foundStopPlace != null) {
-            stopPlace = handleAlreadyExistingStopPlaceContainsMobiitiIds(foundStopPlace, incomingStopPlace);
+            stopPlace = handleAlreadyExistingStopPlaceContainsMobiitiIds(foundStopPlace, incomingStopPlace, recomputeStopPlacesLocation);
 
         } else {
-            stopPlace = handleCompletelyNewStopPlaceContainsMobiitiIds(incomingStopPlace);
+            stopPlace = handleCompletelyNewStopPlaceContainsMobiitiIds(incomingStopPlace, recomputeStopPlacesLocation);
         }
 
         resolveAndFixParentSiteRef(stopPlace);
@@ -128,7 +130,7 @@ public class MergingStopPlaceImporter {
         return stopPlace;
     }
 
-    public StopPlace handleCompletelyNewStopPlace(StopPlace incomingStopPlace) throws ExecutionException {
+    public StopPlace handleCompletelyNewStopPlace(StopPlace incomingStopPlace, boolean recomputeStopPlacesLocation) throws ExecutionException {
 
         if (incomingStopPlace.getNetexId() != null) {
             // This should not be necesarry.
@@ -147,7 +149,9 @@ public class MergingStopPlaceImporter {
 //            logger.trace("Importing quays for new stop place {}", incomingStopPlace);
 //        }
 
-        stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
+        if (recomputeStopPlacesLocation) {
+            stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
+        }
         // Ignore incoming version. Always set version to 1 for new stop places.
         logger.debug("New stop place: {}. Setting version to \"1\"", incomingStopPlace.getName());
         versionCreator.createCopy(incomingStopPlace, StopPlace.class);
@@ -169,8 +173,10 @@ public class MergingStopPlaceImporter {
         return stopPlace;
     }
 
-    public StopPlace handleCompletelyNewStopPlaceContainsMobiitiIds(StopPlace incomingStopPlace) {
-        stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
+    public StopPlace handleCompletelyNewStopPlaceContainsMobiitiIds(StopPlace incomingStopPlace, boolean recomputeStopPlacesLocation) {
+        if (recomputeStopPlacesLocation) {
+            stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
+        }
         // Ignore incoming version. Always set version to 1 for new stop places.
         logger.debug("New stop place: {}. Setting version to \"1\"", incomingStopPlace.getName());
         versionCreator.createCopy(incomingStopPlace, StopPlace.class);
@@ -182,7 +188,7 @@ public class MergingStopPlaceImporter {
         return updateCache(incomingStopPlace);
     }
 
-    public StopPlace handleAlreadyExistingStopPlaceContainsMobiitiIds(StopPlace existingStopPlace, StopPlace incomingStopPlace) {
+    public StopPlace handleAlreadyExistingStopPlaceContainsMobiitiIds(StopPlace existingStopPlace, StopPlace incomingStopPlace, boolean recomputeStopPlacesLocation) {
         logger.debug("Found existing stop place {} from incoming {}", existingStopPlace, incomingStopPlace);
 
         StopPlace copyStopPlace = versionCreator.createCopy(existingStopPlace, StopPlace.class);

@@ -16,10 +16,9 @@
 package org.rutebanken.tiamat.importer.merging;
 
 
-import org.locationtech.jts.geom.Coordinate;
 import org.junit.Test;
+import org.locationtech.jts.geom.Coordinate;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
-import org.rutebanken.tiamat.importer.merging.TransactionalMergingStopPlacesImporter;
 import org.rutebanken.tiamat.model.AccessibilityAssessment;
 import org.rutebanken.tiamat.model.AccessibilityLimitation;
 import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
@@ -57,7 +56,7 @@ public class TransactionalMergingStopPlacesImporterTest extends TiamatIntegratio
         for (int stopPlaceIndex = 0; stopPlaceIndex < stopPlaces; stopPlaceIndex++) {
 
             StopPlace stopPlace = new StopPlace();
-            stopPlace.setNetexId(String.valueOf("MOBIITI:StopPlace:"+stopPlaceIndex * Math.abs(random.nextLong())));
+            stopPlace.setNetexId("MOBIITI:StopPlace:" + stopPlaceIndex * Math.abs(random.nextLong()));
 
             double longitude = 39.61441 * Math.abs(random.nextDouble());
             double latitude = -144.22765 * Math.abs(random.nextDouble());
@@ -66,7 +65,7 @@ public class TransactionalMergingStopPlacesImporterTest extends TiamatIntegratio
             stopPlacesCreated.add(stopPlace);
         }
 
-        siteFrameImporter.importStopPlaces(stopPlacesCreated, new AtomicInteger(), false);
+        siteFrameImporter.importStopPlaces(stopPlacesCreated, new AtomicInteger(), false, true);
     }
 
 
@@ -116,7 +115,7 @@ public class TransactionalMergingStopPlacesImporterTest extends TiamatIntegratio
         sp.add(stopPlace);
 
         AtomicInteger counter = new AtomicInteger();
-        Collection<org.rutebanken.netex.model.StopPlace> importStopPlaces = siteFrameImporter.importStopPlaces(sp, counter, false);
+        Collection<org.rutebanken.netex.model.StopPlace> importStopPlaces = siteFrameImporter.importStopPlaces(sp, counter, false, true);
 
 
         assertThat(importStopPlaces).hasSize(1);

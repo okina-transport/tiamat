@@ -105,15 +105,13 @@ public class StopPlaceImportHandler {
                     .map(sp -> (org.rutebanken.netex.model.StopPlace) sp.getValue())
                     .collect(Collectors.toList()));
 
-            if(providerRepository.getProviders().stream().anyMatch(provider -> provider.getChouetteInfo().getReferential().equals(importParams.providerCode))){
+            if (providerRepository.getProviders().stream().anyMatch(provider -> provider.getChouetteInfo().getReferential().equals(importParams.providerCode))) {
                 tiamatStops.forEach(stop -> stop.setProvider(importParams.providerCode));
-            }
-            else{
+            } else {
                 providerRepository.populate();
-                if (providerRepository.getProviders().stream().noneMatch(provider -> provider.getChouetteInfo().getReferential().equals(importParams.providerCode))){
+                if (providerRepository.getProviders().stream().noneMatch(provider -> provider.getChouetteInfo().getReferential().equals(importParams.providerCode))) {
                     throw new ProviderException("No provider defined");
-                }
-                else{
+                } else {
                     tiamatStops.forEach(stop -> stop.setProvider(importParams.providerCode));
                 }
             }
@@ -160,12 +158,14 @@ public class StopPlaceImportHandler {
                 lock.lock();
                 try {
                     if (importParams.importType == null || importParams.importType.equals(ImportType.MERGE)) {
-                        importedOrMatchedNetexStopPlaces = transactionalMergingStopPlacesImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated, false);
+                        importedOrMatchedNetexStopPlaces =
+                                transactionalMergingStopPlacesImporter.importStopPlaces(tiamatStops,
+                                        stopPlacesCreatedMatchedOrUpdated, false, importParams.recomputeStopPlacesLocation);
                     } else if (importParams.importType.equals(ImportType.INITIAL)) {
                         importedOrMatchedNetexStopPlaces = parallelInitialStopPlaceImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated);
                     } else if (importParams.importType.equals(ImportType.MATCH)) {
                         importedOrMatchedNetexStopPlaces = matchingAppendingIdStopPlacesImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated, importParams);
-                    } else if (importParams.importType.equals(ImportType.ON_MOVE_ONLY)){
+                    } else if (importParams.importType.equals(ImportType.ON_MOVE_ONLY)) {
                         importedOrMatchedNetexStopPlaces = matchingAppendingIdStopPlacesImporter.importStopPlaces(tiamatStops, stopPlacesCreatedMatchedOrUpdated, importParams);
                     } else {
                         throw new NotImplementedException("Import type " + importParams.importType + " not implemented ");

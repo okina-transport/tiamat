@@ -15,16 +15,14 @@
 
 package org.rutebanken.tiamat.importer.merging;
 
+import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
-import org.junit.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.SiteFrame;
 import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.model.StopTypeEnumeration;
-import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
@@ -85,7 +83,7 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
 //        assertThat(importResult.getQuays().iterator().next().getName().getValue()).isEqualTo(name);
 //
 //    }
-    
+
     @Test
     public void addQuaysToStopPlaceWithoutQuays() throws ExecutionException, InterruptedException {
         String name = "Eselbergveien";
@@ -97,13 +95,13 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
         SiteFrame siteFrame = new SiteFrame();
 
         // Import first stop place.
-        mergingStopPlaceImporter.importStopPlace(firstStopPlace, false);
+        mergingStopPlaceImporter.importStopPlace(firstStopPlace, false, true);
 
         StopPlace secondStopPlace = createStopPlace(name, longitude, latitude, null);
         secondStopPlace.getQuays().add(createQuay(name, longitude, latitude, null));
 
         // Import second stop place
-        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace);
+        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace, true);
 
         assertThat(importResult.getNetexId()).isEqualTo(importResult.getNetexId());
         assertThat(importResult.getQuays()).hasSize(1);
@@ -132,14 +130,13 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
 //    }
 
 
-
     @Test
     public void reproduceIssueWithCollectionNotAssosiatedWithAnySession() throws ExecutionException, InterruptedException {
         String name = "Skillebekkgata";
         StopPlace firstStopPlace = createStopPlaceWithQuay(name, 6, 60, "MOBIITI:StopPlace:11063200", "MOBIITI:Quay:11063200");
-        mergingStopPlaceImporter.importStopPlace(firstStopPlace, false);
+        mergingStopPlaceImporter.importStopPlace(firstStopPlace, false, true);
         StopPlace secondStopPlace = createStopPlaceWithQuay(name, 6, 60.0001, "MOBIITI:StopPlace:11063198", "MOBIITI:Quay:11063198");
-        mergingStopPlaceImporter.importStopPlace(secondStopPlace, false);
+        mergingStopPlaceImporter.importStopPlace(secondStopPlace, false, true);
     }
 
 //    /**
@@ -275,9 +272,9 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
 //        assertThat(importResult.getQuays()).hasSize(1);
 //        assertThat(importResult.getQuays()).contains(terminal1);
 //    }
-    
+
     private Point point(double longitude, double latitude) {
-        return 
+        return
                 geometryFactory.createPoint(
                         new Coordinate(longitude, latitude));
     }

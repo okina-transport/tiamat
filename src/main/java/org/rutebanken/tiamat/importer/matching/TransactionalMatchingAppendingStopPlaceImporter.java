@@ -18,7 +18,10 @@ package org.rutebanken.tiamat.importer.matching;
 import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
-import org.rutebanken.tiamat.importer.*;
+import org.rutebanken.tiamat.importer.AlternativeStopTypes;
+import org.rutebanken.tiamat.importer.ImportParams;
+import org.rutebanken.tiamat.importer.ImporterUtils;
+import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByIdFinder;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
 import org.rutebanken.tiamat.importer.merging.QuayMerger;
@@ -38,17 +41,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.FARE_ZONE;
@@ -61,34 +56,24 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     private static final Logger logger = LoggerFactory.getLogger(TransactionalMatchingAppendingStopPlaceImporter.class);
 
     private static final boolean CREATE_NEW_QUAYS = true;
-
-    @Autowired
-    private KeyValueListAppender keyValueListAppender;
-
-    @Autowired
-    private StopPlaceRepository stopPlaceRepository;
-
-    @Autowired
-    private TariffZoneRepository tariffZoneRepository;
-
-    @Autowired
-    private QuayMerger quayMerger;
-
-    @Autowired
-    private NetexMapper netexMapper;
-
-    @Autowired
-    private StopPlaceByIdFinder stopPlaceByIdFinder;
-
-    @Autowired
-    private AlternativeStopTypes alternativeStopTypes;
-
-    @Autowired
-    private MergingStopPlaceImporter mergingStopPlaceImporter;
-
     @Autowired
     protected VersionCreator versionCreator;
-
+    @Autowired
+    private KeyValueListAppender keyValueListAppender;
+    @Autowired
+    private StopPlaceRepository stopPlaceRepository;
+    @Autowired
+    private TariffZoneRepository tariffZoneRepository;
+    @Autowired
+    private QuayMerger quayMerger;
+    @Autowired
+    private NetexMapper netexMapper;
+    @Autowired
+    private StopPlaceByIdFinder stopPlaceByIdFinder;
+    @Autowired
+    private AlternativeStopTypes alternativeStopTypes;
+    @Autowired
+    private MergingStopPlaceImporter mergingStopPlaceImporter;
     @Autowired
     private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
 
@@ -102,8 +87,9 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                                  List<StopPlace> matchedStopPlaces,
                                  AtomicInteger stopPlacesCreatedOrUpdated, ImportParams importParams) throws TiamatBusinessException {
 
-
-        stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
+        if (importParams.recomputeStopPlacesLocation) {
+            stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
+        }
         List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
         foundStopPlaces = removeExpiredVersions(foundStopPlaces);
 
@@ -157,7 +143,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             StopPlace newStopPlace = null;
             try {
-                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace, false);
+                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace, false, importParams.recomputeStopPlacesLocation);
             } catch (InterruptedException | ExecutionException e) {
                 logger.error("Problem while adding new stop place", e);
             }
@@ -183,11 +169,8 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 logger.debug("Found matching stop place {}", existingStopPlace);
 
 
-                boolean keyValuesChanged = false;
+                boolean keyValuesChanged = keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy);
 
-                if (keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy)) {
-                    keyValuesChanged = true;
-                }
                 if (keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy)) {
                     keyValuesChanged = true;
                 }
@@ -229,12 +212,11 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
                 boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS, importParams);
                 boolean centroidChanged = false;
-                if (!importParams.keepStopGeolocalisation){
+                if (!importParams.keepStopGeolocalisation) {
                     if (incomingStopPlace.getCentroid() != null && !incomingStopPlace.getCentroid().equalsExact(copy.getCentroid(), 0.0001)) {
                         copy.setCentroid(incomingStopPlace.getCentroid());
                         centroidChanged = true;
-                    }
-                    else {
+                    } else if (importParams.recomputeStopPlacesLocation) {
                         centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
                     }
                 }
@@ -274,15 +256,14 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
             }
             for (TariffZoneRef tariffZoneRef : incomingStopPlace.getTariffZones()) {
                 String netexId = tariffZoneRepository.findFirstByKeyValue(NetexIdMapper.FARE_ZONE, tariffZoneRef.getRef());
-                if(netexId == null) {
+                if (netexId == null) {
                     copy.getTariffZones().add(tariffZoneRef);
                     tariffZoneChanged = true;
-                }
-                else {
-                    for(TariffZoneRef tariffZoneRefCopy : copy.getTariffZones()){
+                } else {
+                    for (TariffZoneRef tariffZoneRefCopy : copy.getTariffZones()) {
                         TariffZone tariffZone = tariffZoneRepository.findFirstByNetexIdOrderByVersionDesc(tariffZoneRefCopy.getRef());
-                        for(String ref : tariffZone.getKeyValues().get(FARE_ZONE).getItems()){
-                            if(!ref.equals(tariffZoneRef.getRef())){
+                        for (String ref : tariffZone.getKeyValues().get(FARE_ZONE).getItems()) {
+                            if (!ref.equals(tariffZoneRef.getRef())) {
                                 tariffZoneRef.setRef(netexId);
                                 copy.getTariffZones().add(tariffZoneRef);
                                 tariffZoneChanged = true;
@@ -296,14 +277,14 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     }
 
     private List<org.rutebanken.tiamat.model.StopPlace> removeExpiredVersions(List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces) {
-        if (foundStopPlaces == null || foundStopPlaces.isEmpty()){
+        if (foundStopPlaces == null || foundStopPlaces.isEmpty()) {
             return new ArrayList<>();
         }
 
         List<org.rutebanken.tiamat.model.StopPlace> filteredStopPlaces = new ArrayList<>();
         for (org.rutebanken.tiamat.model.StopPlace foundStopPlace : foundStopPlaces) {
-            if(foundStopPlace.getValidBetween() != null &&
-                    (foundStopPlace.getValidBetween().getToDate() == null || foundStopPlace.getValidBetween().getToDate().isAfter(Instant.now()))){
+            if (foundStopPlace.getValidBetween() != null &&
+                    (foundStopPlace.getValidBetween().getToDate() == null || foundStopPlace.getValidBetween().getToDate().isAfter(Instant.now()))) {
                 filteredStopPlaces.add(foundStopPlace);
             }
         }
@@ -317,14 +298,14 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
             return false;
         }
 
-        if (existingStopPlace.getTransportMode() == null){
+        if (existingStopPlace.getTransportMode() == null) {
             // to repair old data with no transport mode defined
             fillEmptyTransportMode(existingStopPlace);
         }
 
         Set<VehicleModeEnumeration> completeTransportModeSet = new HashSet<>();
         completeTransportModeSet.add(existingStopPlace.getTransportMode());
-        if (!existingStopPlace.getOtherTransportModes().isEmpty()){
+        if (!existingStopPlace.getOtherTransportModes().isEmpty()) {
             completeTransportModeSet.addAll(existingStopPlace.getOtherTransportModes());
         }
         completeTransportModeSet.add(incomingTransportMode);
@@ -343,23 +324,23 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     }
 
     private void fillEmptyTransportMode(org.rutebanken.tiamat.model.StopPlace existingStopPlace) {
-        if (StopTypeEnumeration.ONSTREET_BUS.equals(existingStopPlace.getStopPlaceType())){
+        if (StopTypeEnumeration.ONSTREET_BUS.equals(existingStopPlace.getStopPlaceType())) {
             existingStopPlace.setTransportMode(VehicleModeEnumeration.BUS);
         }
 
-        if (StopTypeEnumeration.ONSTREET_TRAM.equals(existingStopPlace.getStopPlaceType()) || StopTypeEnumeration.METRO_STATION.equals(existingStopPlace.getStopPlaceType())){
+        if (StopTypeEnumeration.ONSTREET_TRAM.equals(existingStopPlace.getStopPlaceType()) || StopTypeEnumeration.METRO_STATION.equals(existingStopPlace.getStopPlaceType())) {
             existingStopPlace.setTransportMode(VehicleModeEnumeration.TRAM);
         }
 
-        if (StopTypeEnumeration.FERRY_STOP.equals(existingStopPlace.getStopPlaceType())){
+        if (StopTypeEnumeration.FERRY_STOP.equals(existingStopPlace.getStopPlaceType())) {
             existingStopPlace.setTransportMode(VehicleModeEnumeration.FERRY);
         }
 
-        if (StopTypeEnumeration.RAIL_STATION.equals(existingStopPlace.getStopPlaceType())){
+        if (StopTypeEnumeration.RAIL_STATION.equals(existingStopPlace.getStopPlaceType())) {
             existingStopPlace.setTransportMode(VehicleModeEnumeration.RAIL);
         }
 
-        if (StopTypeEnumeration.METRO_STATION.equals(existingStopPlace.getStopPlaceType())){
+        if (StopTypeEnumeration.METRO_STATION.equals(existingStopPlace.getStopPlaceType())) {
             existingStopPlace.setTransportMode(VehicleModeEnumeration.TRAM);
         }
     }
@@ -405,12 +386,8 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
             return true;
         }
 
-        if (VehicleModeEnumeration.OTHER.equals(primaryTransportMode) &&
-                StopTypeEnumeration.OTHER.equals(stopPlace.getStopPlaceType())) {
-            return true;
-        }
-
-        return false;
+        return VehicleModeEnumeration.OTHER.equals(primaryTransportMode) &&
+                StopTypeEnumeration.OTHER.equals(stopPlace.getStopPlaceType());
     }
 
     private VehicleModeEnumeration getPrimaryTransportMode(Set<VehicleModeEnumeration> completeTransportModeSet) {

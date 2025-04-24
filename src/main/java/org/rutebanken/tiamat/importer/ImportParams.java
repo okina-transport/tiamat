@@ -50,6 +50,9 @@ public class ImportParams {
     @QueryParam(value = "updateStopAccessibility")
     public boolean updateStopAccessibility;
 
+    @QueryParam(value = "recomputeStopPlacesLocation")
+    public boolean recomputeStopPlacesLocation = true;
+
     @QueryParam(value = "keepStopNames")
     public boolean keepStopNames;
 

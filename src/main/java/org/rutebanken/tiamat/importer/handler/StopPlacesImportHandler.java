@@ -17,7 +17,7 @@ package org.rutebanken.tiamat.importer.handler;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
-import org.rutebanken.netex.model.*;
+import org.rutebanken.netex.model.EntityStructure;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.filter.ZoneTopographicPlaceFilter;
 import org.rutebanken.tiamat.importer.matching.MatchingAppendingIdStopPlacesImporter;
@@ -31,7 +31,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.xml.bind.JAXBElement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
@@ -84,7 +87,7 @@ public class StopPlacesImportHandler {
         try {
             if (containsMobiitiIds) {
                 logger.info("Starting import of stopPlace with Mobiiti Ids");
-                importedStopPlaces = transactionalMergingStopPlacesImporter.importStopPlaces(stopPlacesParsed, atomicInteger, true);
+                importedStopPlaces = transactionalMergingStopPlacesImporter.importStopPlaces(stopPlacesParsed, atomicInteger, true, true);
 
             } else {
                 logger.info("Starting import of stopPlace with external provider Ids");

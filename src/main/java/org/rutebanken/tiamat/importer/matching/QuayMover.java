@@ -1,21 +1,17 @@
 package org.rutebanken.tiamat.importer.matching;
 
-import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
-import org.rutebanken.tiamat.importer.merging.QuayMerger;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.service.stopplace.StopPlaceQuayMover;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 /**
  * Classe pour déplacer les quais d'un arrêt à un autre
@@ -25,11 +21,9 @@ import java.util.stream.Collectors;
 public class QuayMover {
 
     @Autowired
-    private StopPlaceQuayMover stopPlaceQuayMover;
-
-    @Autowired
     protected VersionCreator versionCreator;
-
+    @Autowired
+    private StopPlaceQuayMover stopPlaceQuayMover;
     @Autowired
     private MergingStopPlaceImporter mergingStopPlaceImporter;
 
@@ -41,6 +35,7 @@ public class QuayMover {
 
     /**
      * On boucle sur les arrêts trouvés avec les identifiants des quais du point d'arrêt arrivant
+     *
      * @param foundStopPlaces
      * @param incomingStopPlace
      * @throws ExecutionException
@@ -66,7 +61,7 @@ public class QuayMover {
         if (!incomingStopPlaceAlreadyExists) {
             StopPlace copyIncomingStopPlace = versionCreator.createCopy(incomingStopPlace, StopPlace.class);
             copyIncomingStopPlace.getQuays().clear();
-            targetStopPlace = mergingStopPlaceImporter.handleCompletelyNewStopPlace(copyIncomingStopPlace);
+            targetStopPlace = mergingStopPlaceImporter.handleCompletelyNewStopPlace(copyIncomingStopPlace, true);
         }
 
         //On construit une liste qui contient l'ensemble des originalIds des quays de l'incoming StopPlace
@@ -85,7 +80,7 @@ public class QuayMover {
             for (Quay quay : stopPlace.getQuays()) {
                 //On vérifie si le quai à déplacer doit l'être pour tout les producteurs
                 if (incomingQuaysOriginalIds.containsAll(quay.getOriginalIds())) {
-                        stopPlaceQuayMover.moveQuays(Collections.singletonList(quay.getNetexId()), targetStopPlace.getNetexId(), moveQuayComment, moveQuayComment);
+                    stopPlaceQuayMover.moveQuays(Collections.singletonList(quay.getNetexId()), targetStopPlace.getNetexId(), moveQuayComment, moveQuayComment);
                 } else {
                     //il faut créer un nouveau quai et séparer les importe id correspondants
                     Quay newQuay = createNewQuay(quay);

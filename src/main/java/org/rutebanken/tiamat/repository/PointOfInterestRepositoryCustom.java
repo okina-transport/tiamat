@@ -48,4 +48,6 @@ public interface PointOfInterestRepositoryCustom extends DataManagedObjectStruct
 
     List<PointOfInterest> getAllPOIWithoutPostcode();
 
+    List<PointOfInterest> findAllPOILastVersionAndValid();
+
 }

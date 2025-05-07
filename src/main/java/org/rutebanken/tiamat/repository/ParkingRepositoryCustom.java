@@ -33,8 +33,6 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
 
     Iterator<Parking> scrollParkings(Set<Long> stopPlaceIds);
 
-    int countResult(ParkingSearch parkingSearch);
-
     int countResult(Set<Long> stopPlaceIds);
 
     int countResult();
@@ -45,8 +43,6 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
 
     Set<Long> scrollParkings();
 
-    Iterator<Parking> scrollParkings(ParkingSearch parkingSearch);
-
     Page<Parking> findByName(String query, Pageable pageable);
 
     /**
@@ -56,12 +52,12 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
      */
     List<String> findByStopPlaceNetexId(String netexStopPlaceId);
 
-    void clearAllRentalbikeParkings();
-
     void initExportJobTable( Long exportJobId);
 
     List<Parking> getParkingsInitializedForExport(Set<Long> parkingIds) ;
 
     Optional<Parking> findByIdLocAndOsm(String idLoc, String idOsm);
+
+    List<Parking> findAllParkingsLastVersionAndValid();
 }
 

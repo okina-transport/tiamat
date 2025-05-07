@@ -454,6 +454,9 @@ public class GraphQLNames {
     /** Check if authorized to edit entity */
     public static final String CHECK_AUTHORIZED = "checkAuthorized";
     public static final String FIND_STOPPLACE_BY_BBOX = "stopPlaceBBox";
+    public static final String FIND_ALL_STOPPLACES = "allStopPlaces";
+    public static final String FIND_ALL_PARKINGS = "allParkings";
+    public static final String FIND_ALL_POI = "allPointsOfInterest";
     public static final String FIND_PARKING_BY_BBOX = "parkingBBox";
     public static final String FIND_TOPOGRAPHIC_PLACE = "topographicPlace";
     public static final String FIND_PATH_LINK = "pathLink";

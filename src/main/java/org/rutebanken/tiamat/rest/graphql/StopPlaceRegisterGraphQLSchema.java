@@ -126,6 +126,15 @@ public class StopPlaceRegisterGraphQLSchema {
     DataFetcher stopPlaceFetcher;
 
     @Autowired
+    DataFetcher allStopPlacesFetcher;
+
+    @Autowired
+    DataFetcher allParkingsFetcher;
+
+    @Autowired
+    DataFetcher allPointsOfInterestFetcher;
+
+    @Autowired
     private DataFetcher<GroupOfStopPlaces> groupOfStopPlacesUpdater;
 
     @Autowired
@@ -299,6 +308,21 @@ public class StopPlaceRegisterGraphQLSchema {
                         .description("Find StopPlaces within given BoundingBox.")
                         .argument(createBboxArguments())
                         .dataFetcher(stopPlaceFetcher))
+                .field(newFieldDefinition()
+                        .type(new GraphQLList(stopPlaceInterface))
+                        .name(FIND_ALL_STOPPLACES)
+                        .description("Find All StopPlaces")
+                        .dataFetcher(allStopPlacesFetcher))
+                .field(newFieldDefinition()
+                        .type(new GraphQLList(parkingInterface))
+                        .name(FIND_ALL_PARKINGS)
+                        .description("Find All Parkings")
+                        .dataFetcher(allParkingsFetcher))
+                .field(newFieldDefinition()
+                        .type(new GraphQLList(pointOfInterestInterface))
+                        .name(FIND_ALL_POI)
+                        .description("Find All Points of Interest")
+                        .dataFetcher(allPointsOfInterestFetcher))
                 .field(newFieldDefinition()
                         .name(FIND_PARKING)
                         .type(new GraphQLList(parkingInterface))

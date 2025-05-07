@@ -25,12 +25,11 @@ import org.hibernate.query.NativeQuery;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.rutebanken.tiamat.exporter.params.ParkingSearch;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingArea;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
+import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
-import org.rutebanken.tiamat.repository.search.ParkingQueryFromSearchBuilder;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,8 +63,6 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     private GeometryFactory geometryFactory;
     @Autowired
     private SearchHelper searchHelper;
-    @Autowired
-    private ParkingQueryFromSearchBuilder parkingQueryFromSearchBuilder;
 
     /**
      * Find parking's netex ID by key value
@@ -113,20 +110,9 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         return result;
     }
 
-
-    @Override
-    public Iterator<Parking> scrollParkings(ParkingSearch parkingSearch) {
-        return scrollParkings(parkingQueryFromSearchBuilder.buildQueryFromSearch(parkingSearch));
-    }
-
     @Override
     public Iterator<Parking> scrollParkings(Set<Long> stopPlaceIds) {
         return scrollParkings(getParkingsByStopPlaceIdsSQL(stopPlaceIds));
-    }
-
-    @Override
-    public int countResult(ParkingSearch parkingSearch) {
-        return countResult(parkingQueryFromSearchBuilder.buildQueryFromSearch(parkingSearch));
     }
 
     @Override
@@ -350,19 +336,6 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         }
     }
 
-    @Override
-    public void clearAllRentalbikeParkings() {
-
-        String parkingIdQuery = "SELECT id FROM parking p WHERE p.parking_type = 'CYCLE_RENTAL'";
-
-        entityManager.createNativeQuery("DELETE FROM value_items WHERE value_id in ( " +
-                "                           SELECT key_values_id FROM parking_key_values pkv JOIN parking p on p.id = pkv.parking_id WHERE p.parking_type = 'CYCLE_RENTAL') ").executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM parking_key_values WHERE parking_id  in ( " + parkingIdQuery + ")").executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM parking_parking_payment_process WHERE parking_id  in ( " + parkingIdQuery + ")").executeUpdate();
-
-        entityManager.createNativeQuery("DELETE FROM parking WHERE parking_type = 'CYCLE_RENTAL'").executeUpdate();
-    }
-
     /**
      * Initialize export job table with stop ids that must be exported
      *
@@ -483,5 +456,10 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         return results;
     }
 
-
+    public List<Parking> findAllParkingsLastVersionAndValid() {
+        String sql = "SELECT p.* FROM parking p WHERE " +
+                SQL_MAX_VERSION_OF_PARKING +
+                "ORDER BY p.netex_id, p.version";
+        return entityManager.createNativeQuery(sql, Parking.class).getResultList();
+    }
 }

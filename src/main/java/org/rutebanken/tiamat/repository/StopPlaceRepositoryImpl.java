@@ -1024,6 +1024,18 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     }
 
     @Override
+    public List<StopPlace> findAllStopplacesLastVersionAndValid() {
+        final String queryString = "SELECT s.* FROM stop_place s " +
+                SQL_LEFT_JOIN_PARENT_STOP +
+                " WHERE" +
+                SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME;
+
+        return entityManager.createNativeQuery(queryString, StopPlace.class)
+                .setParameter("pointInTime", Date.from(Instant.now()))
+                .getResultList();
+    }
+
+    @Override
     public List<Quay> findQuayByNetexId(String netexId) {
         final String queryString = "SELECT quay FROM Quay quay WHERE quay.netexId = :netexId";
         final TypedQuery<Quay> typedQuery = entityManager.createQuery(queryString, Quay.class);

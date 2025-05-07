@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
@@ -89,5 +90,23 @@ public class ParentStopPlacesFetcher {
 
         return result;
     }
+
+//    public List<StopPlace> resolveParentsLight(List<StopPlace> stopPlaceList, boolean keepChilds) {
+//
+//        Session session = entityManager.unwrap(Session.class);
+//
+//        if (stopPlaceList == null || stopPlaceList.stream().noneMatch(Objects::nonNull)) {
+//            return stopPlaceList;
+//        }
+//
+//        List<StopPlace> stopsWithParent = stopPlaceList.stream()
+//                .filter(stopPlace -> !stopPlace.isParentStopPlace() && stopPlace.getParentSiteRef() != null)
+//                .toList();
+//
+//        StopPlace parent = stopPlaceRepository.findFirstByNetexIdAndVersion(nonParentStop.getParentSiteRef().getRef(), Long.parseLong(nonParentStop.getParentSiteRef().getVersion()));
+//
+//
+//        return result;
+//    }
 
 }

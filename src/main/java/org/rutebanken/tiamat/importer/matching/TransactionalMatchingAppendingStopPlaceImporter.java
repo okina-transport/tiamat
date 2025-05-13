@@ -40,6 +40,7 @@ import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -94,6 +95,9 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
     @Autowired
     private TiamatProperties tiamatProperties;
+
+    @Value("${netex.validPrefix:MOBIITI}")
+    String validNetexPrefix;
 
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
@@ -273,7 +277,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
         Set<org.rutebanken.tiamat.model.StopPlace> results = new HashSet<>();
         Optional<Long> stopPlaceOpt = mdmService.getExistingStopPlaceMdmIds(incomingStopPlace);
         if (stopPlaceOpt.isPresent()) {
-            org.rutebanken.tiamat.model.StopPlace existingStopPlace = stopPlaceRepository.findFirstByMdmIdOrderByVersionDesc(stopPlaceOpt.get());
+            org.rutebanken.tiamat.model.StopPlace existingStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(validNetexPrefix + ":StopPlace:" +stopPlaceOpt.get());
             if (existingStopPlace != null){
                 results.add(existingStopPlace);
             }
@@ -297,7 +301,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
         }
 
         return quayMdmIds.stream()
-                        .map(okinaIdentifier -> quayRepository.findFirstByMdmIdOrderByVersionDesc(okinaIdentifier.getSuperId()))
+                        .map(okinaIdentifier -> quayRepository.findFirstByNetexIdOrderByVersionDesc(validNetexPrefix + ":Quay:" + okinaIdentifier.getSuperId()))
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
 

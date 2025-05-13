@@ -17,11 +17,15 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.hibernate.Hibernate;
+import org.hibernate.Session;
 import org.rutebanken.helper.organisation.RoleAssignment;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.dtoassembling.dto.BoundingBoxDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
+import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.model.TopographicPlace;
@@ -31,15 +35,20 @@ import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.repository.TagRepository;
 import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
 import org.rutebanken.tiamat.service.stopplace.ParentStopPlacesFetcher;
+import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.time.Instant;
@@ -57,6 +66,14 @@ class StopPlaceFetcher implements DataFetcher {
 
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceFetcher.class);
+
+    @PersistenceContext
+    private EntityManager em;
+
+    @Autowired
+    private VersionCreator versionCreator;
+
+
 
     private static final Page<StopPlace> EMPTY_STOPS_RESULT = new PageImpl<>(new ArrayList<>());
 
@@ -80,24 +97,80 @@ class StopPlaceFetcher implements DataFetcher {
     private final TagRepository tagRepository;
 
     private final TopographicPlaceRepository topographicPlaceRepository;
+    private final MdmService mdmService;
 
-    StopPlaceFetcher(StopPlaceRepository stopPlaceRepository, ParentStopPlacesFetcher parentStopPlacesFetcher, RoleAssignmentExtractor roleAssignmentExtractor, TagRepository tagRepository, TopographicPlaceRepository topographicPlaceRepository) {
+
+    StopPlaceFetcher(StopPlaceRepository stopPlaceRepository, ParentStopPlacesFetcher parentStopPlacesFetcher, RoleAssignmentExtractor roleAssignmentExtractor, TagRepository tagRepository, TopographicPlaceRepository topographicPlaceRepository, MdmService mdmService) {
         this.stopPlaceRepository = stopPlaceRepository;
         this.parentStopPlacesFetcher = parentStopPlacesFetcher;
         this.roleAssignmentExtractor = roleAssignmentExtractor;
         this.tagRepository = tagRepository;
         this.topographicPlaceRepository = topographicPlaceRepository;
+        this.mdmService = mdmService;
     }
 
-    @Override
-    @Transactional
+
+
     public Object get(DataFetchingEnvironment environment) {
+        List<StopPlace> stopPlaces = getDataFromDB(environment);
+
+
+        // we need to copy stop place to new objects(unhandled by hibernate) to avoid auto-persist of imported-ids
+        List<StopPlace> copiedStopPlaces = new ArrayList<>();
+        for (StopPlace stopPlace : stopPlaces) {
+            StopPlace copy = versionCreator.createCopy(stopPlace, StopPlace.class);
+            copiedStopPlaces.add(copy);
+        }
+        mdmService.fillImportedIds(copiedStopPlaces);
+
+
+
+        boolean onlyMonomodalStopplaces = false;
+        if (environment.getArgument(ONLY_MONOMODAL_STOPPLACES) != null) {
+            onlyMonomodalStopplaces = environment.getArgument(ONLY_MONOMODAL_STOPPLACES);
+        }
+
+        boolean nearbyStopPlaceSearch = false;
+        if (environment.getArgument(NEARBY_STOP_PLACES) != null) {
+            nearbyStopPlaceSearch = environment.getArgument(NEARBY_STOP_PLACES);
+        }
+
+        boolean stopPlacesWithoutQuaySearch = false;
+        if (environment.getArgument(STOP_PLACES_WITHOUT_QUAY) != null) {
+            stopPlacesWithoutQuaySearch = environment.getArgument(STOP_PLACES_WITHOUT_QUAY);
+        }
+
+        boolean stopPlacesWithMultipleProducersSearch = false;
+        if (environment.getArgument(STOP_PLACES_WITH_MULTIPLE_PRODUCERS) != null) {
+            stopPlacesWithMultipleProducersSearch = environment.getArgument(STOP_PLACES_WITH_MULTIPLE_PRODUCERS);
+        }
+
+        boolean quaysWithMultipleProducersSearch = false;
+        if (environment.getArgument(QUAYS_WITH_MULTIPLE_PRODUCERS) != null) {
+            quaysWithMultipleProducersSearch = environment.getArgument(QUAYS_WITH_MULTIPLE_PRODUCERS);
+        }
+
+
+        //By default stop should resolve parent stops
+        if (nearbyStopPlaceSearch || onlyMonomodalStopplaces || stopPlacesWithoutQuaySearch || stopPlacesWithMultipleProducersSearch || quaysWithMultipleProducersSearch) {
+            return getStopPlaces(environment, copiedStopPlaces, stopPlaces.size());
+        } else {
+            List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(copiedStopPlaces, KEEP_CHILDREN);
+            return getStopPlaces(environment, parentsResolved, parentsResolved.size());
+        }
+    }
+
+
+
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public List<StopPlace> getDataFromDB(DataFetchingEnvironment environment) {
         ExportParams.Builder exportParamsBuilder = newExportParamsBuilder();
         StopPlaceSearch.Builder stopPlaceSearchBuilder = newStopPlaceSearchBuilder();
         List<String> userOrgs = roleAssignmentExtractor.getRoleAssignmentsForUser().stream().map(RoleAssignment::getOrganisation).collect(Collectors.toList());
 
         Boolean ignoreStops = environment.getArgument(IGNORE_STOPS);
-        if (ignoreStops != null && ignoreStops) { return new PageImpl<>(new ArrayList<>()); }
+        if (ignoreStops != null && ignoreStops) { return new ArrayList<>(); }
 
         logger.info("Searching for StopPlaces with arguments {}", environment.getArguments());
         logger.info("User organisations : {}", userOrgs);
@@ -176,7 +249,7 @@ class StopPlaceFetcher implements DataFetcher {
                     stopPlaceSearchBuilder.setNetexIdList(idList);
                 } else {
                     //Search for key/values returned no results
-                    return EMPTY_STOPS_RESULT;
+                    return new ArrayList<>();
                 }
             } else {
 
@@ -258,42 +331,11 @@ class StopPlaceFetcher implements DataFetcher {
                 stopPlacesPage = stopPlaceRepository.findStopPlace(exportParamsBuilder.setStopPlaceSearch(stopPlaceSearchBuilder.build()).build());
             }
         }
-
-        final List<StopPlace> stopPlaces = stopPlacesPage.getContent();
-        boolean onlyMonomodalStopplaces = false;
-        if (environment.getArgument(ONLY_MONOMODAL_STOPPLACES) != null) {
-            onlyMonomodalStopplaces = environment.getArgument(ONLY_MONOMODAL_STOPPLACES);
-        }
-
-        boolean nearbyStopPlaceSearch = false;
-        if (environment.getArgument(NEARBY_STOP_PLACES) != null) {
-            nearbyStopPlaceSearch = environment.getArgument(NEARBY_STOP_PLACES);
-        }
-
-        boolean stopPlacesWithoutQuaySearch = false;
-        if (environment.getArgument(STOP_PLACES_WITHOUT_QUAY) != null) {
-            stopPlacesWithoutQuaySearch = environment.getArgument(STOP_PLACES_WITHOUT_QUAY);
-        }
-
-        boolean stopPlacesWithMultipleProducersSearch = false;
-        if (environment.getArgument(STOP_PLACES_WITH_MULTIPLE_PRODUCERS) != null) {
-            stopPlacesWithMultipleProducersSearch = environment.getArgument(STOP_PLACES_WITH_MULTIPLE_PRODUCERS);
-        }
-
-        boolean quaysWithMultipleProducersSearch = false;
-        if (environment.getArgument(QUAYS_WITH_MULTIPLE_PRODUCERS) != null) {
-            quaysWithMultipleProducersSearch = environment.getArgument(QUAYS_WITH_MULTIPLE_PRODUCERS);
-        }
-
-
-        //By default stop should resolve parent stops
-        if (nearbyStopPlaceSearch || onlyMonomodalStopplaces || stopPlacesWithoutQuaySearch || stopPlacesWithMultipleProducersSearch || quaysWithMultipleProducersSearch) {
-           return getStopPlaces(environment, stopPlaces, stopPlaces.size());
-        } else {
-            List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(stopPlaces, KEEP_CHILDREN);
-            return getStopPlaces(environment, parentsResolved, parentsResolved.size());
-        }
+        List<StopPlace> results = stopPlacesPage.getContent();
+        results.forEach(stopPlaceRepository::initializeStopPlace);
+        return results;
     }
+
 
     protected void fetchTags(List<StopPlace> stopPlaceCollection) {
         if (!CollectionUtils.isEmpty(stopPlaceCollection)) {
@@ -374,7 +416,12 @@ class StopPlaceFetcher implements DataFetcher {
     private PageImpl<StopPlace> getStopPlaces(DataFetchingEnvironment environment, List<StopPlace> stopPlaces, long size) {
         fetchTags(stopPlaces);
         fetchParentTopographicPlaces(stopPlaces);
+        fetchImportedIds(stopPlaces);
         return new PageImpl<>(stopPlaces, PageRequest.of(environment.getArgument(PAGE), environment.getArgument(SIZE)), size);
+    }
+
+    private void fetchImportedIds(List<StopPlace> stopPlaces) {
+        mdmService.fillImportedIds(stopPlaces);
     }
 
     private <T> T setIfNonNull(DataFetchingEnvironment environment, String argumentName, Consumer<T> consumer) {

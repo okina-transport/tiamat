@@ -44,9 +44,6 @@ public class Quay extends StopPlaceSpace_VersionStructure {
     @Column(name = "url")
     protected String url;
 
-    @Column(name = "mdm_id")
-    protected Long mdmId;
-
     /**
      * TODO: reconsider data type for compass bearing.
      * https://rutebanken.atlassian.net/browse/NRP-895
@@ -92,13 +89,6 @@ public class Quay extends StopPlaceSpace_VersionStructure {
         this.url = url;
     }
 
-    public Long getMdmId() {
-        return mdmId;
-    }
-
-    public void setMdmId(Long mdmId) {
-        this.mdmId = mdmId;
-    }
 
     @Override
     public boolean equals(Object object) {

@@ -107,8 +107,6 @@ public class StopPlace
 
     private String provider;
 
-    @Column(name = "mdm_id")
-    protected Long mdmId;
 
     @Transient
     private Set<Tag> tags = new HashSet<>();
@@ -327,13 +325,6 @@ public class StopPlace
         this.modificationEnumeration = modificationEnumeration;
     }
 
-    public Long getMdmId() {
-        return mdmId;
-    }
-
-    public void setMdmId(Long mdmId) {
-        this.mdmId = mdmId;
-    }
 
     public String getProvider() {
         return provider;

@@ -18,17 +18,22 @@ package org.rutebanken.tiamat.repository;
 import com.google.common.collect.Sets;
 import org.apache.commons.collections4.ListUtils;
 import org.hibernate.Hibernate;
+import org.jetbrains.annotations.NotNull;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
+import org.rutebanken.tiamat.feign.mdm.OkinaIdentifier;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
+import javax.swing.text.html.Option;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -51,6 +56,12 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
 
     @Autowired
     private GeometryFactory geometryFactory;
+
+    @Value("${netex.validPrefix:MOBIITI}")
+    String validNetexPrefix;
+
+    @Autowired
+    private MdmService mdmService;
 
     /**
      * This repository method does not use validity for returning the right version.
@@ -315,30 +326,51 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
     public List<JbvCodeMappingDto> findIdMappingsForQuay() {
         String sql = "WITH qref AS (" +
                 "    SELECT MAX(q.id) AS q_id, q.netex_id" +
-                "    FROM quay q" +
-                "    INNER JOIN quay_key_values qkv ON q.id = qkv.quay_id" +
-                "    WHERE qkv.key_values_key = 'imported-id'" +
+                "    FROM quay q " +
                 "    GROUP BY q.netex_id " +
                 ")" +
-                "SELECT DISTINCT qref.q_id, vi.items, qref.netex_id," +
+                "SELECT DISTINCT qref.q_id, qref.netex_id," +
                 "    CASE WHEN q.name_value IS NOT NULL AND q.name_value <> '' THEN q.name_value" +
                 "         ELSE s.name_value END AS name_value" +
                 " FROM qref" +
-                " INNER JOIN quay_key_values qkv ON qref.q_id = qkv.quay_id AND qkv.key_values_key = 'imported-id'" +
                 " INNER JOIN quay q ON qref.q_id = q.id" +
-                " INNER JOIN value_items vi ON vi.value_id = qkv.key_values_id" +
                 " LEFT JOIN stop_place_quays spq ON spq.quays_id = qref.q_id" +
                 " LEFT JOIN stop_place s ON s.id = spq.stop_place_id";
 
         Query nativeQuery = entityManager.createNativeQuery(sql);
 
+        Map<Long, String> netexIdAndName = new HashMap<>();
+
         List<Object[]> result = nativeQuery.getResultList();
 
         List<JbvCodeMappingDto> mappingResult = new ArrayList<>();
         for (Object[] row : result) {
-            mappingResult.add(new JbvCodeMappingDto(row[1].toString(), null, row[2].toString(), row[3].toString()));
+            netexIdAndName.put(Long.valueOf(row[1].toString().split(":")[2]), row[2].toString());
         }
 
+        Set<Long> quaySuperIds = new HashSet<>(netexIdAndName.keySet());
+
+        if (quaySuperIds.isEmpty()){
+            return new ArrayList<>();
+        }
+
+        List<OkinaIdentifier> mdmIds = mdmService.getAllQuaysFromSuperId(quaySuperIds);
+        for (Map.Entry<Long, String> netexAndNameEntry : netexIdAndName.entrySet()) {
+            Long netexId = netexAndNameEntry.getKey();
+
+            List<OkinaIdentifier> filteredIdsFromMdm = mdmIds.stream()
+                                .filter(okinaId -> okinaId.getSuperId().equals(netexId))
+                                .toList();
+
+            if (filteredIdsFromMdm.isEmpty()){
+                continue;
+            }
+
+            for (OkinaIdentifier okinaIdentifier : filteredIdsFromMdm) {
+                JbvCodeMappingDto newMapping = new JbvCodeMappingDto(okinaIdentifier.getDataset() + ":Quay:" + okinaIdentifier.getOriginalId(), null, validNetexPrefix + ":Quay:" + netexId, netexAndNameEntry.getValue());
+                mappingResult.add(newMapping);
+            }
+        }
         return mappingResult;
     }
 
@@ -530,6 +562,28 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
         query.setParameter("name", name);
         query.setParameter("publicCode", publicCode);
         return getOneOrNull((TypedQuery<String>) query);
+    }
+
+    @Override
+    public Optional<Quay> findQuayByMdmId(Long mdmId) {
+
+
+        Query query = entityManager.createNativeQuery("SELECT q.* " +
+                "FROM quay q " +
+                "WHERE q.netex_id = :netexIdParam " +
+                " ORDER BY q.version DESC", Quay.class );
+
+        query.setParameter("netexIdParam", validNetexPrefix + ":Quay:" + mdmId);
+        query.setMaxResults(1);
+
+
+        List<Quay> resultList = query.getResultList();
+
+        if (resultList.isEmpty()){
+            return Optional.empty();
+        }
+
+        return Optional.of(resultList.get(0));
     }
 
     private <T> T getOneOrNull(TypedQuery<T> query) {

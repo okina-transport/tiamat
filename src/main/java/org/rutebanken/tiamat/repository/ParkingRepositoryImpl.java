@@ -26,12 +26,15 @@ import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.exporter.params.ParkingSearch;
+import org.rutebanken.tiamat.feign.mdm.OkinaIdentifier;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingArea;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.ParkingQueryFromSearchBuilder;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
+import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +69,10 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     private SearchHelper searchHelper;
     @Autowired
     private ParkingQueryFromSearchBuilder parkingQueryFromSearchBuilder;
+    @Autowired
+    private MdmService mdmService;
+    @Autowired
+    private VersionCreator versionCreator;
 
     /**
      * Find parking's netex ID by key value
@@ -271,11 +278,70 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         query.setFirstResult(Math.toIntExact(pageable.getOffset()));
         query.setMaxResults(pageable.getPageSize());
         List<Parking> parkings = query.getResultList();
+        parkings = createCopyAndFillImportedIdsFromMDM(parkings);
         return new PageImpl<>(parkings, pageable, parkings.size());
     }
 
     @Override
+    public Optional<Parking> findByOsm(String idOsm) {
+        if (StringUtils.isEmpty(idOsm)) {
+            return Optional.empty();
+        }
+
+        String queryString = "SELECT * FROM parking p ";
+        queryString = queryString + " INNER JOIN parking_key_values pkv on p.id=pkv.parking_id ";
+        queryString = queryString + " AND pkv.key_values_key = 'id_osm'";
+        queryString = queryString + " AND EXISTS ( SELECT 1 FROM value_items vi WHERE vi.items = :idOsm AND pkv.key_values_id = vi.value_id)";
+
+
+        logger.debug("Finding parking by idloc and idosm: {}", queryString);
+
+        final Query query = entityManager.createNativeQuery(queryString, Parking.class);
+
+        if (StringUtils.isNotEmpty(idOsm)) {
+            query.setParameter("idOsm", idOsm);
+        }
+
+        List<Parking> results = query.getResultList();
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(results.get(0));
+
+    }
+
+    @Override
+    public List<Parking> createCopyAndFillImportedIdsFromMDM(List<Parking> parkings){
+        List<Parking> results = new ArrayList<>();
+        if (parkings.isEmpty()){
+            return new ArrayList<>();
+        }
+
+        Set<Long> superIds = new HashSet<>();
+        for (Parking parking : parkings) {
+            results.add(versionCreator.createCopy(parking, Parking.class));
+            superIds.add(Long.valueOf(parking.getNetexId().split(":")[2]));
+        }
+
+        List<OkinaIdentifier> mdmIds = mdmService.getAllParkingsFromSuperId(superIds);
+
+        for (Parking parking : results) {
+            Long superId = Long.valueOf(parking.getNetexId().split(":")[2]);
+            String originalId = mdmIds.stream()
+                    .filter(mdmId -> mdmId.getSuperId().equals(superId))
+                    .map(OkinaIdentifier::getOriginalId)
+                    .findFirst().orElse(null);
+            parking.getOriginalIds().add(originalId);
+        }
+
+        return results;
+    }
+
+
+    @Override
     public Optional<Parking> findByIdLocAndOsm(String idLoc, String idOsm) {
+
         String queryString = "SELECT * FROM parking p ";
 
         if (StringUtils.isNotEmpty(idOsm)) {

@@ -19,6 +19,7 @@ import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMappi
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
 import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceFromOriginalIdFinder;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
@@ -60,6 +61,7 @@ public class MergingStopPlaceImporter {
     private final MergingUtils mergingUtils;
 
     private final QuaysVersionedSaverService quaysVersionedSaverService;
+    private final MdmService mdmService;
 
     @Autowired
     public MergingStopPlaceImporter(StopPlaceFromOriginalIdFinder stopPlaceFromOriginalIdFinder,
@@ -70,8 +72,8 @@ public class MergingStopPlaceImporter {
                                     VersionCreator versionCreator,
                                     ReferenceResolver referenceResolver,
                                     MergingUtils mergingUtils,
-                                    QuaysVersionedSaverService quaysVersionedSaverService
-    ) {
+                                    QuaysVersionedSaverService quaysVersionedSaverService,
+                                    MdmService mdmService) {
         this.stopPlaceFromOriginalIdFinder = stopPlaceFromOriginalIdFinder;
         this.nearbyStopPlaceFinder = nearbyStopPlaceFinder;
         this.stopPlaceCentroidComputer = stopPlaceCentroidComputer;
@@ -81,6 +83,7 @@ public class MergingStopPlaceImporter {
         this.referenceResolver = referenceResolver;
         this.mergingUtils = mergingUtils;
         this.quaysVersionedSaverService = quaysVersionedSaverService;
+        this.mdmService = mdmService;
     }
 
     /**
@@ -115,7 +118,7 @@ public class MergingStopPlaceImporter {
 
     public StopPlace importStopPlaceContainsMobiitiIdsWithoutNetexMapping(StopPlace incomingStopPlace, boolean recomputeStopPlacesLocation) {
         final StopPlace foundStopPlace = stopPlaceFromOriginalIdFinder.findStopPlace(incomingStopPlace);
-
+        mdmService.createOrUpdateExistingIdentifiers(incomingStopPlace);
         final StopPlace stopPlace;
         if (foundStopPlace != null) {
             stopPlace = handleAlreadyExistingStopPlaceContainsMobiitiIds(foundStopPlace, incomingStopPlace, recomputeStopPlacesLocation);

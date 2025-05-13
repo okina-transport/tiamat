@@ -73,7 +73,8 @@ class PointOfInterestFetcher implements DataFetcher {
             } else {
                 logger.info("Finding first poi by netexid {} and highest version", pointOfInterestId);
                 pointOfInterestList.add(pointOfInterestRepository.findFirstByNetexIdOrderByVersionDesc(pointOfInterestId));
-                pointOfInterestPage = new PageImpl<>(pointOfInterestList, pageable, 1L);
+                List<PointOfInterest> copiedItems = pointOfInterestRepository.createCopyAndFillImportedIdsFromMDM(pointOfInterestList);
+                pointOfInterestPage = new PageImpl<>(copiedItems, pageable, 1L);
             }
         } else if (environment.getArgument(LONGITUDE_MIN) != null) {
             BoundingBoxDto boundingBox = new BoundingBoxDto();

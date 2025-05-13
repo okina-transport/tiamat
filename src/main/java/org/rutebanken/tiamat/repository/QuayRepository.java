@@ -21,6 +21,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface QuayRepository extends QuayRepositoryCustom, EntityInVersionRepository<Quay> {
 
-    Quay findFirstByMdmIdOrderByVersionDesc(Long mdmId);
+
 
 }

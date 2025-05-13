@@ -63,5 +63,9 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
     List<Parking> getParkingsInitializedForExport(Set<Long> parkingIds) ;
 
     Optional<Parking> findByIdLocAndOsm(String idLoc, String idOsm);
+
+    Optional<Parking> findByOsm(String idLoc);
+
+    List<Parking> createCopyAndFillImportedIdsFromMDM(List<Parking> parkings);
 }
 

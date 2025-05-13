@@ -4,18 +4,14 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.config.TiamatProperties;
 import org.rutebanken.tiamat.feign.mdm.MdmFeignClient;
 import org.rutebanken.tiamat.feign.mdm.OkinaIdentifier;
-import org.rutebanken.tiamat.model.DataManagedObjectStructure;
-import org.rutebanken.tiamat.model.Quay;
-import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class MdmService {
@@ -35,24 +31,31 @@ public class MdmService {
         this.tiamatProperties = tiamatProperties;
     }
 
-    public void replaceTiamatIdByMdmId(List<StopPlace> stopPlaces){
-        List<Long> stopPlaceMdmIds = new ArrayList<>();
-        List<Long> quayMdmIds = new ArrayList<>();
+    public void fillImportedIds(List<StopPlace> stopPlaces){
+        if (stopPlaces.isEmpty()){
+            return;
+        }
+
+        Set<Long> stopPlaceMdmIds = new HashSet<>();
+        Set<Long> quayMdmIds = new HashSet<>();
+
+
+
         for (org.rutebanken.tiamat.model.StopPlace recoveredStopPlace : stopPlaces) {
-            stopPlaceMdmIds.add(recoveredStopPlace.getMdmId());
+            stopPlaceMdmIds.add(Long.valueOf(recoveredStopPlace.getNetexId().split(":")[2]));
 
             for (Quay quay : recoveredStopPlace.getQuays()) {
-                quayMdmIds.add(quay.getMdmId());
+                quayMdmIds.add(Long.valueOf(quay.getNetexId().split(":")[2]));
             }
         }
 
-        List<OkinaIdentifier> stopPlacesMdmData = mdmFeignClient.getStopPlaceIdentifiers(stopPlaceMdmIds);
-        stopPlaces.forEach(stopPlace -> replaceTiamatIdByMdmId(stopPlace, stopPlacesMdmData));
+        List<OkinaIdentifier> stopPlacesMdmData = mdmFeignClient.getStopPlaceIdentifiers(stopPlaceMdmIds.stream().toList());
+        stopPlaces.forEach(stopPlace -> feedImportedIds(stopPlace, stopPlacesMdmData));
 
-        List<OkinaIdentifier> quaysMdmData = mdmFeignClient.getQuayIdentifiers(quayMdmIds);
+        List<OkinaIdentifier> quaysMdmData = mdmFeignClient.getQuayIdentifiers(quayMdmIds.stream().toList());
         for (StopPlace stopPlace : stopPlaces) {
             for (Quay quay : stopPlace.getQuays()) {
-                replaceTiamatIdByMdmId(quay, quaysMdmData);
+                feedImportedIds(quay, quaysMdmData);
             }
         }
     }
@@ -68,22 +71,62 @@ public class MdmService {
         return stopPlaceMdmData != null ? Optional.of(stopPlaceMdmData.getSuperId()) : Optional.empty();
     }
 
-    private void replaceTiamatIdByMdmId(DataManagedObjectStructure quayOrStopPlace, List<OkinaIdentifier> quaysMdmData) {
 
+
+    private void feedImportedIds(DataManagedObjectStructure quayOrStopPlace, List<OkinaIdentifier> mdmData){
         String objectType = quayOrStopPlace instanceof StopPlace ? ":StopPlace:" : ":Quay:";
+        Long mdmId = Long.valueOf(quayOrStopPlace.getNetexId().split(":")[2]);
 
-        for (String originalId : quayOrStopPlace.getOriginalIds()) {
-            for (OkinaIdentifier currentMdmData : quaysMdmData) {
-                if (originalId.equals(currentMdmData.getDataset() +  objectType  + currentMdmData.getOriginalId())){
-                    quayOrStopPlace.setNetexId(validNetexPrefix + objectType + currentMdmData.getSuperId().toString());
-                    return;
-                }
+        if (mdmId == null){
+            return;
+        }
+
+        final Long finalMdmId = mdmId;
+        List<OkinaIdentifier> mdmDataRelatedToObject = mdmData.stream()
+                .filter(currentMdmData -> currentMdmData.getSuperId().equals(finalMdmId))
+                .collect(Collectors.toList());
+
+        if (!mdmDataRelatedToObject.isEmpty()){
+            for (OkinaIdentifier okinaIdentifier : mdmDataRelatedToObject) {
+                quayOrStopPlace.getOriginalIds().add(okinaIdentifier.getDataset() + objectType + okinaIdentifier.getOriginalId());
             }
         }
+
+    }
+
+    public void generateIdentifier(PointOfInterest incomingPointOfInterest) {
+        if (!tiamatProperties.isMdmEnabled()){
+            return;
+        }
+
+        OkinaIdentifier okinaIdentifier = new OkinaIdentifier();
+        okinaIdentifier.setOriginalId(incomingPointOfInterest.getOriginalIds().iterator().next());
+        List<OkinaIdentifier> mdmData = mdmFeignClient.generatePoiIdentifiers(List.of(okinaIdentifier));
+        Long superId = mdmData.get(0).getSuperId();
+        incomingPointOfInterest.setNetexId(validNetexPrefix + ":PointOfInterest:" + superId);
+        incomingPointOfInterest.getOriginalIds().clear();
+    }
+
+    public void generateIdentifier(Parking parking) {
+        if (!tiamatProperties.isMdmEnabled()){
+            return;
+        }
+
+        OkinaIdentifier okinaIdentifier = new OkinaIdentifier();
+        okinaIdentifier.setOriginalId(parking.getOriginalIds().iterator().next());
+        List<OkinaIdentifier> mdmData = mdmFeignClient.generateParkingIdentifiers(List.of(okinaIdentifier));
+        Long superId = mdmData.get(0).getSuperId();
+        parking.setNetexId(validNetexPrefix + ":Parking:" + superId);
+        parking.getOriginalIds().clear();
     }
 
     public void generateIdentifier(StopPlace incomingStopPlace) {
-        if (tiamatProperties.isMdmEnabled()) {
+        if (!tiamatProperties.isMdmEnabled()){
+            return;
+        }
+
+        if (!incomingStopPlace.getNetexId().contains(validNetexPrefix + ":StopPlace:")) {
+            // first case : stopPlace coming from chouette. New super ids need to be generated by MDM
             try {
                 List<OkinaIdentifier> stopIdentifiers = new ArrayList<>();
                 OkinaIdentifier stopIdentifier = buildInputStopIdentifier(incomingStopPlace);
@@ -106,16 +149,25 @@ public class MdmService {
 
                 List<OkinaIdentifier> mdmQuayIdentifiers = mdmFeignClient.generateQuayIdentifiers(quayIdentifiers);
                 fillMdmId(incomingStopPlace.getQuays(), mdmQuayIdentifiers);
+                removeImportedIds(incomingStopPlace);
             } catch (Exception e) {
                 logger.error("Failed to create stop identifiers in mdm: {}", e.getMessage());
             }
         }
     }
 
+    public void removeImportedIds(StopPlace incomingStopPlace) {
+        incomingStopPlace.getOriginalIds().clear();
+        incomingStopPlace.getQuays().forEach(quay -> quay.getOriginalIds().clear());
+
+    }
+
     private void fillMdmId(Set<Quay> quays, List<OkinaIdentifier> mdmIdentifiers) {
         for (Quay quay : quays) {
             Optional<Long> mdmOpt = getMdmIdFromResponse(quay.getOriginalIds().iterator().next(), mdmIdentifiers);
-            mdmOpt.ifPresent(quay::setMdmId);
+            mdmOpt.ifPresent(superId -> {
+                quay.setNetexId(validNetexPrefix + ":Quay:" + superId);
+            });
         }
     }
 
@@ -142,7 +194,7 @@ public class MdmService {
     private void fillMdmId(StopPlace incomingStopPlace, List<OkinaIdentifier> mdmIdentifiers) {
         for (OkinaIdentifier mdmIdentifier : mdmIdentifiers) {
             if (incomingStopPlace.getOriginalIds().contains(mdmIdentifier.getDataset() + ":StopPlace:" + mdmIdentifier.getOriginalId())) {
-                incomingStopPlace.setMdmId(mdmIdentifier.getSuperId());
+                incomingStopPlace.setNetexId(validNetexPrefix + ":StopPlace:" + mdmIdentifier.getSuperId());
             }
         }
     }
@@ -195,6 +247,22 @@ public class MdmService {
         return quayIdentifier;
     }
 
+    public List<OkinaIdentifier> getAllQuaysFromSuperId(Set<Long> superIds) {
+        return mdmFeignClient.getQuayIdentifiers(superIds.stream().toList());
+    }
+
+    public List<OkinaIdentifier> getAllStopPlacesFromSuperId(Set<Long> superIds) {
+        return mdmFeignClient.getStopPlaceIdentifiers(superIds.stream().toList());
+    }
+
+    public List<OkinaIdentifier> getAllPoisFromSuperId(Set<Long> superIds) {
+        return mdmFeignClient.getPoisIdentifiers(superIds.stream().toList());
+    }
+
+    public List<OkinaIdentifier> getAllParkingsFromSuperId(Set<Long> superIds) {
+        return mdmFeignClient.getParkingIdentifiers(superIds.stream().toList());
+    }
+
     public List<OkinaIdentifier> getExistingQuaysMdmIds(String datasetId, Set<Quay> quays) {
 
         List<OkinaIdentifier> quayIdentifiers = new ArrayList<>();
@@ -203,5 +271,154 @@ public class MdmService {
         }
 
         return mdmFeignClient.getQuayIdentifiersByOriginalId(quayIdentifiers);
+    }
+
+    public OkinaIdentifier getExistingPoiMdmIds(PointOfInterest poi){
+        return getExistingPoiMdmIdsFromImportedId(poi.getOriginalIds().iterator().next());
+    }
+
+    public OkinaIdentifier getExistingPoiMdmIdsFromImportedId(String importedId){
+        OkinaIdentifier okinaId = new OkinaIdentifier();
+        okinaId.setOriginalId(importedId);
+        List<OkinaIdentifier> results = mdmFeignClient.getPoiIdentifiersByOriginalId(List.of(okinaId));
+        return results != null && !results.isEmpty() ? results.get(0) : null;
+    }
+
+    public OkinaIdentifier getExistingParkingMdmIdsFromImportedId(String importedId){
+        OkinaIdentifier okinaId = new OkinaIdentifier();
+        okinaId.setOriginalId(importedId);
+        List<OkinaIdentifier> results = mdmFeignClient.getParkingsIdentifiersByOriginalId(List.of(okinaId));
+        return results != null && !results.isEmpty() ? results.get(0) : null;
+    }
+
+
+    /**
+     * Send identifiers to mdm to update imported ids
+     * (used when imported)
+     * @param incomingStopPlace
+     *  StopPlace with MOBIITI ids
+     */
+    public void updateImportedIds(StopPlace incomingStopPlace) {
+        List<OkinaIdentifier> stopPlaceMdmData = getStopPlaceIdentifiers(incomingStopPlace);
+        mdmFeignClient.updateStopImportedIds(stopPlaceMdmData);
+
+        List<OkinaIdentifier> quayMdmData = getQuaysIdentifiers(incomingStopPlace);
+        mdmFeignClient.updateQuaysImportedIds(quayMdmData);
+    }
+
+
+    /**
+     * Send importedIds that need to be updated in MDM
+     * (launched when modification is made in ABZU)
+     * @param incomingPoi
+     *  incomingPoi with MOBIITI id
+     */
+    public void updateImportedIds(PointOfInterest incomingPoi) {
+        List<OkinaIdentifier> poiImportedIds = new ArrayList<>();
+        for (String originalId : incomingPoi.getOriginalIds()) {
+            OkinaIdentifier okinaIdentifier = new OkinaIdentifier();
+            okinaIdentifier.setOriginalId(originalId);
+            okinaIdentifier.setSuperId(Long.valueOf(incomingPoi.getNetexId().split(":")[2]));
+            poiImportedIds.add(okinaIdentifier);
+        }
+
+        mdmFeignClient.updatePoiImportedIds(poiImportedIds);
+    }
+
+    /**
+     * Send importedIds that need to be updated in MDM
+     * (launched when modification is made in ABZU)
+     * @param incomingParking
+     *  incomingParking with MOBIITI id
+     */
+    public void updateImportedIds(Parking incomingParking) {
+        List<OkinaIdentifier> parkingImportedIds = new ArrayList<>();
+        for (String originalId : incomingParking.getOriginalIds()) {
+            OkinaIdentifier okinaIdentifier = new OkinaIdentifier();
+            okinaIdentifier.setOriginalId(originalId);
+            okinaIdentifier.setSuperId(Long.valueOf(incomingParking.getNetexId().split(":")[2]));
+            parkingImportedIds.add(okinaIdentifier);
+        }
+
+        mdmFeignClient.updateParkingsImportedIds(parkingImportedIds);
+    }
+
+
+    /**
+     * Send identifiers that need to be created in MDM WITHOUT generating new ones
+     * (used when re-importing MOBIITI data)
+     * @param incomingPois
+     *  incoming Pois with MOBIITI ids
+     */
+    public void createOrUpdateExistingIdentifiers(List<PointOfInterest> incomingPois) {
+        List<OkinaIdentifier> idToSend = new ArrayList<>();
+
+
+        for (PointOfInterest poi : incomingPois) {
+                OkinaIdentifier id = new OkinaIdentifier();
+                id.setOriginalId(poi.getOriginalIds().iterator().next());
+                id.setSuperId(Long.valueOf(poi.getNetexId().split(":")[2]));
+                idToSend.add(id);
+        }
+
+
+        mdmFeignClient.createOrUpdatePoiIdentifiers(idToSend);
+    }
+
+
+
+    /**
+     * Force mdm to create data into table WITHOUT generating a new super id
+     * (used when importing Netex stop from abzu that contains MOBIITI points)
+     * @param incomingStopPlace
+     *  StopPlace with MOBIITI ids
+     */
+    public void createOrUpdateExistingIdentifiers(StopPlace incomingStopPlace) {
+        List<OkinaIdentifier> stopPlaceMdmData = getStopPlaceIdentifiers(incomingStopPlace);
+        mdmFeignClient.createOrUpdateStopIdentifiers(stopPlaceMdmData);
+
+        List<OkinaIdentifier> quayMdmData = getQuaysIdentifiers(incomingStopPlace);
+        mdmFeignClient.createOrUpdateQuayIdentifiers(quayMdmData);
+    }
+
+    private List<OkinaIdentifier> getQuaysIdentifiers(StopPlace stopPlace) {
+        List<OkinaIdentifier> quayMdmData = new ArrayList<>();
+        for (Quay quay : stopPlace.getQuays()) {
+            String quayMdmId = quay.getNetexId().split(":")[2];
+            for (String originalId : quay.getOriginalIds()) {
+                OkinaIdentifier mdmData = new OkinaIdentifier();
+                mdmData.setDataset(originalId.split(":")[0]);
+                mdmData.setOriginalId(originalId.split(":")[2]);
+                mdmData.setSuperId(Long.valueOf(quayMdmId));
+                quayMdmData.add(mdmData);
+            }
+        }
+        return quayMdmData;
+    }
+
+    private List<OkinaIdentifier> getStopPlaceIdentifiers(StopPlace stopPlace) {
+        List<OkinaIdentifier> stopPlaceMdmData = new ArrayList<>();
+        String mdmId = stopPlace.getNetexId().split(":")[2];
+
+        for (String originalId : stopPlace.getOriginalIds()) {
+            OkinaIdentifier mdmData = new OkinaIdentifier();
+            mdmData.setDataset(originalId.split(":")[0]);
+            mdmData.setOriginalId(originalId.split(":")[2]);
+            mdmData.setSuperId(Long.valueOf(mdmId));
+            stopPlaceMdmData.add(mdmData);
+        }
+        return stopPlaceMdmData;
+    }
+
+    /**
+     * Request MDM to get originalId and fill it in object
+     * @param parking
+     * object that needs to be filled with originalId
+     *
+     */
+    public void fillOriginalId(Parking parking) {
+        Long superId = Long.valueOf(parking.getNetexId().split(":")[2]);
+        List<OkinaIdentifier> mdmData = mdmFeignClient.getParkingIdentifiers(Arrays.asList(superId));
+        parking.getOriginalIds().add(mdmData.get(0).getOriginalId());
     }
 }

@@ -51,6 +51,6 @@ public interface StopPlaceRepository extends StopPlaceRepositoryCustom, EntityIn
     List<StopPlace> getStopPlaceWithQuaysWithoutPostCode();
 
 
-    StopPlace findFirstByMdmIdOrderByVersionDesc(Long mdmId);
+
 }
 

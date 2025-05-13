@@ -983,7 +983,7 @@ public class StreamingPublicationDelivery {
         logger.info("There are stop places to export");
 
         List<org.rutebanken.tiamat.model.StopPlace> recoveredStopPlaces = stopPlaceRepository.getStopPlaceInitializedForExport(stopPlacePrimaryIds);
-        mdmService.replaceTiamatIdByMdmId(recoveredStopPlaces);
+        mdmService.fillImportedIds(recoveredStopPlaces);
 
         recoveredStopPlaces.forEach(this::addAdditionalInfo);
         logger.info("Feed of addAdditionalInfo completed");

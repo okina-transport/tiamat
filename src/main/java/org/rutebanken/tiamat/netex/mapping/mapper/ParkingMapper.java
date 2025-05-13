@@ -120,7 +120,7 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
         super.mapBtoA(tiamatParking, netexParking, context);
 
         String originalId =
-                tiamatParking.getKeyValues().get(ORIGINAL_ID_KEY).getItems().stream().findFirst().orElseThrow();
+                tiamatParking.getKeyValues().get(ORIGINAL_ID_KEY).getItems().stream().findFirst().orElse(null);
 
         if (PARKING_ID_PATTERN.matcher(originalId).matches()) {
             netexParking.setId(originalId);

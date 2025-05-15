@@ -50,6 +50,8 @@ public class MergingParkingImporter {
 
     private final ParkingAreasVersionedSaverService parkingAreasVersionedSaverService;
 
+    private final ParkingBaysVersionedSaverService parkingBaysVersionedSaverService;
+
     private final ParkingPlaceEquipmentsVersionedSaverService parkingPlaceEquipmentsVersionedSaverService;
 
     private final ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService;
@@ -64,17 +66,17 @@ public class MergingParkingImporter {
 
     @Autowired
     public MergingParkingImporter(ParkingFromOriginalIdFinder parkingFromOriginalIdFinder,
-								  NearbyParkingFinder nearbyParkingFinder,
-								  ReferenceResolver referenceResolver,
-								  NetexMapper netexMapper,
-								  ParkingVersionedSaverService parkingVersionedSaverService,
-								  ParkingPropertiesVersionedSaverService parkingPropertiesVersionedSaverService,
+                                  NearbyParkingFinder nearbyParkingFinder,
+                                  ReferenceResolver referenceResolver,
+                                  NetexMapper netexMapper,
+                                  ParkingVersionedSaverService parkingVersionedSaverService,
+                                  ParkingPropertiesVersionedSaverService parkingPropertiesVersionedSaverService,
                                   AccessibilityVersionedSaverService accessibilityVersionedSaverService,
-								  ParkingAreasVersionedSaverService parkingAreasVersionedSaverService,
-								  ParkingPlaceEquipmentsVersionedSaverService parkingPlaceEquipmentsVersionedSaverService,
-								  ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService,
-								  VersionCreator versionCreator,
-								  MergingUtils mergingUtils, AccessibilityAssessmentRepository accessibilityAssessmentRepository) {
+                                  ParkingAreasVersionedSaverService parkingAreasVersionedSaverService,
+                                  ParkingPlaceEquipmentsVersionedSaverService parkingPlaceEquipmentsVersionedSaverService,
+                                  ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService,
+                                  VersionCreator versionCreator,
+                                  MergingUtils mergingUtils, AccessibilityAssessmentRepository accessibilityAssessmentRepository, ParkingBaysVersionedSaverService parkingBaysVersionedSaverService) {
         this.parkingFromOriginalIdFinder = parkingFromOriginalIdFinder;
         this.nearbyParkingFinder = nearbyParkingFinder;
         this.referenceResolver = referenceResolver;
@@ -86,6 +88,7 @@ public class MergingParkingImporter {
         this.parkingInstalledEquipmentsVersionedSaverService = parkingInstalledEquipmentsVersionedSaverService;
         this.versionCreator = versionCreator;
         this.mergingUtils = mergingUtils;
+        this.parkingBaysVersionedSaverService = parkingBaysVersionedSaverService;
     }
 
     /**
@@ -197,8 +200,19 @@ public class MergingParkingImporter {
                         !new HashSet<>(incomingParking.getParkingAreas()).containsAll(copyParking.getParkingAreas()))) {
 
             copyParking.getParkingAreas().clear();
+
             for (ParkingArea area : incomingParking.getParkingAreas()) {
                 copyParkingAreas.add(parkingAreasVersionedSaverService.saveNewVersion(area));
+                if (area.getBays() != null || !area.getBays().isEmpty()) {
+                    List<ParkingBay> copyParkingBays = new ArrayList<>();
+                    for (ParkingBay bay : area.getBays()) {
+                        copyParkingBays.add(parkingBaysVersionedSaverService.saveNewVersion(bay));
+                    }
+                    if (!copyParkingBays.isEmpty()) {
+                        area.getBays().clear();
+                        area.getBays().addAll(copyParkingBays);
+                    }
+                }
             }
             copyParking.getParkingAreas().addAll(copyParkingAreas);
             logger.info("Updated areas to {} for parking {}", copyParking.getParkingAreas(), copyParking);

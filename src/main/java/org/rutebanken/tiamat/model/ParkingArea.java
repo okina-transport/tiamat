@@ -15,11 +15,10 @@
 
 package org.rutebanken.tiamat.model;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.OneToOne;
-import javax.persistence.Transient;
+import javax.persistence.*;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Entity
@@ -33,8 +32,8 @@ public class ParkingArea
 
     protected SpecificParkingAreaUsageEnumeration specificParkingAreaUsage = SpecificParkingAreaUsageEnumeration.NONE;
 
-    @Transient
-    protected ParkingBays_RelStructure bays;
+    @OneToMany(mappedBy = "parkingArea", cascade = CascadeType.ALL, orphanRemoval = true)
+    protected List<ParkingBay> bays = new ArrayList<>();
 
     @Transient
     protected EntranceRefs_RelStructure entrances;
@@ -55,14 +54,6 @@ public class ParkingArea
         this.parkingProperties = value;
     }
 
-    public ParkingBays_RelStructure getBays() {
-        return bays;
-    }
-
-    public void setBays(ParkingBays_RelStructure value) {
-        this.bays = value;
-    }
-
     public EntranceRefs_RelStructure getEntrances() {
         return entrances;
     }
@@ -77,5 +68,13 @@ public class ParkingArea
 
     public void setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration specificParkingAreaUsage) {
         this.specificParkingAreaUsage = specificParkingAreaUsage;
+    }
+
+    public List<ParkingBay> getBays() {
+        return bays;
+    }
+
+    public void setBays(List<ParkingBay> bays) {
+        this.bays = bays;
     }
 }

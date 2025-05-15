@@ -18,14 +18,14 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
 import org.apache.commons.lang3.StringUtils;
-import org.rutebanken.netex.model.ObjectFactory;
-import org.rutebanken.netex.model.PublicUseEnumeration;
-import org.rutebanken.netex.model.TypeOfPlaceRefStructure;
-import org.rutebanken.netex.model.TypeOfPlaceRefs_RelStructure;
+import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.ParkingArea;
 import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
 
+import javax.xml.bind.JAXBElement;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.ParkingArea, ParkingArea> {
 
@@ -35,8 +35,30 @@ public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.P
     public void mapAtoB(org.rutebanken.netex.model.ParkingArea netexParkingArea, ParkingArea tiamatParkingArea, MappingContext context) {
         super.mapAtoB(netexParkingArea, tiamatParkingArea, context);
 
-        if (netexParkingArea.getRest().get(0).getName().getLocalPart().equals("TotalCapacity")) {
-            tiamatParkingArea.setTotalCapacity((BigInteger) netexParkingArea.getRest().get(0).getValue());
+        for (JAXBElement rest : netexParkingArea.getRest()) {
+            if (rest.getName().getLocalPart().equals("TotalCapacity")) {
+                tiamatParkingArea.setTotalCapacity((BigInteger) netexParkingArea.getRest().get(0).getValue());
+            }
+
+            if (rest.getName().getLocalPart().equals("bays")) {
+                if (rest.getValue() instanceof org.rutebanken.netex.model.ParkingBays_RelStructure) {
+                    org.rutebanken.netex.model.ParkingBays_RelStructure parkingBaysRelStructure = (org.rutebanken.netex.model.ParkingBays_RelStructure) rest.getValue();
+                    List<org.rutebanken.tiamat.model.ParkingBay> tiamatBays = new ArrayList<>();
+
+                    for (Object object : parkingBaysRelStructure.getParkingBayRefOrParkingBay_()) {
+                        if (object instanceof JAXBElement) {
+                            JAXBElement jaxbElement = (JAXBElement) object;
+                            if (jaxbElement.getValue() instanceof ParkingBay) {
+                                ParkingBay parkingBay = (ParkingBay) jaxbElement.getValue();
+                                org.rutebanken.tiamat.model.ParkingBay tiamatParkingBay = mapperFacade.map(parkingBay, org.rutebanken.tiamat.model.ParkingBay.class);
+                                tiamatParkingBay.setParkingArea(tiamatParkingArea);
+                                tiamatBays.add(tiamatParkingBay);
+                            }
+                        }
+                    }
+                    tiamatParkingArea.setBays(tiamatBays);
+                }
+            }
         }
     }
 
@@ -49,6 +71,23 @@ public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.P
 
         netexParkingArea.setPublicUse(tiamatParkingArea.getPublicUse() != null ? PublicUseEnumeration.fromValue(tiamatParkingArea.getPublicUse().value()) : PublicUseEnumeration.ALL);
         netexParkingArea.withRest(netexObjectFactory.createParkingArea_VersionStructureTotalCapacity(tiamatParkingArea.getTotalCapacity()));
+
+        if (tiamatParkingArea.getBays() != null && !tiamatParkingArea.getBays().isEmpty()) {
+            ParkingBays_RelStructure parkingBaysRelStructure = new ParkingBays_RelStructure();
+
+            for (org.rutebanken.tiamat.model.ParkingBay tiamatBay : tiamatParkingArea.getBays()) {
+                org.rutebanken.netex.model.ParkingBay netexBay = mapperFacade.map(
+                        tiamatBay,
+                        org.rutebanken.netex.model.ParkingBay.class
+                );
+
+                JAXBElement<ParkingBay> bayElement = netexObjectFactory.createParkingBay(netexBay);
+                parkingBaysRelStructure.getParkingBayRefOrParkingBay_().add(bayElement);
+            }
+            JAXBElement<ParkingBays_RelStructure> baysElement =
+                    netexObjectFactory.createParkingArea_VersionStructureBays(parkingBaysRelStructure);
+            netexParkingArea.getRest().add(baysElement);
+        }
 
         if (SpecificParkingAreaUsageEnumeration.PARD_AND_RIDE.equals(tiamatParkingArea.getSpecificParkingAreaUsage())) {
 

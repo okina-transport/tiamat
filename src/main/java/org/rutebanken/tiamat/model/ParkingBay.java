@@ -15,8 +15,38 @@
 
 package org.rutebanken.tiamat.model;
 
-public class ParkingBay
-        extends ParkingBay_VersionStructure {
+import com.google.common.base.MoreObjects;
 
+import javax.persistence.*;
 
+@Entity
+public class ParkingBay extends ParkingBay_VersionStructure {
+
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "parking_area_id")
+    private ParkingArea parkingArea;
+
+    public ParkingArea getParkingArea() {
+        return parkingArea;
+    }
+
+    public void setParkingArea(ParkingArea parkingArea) {
+        this.parkingArea = parkingArea;
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .omitNullValues()
+                .add("netexId", netexId)
+                .add("created", created)
+                .add("changed", changed)
+                .add("parkingVehicleType", parkingVehicleType)
+                .add("lenght", length)
+                .add("width", width)
+                .add("height", height)
+                .add("weight", weight)
+                .add("rechargingAvailable", rechargingAvailable)
+                .toString();
+    }
 }

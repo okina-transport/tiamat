@@ -20,11 +20,14 @@ import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
 import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.netex.model.ParkingAreas_RelStructure;
+import org.rutebanken.netex.model.ParkingBay;
+import org.rutebanken.netex.model.ParkingBays_RelStructure;
 import org.rutebanken.tiamat.model.ParkingArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import javax.xml.bind.JAXBElement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,6 +50,15 @@ public class ParkingAreaListConverter extends BidirectionalConverter<List<Parkin
 
         parkingAreas.forEach(parkingArea -> {
             org.rutebanken.netex.model.ParkingArea netexParkingArea = mapperFacade.map(parkingArea, org.rutebanken.netex.model.ParkingArea.class);
+
+            ParkingBays_RelStructure baysRelStructure = new ParkingBays_RelStructure();
+            for (org.rutebanken.tiamat.model.ParkingBay bay : parkingArea.getBays()) {
+                org.rutebanken.netex.model.ParkingBay netexParkingBay = mapperFacade.map(bay, org.rutebanken.netex.model.ParkingBay.class);
+                JAXBElement<ParkingBay> bayElement = netexObjectFactory.createParkingBay(netexParkingBay);
+                baysRelStructure.withParkingBayRefOrParkingBay_(bayElement);
+            }
+            netexParkingArea.withRest(netexObjectFactory.createParkingArea_VersionStructureBays(baysRelStructure));
+
             parkingAreas_relStructure.getParkingAreaRefOrParkingArea_().add(netexObjectFactory.createParkingArea(netexParkingArea));
         });
         return parkingAreas_relStructure;

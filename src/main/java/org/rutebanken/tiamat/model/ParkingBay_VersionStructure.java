@@ -15,9 +15,10 @@
 
 package org.rutebanken.tiamat.model;
 
+import javax.persistence.MappedSuperclass;
 import java.math.BigDecimal;
 
-
+@MappedSuperclass
 public class ParkingBay_VersionStructure
         extends ParkingComponent_VersionStructure {
 
@@ -25,6 +26,7 @@ public class ParkingBay_VersionStructure
     protected BigDecimal length;
     protected BigDecimal width;
     protected BigDecimal height;
+    protected BigDecimal weight;
     protected Boolean rechargingAvailable;
 
     public ParkingVehicleEnumeration getParkingVehicleType() {
@@ -58,6 +60,10 @@ public class ParkingBay_VersionStructure
     public void setHeight(BigDecimal value) {
         this.height = value;
     }
+
+    public BigDecimal getWeight() { return weight; }
+
+    public void setWeight(BigDecimal weight) { this.weight = weight; }
 
     public Boolean isRechargingAvailable() {
         return rechargingAvailable;

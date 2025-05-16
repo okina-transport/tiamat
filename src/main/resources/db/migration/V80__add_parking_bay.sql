@@ -98,16 +98,3 @@ ALTER TABLE parking_bay_equipment_places
 
 ALTER TABLE parking_bay_equipment_places
     ADD CONSTRAINT fk_equipment_places_id FOREIGN KEY (equipment_places_id) REFERENCES equipment_place (id);
-
-
-CREATE TABLE parking_bay_check_constraints
-(
-    parking_bay_id       bigint NOT NULL,
-    check_constraints_id bigint NOT NULL
-);
-
-ALTER TABLE parking_bay_check_constraints
-    ADD CONSTRAINT fk_parking_bay_id FOREIGN KEY (parking_bay_id) REFERENCES parking_bay (id);
-
-ALTER TABLE parking_bay_check_constraints
-    ADD CONSTRAINT fk_pcheck_constraints_id FOREIGN KEY (check_constraints_id) REFERENCES check_constraint (id);

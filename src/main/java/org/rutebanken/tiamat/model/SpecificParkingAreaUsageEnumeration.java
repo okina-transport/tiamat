@@ -7,7 +7,7 @@ public enum SpecificParkingAreaUsageEnumeration {
     PEDAL_CYCLE("pedalCycle"),
     TWO_WHEELED_VEHICLE("twoWheeledVehicle"),
     CARSHARE("autopartage"),
-    PARD_AND_RIDE("parkAndRide"),
+    PARK_AND_RIDE("parkAndRide"),
     DISABLED("handicap");
     private final String value;
 
@@ -24,5 +24,7 @@ public enum SpecificParkingAreaUsageEnumeration {
         throw new IllegalArgumentException(v);
     }
 
-    public String value() { return value; }
+    public String value() {
+        return value;
+    }
 }

@@ -14,7 +14,7 @@
   ~ limitations under the Licence.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -81,7 +81,7 @@
         <assertj-core.version>3.10.0</assertj-core.version>
         <rest-assured.version>4.5.1</rest-assured.version>
         <javax.el.version>3.0.0</javax.el.version>
-<!--        <com.h2database.version>2.2.224</com.h2database.version>-->
+        <!--        <com.h2database.version>2.2.224</com.h2database.version>-->
         <hikariCP.version>3.2.0</hikariCP.version>
         <commons.lang3.version>3.7</commons.lang3.version>
         <orika-core.version>1.5.4</orika-core.version>
@@ -123,6 +123,9 @@
 
         <sonar.projectKey>mobi-iti:tiamat</sonar.projectKey>
         <maven.compiler.args>--add-opens java.base/java.lang=ALL-UNNAMED</maven.compiler.args>
+        <gbfs-mapper-java.version>2.0.29</gbfs-mapper-java.version>
+        <gbfs-validator-java.version>2.0.34</gbfs-validator-java.version>
+        <gbfs-loader-java.version>4.0.37</gbfs-loader-java.version>
     </properties>
 
     <!-- This repository list can be deleted, as it is now plied by rutebanken nexus.
@@ -138,8 +141,12 @@
             <id>osgeo</id>
             <name>OSGeo Release Repository</name>
             <url>https://repo.osgeo.org/repository/release/</url>
-            <snapshots><enabled>false</enabled></snapshots>
-            <releases><enabled>true</enabled></releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
         </repository>
     </repositories>
 
@@ -203,7 +210,6 @@
             </dependency>
 
 
-
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -245,9 +251,12 @@
             </dependency>
 
             <dependency>
-                <groupId>org.apache.logging.log4j</groupId>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1652 -->
-                <artifactId>log4j-to-slf4j</artifactId>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1653 -->
-                <version>${log4j2.version}</version>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1654 -->
+                <groupId>org.apache.logging.log4j
+                </groupId>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1652 -->
+                <artifactId>log4j-to-slf4j
+                </artifactId>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1653 -->
+                <version>${log4j2.version}
+                </version>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1654 -->
             </dependency>
 
             <dependency>
@@ -313,7 +322,6 @@
             <artifactId>commons-collections4</artifactId>
             <version>4.4</version>
         </dependency>
-
 
 
         <dependency>
@@ -548,11 +556,11 @@
             <version>${hibernate.version}</version>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>com.h2database</groupId>-->
-<!--            <artifactId>h2</artifactId>-->
-<!--            <version>${com.h2database.version}</version>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>com.h2database</groupId>-->
+        <!--            <artifactId>h2</artifactId>-->
+        <!--            <version>${com.h2database.version}</version>-->
+        <!--        </dependency>-->
 
         <dependency>
             <groupId>com.zaxxer</groupId>
@@ -738,6 +746,24 @@
             <version>1.9.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.entur.gbfs</groupId>
+            <artifactId>gbfs-validator-java</artifactId>
+            <version>${gbfs-validator-java.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.entur.gbfs</groupId>
+            <artifactId>gbfs-mapper-java</artifactId>
+            <version>${gbfs-mapper-java.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.entur.gbfs</groupId>
+            <artifactId>gbfs-loader-java</artifactId>
+            <version>${gbfs-loader-java.version}</version>
+        </dependency>
+
     </dependencies>
 
 
@@ -826,7 +852,9 @@
                     <!--                        <exclude>**/GraphQLResourceStopPlaceMergerTest.java</exclude>-->
                     <!--                        <exclude>**/GraphQLResourceQuayMergerTest.java</exclude>-->
                     <!--                    </excludes>-->
-                    <argLine>@{argLine} -Xms500m -Xmx5000m -Xss256k --add-opens java.base/java.lang=ALL-UNNAMED -Dhazelcast.ignoreXxeProtectionFailures=true</argLine>
+                    <argLine>@{argLine} -Xms500m -Xmx5000m -Xss256k --add-opens java.base/java.lang=ALL-UNNAMED
+                        -Dhazelcast.ignoreXxeProtectionFailures=true
+                    </argLine>
                     <runOrder>alphabetical</runOrder>
                 </configuration>
             </plugin>
@@ -892,8 +920,10 @@
         <profile>
             <id>sonar</id>
             <properties>
-                <sonar.dependencyCheck.jsonReportPath>target/dependency-check-report.json</sonar.dependencyCheck.jsonReportPath>
-                <sonar.dependencyCheck.htmlReportPath>target/dependency-check-report.html</sonar.dependencyCheck.htmlReportPath>
+                <sonar.dependencyCheck.jsonReportPath>target/dependency-check-report.json
+                </sonar.dependencyCheck.jsonReportPath>
+                <sonar.dependencyCheck.htmlReportPath>target/dependency-check-report.html
+                </sonar.dependencyCheck.htmlReportPath>
                 <sonar.dependencyCheck.securityHotspot>true</sonar.dependencyCheck.securityHotspot>
                 <sonar.dependencyCheck.summarize>true</sonar.dependencyCheck.summarize>
             </properties>
@@ -923,7 +953,7 @@
                                     <goal>check</goal>
                                 </goals>
                                 <configuration>
-                                    <rules />
+                                    <rules/>
                                 </configuration>
                             </execution>
                         </executions>

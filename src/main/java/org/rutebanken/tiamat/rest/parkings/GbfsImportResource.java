@@ -1,25 +1,18 @@
 package org.rutebanken.tiamat.rest.parkings;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.general.ImportJobWorker;
 import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
-import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
-import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
-import org.rutebanken.tiamat.model.gbfs.GbfsImportLinks;
-import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportData;
-import org.rutebanken.tiamat.model.gbfs.GbfsValidationOutput;
+import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportParams;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.repository.JobRepository;
-import org.rutebanken.tiamat.service.parking.GbfsInputValidator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
+import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -34,46 +27,24 @@ import java.util.concurrent.Executors;
 @Path("/gbfs_parking")
 public class GbfsImportResource {
 
-    private static final Logger logger = LoggerFactory.getLogger(GbfsImportResource.class);
-
     private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("import-%d").build());
 
     private final JobRepository jobRepository;
-    private final GbfsInputValidator gbfsInputValidator;
     private final ImportJobWorkerBuilder importJobWorkerBuilder;
 
-    public GbfsImportResource(JobRepository jobRepository, GbfsInputValidator gbfsInputValidator, ImportJobWorkerBuilder importJobWorkerBuilder) {
+    public GbfsImportResource(JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder) {
         this.jobRepository = jobRepository;
-        this.gbfsInputValidator = gbfsInputValidator;
         this.importJobWorkerBuilder = importJobWorkerBuilder;
-    }
-
-    public static String getLastPartOfUrl(String url) {
-        int lastSlashIndex = url.lastIndexOf('/');
-        if (lastSlashIndex != -1 && lastSlashIndex < url.length() - 1) {
-            return url.substring(lastSlashIndex + 1);
-        }
-        return "";
     }
 
     @POST
     @Path("/async_import")
     @Consumes({MediaType.APPLICATION_JSON + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response importParkingGbfs(GbfsImportLinks gbfsImportLinks) {
-        GbfsValidationOutput validation = gbfsInputValidator.validateInput(gbfsImportLinks);
-        if (CollectionUtils.isNotEmpty(validation.getErrors())) {
-            logger.error("GBFS parking import validation failed : {} error(s)", validation.getErrors().size());
-            for (String error : validation.getErrors()) {
-                logger.error(error);
-            }
-            return Response.status(Response.Status.BAD_REQUEST).build();
-        }
-        ParkingTypeEnumeration parkingType = ParkingTypeEnumeration.fromValue(gbfsImportLinks.getParkingType());
-        SpecificParkingAreaUsageEnumeration parkingAreaType = SpecificParkingAreaUsageEnumeration.fromValue(gbfsImportLinks.getParkingAreaType());
+    public Response importParkingGbfs(@Valid GbfsParkingImportParams gbfsParkingImportParams) {
         Job job = new Job();
-        job.setFileName(getLastPartOfUrl(gbfsImportLinks.getGlobalUrl()));
+        job.setFileName(gbfsParkingImportParams.getGlobalUrl().getPath());
         job.setType(JobType.GBFS_PARKING);
         job.setAction(JobAction.IMPORT);
         job.setStatus(JobStatus.PROCESSING);
@@ -85,7 +56,7 @@ public class GbfsImportResource {
 
         ImportJobWorker importJobWorker = importJobWorkerBuilder
                 .init(job)
-                .withGbfsParkingImportData(new GbfsParkingImportData(validation.getStations(), validation.getVehicleTypes(), validation.getSystemInformation(), parkingType, parkingAreaType))
+                .withGbfsParkingImportParams(gbfsParkingImportParams)
                 .build();
         importService.submit(importJobWorker);
 

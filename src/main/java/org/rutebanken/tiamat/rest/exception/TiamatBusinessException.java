@@ -1,7 +1,6 @@
 package org.rutebanken.tiamat.rest.exception;
 
 
-
 public class TiamatBusinessException extends Exception {
 
     public static final int CODE_NON_PRECISE = 0;
@@ -15,6 +14,10 @@ public class TiamatBusinessException extends Exception {
      * Mismatch between stop point in database and transport mode from incoming point
      */
     public static final int TRANSPORT_MODE_MISMATCH = 2;
+
+    public static final int GBFS_HTTP_RETRIEVAL_FAILED = 3;
+
+    public static final int GBFS_INVALID = 4;
 
 
     /**

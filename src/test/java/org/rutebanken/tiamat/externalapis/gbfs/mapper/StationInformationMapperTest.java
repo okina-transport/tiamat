@@ -1,246 +1,159 @@
 package org.rutebanken.tiamat.externalapis.gbfs.mapper;
 
-import org.junit.Before;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
+import org.mobilitydata.gbfs.v3_0.station_information.GBFSStationInformation;
+import org.mobilitydata.gbfs.v3_0.vehicle_types.GBFSVehicleTypes;
 import org.rutebanken.tiamat.model.*;
-import org.rutebanken.tiamat.model.gbfs.RentalUri;
-import org.rutebanken.tiamat.model.gbfs.StationInformation;
-import org.rutebanken.tiamat.model.gbfs.VehicleType;
 
+import java.math.BigInteger;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.rutebanken.tiamat.externalapis.gbfs.mapper.StationInformationMapper.mapVehicleCapacity;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class StationInformationMapperTest {
 
-    private static final String STATION_ID = "station_id";
-    private static final String STATION_NAME = "station_name";
-    private static final String ADDRESS = "3, Address";
-    private static final String CROSS_STREET = "Cross Street";
-    private static final String BOOKING_URL = "https://booking.com";
-    private static final String RENTAL_URI_IOS = "https://ios.booking.com";
-    private static final String RENTAL_URI_ANDROID = "https://android.booking.com";
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private StationInformationMapper mapper;
+    private static final String RAW_GBFS_V_TYPES = """
+            {
+               "last_updated":"2025-05-30T14:35:33.000+00:00",
+               "ttl":0,
+               "version":"3.0",
+               "data":{
+                 "vehicle_types":[
+                   {
+                     "vehicle_type_id":"CAL:VehicleType:titibike",
+                     "form_factor":"bicycle",
+                     "propulsion_type":"electric_assist",
+                     "max_range_meters":20000
+                   },
+                   {
+                     "vehicle_type_id":"CAL:VehicleType:x2",
+                     "form_factor":"bicycle",
+                     "propulsion_type":"electric_assist",
+                     "max_range_meters":60000
+                   },
+                   {
+                     "vehicle_type_id":"CAL:VehicleType:knot",
+                     "form_factor":"scooter",
+                     "propulsion_type":"electric",
+                     "max_range_meters":35000
+                   },
+                   {
+                     "vehicle_type_id":"CAL:VehicleType:pony",
+                     "form_factor":"scooter",
+                     "propulsion_type":"electric",
+                     "max_range_meters":60000
+                   }
+                 ]
+               }
+             }
+            """;
 
-    @Before
-    public void setUp() {
-        mapper = new StationInformationMapper();
-    }
+    private static final String RAW_GBFS_STATION_INFORMATION_JSON = """
+            {
+              "last_updated":"2025-05-30T14:29:18.000+00:00",
+              "ttl":0,
+              "version":"3.0",
+              "data":{
+                "stations":[
+                  {
+                    "station_id":"CAL:Station:stn_bE8SHEQRa5rnLSuzpqoxJs",
+                    "name":[
+                      {
+                        "text":"Lac des Nauves",
+                        "language":"fr"
+                      }
+                    ],
+                    "short_name":[
+                      {
+                        "text":"LDN",
+                        "language":"fr"
+                      }
+                    ],
+                    "address":"36 quai des orfèvres",
+                    "cross_street":"ABCD",
+                    "lat":45.055792,
+                    "lon":-0.099944,
+                    "is_virtual_station":false,
+                    "capacity":10,
+                    "is_valet_station":false,
+                    "is_charging_station":false,
+                    "rental_uris":{
+                      "web":"https://calivelo.ecovelo.mobi/#/station/stn_bE8SHEQRa5rnLSuzpqoxJs",
+                      "ios":"ios",
+                      "android":"android"
+                    },
+                    "rental_methods":[
+                      "creditcard",
+                      "applepay",
+                      "androidpay"
+                    ],
+                    "vehicle_types_capacity":[
+                      {
+                        "vehicle_type_ids":[
+                          "CAL:VehicleType:knot",
+                          "CAL:VehicleType:pony"
+                        ],
+                        "count":10
+                      }
+                    ],
+                    "parking_type": "underground_parking"
+                  }
+                ]
+              }
+            }
+            """;
 
-    @Test
-    public void toParkingPaymentMethodEnumeration_noRentalMethod_test() {
-        Set<PaymentMethodEnumeration> parkingPaymentMethodEnumeration = StationInformationMapper.toParkingPaymentMethods(new StationInformation());
-
-        assertThat(parkingPaymentMethodEnumeration).isEmpty();
-    }
-
-    @Test
-    public void toParkingPaymentMethods_multipleRentalMethods_test() {
-        StationInformation stationInformation = new StationInformation();
-        stationInformation.setRentalMethods(List.of("creditcard",
-                "paypass",
-                "applepay", "androidpay", "phone",
-                "transitcard"
-        ));
-        Set<PaymentMethodEnumeration> parkingPaymentMethodEnumeration = StationInformationMapper.toParkingPaymentMethods(stationInformation);
-
-        assertThat(parkingPaymentMethodEnumeration).hasSize(4).containsExactlyInAnyOrder(
-                PaymentMethodEnumeration.CREDIT_CARD,
-                PaymentMethodEnumeration.CONTACTLESS_PAYMENT_CARD,
-                PaymentMethodEnumeration.MOBILE_PHONE,
-                PaymentMethodEnumeration.TRAVEL_CARD
-        );
-    }
-
-    @Test
-    public void toParkingLayout_emptyInformation_test() {
-        ParkingLayoutEnumeration parkingLayoutEnumeration = StationInformationMapper.toParkingLayout(new StationInformation());
-
-        assertThat(parkingLayoutEnumeration).isEqualTo(ParkingLayoutEnumeration.UNDEFINED);
-    }
-
-    @Test
-    public void toParkingLayoutEnumeration_parkingTypeDefined_test() {
-        StationInformation stationInformation = new StationInformation();
-        stationInformation.setParkingType("parking_lot");
-        ParkingLayoutEnumeration parkingLayoutEnumeration = StationInformationMapper.toParkingLayout(stationInformation);
-
-        assertThat(parkingLayoutEnumeration).isEqualTo(ParkingLayoutEnumeration.OPEN_SPACE);
-    }
-
-    @Test
-    public void toParkingLayoutEnumeration_parkingTypeDefined2_test() {
-        StationInformation stationInformation = new StationInformation();
-        stationInformation.setParkingType("street_parking");
-        ParkingLayoutEnumeration parkingLayoutEnumeration = StationInformationMapper.toParkingLayout(stationInformation);
-
-        assertThat(parkingLayoutEnumeration).isEqualTo(ParkingLayoutEnumeration.ROADSIDE);
-    }
-
-    @Test
-    public void toParkingLayoutEnumeration_parkingTypeDefined3_test() {
-        StationInformation stationInformation = new StationInformation();
-        stationInformation.setParkingType("underground_parking");
-        ParkingLayoutEnumeration parkingLayoutEnumeration = StationInformationMapper.toParkingLayout(stationInformation);
-
-        assertThat(parkingLayoutEnumeration).isEqualTo(ParkingLayoutEnumeration.UNDERGROUND);
-    }
-
-    @Test
-    public void mapVehicleCapacity_test() {
-        VehicleType vehicleType = new VehicleType();
-        vehicleType.setVehicleTypeId("bike");
-        vehicleType.setFormFactor("bicycle");
-        Parking parking = new Parking();
-        StationInformation stationInformation = new StationInformation();
-        stationInformation.setVehicleCapacity(Map.of("bike", 10));
-
-        mapVehicleCapacity(stationInformation, List.of(vehicleType), parking);
-
-        assertThat(parking.getParkingProperties()).hasSize(1);
-        List<ParkingCapacity> spaces = parking.getParkingProperties().get(0).getSpaces();
-        assertThat(spaces).hasSize(1);
-        assertThat(spaces.get(0).getNumberOfSpaces()).isEqualTo(10);
-        assertThat(spaces.get(0).getParkingVehicleType()).isEqualTo(ParkingVehicleEnumeration.PEDAL_CYCLE);
-    }
-
-    @Test
-    public void toParking_stationIdMapping_test() {
-        StationInformation stationInformation = new StationInformation();
-        stationInformation.setStationId(STATION_ID);
-
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
-
-        assertThat(parking.getNetexId()).isEqualTo("MOBIITI:PARKING:station_id");
-    }
+    private final StationInformationMapper tested = new StationInformationMapper();
 
     @Test
-    public void toParking_nameMapping_test() {
-        StationInformation stationInformation = new StationInformation();
-        stationInformation.setName(STATION_NAME);
-
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
-
-        assertThat(parking.getName().getValue()).isEqualTo(stationInformation.getName());
-    }
-
-    @Test
-    public void toParking_shortNameMapping_test() {
-        StationInformation stationInformation = new StationInformation();
-        stationInformation.setShortName(STATION_NAME);
-
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
-
-        assertThat(parking.getShortName().getValue()).isEqualTo(stationInformation.getShortName());
-    }
-
-    @Test
-    public void toParking_addressMapping_test() {
-        StationInformation stationInformation = new StationInformation();
-        stationInformation.setAddress(ADDRESS);
-
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
-
-        assertThat(parking.getAddress()).isEqualTo(stationInformation.getAddress());
-    }
-
-    @Test
-    public void toParking_crossStreetMapping_test() {
-        StationInformation stationInformation = new StationInformation();
-        stationInformation.setCrossStreet(CROSS_STREET);
-
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
-
-        assertThat(parking.getCrossRoad().getValue()).isEqualTo(stationInformation.getCrossStreet());
-    }
-
-    @Test
-    public void toParking_capacityMapping_test() {
-        StationInformation stationInformation = new StationInformation();
-
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
-
-        assertThat(parking.getTotalCapacity()).isZero();
-    }
-
-    @Test
-    public void toParking_rechargingAvailableMapping_test() {
-        StationInformation stationInformation = new StationInformation();
-        stationInformation.setChargingStation(Boolean.TRUE);
-
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
-
-        assertThat(parking.isRechargingAvailable()).isEqualTo(stationInformation.getChargingStation());
-    }
-
-    @Test
-    public void toParking_bookingUrlMapping_test() {
-        StationInformation stationInformation = new StationInformation();
-        RentalUri rentalUri = new RentalUri();
-        rentalUri.setBookingUri(BOOKING_URL);
-        stationInformation.setRentalUri(rentalUri);
-
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
-
-        assertThat(parking.getBookingUrl()).isEqualTo(stationInformation.getRentalUri().getBookingUri());
-    }
-
-    @Test
-    public void toParking_iosUrlMapping_test() {
-        StationInformation stationInformation = new StationInformation();
-        RentalUri rentalUri = new RentalUri();
-        rentalUri.setRentalUriIos(RENTAL_URI_IOS);
-        stationInformation.setRentalUri(rentalUri);
-
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
-
-        assertThat(parking.getRentalUriIos()).isEqualTo(stationInformation.getRentalUri().getRentalUriIos());
-    }
-
-    @Test
-    public void toParking_androidUrlMapping_test() {
-        StationInformation stationInformation = new StationInformation();
-        RentalUri rentalUri = new RentalUri();
-        rentalUri.setRentalUriAndroid(RENTAL_URI_ANDROID);
-        stationInformation.setRentalUri(rentalUri);
-
-        Parking parking = mapper.toParking(null, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
-
-        assertThat(parking.getRentalUriAndroid()).isEqualTo(stationInformation.getRentalUri().getRentalUriAndroid());
-    }
-
-    @Test
-    public void toParking_organisationMapping_test() {
-        StationInformation stationInformation = new StationInformation();
+    public void test_toParking_whenInputIsValid_shouldMapCorrectly() throws JsonProcessingException {
+        // Arrange
+        GBFSStationInformation gbfsStationInformation = MAPPER.readValue(RAW_GBFS_STATION_INFORMATION_JSON, GBFSStationInformation.class);
+        GBFSVehicleTypes gbfsVehicleTypes = MAPPER.readValue(RAW_GBFS_V_TYPES, GBFSVehicleTypes.class);
         Organisation organisation = new Organisation();
 
-        Parking parking = mapper.toParking(organisation, stationInformation, ParkingTypeEnumeration.CYCLE_RENTAL, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
+        // Act
+        Parking output = tested.toParking(organisation, gbfsStationInformation.getData().getStations().get(0), gbfsVehicleTypes, ParkingTypeEnumeration.CYCLE_RENTAL, SpecificParkingAreaUsageEnumeration.PEDAL_CYCLE);
 
-        assertThat(parking.getOrganisation()).isEqualTo(organisation);
-    }
+        // Assert
+        assertNotNull(output);
+        assertEquals("MOBIITI:PARKING:CAL##3A##Station##3A##stn_bE8SHEQRa5rnLSuzpqoxJs", output.getNetexId());
+        assertEquals("CAL:Station:stn_bE8SHEQRa5rnLSuzpqoxJs", output.getOriginalId());
+        assertEquals("Lac des Nauves", output.getName().getValue());
+        assertEquals("fr", output.getName().getLang());
+        assertEquals("LDN", output.getShortName().getValue());
+        assertEquals("fr", output.getShortName().getLang());
+        assertNotNull(output.getCentroid());
+        assertEquals("36 quai des orfèvres", output.getAddress());
+        assertEquals("ABCD", output.getCrossRoad().getValue());
+        assertEquals(BigInteger.valueOf(10), output.getTotalCapacity());
+        assertFalse(output.isRechargingAvailable());
+        assertEquals("https://calivelo.ecovelo.mobi/#/station/stn_bE8SHEQRa5rnLSuzpqoxJs", output.getBookingUrl());
+        assertEquals("ios", output.getRentalUriIos());
+        assertEquals("android", output.getRentalUriAndroid());
+        assertEquals(List.of(PaymentMethodEnumeration.CREDIT_CARD, PaymentMethodEnumeration.MOBILE_PHONE),
+                output.getParkingPaymentMethods().stream().sorted().toList());
+        assertEquals(List.of(ParkingPaymentProcessEnumeration.PAY_BY_MOBILE_DEVICE,
+                ParkingPaymentProcessEnumeration.PAY_AND_DISPLAY,
+                ParkingPaymentProcessEnumeration.PAY_BY_PREPAID_TOKEN), output.getParkingPaymentProcess());
+        assertEquals(List.of(ParkingVehicleEnumeration.MOTOR_SCOOTER), output.getParkingVehicleTypes());
+        assertEquals(ParkingLayoutEnumeration.UNDERGROUND, output.getParkingLayout());
+        assertEquals(organisation, output.getOrganisation());
+        assertEquals(ParkingTypeEnumeration.CYCLE_RENTAL, output.getParkingType());
+        assertEquals(1, output.getParkingProperties().size());
+        ParkingProperties parkingProperties = output.getParkingProperties().get(0);
+        assertEquals(2, parkingProperties.getSpaces().size());
+        ParkingCapacity parkingCapacity = parkingProperties.getSpaces().get(0);
+        assertEquals(BigInteger.valueOf(10), parkingCapacity.getNumberOfSpaces());
+        assertEquals(ParkingVehicleEnumeration.MOTOR_SCOOTER, parkingCapacity.getParkingVehicleType());
+        ParkingCapacity parkingCapacity2 = parkingProperties.getSpaces().get(0);
+        assertEquals(BigInteger.valueOf(10), parkingCapacity2.getNumberOfSpaces());
+        assertEquals(ParkingVehicleEnumeration.MOTOR_SCOOTER, parkingCapacity2.getParkingVehicleType());
 
-    @Test
-    public void toParking_parkingTypeMapping_test() {
-        StationInformation stationInformation = new StationInformation();
-        Organisation organisation = new Organisation();
-
-        Parking parking = mapper.toParking(organisation, stationInformation, ParkingTypeEnumeration.PARKING_ZONE, List.of(), SpecificParkingAreaUsageEnumeration.NONE);
-
-        assertThat(parking.getParkingType()).isEqualTo(ParkingTypeEnumeration.PARKING_ZONE);
-    }
-
-    @Test
-    public void toParking_parkingAreaTypeMapping_test() {
-        StationInformation stationInformation = new StationInformation();
-        Organisation organisation = new Organisation();
-
-        Parking parking = mapper.toParking(organisation, stationInformation, ParkingTypeEnumeration.PARKING_ZONE, List.of(), SpecificParkingAreaUsageEnumeration.CARPOOL);
-
-        assertThat(parking.getParkingAreas().get(0).getSpecificParkingAreaUsage()).isEqualTo(SpecificParkingAreaUsageEnumeration.CARPOOL);
     }
 
 }

@@ -1,200 +1,113 @@
 package org.rutebanken.tiamat.externalapis.gbfs.mapper;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
+import org.mobilitydata.gbfs.v3_0.system_information.GBFSSystemInformation;
 import org.rutebanken.tiamat.model.Organisation;
-import org.rutebanken.tiamat.model.gbfs.AndroidUrl;
-import org.rutebanken.tiamat.model.gbfs.IosUrl;
-import org.rutebanken.tiamat.model.gbfs.RentalApps;
-import org.rutebanken.tiamat.model.gbfs.SystemInformation;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SystemInformationMapperTest {
 
-    private static final String SYSTEM_ID = "nantes";
-    private static final String LANGUAGE = "fr";
-    private static final String NAME = "Naolib";
-    private static final String OPERATOR = "Naolib";
-    private static final String ORGANISATION_URL = "https://velo.naolib.fr/";
-    private static final String PURCHASE_URL = "https://velo.naolib.fr/fr/offers/groups";
-    private static final String PHONE_NUMBER = "+33130793344";
-    private static final String EMAIL = "developer@jcdecaux.com";
-    private static final String TIMEZONE = "Europe/Paris";
-    private static final String ANDROID_DISCOVERY_URL = "com.jcdecaux.vls.nantes://";
-    private static final String ANDROID_STORE_URL = "https://play.google.com/store/apps/details?id=com.jcdecaux.vls.nantes";
-    private static final String IOS_DISCOVERY_URL = "https://itunes.apple.com/app/id1414197331";
-    private static final String IOS_STORE_URL = "com.jcdecaux.vls.nantes://";
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private final SystemInformationMapper systemInformationMapper = new SystemInformationMapper();
+    private static final String GBFS_STATION_INFORMATION_RAW_JSON = """
+            {
+              "last_updated": "2023-07-17T13:34:13+02:00",
+              "ttl": 1800,
+              "version": "3.0",
+              "data": {
+                "system_id": "nantes",
+                "languages": ["fr"],
+                "name": [
+                  {
+                    "text": "NANTES - Naolib",
+                    "language": "fr"
+                  }
+                ],
+                "short_name": [
+                  {
+                    "text": "Naolib",
+                    "language": "fr"
+                  }
+                ],
+                "operator": [
+                  {
+                    "text": "NAOLIB",
+                    "language": "fr"
+                  }
+                ],
+                "opening_hours": "Apr 1-Nov 3 00:00-24:00",
+                "start_date": "2010-06-10",
+                "url": "https://velo.naolib.fr/",
+                "purchase_url": "https://velo.naolib.fr/fr/offers/groups",
+                "phone_number": "+33130793344",
+                "email": "developer@jcdecaux.com",
+                "feed_contact_email": "datafeed@example.com",
+                "timezone": "Europe/Paris",
+                "license_url": "https://www.example.com/data-license.html",
+                "terms_url": [
+                  {
+                     "text": "https://www.example.com/en/terms",
+                     "language": "en"
+                  }
+                ],
+                "terms_last_updated": "2021-06-21",
+                "privacy_url": [
+                  {
+                     "text": "https://www.example.com/en/privacy-policy",
+                     "language": "en"
+                  }
+                ],
+                "privacy_last_updated": "2019-01-13",
+                "rental_apps": {
+                  "android": {
+                    "discovery_uri": "com.jcdecaux.vls.nantes.android://",
+                    "store_uri": "https://play.google.com/store/apps/details?id=com.jcdecaux.vls.nantes"
+                  },
+                  "ios": {
+                    "store_uri": "https://itunes.apple.com/app/id1414197331",
+                    "discovery_uri": "com.jcdecaux.vls.nantes.ios://"
+                  }
+                },
+                "brand_assets": {
+                    "brand_last_modified": "2021-06-15",
+                    "brand_image_url": "https://www.example.com/assets/brand_image.svg",
+                    "brand_image_url_dark": "https://www.example.com/assets/brand_image_dark.svg",
+                    "color": "#C2D32C",
+                    "brand_terms_url": "https://www.example.com/assets/brand.pdf"
+                  }
+            
+              }
+            }""";
 
-    @Test
-    public void systemInformationToOrganisation_organisationIdMapping_test() {
-        SystemInformation systemInformation = new SystemInformation();
-        systemInformation.setSystemId(SYSTEM_ID);
-
-        Organisation result = systemInformationMapper.toOrganisation(systemInformation);
-
-        assertThat(result.getNetexId()).isNotNull();
-        assertThat(result.getNetexId()).isEqualTo("MOBIITI:ORGANISATION:"+systemInformation.getSystemId());
-    }
-
-    @Test
-    public void systemInformationToOrganisation_languageMapping_test() {
-        SystemInformation systemInformation = new SystemInformation();
-        systemInformation.setLanguage(LANGUAGE);
-
-        Organisation result = systemInformationMapper.toOrganisation(systemInformation);
-
-        assertThat(result.getLanguage()).isNotNull();
-        assertThat(result.getLanguage()).isEqualTo(systemInformation.getLanguage());
-    }
-
-    @Test
-    public void systemInformationToOrganisation_nameMapping_test() {
-        SystemInformation systemInformation = new SystemInformation();
-        systemInformation.setName(NAME);
-
-        Organisation result = systemInformationMapper.toOrganisation(systemInformation);
-
-        assertThat(result.getName()).isNotNull();
-        assertThat(result.getName()).isEqualTo(systemInformation.getName());
-    }
-
-    @Test
-    public void systemInformationToOrganisation_shortNameMapping_test() {
-        SystemInformation systemInformation = new SystemInformation();
-        systemInformation.setShortName(NAME);
-
-        Organisation result = systemInformationMapper.toOrganisation(systemInformation);
-
-        assertThat(result.getShortName()).isNotNull();
-        assertThat(result.getShortName()).isEqualTo(systemInformation.getShortName());
-    }
-
-    @Test
-    public void systemInformationToOrganisation_operatorMapping_test() {
-        SystemInformation systemInformation = new SystemInformation();
-        systemInformation.setOperator(OPERATOR);
-
-        Organisation result = systemInformationMapper.toOrganisation(systemInformation);
-
-        assertThat(result.getOperator()).isNotNull();
-        assertThat(result.getOperator()).isEqualTo(systemInformation.getOperator());
-    }
-
-    @Test
-    public void systemInformationToOrganisation_organisationUrlMapping_test() {
-        SystemInformation systemInformation = new SystemInformation();
-        systemInformation.setUrl(ORGANISATION_URL);
-
-        Organisation result = systemInformationMapper.toOrganisation(systemInformation);
-
-        assertThat(result.getOrganisationUrl()).isNotNull();
-        assertThat(result.getOrganisationUrl()).isEqualTo(systemInformation.getUrl());
-    }
+    private final SystemInformationMapper tested = new SystemInformationMapper();
 
     @Test
-    public void systemInformationToOrganisation_purchaseUrlMapping_test() {
-        SystemInformation systemInformation = new SystemInformation();
-        systemInformation.setPurchaseUrl(PURCHASE_URL);
+    public void test_toOrganisation_whenInputGBFSIsValid_thenShouldConvertProperly() throws JsonProcessingException {
+        // Arrange
+        GBFSSystemInformation si = MAPPER.readValue(GBFS_STATION_INFORMATION_RAW_JSON, GBFSSystemInformation.class);
 
-        Organisation result = systemInformationMapper.toOrganisation(systemInformation);
+        // Act
+        Organisation output = tested.toOrganisation(si);
 
-        assertThat(result.getPurchaseUrl()).isNotNull();
-        assertThat(result.getPurchaseUrl()).isEqualTo(systemInformation.getPurchaseUrl());
-    }
+        // Assert
+        assertEquals("MOBIITI:ORGANISATION:nantes", output.getNetexId());
+        assertEquals("fr", output.getLanguage());
+        assertEquals("NANTES - Naolib", output.getName());
+        assertEquals("Naolib", output.getShortName());
+        assertEquals("NAOLIB", output.getOperator());
+        assertEquals("https://velo.naolib.fr/", output.getOrganisationUrl());
+        assertEquals("https://velo.naolib.fr/fr/offers/groups", output.getPurchaseUrl());
+        assertEquals("+33130793344", output.getPhoneNumber());
+        assertEquals("developer@jcdecaux.com", output.getEmail());
+        assertEquals("Europe/Paris", output.getTimezone());
+        assertEquals("com.jcdecaux.vls.nantes.android://", output.getAndroidDiscoveryUri());
+        assertEquals("https://play.google.com/store/apps/details?id=com.jcdecaux.vls.nantes", output.getAndroidStoreUri());
+        assertEquals("com.jcdecaux.vls.nantes.ios://", output.getIosDiscoveryUri());
+        assertEquals("https://itunes.apple.com/app/id1414197331", output.getIosStoreUri());
 
-    @Test
-    public void systemInformationToOrganisation_phoneNumberMapping_test() {
-        SystemInformation systemInformation = new SystemInformation();
-        systemInformation.setPhoneNumber(PHONE_NUMBER);
-
-        Organisation result = systemInformationMapper.toOrganisation(systemInformation);
-
-        assertThat(result.getPhoneNumber()).isNotNull();
-        assertThat(result.getPhoneNumber()).isEqualTo(systemInformation.getPhoneNumber());
-    }
-
-    @Test
-    public void systemInformationToOrganisation_emailMapping_test() {
-        SystemInformation systemInformation = new SystemInformation();
-        systemInformation.setEmail(EMAIL);
-
-        Organisation result = systemInformationMapper.toOrganisation(systemInformation);
-
-        assertThat(result.getEmail()).isNotNull();
-        assertThat(result.getEmail()).isEqualTo(systemInformation.getEmail());
-    }
-
-    @Test
-    public void systemInformationToOrganisation_timezoneMapping_test() {
-        SystemInformation systemInformation = new SystemInformation();
-        systemInformation.setTimezone(TIMEZONE);
-
-        Organisation result = systemInformationMapper.toOrganisation(systemInformation);
-
-        assertThat(result.getTimezone()).isNotNull();
-        assertThat(result.getTimezone()).isEqualTo(systemInformation.getTimezone());
-    }
-
-    @Test
-    public void systemInformationToOrganisation_androidStoreUriMapping_test() {
-        SystemInformation systemInformation = new SystemInformation();
-        RentalApps rentalApps = new RentalApps();
-        AndroidUrl androidUrl = new AndroidUrl();
-        androidUrl.setAndroidStoreUri(ANDROID_STORE_URL);
-        rentalApps.setAndroidUrl(androidUrl);
-        systemInformation.setRentalApps(rentalApps);
-
-        Organisation result = systemInformationMapper.toOrganisation(systemInformation);
-
-        assertThat(result.getAndroidStoreUri()).isNotNull();
-        assertThat(result.getAndroidStoreUri()).isEqualTo(systemInformation.getRentalApps().getAndroidUrl().getAndroidStoreUri());
-    }
-
-    @Test
-    public void systemInformationToOrganisation_androidDiscoveryUriMapping_test() {
-        SystemInformation systemInformation = new SystemInformation();
-        RentalApps rentalApps = new RentalApps();
-        AndroidUrl androidUrl = new AndroidUrl();
-        androidUrl.setAndroidDiscoveryUri(ANDROID_DISCOVERY_URL);
-        rentalApps.setAndroidUrl(androidUrl);
-        systemInformation.setRentalApps(rentalApps);
-
-        Organisation result = systemInformationMapper.toOrganisation(systemInformation);
-
-        assertThat(result.getAndroidDiscoveryUri()).isNotNull();
-        assertThat(result.getAndroidDiscoveryUri()).isEqualTo(systemInformation.getRentalApps().getAndroidUrl().getAndroidDiscoveryUri());
-    }
-
-    @Test
-    public void systemInformationToOrganisation_iosStoreUriMapping_test() {
-        SystemInformation systemInformation = new SystemInformation();
-        RentalApps rentalApps = new RentalApps();
-        IosUrl iosUrl = new IosUrl();
-        iosUrl.setIosStoreUri(IOS_STORE_URL);
-        rentalApps.setIosUrl(iosUrl);
-        systemInformation.setRentalApps(rentalApps);
-
-        Organisation result = systemInformationMapper.toOrganisation(systemInformation);
-
-        assertThat(result.getIosStoreUri()).isNotNull();
-        assertThat(result.getIosStoreUri()).isEqualTo(systemInformation.getRentalApps().getIosUrl().getIosStoreUri());
-    }
-
-    @Test
-    public void systemInformationToOrganisation_iosDiscoveryUriMapping_test() {
-        SystemInformation systemInformation = new SystemInformation();
-        RentalApps rentalApps = new RentalApps();
-        IosUrl iosUrl = new IosUrl();
-        iosUrl.setIosDiscoveryUri(IOS_DISCOVERY_URL);
-        rentalApps.setIosUrl(iosUrl);
-        systemInformation.setRentalApps(rentalApps);
-
-        Organisation result = systemInformationMapper.toOrganisation(systemInformation);
-
-        assertThat(result.getIosDiscoveryUri()).isNotNull();
-        assertThat(result.getIosDiscoveryUri()).isEqualTo(systemInformation.getRentalApps().getIosUrl().getIosDiscoveryUri());
     }
 
 }

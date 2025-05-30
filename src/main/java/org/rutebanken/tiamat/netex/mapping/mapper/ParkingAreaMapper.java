@@ -41,15 +41,12 @@ public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.P
             }
 
             if (rest.getName().getLocalPart().equals("bays")) {
-                if (rest.getValue() instanceof org.rutebanken.netex.model.ParkingBays_RelStructure) {
-                    org.rutebanken.netex.model.ParkingBays_RelStructure parkingBaysRelStructure = (org.rutebanken.netex.model.ParkingBays_RelStructure) rest.getValue();
+                if (rest.getValue() instanceof ParkingBays_RelStructure parkingBaysRelStructure) {
                     List<org.rutebanken.tiamat.model.ParkingBay> tiamatBays = new ArrayList<>();
 
                     for (Object object : parkingBaysRelStructure.getParkingBayRefOrParkingBay_()) {
-                        if (object instanceof JAXBElement) {
-                            JAXBElement jaxbElement = (JAXBElement) object;
-                            if (jaxbElement.getValue() instanceof ParkingBay) {
-                                ParkingBay parkingBay = (ParkingBay) jaxbElement.getValue();
+                        if (object instanceof JAXBElement jaxbElement) {
+                            if (jaxbElement.getValue() instanceof ParkingBay parkingBay) {
                                 org.rutebanken.tiamat.model.ParkingBay tiamatParkingBay = mapperFacade.map(parkingBay, org.rutebanken.tiamat.model.ParkingBay.class);
                                 tiamatParkingBay.setParkingArea(tiamatParkingArea);
                                 tiamatBays.add(tiamatParkingBay);
@@ -65,7 +62,7 @@ public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.P
     @Override
     public void mapBtoA(ParkingArea tiamatParkingArea, org.rutebanken.netex.model.ParkingArea netexParkingArea, MappingContext context) {
         super.mapBtoA(tiamatParkingArea, netexParkingArea, context);
-        
+
         // NETEX Parking profile FRANCE v1.2 requires ":LOC" suffix
         netexParkingArea.setId(StringUtils.appendIfMissing(tiamatParkingArea.getNetexId(), ":LOC"));
 
@@ -89,12 +86,12 @@ public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.P
             netexParkingArea.getRest().add(baysElement);
         }
 
-        if (SpecificParkingAreaUsageEnumeration.PARD_AND_RIDE.equals(tiamatParkingArea.getSpecificParkingAreaUsage())) {
+        if (SpecificParkingAreaUsageEnumeration.PARK_AND_RIDE.equals(tiamatParkingArea.getSpecificParkingAreaUsage())) {
 
             TypeOfPlaceRefs_RelStructure typeOfPlaceRefRel = new TypeOfPlaceRefs_RelStructure();
             TypeOfPlaceRefStructure typeOfPlaceRef = new TypeOfPlaceRefStructure();
 
-            if (SpecificParkingAreaUsageEnumeration.PARD_AND_RIDE.equals(tiamatParkingArea.getSpecificParkingAreaUsage())) {
+            if (SpecificParkingAreaUsageEnumeration.PARK_AND_RIDE.equals(tiamatParkingArea.getSpecificParkingAreaUsage())) {
                 typeOfPlaceRef.withRef("parkAndRide");
             }
 

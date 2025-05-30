@@ -15,16 +15,23 @@
 
 package org.rutebanken.tiamat;
 
+import org.entur.gbfs.http.GBFSHttpClient;
+import org.entur.gbfs.mapper.GBFSMapper;
+import org.entur.gbfs.mapper.GBFSMapperImpl;
+import org.entur.gbfs.validation.GbfsValidator;
+import org.entur.gbfs.validation.GbfsValidatorFactory;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+
 @SpringBootApplication
 @Configuration
 @EnableTransactionManagement
@@ -37,5 +44,21 @@ public class TiamatApplication {
     public static void main(String[] args) {
         SpringApplication.run(TiamatApplication.class, args);
     }
+
+    @Bean
+    public GBFSMapper gbfsMapper() {
+        return new GBFSMapperImpl();
+    }
+
+    @Bean
+    public GbfsValidator gbfsValidator() {
+        return GbfsValidatorFactory.getGbfsJsonValidator();
+    }
+
+    @Bean
+    public GBFSHttpClient gbfsHttpClient() {
+        return new GBFSHttpClient();
+    }
+
 }
 

@@ -2,11 +2,11 @@ package org.rutebanken.tiamat.general;
 
 import org.jetbrains.annotations.NotNull;
 import org.rutebanken.tiamat.config.Messages;
+import org.rutebanken.tiamat.importer.GbfsParkingImporter;
 import org.rutebanken.tiamat.importer.NetexImporter;
-import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportData;
+import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportParams;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.repository.JobRepository;
-import org.rutebanken.tiamat.repository.OrganisationRepository;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.rutebanken.tiamat.rest.utils.StreamUtils;
 import org.rutebanken.tiamat.service.batch.MissingPostCodeService;
@@ -34,11 +34,11 @@ public class ImportJobWorkerBuilder {
     private final BikeParkingsImportedService bikeParkingsImportedService;
     private final RentalBikeParkingsImportedService rentalBikeparkingsImportedService;
     private final MissingPostCodeService missingPostalCodeService;
-    private final OrganisationRepository organisationRepository;
+    private final GbfsParkingImporter gbfsParkingImporter;
     private final Messages messages;
     private ImportJobWorker importJobWorker;
 
-    public ImportJobWorkerBuilder(JobRepository jobRepository, PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, PointOfInterestCSVHelper poiHelper, NetexImporter netexImporter, ParkingsImportedService parkingsImportedService, BikeParkingsImportedService bikeParkingsImportedService, RentalBikeParkingsImportedService rentalBikeparkingsImportedService, MissingPostCodeService missingPostalCodeService, OrganisationRepository organisationRepository, Messages messages) {
+    public ImportJobWorkerBuilder(JobRepository jobRepository, PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, PointOfInterestCSVHelper poiHelper, NetexImporter netexImporter, ParkingsImportedService parkingsImportedService, BikeParkingsImportedService bikeParkingsImportedService, RentalBikeParkingsImportedService rentalBikeparkingsImportedService, MissingPostCodeService missingPostalCodeService, GbfsParkingImporter gbfsParkingImporter, Messages messages) {
         this.jobRepository = jobRepository;
         this.publicationDeliveryUnmarshaller = publicationDeliveryUnmarshaller;
         this.poiHelper = poiHelper;
@@ -47,7 +47,7 @@ public class ImportJobWorkerBuilder {
         this.bikeParkingsImportedService = bikeParkingsImportedService;
         this.rentalBikeparkingsImportedService = rentalBikeparkingsImportedService;
         this.missingPostalCodeService = missingPostalCodeService;
-        this.organisationRepository = organisationRepository;
+        this.gbfsParkingImporter = gbfsParkingImporter;
         this.messages = messages;
     }
 
@@ -62,7 +62,7 @@ public class ImportJobWorkerBuilder {
                 this.bikeParkingsImportedService,
                 this.rentalBikeparkingsImportedService,
                 this.missingPostalCodeService,
-                this.organisationRepository,
+                this.gbfsParkingImporter,
                 this.messages);
         return this;
     }
@@ -103,28 +103,28 @@ public class ImportJobWorkerBuilder {
     }
 
     public ImportJobWorkerBuilder withKeepStopNames(Boolean keepStopNames) {
-        if (keepStopNames != null){
+        if (keepStopNames != null) {
             this.importJobWorker.setKeepStopNames(keepStopNames);
         }
         return this;
     }
 
     public ImportJobWorkerBuilder withKeepStopGeolocalisation(Boolean keepStopGeolocalisation) {
-        if (keepStopGeolocalisation != null){
+        if (keepStopGeolocalisation != null) {
             this.importJobWorker.setKeepStopGeolocalisation(keepStopGeolocalisation);
         }
         return this;
     }
 
     public ImportJobWorkerBuilder withUpdateStopAccessibility(Boolean updateStopAccessibility) {
-        if (updateStopAccessibility != null){
+        if (updateStopAccessibility != null) {
             this.importJobWorker.setUpdateStopAccessibility(updateStopAccessibility);
         }
         return this;
     }
 
-    public ImportJobWorkerBuilder withGbfsParkingImportData(GbfsParkingImportData gbfsParkingImportData) {
-        this.importJobWorker.setGbfsParkingImportData(gbfsParkingImportData);
+    public ImportJobWorkerBuilder withGbfsParkingImportParams(GbfsParkingImportParams gbfsParkingImportData) {
+        this.importJobWorker.setGbfsParkingImportParams(gbfsParkingImportData);
         return this;
     }
 

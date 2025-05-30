@@ -1,34 +1,52 @@
 package org.rutebanken.tiamat.externalapis.gbfs.mapper;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.mobilitydata.gbfs.v3_0.system_information.GBFSData;
+import org.mobilitydata.gbfs.v3_0.system_information.GBFSOperator;
+import org.mobilitydata.gbfs.v3_0.system_information.GBFSShortName;
+import org.mobilitydata.gbfs.v3_0.system_information.GBFSSystemInformation;
 import org.rutebanken.tiamat.model.Organisation;
-import org.rutebanken.tiamat.model.gbfs.SystemInformation;
 
 public class SystemInformationMapper {
 
-    public Organisation toOrganisation(SystemInformation systemInformation) {
+    public Organisation toOrganisation(GBFSSystemInformation si) {
         Organisation organisation = new Organisation();
-        if (systemInformation != null) {
-            organisation.setNetexId("MOBIITI:ORGANISATION:"+ systemInformation.getSystemId());
-            organisation.setLanguage(systemInformation.getLanguage());
-            organisation.setName(systemInformation.getName());
-            organisation.setShortName(systemInformation.getShortName());
-            organisation.setOperator(systemInformation.getOperator());
-            organisation.setOrganisationUrl(systemInformation.getUrl());
-            organisation.setPurchaseUrl(systemInformation.getPurchaseUrl());
-            organisation.setPhoneNumber(systemInformation.getPhoneNumber());
-            organisation.setEmail(systemInformation.getEmail());
-            organisation.setTimezone(systemInformation.getTimezone());
-            if (systemInformation.getRentalApps() != null) {
-                if (systemInformation.getRentalApps().getAndroidUrl() != null) {
-                    organisation.setAndroidDiscoveryUri(systemInformation.getRentalApps().getAndroidUrl().getAndroidDiscoveryUri());
-                    organisation.setAndroidStoreUri(systemInformation.getRentalApps().getAndroidUrl().getAndroidStoreUri());
-                }
-                if (systemInformation.getRentalApps().getIosUrl() != null) {
-                    organisation.setIosDiscoveryUri(systemInformation.getRentalApps().getIosUrl().getIosDiscoveryUri());
-                    organisation.setIosStoreUri(systemInformation.getRentalApps().getIosUrl().getIosStoreUri());
-                }
+        if (si == null) {
+            return organisation;
+        }
+        GBFSData data = si.getData();
+        organisation.setNetexId("MOBIITI:ORGANISATION:" + data.getSystemId());
+        String language = data.getLanguages().get(0);
+        organisation.setLanguage(language);
+        organisation.setName(data.getName().get(0).getText());
+        if (CollectionUtils.isNotEmpty(data.getShortName())) {
+            data.getShortName().stream()
+                    .filter(sn -> language.equals(sn.getLanguage()))
+                    .map(GBFSShortName::getText)
+                    .findFirst()
+                    .ifPresent(organisation::setShortName);
+        }
+        if (CollectionUtils.isNotEmpty(data.getOperator())) {
+            data.getOperator().stream()
+                    .filter(o -> language.equals(o.getLanguage()))
+                    .map(GBFSOperator::getText)
+                    .findFirst()
+                    .ifPresent(organisation::setOperator);
+        }
+        organisation.setOrganisationUrl(data.getUrl());
+        organisation.setPurchaseUrl(data.getPurchaseUrl());
+        organisation.setPhoneNumber(data.getPhoneNumber());
+        organisation.setEmail(data.getEmail());
+        organisation.setTimezone(data.getTimezone().value());
+        if (data.getRentalApps() != null) {
+            if (data.getRentalApps().getAndroid() != null) {
+                organisation.setAndroidDiscoveryUri(data.getRentalApps().getAndroid().getDiscoveryUri());
+                organisation.setAndroidStoreUri(data.getRentalApps().getAndroid().getStoreUri());
             }
-
+            if (data.getRentalApps().getIos() != null) {
+                organisation.setIosDiscoveryUri(data.getRentalApps().getIos().getDiscoveryUri());
+                organisation.setIosStoreUri(data.getRentalApps().getIos().getStoreUri());
+            }
         }
         return organisation;
     }

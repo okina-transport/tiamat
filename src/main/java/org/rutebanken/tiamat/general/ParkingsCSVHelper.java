@@ -11,8 +11,6 @@ import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.rest.dto.DtoParking;
 import org.rutebanken.tiamat.service.Preconditions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,8 +26,6 @@ import java.util.stream.Collectors;
 public class ParkingsCSVHelper {
 
     private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
-    public final static String DELIMETER_PARKING_ID_NAME = " : ";
-    private static final Logger logger = LoggerFactory.getLogger(ParkingsCSVHelper.class);
     private final static Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
 
     private static final GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
@@ -94,33 +90,15 @@ public class ParkingsCSVHelper {
 
     public static void checkDuplicatedParkings(List<DtoParking> parkings) throws IllegalArgumentException {
         List<String> compositeKey = parkings.stream().map(parking -> parking.getId() + parking.getName()).collect(Collectors.toList());
-        List<String> duplicates = foundDuplicates(compositeKey);
+        List<String> duplicates = AccessibilityCSVUtils.foundDuplicates(compositeKey);
 
-        if (duplicates.size() > 0) {
-            String duplicatesMsg = duplicates.stream()
-                    .collect(Collectors.joining(","));
+        if (CollectionUtils.isNotEmpty(duplicates)) {
+            String duplicatesMsg = String.join(",", duplicates);
 
             throw new IllegalArgumentException("There are duplicated parkings in your CSV File 'With the same ID & Name'. Duplicates:" + duplicatesMsg);
         }
 
     }
-
-    private static List<String> foundDuplicates(List<String> fullList) {
-        List<String> alreadyReadList = new ArrayList<>();
-        List<String> duplicateList = new ArrayList<>();
-
-        fullList.stream()
-                .forEach(id -> {
-                    if (alreadyReadList.contains(id)) {
-                        duplicateList.add(id);
-                    } else {
-                        alreadyReadList.add(id);
-                    }
-                });
-
-        return duplicateList;
-    }
-
 
     public static List<Parking> mapFromDtoToEntity(List<DtoParking> dtoParkingsCSV, ParkingLayoutEnumeration parkingLayoutEnumeration,
                                                    ParkingTypeEnumeration parkingTypeEnumeration, Boolean parkAndRideDetection) {
@@ -164,7 +142,7 @@ public class ParkingsCSVHelper {
             if (ParkingTypeEnumeration.PARK_AND_RIDE.equals(parking.getParkingType())) {
                 ParkingArea parkAndRideArea = new ParkingArea();
                 parkAndRideArea.setVersion(1L);
-                parkAndRideArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.PARD_AND_RIDE);
+                parkAndRideArea.setSpecificParkingAreaUsage(SpecificParkingAreaUsageEnumeration.PARK_AND_RIDE);
                 setParkingAreaMaximumHeight(parkingDto, parkAndRideArea);
                 if (nbPMR != null) {
                     parkAndRideArea.setName(new EmbeddableMultilingualString("Zone PMR", "FR"));
@@ -185,7 +163,7 @@ public class ParkingsCSVHelper {
                 parking.getParkingAreas().add(parkAndRideArea);
             }
 
-            if (parkingDto.getWorkType().equals("")) {
+            if (StringUtils.isBlank(parkingDto.getWorkType())) {
                 parking.setParkingLayout(parkingLayoutEnumeration);
             } else {
                 parking.setParkingLayout(ParkingLayoutEnumeration.fromValue(parkingDto.getWorkType()));
@@ -373,16 +351,15 @@ public class ParkingsCSVHelper {
         newArea.setName(new EmbeddableMultilingualString(areaName, "FR"));
         newArea.setTotalCapacity(numberValue);
 
-        ParkingProperties newProterties = parkingProperties;
-        newProterties.getParkingVehicleTypes().add(parkingVehicleEnumeration);
+        parkingProperties.getParkingVehicleTypes().add(parkingVehicleEnumeration);
 
         ParkingCapacity newCapacity = new ParkingCapacity();
         newCapacity.setParkingUserType(totalCapacity.getParkingUserType());
         newCapacity.setNumberOfSpaces(numberValue);
         newCapacity.setParkingVehicleType(parkingVehicleEnumeration);
 
-        newProterties.getSpaces().add(newCapacity);
-        newArea.setParkingProperties(newProterties);
+        parkingProperties.getSpaces().add(newCapacity);
+        newArea.setParkingProperties(parkingProperties);
 
         parking.getParkingAreas().add(newArea);
     }

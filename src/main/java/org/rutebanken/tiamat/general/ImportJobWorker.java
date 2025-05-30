@@ -15,27 +15,23 @@
 
 package org.rutebanken.tiamat.general;
 
-import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.config.Messages;
-import org.rutebanken.tiamat.externalapis.DtoGeocode;
-import org.rutebanken.tiamat.externalapis.gbfs.mapper.StationInformationMapper;
-import org.rutebanken.tiamat.externalapis.gbfs.mapper.SystemInformationMapper;
+import org.rutebanken.tiamat.importer.GbfsParkingImporter;
 import org.rutebanken.tiamat.importer.ImportParams;
-import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.importer.NetexImporter;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingLayoutEnumeration;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
-import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportData;
+import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportParams;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.NetexUtils;
 import org.rutebanken.tiamat.repository.JobRepository;
-import org.rutebanken.tiamat.repository.OrganisationRepository;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
 import org.rutebanken.tiamat.rest.dto.DtoParking;
 import org.rutebanken.tiamat.rest.dto.DtoPointOfInterest;
+import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.rutebanken.tiamat.service.batch.MissingPostCodeService;
 import org.rutebanken.tiamat.service.parking.BikeParkingsImportedService;
@@ -55,7 +51,6 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ImportJobWorker implements Runnable {
@@ -71,7 +66,7 @@ public class ImportJobWorker implements Runnable {
     private final BikeParkingsImportedService bikeParkingsImportedService;
     private final RentalBikeParkingsImportedService rentalBikeparkingsImportedService;
     private final MissingPostCodeService missingPostalCodeService;
-    private final OrganisationRepository organisationRepository;
+    private final GbfsParkingImporter gbfsParkingImporter;
     private final Messages messages;
 
     private InputStream inputStream;
@@ -84,10 +79,10 @@ public class ImportJobWorker implements Runnable {
     private boolean keepStopNames;
     private boolean keepStopGeolocalisation;
     private boolean updateStopAccessibility;
-    private GbfsParkingImportData gbfsParkingImportData;
+    private GbfsParkingImportParams gbfsParkingImportParams;
 
     protected ImportJobWorker(Job job, JobRepository jobRepository,
-                              PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, PointOfInterestCSVHelper poiHelper, NetexImporter netexImporter, ParkingsImportedService parkingsImportedService, BikeParkingsImportedService bikeParkingsImportedService, RentalBikeParkingsImportedService rentalBikeparkingsImportedService, MissingPostCodeService missingPostalCodeService, OrganisationRepository organisationRepository, Messages messages) {
+                              PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, PointOfInterestCSVHelper poiHelper, NetexImporter netexImporter, ParkingsImportedService parkingsImportedService, BikeParkingsImportedService bikeParkingsImportedService, RentalBikeParkingsImportedService rentalBikeparkingsImportedService, MissingPostCodeService missingPostalCodeService, GbfsParkingImporter gbfsParkingImporter, Messages messages) {
         this.job = job;
         this.jobRepository = jobRepository;
         this.publicationDeliveryUnmarshaller = publicationDeliveryUnmarshaller;
@@ -97,24 +92,8 @@ public class ImportJobWorker implements Runnable {
         this.bikeParkingsImportedService = bikeParkingsImportedService;
         this.rentalBikeparkingsImportedService = rentalBikeparkingsImportedService;
         this.missingPostalCodeService = missingPostalCodeService;
-        this.organisationRepository = organisationRepository;
+        this.gbfsParkingImporter = gbfsParkingImporter;
         this.messages = messages;
-    }
-
-    private static void updateInseeCode(List<Parking> parkingList) {
-        for (Parking parking : parkingList) {
-            DtoGeocode dtoGeocode = new DtoGeocode();
-            try {
-                dtoGeocode = ImporterUtils.getGeocodeDataByReverseGeocoding(parking.getCentroid().getCoordinate().x, parking.getCentroid().getCoordinate().y);
-            } catch (Exception e) {
-                logger.error("Erreur lors de la récupération du code postal du parking : {}", parking.getNetexId(), e);
-            }
-            if (StringUtils.isNotBlank(dtoGeocode.getCityCode())) {
-                parking.setInsee(dtoGeocode.getCityCode());
-            } else {
-                logger.error("Code postal non trouvé pour le parking {} ", parking.getNetexId());
-            }
-        }
     }
 
     public void run() {
@@ -217,22 +196,13 @@ public class ImportJobWorker implements Runnable {
         parkingsImportedService.createOrUpdateParkings(parkings);
     }
 
-    private void launchGbfsParkingImport() {
-        SystemInformationMapper systemInformationMapper = new SystemInformationMapper();
-        org.rutebanken.tiamat.model.Organisation organisation = systemInformationMapper.toOrganisation(gbfsParkingImportData.systemInformation());
-        Optional<org.rutebanken.tiamat.model.Organisation> optionalOrganisation = organisationRepository.findByName(organisation.getName());
-        optionalOrganisation.ifPresent(value -> organisation.setId(value.getId()));
-        organisationRepository.save(organisation);
-        StationInformationMapper stationInformationMapper = new StationInformationMapper();
-        List<Parking> parkingList = stationInformationMapper.toParkingList(organisation, gbfsParkingImportData);
-        updateInseeCode(parkingList);
-        parkingsImportedService.createOrUpdateParkings(parkingList);
+    private void launchGbfsParkingImport() throws TiamatBusinessException {
+        gbfsParkingImporter.importProcess(gbfsParkingImportParams);
     }
 
     private void launchNetexParkingImport() throws JAXBException, IOException, SAXException, BindException {
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         netexImporter.importProcess(incomingPublicationDelivery, new ImportParams(), false);
-
     }
 
     private void launchNetexStopPlaceImport() throws JAXBException, IOException, SAXException, BindException {
@@ -393,7 +363,7 @@ public class ImportJobWorker implements Runnable {
         this.updateStopAccessibility = updateStopAccessibility;
     }
 
-    public void setGbfsParkingImportData(GbfsParkingImportData gbfsParkingImportData) {
-        this.gbfsParkingImportData = gbfsParkingImportData;
+    public void setGbfsParkingImportParams(GbfsParkingImportParams gbfsParkingImportParams) {
+        this.gbfsParkingImportParams = gbfsParkingImportParams;
     }
 }

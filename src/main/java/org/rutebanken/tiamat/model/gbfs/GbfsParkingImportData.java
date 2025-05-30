@@ -1,13 +1,10 @@
 package org.rutebanken.tiamat.model.gbfs;
 
-import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
-import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
+import org.mobilitydata.gbfs.v3_0.station_information.GBFSStationInformation;
+import org.mobilitydata.gbfs.v3_0.system_information.GBFSSystemInformation;
+import org.mobilitydata.gbfs.v3_0.vehicle_types.GBFSVehicleTypes;
 
-import java.util.List;
-
-public record GbfsParkingImportData(List<StationInformation> stations, List<VehicleType> vehicleTypes,
-                                    SystemInformation systemInformation,
-                                    ParkingTypeEnumeration parkingType,
-                                    SpecificParkingAreaUsageEnumeration parkingAreaType) {
+public record GbfsParkingImportData(GBFSStationInformation stationInformation, GBFSSystemInformation systemInformation,
+                                    GBFSVehicleTypes vehicleTypes) {
 
 }

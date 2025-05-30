@@ -15,6 +15,8 @@
 
 package org.rutebanken.tiamat.rest.exception;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.collect.Sets;
 import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
@@ -49,13 +51,15 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
         this.messages = messages;
         mapping = new HashMap<>();
         mapping.put(Response.Status.BAD_REQUEST,
-                Sets.newHashSet(ValidationException.class, OptimisticLockException.class, EntityNotFoundException.class, DataIntegrityViolationException.class, BindException.class));
+                Sets.newHashSet(ValidationException.class, OptimisticLockException.class,
+                        EntityNotFoundException.class, DataIntegrityViolationException.class, BindException.class,
+                        JsonMappingException.class, JsonParseException.class));
         mapping.put(Response.Status.CONFLICT, Sets.newHashSet(EntityExistsException.class));
         mapping.put(Response.Status.FORBIDDEN, Sets.newHashSet(AccessDeniedException.class));
         mapping.put(Response.Status.UNAUTHORIZED, Sets.newHashSet(NotAuthorizedException.class, NotAuthenticatedException.class));
     }
 
-
+    @Override
     public Response toResponse(Exception ex) {
         Throwable rootCause = getRootCause(ex);
         int status = toStatus(rootCause);

@@ -44,7 +44,7 @@ public class GbfsImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response importParkingGbfs(@Valid GbfsParkingImportParams gbfsParkingImportParams) {
         Job job = new Job();
-        job.setFileName(gbfsParkingImportParams.getGlobalUrl().getPath());
+        job.setFileName(gbfsParkingImportParams.getGlobalUrl().toString());
         job.setType(JobType.GBFS_PARKING);
         job.setAction(JobAction.IMPORT);
         job.setStatus(JobStatus.PROCESSING);

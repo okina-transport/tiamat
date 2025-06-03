@@ -49,6 +49,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.FARE_ZONE;
@@ -106,7 +107,6 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
         if (importParams.recomputeStopPlacesLocation) {
             stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
         }
-        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
 
         List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces;
         if (tiamatProperties.isMdmEnabled()){

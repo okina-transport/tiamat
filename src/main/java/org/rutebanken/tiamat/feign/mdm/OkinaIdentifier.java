@@ -1,7 +1,5 @@
 package org.rutebanken.tiamat.feign.mdm;
 
-import java.math.BigInteger;
-
 public class OkinaIdentifier {
 
     private String dataset;

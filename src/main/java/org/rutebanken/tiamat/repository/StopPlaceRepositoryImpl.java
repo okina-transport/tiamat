@@ -1164,7 +1164,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         if (stopPlaceSuperIds.isEmpty()){
             return new ArrayList<>();
         }
-        List<OkinaIdentifier> mdmIds = mdmService.getAllQuaysFromSuperId(stopPlaceSuperIds);
+        List<OkinaIdentifier> mdmIds = mdmService.getAllStopPlacesFromSuperId(stopPlaceSuperIds);
         for (Map.Entry<Long, String> netexAndNameEntry : netexIdAndName.entrySet()) {
             Long netexId = netexAndNameEntry.getKey();
 

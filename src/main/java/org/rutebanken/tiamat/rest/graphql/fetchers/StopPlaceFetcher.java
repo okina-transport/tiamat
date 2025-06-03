@@ -17,15 +17,12 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import org.hibernate.Hibernate;
-import org.hibernate.Session;
 import org.rutebanken.helper.organisation.RoleAssignment;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.dtoassembling.dto.BoundingBoxDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
-import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.model.TopographicPlace;
@@ -116,13 +113,7 @@ class StopPlaceFetcher implements DataFetcher {
 
 
         // we need to copy stop place to new objects(unhandled by hibernate) to avoid auto-persist of imported-ids
-        List<StopPlace> copiedStopPlaces = new ArrayList<>();
-        for (StopPlace stopPlace : stopPlaces) {
-            StopPlace copy = versionCreator.createCopy(stopPlace, StopPlace.class);
-            copiedStopPlaces.add(copy);
-        }
-        mdmService.fillImportedIds(copiedStopPlaces);
-
+        List<StopPlace> copiedStopPlaces = getStopPlaceCopyWithMdmId(stopPlaces);
 
 
         boolean onlyMonomodalStopplaces = false;
@@ -156,11 +147,23 @@ class StopPlaceFetcher implements DataFetcher {
             return getStopPlaces(environment, copiedStopPlaces, stopPlaces.size());
         } else {
             List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(copiedStopPlaces, KEEP_CHILDREN);
-            return getStopPlaces(environment, parentsResolved, parentsResolved.size());
+            return getStopPlaces(environment, getStopPlaceCopyWithMdmId(parentsResolved), parentsResolved.size());
         }
     }
 
-
+    private List<StopPlace> getStopPlaceCopyWithMdmId(List<StopPlace> stopPlaces) {
+        if (mdmService.isMdmEnabled()) {
+            List<StopPlace> copiedStopPlaces = new ArrayList<>();
+            for (StopPlace stopPlace : stopPlaces) {
+                StopPlace copy = versionCreator.createCopy(stopPlace, StopPlace.class);
+                copiedStopPlaces.add(copy);
+            }
+            mdmService.fillImportedIds(copiedStopPlaces);
+            return copiedStopPlaces;
+        } else {
+            return stopPlaces;
+        }
+    }
 
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -221,7 +224,7 @@ class StopPlaceFetcher implements DataFetcher {
                 List<StopPlace> stopPlace;
                 if (version != null && version > 0) {
                     stopPlace = Arrays.asList(stopPlaceRepository.findFirstByNetexIdAndVersion(netexId, version));
-                    stopPlacesPage = getStopPlaces(environment, stopPlace, 1L);
+                    stopPlacesPage = getStopPlaces(environment, getStopPlaceCopyWithMdmId(stopPlace), 1L);
                 } else {
                     stopPlaceSearchBuilder.setNetexIdList(Arrays.asList(netexId));
                     stopPlacesPage = stopPlaceRepository.findStopPlace(exportParamsBuilder.setStopPlaceSearch(stopPlaceSearchBuilder.build()).build());
@@ -333,7 +336,7 @@ class StopPlaceFetcher implements DataFetcher {
         }
         List<StopPlace> results = stopPlacesPage.getContent();
         results.forEach(stopPlaceRepository::initializeStopPlace);
-        return results;
+        return getStopPlaceCopyWithMdmId(results);
     }
 
 
@@ -416,12 +419,7 @@ class StopPlaceFetcher implements DataFetcher {
     private PageImpl<StopPlace> getStopPlaces(DataFetchingEnvironment environment, List<StopPlace> stopPlaces, long size) {
         fetchTags(stopPlaces);
         fetchParentTopographicPlaces(stopPlaces);
-        fetchImportedIds(stopPlaces);
         return new PageImpl<>(stopPlaces, PageRequest.of(environment.getArgument(PAGE), environment.getArgument(SIZE)), size);
-    }
-
-    private void fetchImportedIds(List<StopPlace> stopPlaces) {
-        mdmService.fillImportedIds(stopPlaces);
     }
 
     private <T> T setIfNonNull(DataFetchingEnvironment environment, String argumentName, Consumer<T> consumer) {

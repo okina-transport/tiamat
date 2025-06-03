@@ -16,10 +16,13 @@
 package org.rutebanken.tiamat;
 
 import com.hazelcast.core.HazelcastInstance;
-import org.locationtech.jts.geom.GeometryFactory;
+import org.entur.gbfs.http.GBFSHttpClient;
+import org.entur.gbfs.mapper.GBFSMapper;
+import org.entur.gbfs.validation.GbfsValidator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.domain.ChouetteInfo;
@@ -42,7 +45,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -57,7 +59,6 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
-import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
 import static org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService.INITIAL_LAST_ID;
 
 @RunWith(SpringRunner.class)
@@ -143,6 +144,15 @@ public abstract class TiamatIntegrationTest {
 
     @Autowired
     protected ReflectionAuthorizationService reflectionAuthorizationService;
+
+    @MockBean
+    public GBFSMapper gbfsMapper;
+
+    @MockBean
+    public GbfsValidator gbfsValidator;
+
+    @MockBean
+    public GBFSHttpClient gbfsHttpClient;
 
     @Value("${local.server.port}")
     protected int port;

@@ -64,8 +64,8 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
 
     List<Parking> getAllParkingsWithoutInsee();
 
-    Optional<Parking> findByOsm(String idLoc);
-
     List<Parking> createCopyAndFillImportedIdsFromMDM(List<Parking> parkings);
+
+    Optional<Parking> findByIdLocAndOsm(String idLoc, String idOsm);
 }
 

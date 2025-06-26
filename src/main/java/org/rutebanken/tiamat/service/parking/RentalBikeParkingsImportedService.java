@@ -92,7 +92,7 @@ public class RentalBikeParkingsImportedService {
         if (osmKeyVals != null){
             List<String> idOsms = new ArrayList(osmKeyVals.getItems());
             idOsm = idOsms.get(0);
-            return parkingRepository.findByOsm(idOsm);
+            return parkingRepository.findByIdLocAndOsm(idLocs.get(0), idOsm);
         }
 
         return Optional.empty();

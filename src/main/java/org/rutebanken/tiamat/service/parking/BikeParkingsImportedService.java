@@ -8,7 +8,6 @@ import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.ParkingRepository;
-import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,10 +16,8 @@ import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
 import java.util.ArrayList;
-
 import java.util.List;
 import java.util.Optional;
-
 
 
 @Service
@@ -36,7 +33,6 @@ public class BikeParkingsImportedService {
     private ParkingRepository parkingRepository;
     private NetexIdMapper netexIdMapper;
     private ParkingVersionedSaverService parkingVersionedSaverService;
-    private VersionCreator versionCreator;
     private MdmService mdmService;
 
     @org.springframework.beans.factory.annotation.Value("${netex.validPrefix:MOBIITI}")
@@ -44,11 +40,10 @@ public class BikeParkingsImportedService {
 
 
     @Autowired
-    BikeParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, VersionCreator versionCreator, MdmService mdmService) {
+    BikeParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, MdmService mdmService) {
         this.parkingRepository = parkingRepository;
         this.netexIdMapper = netexIdMapper;
         this.parkingVersionedSaverService = parkingVersionedSaverService;
-        this.versionCreator = versionCreator;
         this.mdmService = mdmService;
     }
 
@@ -76,7 +71,7 @@ public class BikeParkingsImportedService {
 
 
     private Optional<Parking> retrieveBikeParkingInBDD(Parking parking) {
-        List<String> idLocs = new ArrayList(parking.getKeyValues().get(ID_LOCAL).getItems());
+        List<String> idLocs = new ArrayList<>(parking.getKeyValues().get(ID_LOCAL).getItems());
 
         OkinaIdentifier existingMdmId = mdmService.getExistingParkingMdmIdsFromImportedId(idLocs.get(0));
         if (existingMdmId != null){
@@ -89,9 +84,9 @@ public class BikeParkingsImportedService {
         Value osmKeyVals = parking.getKeyValues().get(ID_OSM);
         String idOsm = null;
         if (osmKeyVals != null){
-            List<String> idOsms = new ArrayList(osmKeyVals.getItems());
+            List<String> idOsms = new ArrayList<>(osmKeyVals.getItems());
             idOsm = idOsms.get(0);
-            return parkingRepository.findByOsm(idOsm);
+            return parkingRepository.findByIdLocAndOsm(idLocs.get(0), idOsm);
         }
 
         return Optional.empty();

@@ -19,6 +19,7 @@ import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
+import org.rutebanken.tiamat.netex.NetexUtils;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,6 +91,7 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
     public void mapBtoA(org.rutebanken.tiamat.model.StopPlace stopPlace, StopPlace netexStopPlace, MappingContext context) {
         try {
             super.mapBtoA(stopPlace, netexStopPlace, context);
+            NetexUtils.fillTypeOfKey(netexStopPlace);
             if (stopPlace.getPlaceEquipments() != null &&
                     stopPlace.getPlaceEquipments().getInstalledEquipment() != null &&
                     stopPlace.getPlaceEquipments().getInstalledEquipment().isEmpty()) {

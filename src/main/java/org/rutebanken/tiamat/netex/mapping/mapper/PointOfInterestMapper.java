@@ -5,6 +5,7 @@ import ma.glasnost.orika.MappingContext;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.PointOfInterestFacilitySet;
 import org.rutebanken.tiamat.model.PointOfInterestOpeningHours;
+import org.rutebanken.tiamat.netex.NetexUtils;
 import org.springframework.stereotype.Component;
 
 import javax.xml.bind.JAXBElement;
@@ -29,6 +30,7 @@ public class PointOfInterestMapper extends CustomMapper<PointOfInterest, org.rut
     @Override
     public void mapBtoA(org.rutebanken.tiamat.model.PointOfInterest pointOfInterest, PointOfInterest pointOfInterest2, MappingContext context) {
         super.mapBtoA(pointOfInterest, pointOfInterest2, context);
+        NetexUtils.fillTypeOfKey(pointOfInterest2);
 
         PostalAddress pa = new PostalAddress();
         Boolean mustAddPostalAddress = false;

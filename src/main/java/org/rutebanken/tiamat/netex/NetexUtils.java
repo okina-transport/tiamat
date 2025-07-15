@@ -31,6 +31,19 @@ public class NetexUtils {
         return quays;
     }
 
+
+    public static void fillTypeOfKey(DataManagedObjectStructure object){
+        if (object.getKeyList() == null || object.getKeyList().getKeyValue() == null || object.getKeyList().getKeyValue().isEmpty()){
+            return;
+        }
+
+        for (KeyValueStructure keyValueStructure : object.getKeyList().getKeyValue()) {
+            if ("imported-id".equals(keyValueStructure.getKey())){
+                keyValueStructure.setTypeOfKey("ALTERNATE_IDENTIFIER");
+            }
+        }
+    }
+
     public static <Parking> List<Parking> getMembers(Class<Parking> clazz, List<JAXBElement<? extends EntityStructure>> members) {
         List<Parking> foundMembers = new ArrayList<>();
 

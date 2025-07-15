@@ -21,6 +21,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
+import org.rutebanken.tiamat.netex.NetexUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -118,6 +119,7 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
     @Override
     public void mapBtoA(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking, MappingContext context) {
         super.mapBtoA(tiamatParking, netexParking, context);
+        NetexUtils.fillTypeOfKey(netexParking);
 
         String originalId =
                 tiamatParking.getKeyValues().get(ORIGINAL_ID_KEY).getItems().stream().findFirst().orElseThrow();

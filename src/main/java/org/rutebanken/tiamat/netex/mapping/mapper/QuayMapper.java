@@ -17,13 +17,10 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
-import org.rutebanken.netex.model.AlternativeNames_RelStructure;
-import org.rutebanken.netex.model.MultilingualString;
-import org.rutebanken.netex.model.PostalAddress;
-import org.rutebanken.netex.model.Quay;
-import org.rutebanken.netex.model.SiteRefStructure;
+import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.model.AlternativeName;
+import org.rutebanken.tiamat.netex.NetexUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -75,6 +72,7 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
     @Override
     public void mapBtoA(org.rutebanken.tiamat.model.Quay quay, Quay quay2, MappingContext context) {
         super.mapBtoA(quay, quay2, context);
+        NetexUtils.fillTypeOfKey(quay2);
         if (quay.getPlaceEquipments() != null &&
                 quay.getPlaceEquipments().getInstalledEquipment() != null &&
                 quay.getPlaceEquipments().getInstalledEquipment().isEmpty()) {
@@ -126,6 +124,7 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
         }
 
     }
+
 
     private void feedPostalAddress(org.rutebanken.tiamat.model.Quay tiamatQuay, Quay netexQuay){
 

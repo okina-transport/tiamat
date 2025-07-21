@@ -314,9 +314,8 @@ public class ImportJobWorker implements Runnable {
         poiHelper.clearClassificationCache();
         List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
         PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
-        List<DtoPointOfInterest> poiWithClassification = poiHelper.filterPoisWithClassification(dtoPointOfInterest);
+        List<DtoPointOfInterest> poiWithClassification = poiHelper.filterPoisWithClassification(dtoPointOfInterest, job);
         poiHelper.persistPointsOfInterest(poiWithClassification);
-
     }
 
     private void launchMissingPostalCodeService() {

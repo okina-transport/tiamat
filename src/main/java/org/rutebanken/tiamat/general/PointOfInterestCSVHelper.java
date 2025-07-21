@@ -9,6 +9,7 @@ import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.repository.PointOfInterestClassificationRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestFacilitySetRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
@@ -94,15 +95,20 @@ public class PointOfInterestCSVHelper {
 
     }
 
-    public List<DtoPointOfInterest> filterPoisWithClassification(List<DtoPointOfInterest> dtoPointOfInterest){
-        return dtoPointOfInterest.stream()
+    public List<DtoPointOfInterest> filterPoisWithClassification(List<DtoPointOfInterest> dtoPointOfInterest, Job job){
+        List<DtoPointOfInterest> filteredPOI = dtoPointOfInterest.stream()
                 .filter(poi -> StringUtils.isNotEmpty(poi.getAmenity()) ||  StringUtils.isNotEmpty(poi.getBuilding()) || StringUtils.isNotEmpty(poi.getHistoric())
                         ||  StringUtils.isNotEmpty(poi.getLanduse()) ||  StringUtils.isNotEmpty(poi.getLeisure())
                         ||  StringUtils.isNotEmpty(poi.getTourism()) ||StringUtils.isNotEmpty(poi.getOffice()))
                 .collect(Collectors.toList());
 
+        if (filteredPOI.isEmpty()){
+            String message = "Warning about job " + job.getId() + ". At least one of the following fields: amenity, building, historic, landuse, leisure, tourism or office is mandatory";
+            logger.warn("{}.\nImport job was {}", message, job);
+            job.setMessage(message);
+        }
 
-
+        return filteredPOI;
     }
 
 

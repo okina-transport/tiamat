@@ -321,8 +321,7 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
                 "    GROUP BY q.netex_id " +
                 ")" +
                 "SELECT DISTINCT qref.q_id, vi.items, qref.netex_id," +
-                "    CASE WHEN q.name_value IS NOT NULL AND q.name_value <> '' THEN q.name_value" +
-                "         ELSE s.name_value END AS name_value" +
+                "    COALESCE(NULLIF(q.name_value, ''), NULLIF(s.name_value, ''), '') AS name_value" +
                 " FROM qref" +
                 " INNER JOIN quay_key_values qkv ON qref.q_id = qkv.quay_id AND qkv.key_values_key = 'imported-id'" +
                 " INNER JOIN quay q ON qref.q_id = q.id" +
@@ -337,6 +336,7 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
         List<JbvCodeMappingDto> mappingResult = new ArrayList<>();
         for (Object[] row : result) {
             mappingResult.add(new JbvCodeMappingDto(row[1].toString(), null, row[2].toString(), row[3].toString()));
+
         }
 
         return mappingResult;

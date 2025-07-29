@@ -20,7 +20,6 @@ public enum JobType {
     NETEX_POI,
     NETEX_STOP_PLACE_QUAY,
     CSV_POI,
-    CSV_SHOP,
     CSV_PARKING,
     CSV_BIKE_PARKING,
     CSV_RENTAL_BIKE_PARKING,

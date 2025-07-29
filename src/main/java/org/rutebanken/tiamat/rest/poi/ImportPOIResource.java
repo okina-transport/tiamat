@@ -56,7 +56,7 @@ public class ImportPOIResource {
 
         List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
         PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
-        List<DtoPointOfInterest> poiWithClassification = poiHelper.filterPoisWithClassification(dtoPointOfInterest, null);
+        List<DtoPointOfInterest> poiWithClassification = poiHelper.filterPoisWithClassificationOrShop(dtoPointOfInterest, null);
 
         //poiHelper.clearPOIExceptShop();
 
@@ -87,23 +87,6 @@ public class ImportPOIResource {
         return Response.status(500).build();
     }
 
-    @GET
-    @Path("/shop_import_list")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getShopImportList() {
-        List<JobType> poiTypes = List.of(JobType.CSV_SHOP);
-        try {
-            List<Job> foundJobs = jobRepository.findByTypesAndAction(poiTypes, JobAction.IMPORT);
-            return Response.ok(foundJobs).build();
-        } catch (Exception e) {
-            logger.error("Error while getting shop import list", e);
-
-        }
-
-        return Response.status(500).build();
-    }
-
-
     @POST
     @Path("/poi_async_import_csv")
     @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
@@ -126,51 +109,4 @@ public class ImportPOIResource {
 
         return Response.status(200).build();
     }
-
-    @POST
-    @Path("/shop_import_csv")
-    @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response importShopCsvFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
-
-        logger.info("Import points de vente par " + user + " du fichier " + fileName);
-
-        List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
-        PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
-        poiHelper.checkShops(dtoPointOfInterest);
-
-        //poiHelper.clearPOIForShopClassification();
-
-        try {
-            poiHelper.persistPointsOfInterest(dtoPointOfInterest);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-        return Response.status(200).build();
-    }
-
-
-    @POST
-    @Path("/shop_async_import_csv")
-    @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response importAsyncShopCsvFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
-        Job job = new Job();
-        job.setFileName(fileName);
-        job.setType(JobType.CSV_SHOP);
-        job.setAction(JobAction.IMPORT);
-        job.setStatus(JobStatus.PROCESSING);
-        job.setStarted(Instant.now());
-        jobRepository.save(job);
-
-        ImportJobWorker importJobWorker = importJobWorkerBuilder
-                .init(job)
-                .withInputStream(inputStream)
-                .build();
-        importService.submit(importJobWorker);
-
-        return Response.status(200).build();
-    }
-
-
 }

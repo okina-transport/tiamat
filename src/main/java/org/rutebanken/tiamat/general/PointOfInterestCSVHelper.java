@@ -95,11 +95,14 @@ public class PointOfInterestCSVHelper {
 
     }
 
-    public List<DtoPointOfInterest> filterPoisWithClassification(List<DtoPointOfInterest> dtoPointOfInterest, Job job){
+    public List<DtoPointOfInterest> filterPoisWithClassificationOrShop(List<DtoPointOfInterest> dtoPointOfInterest, Job job){
         List<DtoPointOfInterest> filteredPOI = dtoPointOfInterest.stream()
-                .filter(poi -> StringUtils.isNotEmpty(poi.getAmenity()) ||  StringUtils.isNotEmpty(poi.getBuilding()) || StringUtils.isNotEmpty(poi.getHistoric())
+                .filter(poi -> (
+                        StringUtils.isNotEmpty(poi.getAmenity()) ||  StringUtils.isNotEmpty(poi.getBuilding()) || StringUtils.isNotEmpty(poi.getHistoric())
                         ||  StringUtils.isNotEmpty(poi.getLanduse()) ||  StringUtils.isNotEmpty(poi.getLeisure())
-                        ||  StringUtils.isNotEmpty(poi.getTourism()) ||StringUtils.isNotEmpty(poi.getOffice()))
+                        ||  StringUtils.isNotEmpty(poi.getTourism()) ||StringUtils.isNotEmpty(poi.getOffice())
+                    ) || StringUtils.isNotEmpty(poi.getShop())
+                )
                 .collect(Collectors.toList());
 
         if (filteredPOI.isEmpty()){
@@ -110,25 +113,6 @@ public class PointOfInterestCSVHelper {
 
         return filteredPOI;
     }
-
-
-    public void checkShops( List<DtoPointOfInterest> dtoPointOfInterest){
-        List<DtoPointOfInterest> nonShopPOI = dtoPointOfInterest.stream()
-                .filter(poi -> StringUtils.isEmpty(poi.getShop()))
-                .collect(Collectors.toList());
-
-        String nonShopString = nonShopPOI.stream()
-                .map(DtoPointOfInterest::getId)
-                .collect(Collectors.joining(","));
-
-        if (!nonShopPOI.isEmpty()){
-            String errorMsg = "Non shops POIs have been found in shop import:" + nonShopString;
-            logger.error(errorMsg);
-            throw new IllegalArgumentException(errorMsg);
-        }
-
-    }
-
 
     /**
      * Converts a raw string from CSV to a DTO object
@@ -323,7 +307,6 @@ public class PointOfInterestCSVHelper {
             PointOfInterestFacilitySet facilitySet = createFacilitySetForShopImport();
             newPointOfInterest.setPointOfInterestFacilitySet(facilitySet);
         }
-
 
         if (dtoPoiCSV.getTags().size() > 0) {
             for (Map.Entry<String, String> tagEntry : dtoPoiCSV.getTags().entrySet()) {

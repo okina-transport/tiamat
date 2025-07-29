@@ -106,9 +106,6 @@ public class ImportJobWorker implements Runnable {
 
         try {
             switch (job.getType()) {
-                case CSV_SHOP:
-                    launchCSVShopImport();
-                    break;
                 case CSV_RENTAL_BIKE_PARKING:
                     launchCSVRentalBikeParkingImport();
                     break;
@@ -164,13 +161,6 @@ public class ImportJobWorker implements Runnable {
         } finally {
             jobRepository.save(job);
         }
-    }
-
-    private void launchCSVShopImport() throws IOException {
-        List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
-        PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
-        poiHelper.checkShops(dtoPointOfInterest);
-        poiHelper.persistPointsOfInterest(dtoPointOfInterest);
     }
 
     private void launchCSVRentalBikeParkingImport() throws IOException {
@@ -314,8 +304,13 @@ public class ImportJobWorker implements Runnable {
         poiHelper.clearClassificationCache();
         List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
         PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
-        List<DtoPointOfInterest> poiWithClassification = poiHelper.filterPoisWithClassification(dtoPointOfInterest, job);
+        List<DtoPointOfInterest> poiWithClassification = poiHelper.filterPoisWithClassificationOrShop(dtoPointOfInterest, job);
         poiHelper.persistPointsOfInterest(poiWithClassification);
+
+//        List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
+//        PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
+//        poiHelper.checkShops(dtoPointOfInterest);
+//        poiHelper.persistPointsOfInterest(dtoPointOfInterest);
     }
 
     private void launchMissingPostalCodeService() {

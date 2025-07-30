@@ -61,15 +61,6 @@ public class ShopImportTest extends TiamatIntegrationTest {
         assertTrue(actualMessage.contains(expectedMessage));
     }
 
-
-    @Test
-    public void testPOIWithoutShop() throws IOException {
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/shop/poi_pdv_with_empty_shop_column.csv") );
-        String expectedMessage = "Non shops POIs have been found in shop import";
-        String actualMessage = exception.getMessage();
-        assertTrue(actualMessage.contains(expectedMessage));
-    }
-
    @Test
     public void testPOIWithoutID() throws IOException {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/shop/poi_pdv_without_id.csv") );

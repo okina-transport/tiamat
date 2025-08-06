@@ -1024,15 +1024,25 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     }
 
     @Override
-    public List<StopPlace> findAllStopplacesLastVersionAndValid() {
-        final String queryString = "SELECT s.* FROM stop_place s " +
+    public List<StopPlace> findAllStopplacesLastVersionAndValid(List<String> providerList) {
+        String queryString = "SELECT s.* FROM stop_place s " +
                 SQL_LEFT_JOIN_PARENT_STOP +
                 " WHERE" +
                 SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME;
 
-        return entityManager.createNativeQuery(queryString, StopPlace.class)
-                .setParameter("pointInTime", Date.from(Instant.now()))
-                .getResultList();
+
+        if(!providerList.isEmpty()){
+            queryString += " AND s.provider in :providers";
+        }
+
+        Query query = entityManager.createNativeQuery(queryString, StopPlace.class)
+                           .setParameter("pointInTime", Date.from(Instant.now()));
+
+        if(!providerList.isEmpty()){
+            query.setParameter("providers", providerList);
+        }
+
+        return query.getResultList();
     }
 
     @Override

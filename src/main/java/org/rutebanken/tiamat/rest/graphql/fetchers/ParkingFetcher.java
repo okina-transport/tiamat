@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.locationtech.jts.geom.Envelope;
+import org.rutebanken.tiamat.auth.StopPlaceAuthorizationService;
 import org.rutebanken.tiamat.dtoassembling.dto.BoundingBoxDto;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.repository.ParkingRepository;
@@ -50,11 +51,20 @@ class ParkingFetcher implements DataFetcher {
     @Autowired
     private ParkingRepository parkingRepository;
 
+    @Autowired
+    private StopPlaceAuthorizationService stopPlaceAuthorizationService;
+
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
 
         PageRequest pageable = PageRequest.of(environment.getArgument(PAGE), environment.getArgument(SIZE));
+
+        List<String> filteredProviders = stopPlaceAuthorizationService.getFilteredProviders();
+        if (filteredProviders != null && !filteredProviders.isEmpty()){
+            // stack in saas mode and user with restricted rights. Returning no parking
+            return  new PageImpl<>(new ArrayList<>(), pageable, 1L);
+        }
 
         Page<Parking> parkingPage;
 

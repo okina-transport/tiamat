@@ -125,5 +125,5 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     StopPlace findFirstStopPlaceByNetexQuayOrderByVersionDesc(String quayNetexId);
 
-    List<StopPlace> findAllStopplacesLastVersionAndValid();
+    List<StopPlace> findAllStopplacesLastVersionAndValid(List<String> providerList);
 }

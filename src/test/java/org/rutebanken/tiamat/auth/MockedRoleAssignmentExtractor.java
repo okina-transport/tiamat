@@ -20,6 +20,7 @@ import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -48,6 +49,16 @@ public class MockedRoleAssignmentExtractor implements RoleAssignmentExtractor {
 	@Override
 	public List<RoleAssignment> getRoleAssignmentsForUser(Authentication authentication) {
 		return getRoleAssignmentsForUser();
+	}
+
+	@Override
+	public boolean isSuperAdmin(Authentication auth) {
+		return false;
+	}
+
+	@Override
+	public List<String> getClientList(Authentication auth) {
+		return new ArrayList<>();
 	}
 
 	public void setNextReturnedRoleAssignment(List<RoleAssignment> nextReturnedRoleAssignmentList) {

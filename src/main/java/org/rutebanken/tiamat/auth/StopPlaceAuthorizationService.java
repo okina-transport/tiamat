@@ -16,12 +16,14 @@
 package org.rutebanken.tiamat.auth;
 
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
+import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.diff.TiamatObjectDiffer;
 import org.rutebanken.tiamat.diff.generic.Difference;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -46,10 +48,17 @@ public class StopPlaceAuthorizationService {
 
     private final TiamatObjectDiffer tiamatObjectDiffer;
 
+    private final RoleAssignmentExtractor roleAssignmentExtractor;
+
+
+    @Value("${enable.saas.mode:false}")
+    private boolean enableSaasMode;
+
     @Autowired
-    public StopPlaceAuthorizationService(ReflectionAuthorizationService authorizationService, TiamatObjectDiffer tiamatObjectDiffer) {
+    public StopPlaceAuthorizationService(ReflectionAuthorizationService authorizationService, TiamatObjectDiffer tiamatObjectDiffer, RoleAssignmentExtractor roleAssignmentExtractor) {
         this.authorizationService = authorizationService;
         this.tiamatObjectDiffer = tiamatObjectDiffer;
+        this.roleAssignmentExtractor = roleAssignmentExtractor;
     }
 
     public void assertAuthorizedToEdit(StopPlace existingVersion, StopPlace newVersion) {
@@ -143,6 +152,36 @@ public class StopPlaceAuthorizationService {
             logger.warn("Could not compare children", e);
             return true;
         }
+    }
+
+    /**
+     * Get the providers by which the results must be filtered.
+     * If stack is in saas mode :
+     *  - user is superAdmin => access to all data
+     *  - user is granted on X providers => list of X providers
+     *
+     * If stack is not in saas mode:
+     *  - access to all data
+     *
+     * @return
+     *      List of providers (empty list means user has access to all data with no filtering)
+     */
+    public List<String> getFilteredProviders(){
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isSuperAdmin = roleAssignmentExtractor.isSuperAdmin(auth);
+        List<String> providerList = new ArrayList<>();
+
+        if (enableSaasMode && !isSuperAdmin) {
+            providerList = roleAssignmentExtractor.getClientList(auth);
+            providerList.remove("technique");
+        }
+        return providerList;
+    }
+
+    public boolean isUserWithRestrictedAccess() {
+        List<String> filteredProviders = getFilteredProviders();
+        return filteredProviders != null && !filteredProviders.isEmpty();
     }
 
 

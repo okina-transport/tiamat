@@ -20,6 +20,7 @@ import graphql.schema.DataFetchingEnvironment;
 import org.locationtech.jts.geom.Envelope;
 import org.rutebanken.helper.organisation.RoleAssignment;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
+import org.rutebanken.tiamat.auth.StopPlaceAuthorizationService;
 import org.rutebanken.tiamat.dtoassembling.dto.BoundingBoxDto;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.repository.ParkingRepository;
@@ -55,8 +56,16 @@ class AllParkingsFetcher implements DataFetcher {
     @Autowired
     private RoleAssignmentExtractor roleAssignmentExtractor;
 
+    @Autowired
+    private StopPlaceAuthorizationService stopPlaceAuthorizationService;
+
     @Override
     public Object get(DataFetchingEnvironment environment) {
+
+        if (stopPlaceAuthorizationService.isUserWithRestrictedAccess()) {
+            return new ArrayList();
+        }
+
         List<String> userOrgs = roleAssignmentExtractor.getRoleAssignmentsForUser().stream().map(RoleAssignment::getOrganisation).collect(Collectors.toList());
 
         Boolean ignoreStops = environment.getArgument(IGNORE_POIS);

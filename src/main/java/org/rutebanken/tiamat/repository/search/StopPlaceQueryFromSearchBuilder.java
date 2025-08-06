@@ -316,6 +316,14 @@ public class StopPlaceQueryFromSearchBuilder {
 
         }
 
+
+        if (exportParams.getProviderList() != null && !exportParams.getProviderList().isEmpty()){
+            operators.add("and");
+            wheres.add("s.provider in :providerList");
+            parameters.put("providerList", exportParams.getProviderList());
+
+        }
+
         // Parameters: version, pointInTime, versionValidity, allVersions. Should not be combined. See the exportParamsAndStopPlaceSearchValidator
         if (stopPlaceSearch.getVersion() != null) {
             operators.add("and");

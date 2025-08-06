@@ -19,6 +19,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.rutebanken.helper.organisation.RoleAssignment;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
+import org.rutebanken.tiamat.auth.StopPlaceAuthorizationService;
 import org.rutebanken.tiamat.dtoassembling.dto.BoundingBoxDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
@@ -81,12 +82,16 @@ class StopPlaceFetcher implements DataFetcher {
 
     private final TopographicPlaceRepository topographicPlaceRepository;
 
-    StopPlaceFetcher(StopPlaceRepository stopPlaceRepository, ParentStopPlacesFetcher parentStopPlacesFetcher, RoleAssignmentExtractor roleAssignmentExtractor, TagRepository tagRepository, TopographicPlaceRepository topographicPlaceRepository) {
+    private final StopPlaceAuthorizationService stopPlaceAuthorizationService;
+
+    StopPlaceFetcher(StopPlaceRepository stopPlaceRepository, ParentStopPlacesFetcher parentStopPlacesFetcher, RoleAssignmentExtractor roleAssignmentExtractor, TagRepository tagRepository,
+                     TopographicPlaceRepository topographicPlaceRepository, StopPlaceAuthorizationService stopPlaceAuthorizationService) {
         this.stopPlaceRepository = stopPlaceRepository;
         this.parentStopPlacesFetcher = parentStopPlacesFetcher;
         this.roleAssignmentExtractor = roleAssignmentExtractor;
         this.tagRepository = tagRepository;
         this.topographicPlaceRepository = topographicPlaceRepository;
+        this.stopPlaceAuthorizationService = stopPlaceAuthorizationService;
     }
 
     @Override
@@ -103,6 +108,8 @@ class StopPlaceFetcher implements DataFetcher {
         logger.info("User organisations : {}", userOrgs);
 
         Page<StopPlace> stopPlacesPage = new PageImpl<>(new ArrayList<>());
+
+        exportParamsBuilder.setProviderList(stopPlaceAuthorizationService.getFilteredProviders());
 
         stopPlaceSearchBuilder.setPage(environment.getArgument(PAGE)).setSize(environment.getArgument(SIZE));
 

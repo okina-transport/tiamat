@@ -91,11 +91,14 @@ public class ExportParams {
     @ApiParam(value = SEARCH_WITH_PROVIDER_ID_ARG_DESCRIPTION)
     private Long providerId;
 
+    private List<String> providerList;
+
     @BeanParam
     @ApiModelProperty(hidden = true)
     private StopPlaceSearch stopPlaceSearch;
 
-    private ExportParams(ExportMode topographicPlaceExportMode, ExportMode tariffZoneExportMode, ExportMode groupOfStopPlacesExportMode, List<String> municipalityReferences, List<String> countyReferences, List<String> countryReferences, StopPlaceSearch stopPlaceSearch, String codeSpace, Long providerId) {
+    private ExportParams(ExportMode topographicPlaceExportMode, ExportMode tariffZoneExportMode, ExportMode groupOfStopPlacesExportMode, List<String> municipalityReferences, List<String> countyReferences,
+                         List<String> countryReferences, StopPlaceSearch stopPlaceSearch, String codeSpace, Long providerId, List<String> providerList) {
         this.topographicPlaceExportMode = topographicPlaceExportMode;
         this.tariffZoneExportMode = tariffZoneExportMode;
         this.groupOfStopPlacesExportMode = groupOfStopPlacesExportMode;
@@ -105,6 +108,7 @@ public class ExportParams {
         this.stopPlaceSearch = stopPlaceSearch;
         this.codeSpace = codeSpace;
         this.providerId = providerId;
+        this.providerList = providerList;
     }
 
     public ExportParams(StopPlaceSearch stopPlaceSearch) {
@@ -148,6 +152,10 @@ public class ExportParams {
         return providerId;
     }
 
+    public List<String> getProviderList() {
+        return providerList;
+    }
+
     public static ExportParams.Builder newExportParamsBuilder() {
         return new Builder();
     }
@@ -164,6 +172,7 @@ public class ExportParams {
                 .add("tariffZoneExportMode", tariffZoneExportMode)
                 .add("codeSpace", codeSpace)
                 .add("providerId", providerId)
+                .add("providerList", providerList)
                 .toString();
     }
 
@@ -177,6 +186,7 @@ public class ExportParams {
         private StopPlaceSearch stopPlaceSearch;
         private String codeSpace;
         private Long providerId;
+        private List<String> providerList;
 
         private Builder() {
         }
@@ -241,8 +251,13 @@ public class ExportParams {
             return this;
         }
 
+        public Builder setProviderList(List<String> providerList) {
+            this.providerList = providerList;
+            return this;
+        }
+
         public ExportParams build() {
-            return new ExportParams(topographicPlaceExportMode, tariffZoneExportMode, groupOfStopPlacesExportMode, municipalityReferences, countyReferences, countryReferences, stopPlaceSearch, codeSpace, providerId);
+            return new ExportParams(topographicPlaceExportMode, tariffZoneExportMode, groupOfStopPlacesExportMode, municipalityReferences, countyReferences, countryReferences, stopPlaceSearch, codeSpace, providerId, providerList);
         }
     }
 }

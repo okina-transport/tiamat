@@ -114,6 +114,8 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
     @Autowired
     private TiamatObjectDiffer tiamatObjectDiffer;
 
+
+
     private Provider provider;
 
     /**
@@ -132,7 +134,7 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
                 tiamatEntityResolver);
 
 
-        stopPlaceAuthorizationService = new StopPlaceAuthorizationService(reflectionAuthorizationService, tiamatObjectDiffer);
+        stopPlaceAuthorizationService = new StopPlaceAuthorizationService(reflectionAuthorizationService, tiamatObjectDiffer, roleAssignmentExtractor);
 
 //        provider = providerRepository.save(new Provider(1L, "Provider name"));
 

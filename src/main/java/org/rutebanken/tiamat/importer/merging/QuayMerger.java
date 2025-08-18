@@ -22,12 +22,7 @@ import org.opengis.referencing.operation.TransformException;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
-import org.rutebanken.tiamat.importer.matching.OriginalIdMatcher;
-import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
-import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
-import org.rutebanken.tiamat.model.MultilingualString;
-import org.rutebanken.tiamat.model.Quay;
-import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,11 +56,11 @@ public class QuayMerger {
     @Value("${quayMerger.maxCompassBearingDifference:60}")
     private int maxCompassBearingDifference = 60;
 
-    private final OriginalIdMatcher originalIdMatcher;
+    private final AlternativeNameMerger alternativeNameMerger;
 
     @Autowired
-    public QuayMerger(OriginalIdMatcher originalIdMatcher) {
-        this.originalIdMatcher = originalIdMatcher;
+    public QuayMerger(AlternativeNameMerger alternativeNameMerger) {
+        this.alternativeNameMerger = alternativeNameMerger;
     }
 
 
@@ -235,7 +230,9 @@ public class QuayMerger {
 
         keyValueFareZoneUpdated = keyValueListAppender.appendKeyValue(NetexIdMapper.FARE_ZONE, incomingQuay, alreadyAdded);
 
-        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || zipCodeUpdated || urlUpdated || descUpdated || nameUpdated || keyValueExternalRefUpdated || accessibilityUpdated || keyValueFareZoneUpdated) {
+        boolean updateAlternativeName = alternativeNameMerger.updateSiteElementAlternativeName(incomingQuay, alreadyAdded);
+
+        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || zipCodeUpdated || urlUpdated || descUpdated || nameUpdated || keyValueExternalRefUpdated || accessibilityUpdated || keyValueFareZoneUpdated || updateAlternativeName) {
             logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, nameUpdated:{}, keyValueExternalRefUpdated:{}, accessibilityUpdated:{}, keyValueFareZoneUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, nameUpdated, keyValueExternalRefUpdated, accessibilityUpdated, keyValueFareZoneUpdated);
 
             alreadyAdded.setChanged(Instant.now());

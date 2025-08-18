@@ -16,24 +16,21 @@
 package org.rutebanken.tiamat.importer.merging;
 
 import com.google.common.collect.Sets;
+import org.geotools.referencing.GeodeticCalculator;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
-import org.geotools.referencing.GeodeticCalculator;
-import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
-import org.rutebanken.tiamat.importer.matching.OriginalIdMatcher;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.netex.id.NetexIdHelper;
-import org.rutebanken.tiamat.netex.id.ValidPrefixList;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.springframework.test.annotation.DirtiesContext;
 
@@ -48,12 +45,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class QuayMergerTest {
 
-    private GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
+    private final GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
-    private NetexIdHelper netexIdHelper = new NetexIdHelper(new ValidPrefixList("NSR", new HashMap<>()));
+    private final AlternativeNameMerger alternativeNameMerger = new AlternativeNameMerger();
 
     @InjectMocks
-    private QuayMerger quayMerger = new QuayMerger(new OriginalIdMatcher(netexIdHelper));
+    private QuayMerger quayMerger = new QuayMerger(alternativeNameMerger);
 
     @Mock
     private KeyValueListAppender keyValueListAppender;

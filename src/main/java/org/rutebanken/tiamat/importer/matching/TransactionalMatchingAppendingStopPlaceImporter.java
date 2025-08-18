@@ -23,6 +23,7 @@ import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByIdFinder;
+import org.rutebanken.tiamat.importer.merging.AlternativeNameMerger;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
 import org.rutebanken.tiamat.importer.merging.QuayMerger;
 import org.rutebanken.tiamat.model.*;
@@ -54,8 +55,8 @@ import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.RAIL_UIC_
 public class TransactionalMatchingAppendingStopPlaceImporter {
 
     private static final Logger logger = LoggerFactory.getLogger(TransactionalMatchingAppendingStopPlaceImporter.class);
-
     private static final boolean CREATE_NEW_QUAYS = true;
+
     @Autowired
     protected VersionCreator versionCreator;
     @Autowired
@@ -76,12 +77,12 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     private MergingStopPlaceImporter mergingStopPlaceImporter;
     @Autowired
     private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
-
     @Autowired
     private StopPlaceCentroidComputer stopPlaceCentroidComputer;
-
     @Autowired
     private QuayMover quayMover;
+    @Autowired
+    private AlternativeNameMerger alternativeNameMerger;
 
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
@@ -221,7 +222,9 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                     }
                 }
 
-                if (quayChanged || keyValuesChanged || centroidChanged || nameChanged || wheelChairChanged || tariffZoneChanged || privateCodeChanged || hasTransportModeChanged) {
+                boolean updateAlternativeName = alternativeNameMerger.updateSiteElementAlternativeName(incomingStopPlace, copy);
+
+                if (quayChanged || keyValuesChanged || centroidChanged || nameChanged || wheelChairChanged || tariffZoneChanged || privateCodeChanged || hasTransportModeChanged || updateAlternativeName) {
                     if (existingStopPlace.getParentSiteRef() != null && !existingStopPlace.isParentStopPlace()) {
                         org.rutebanken.tiamat.model.StopPlace existingParentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingStopPlace.getParentSiteRef().getRef());
                         org.rutebanken.tiamat.model.StopPlace copyParentStopPlace = versionCreator.createCopy(existingParentStopPlace, org.rutebanken.tiamat.model.StopPlace.class);

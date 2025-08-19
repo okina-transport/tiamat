@@ -89,8 +89,22 @@ public class ValidityUpdater {
         return LocalDateTime.from(dateToConvert.atZone(defaultTimeZone.getDefaultTimeZoneId())).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     }
 
-    private void validateNewVersionDateAfter(String messageKey, String entityId, Instant previousVersionDate, Instant newVersionFromDate) {
-        if(previousVersionDate != null && previousVersionDate.isAfter(newVersionFromDate)) {
+    public void isNewVersionDateValidWithLogging(boolean validationToDateAfterNextVersionFromDate, boolean validationFromDateAfterNextVersionFromDate,
+                                                    String entityString, Instant incomingToDate, Instant incomingFromDate, Instant newVersionFromDate) {
+        if (!validationToDateAfterNextVersionFromDate) {
+            logger.error(messages.get(VALIDATION_TO_DATE_AFTER_NEXT_VERSION_FROM_DATE, entityString, incomingToDate, newVersionFromDate));
+        }
+        if (!validationFromDateAfterNextVersionFromDate) {
+            logger.error(messages.get(VALIDATION_FROM_DATE_AFTER_NEXT_VERSION_FROM_DATE, entityString, incomingFromDate, newVersionFromDate));
+        }
+    }
+
+    public boolean isValidateNewVersionDateAfter(Instant previousVersionDate, Instant newVersionFromDate) {
+        return previousVersionDate == null || previousVersionDate.isAfter(newVersionFromDate);
+    }
+
+    public void validateNewVersionDateAfter(String messageKey, String entityId, Instant previousVersionDate, Instant newVersionFromDate) {
+        if(!isValidateNewVersionDateAfter(previousVersionDate, newVersionFromDate)) {
             throw new IllegalArgumentException(messages.get(messageKey, entityId, formatToLocalDateTime(previousVersionDate), formatToLocalDateTime(newVersionFromDate)));
         }
     }

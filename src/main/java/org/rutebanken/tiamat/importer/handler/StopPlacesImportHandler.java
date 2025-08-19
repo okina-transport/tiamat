@@ -37,6 +37,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.rutebanken.tiamat.config.Messages.VALIDATION_FROM_DATE_AFTER_NEXT_VERSION_FROM_DATE;
+import static org.rutebanken.tiamat.config.Messages.VALIDATION_TO_DATE_AFTER_NEXT_VERSION_FROM_DATE;
+
 @Component
 public class StopPlacesImportHandler {
 
@@ -103,8 +106,8 @@ public class StopPlacesImportHandler {
         if (!importedStopPlaces.isEmpty()) {
             NetexUtils.getMembers(org.rutebanken.netex.model.StopPlace.class, members);
         }
-
         logger.info("Mapped {} stop places !!", tiamatStopPlaces.size());
+        logger.info("Imported {} stop places !!", importedStopPlaces.size());
     }
 
     private List<StopPlace> mapStopPlacesToTiamatModel(List<org.rutebanken.netex.model.StopPlace> netexStopPlacesInFrame, List<org.rutebanken.tiamat.model.Quay> quaysParsed) {
@@ -115,6 +118,7 @@ public class StopPlacesImportHandler {
         netexStopPlacesInFrame.forEach(netexStopPlace -> {
             stopPlacesList.add(netexMapper.parseToTiamatStopPlace(netexStopPlace, quaysParsed));
         });
+
         return stopPlacesList;
     }
 }

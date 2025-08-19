@@ -22,6 +22,7 @@ import org.rutebanken.tiamat.importer.finder.StopPlaceFromOriginalIdFinder;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
+import org.rutebanken.tiamat.versioning.ValidityUpdater;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.QuaysVersionedSaverService;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
@@ -33,6 +34,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -63,6 +65,8 @@ public class MergingStopPlaceImporter {
 
     private final QuaysVersionedSaverService quaysVersionedSaverService;
 
+    private final ValidityUpdater validityUpdater;
+
     @Autowired
     public MergingStopPlaceImporter(StopPlaceFromOriginalIdFinder stopPlaceFromOriginalIdFinder,
                                     NearbyStopPlaceFinder nearbyStopPlaceFinder,
@@ -72,7 +76,7 @@ public class MergingStopPlaceImporter {
                                     VersionCreator versionCreator,
                                     ReferenceResolver referenceResolver,
                                     MergingUtils mergingUtils,
-                                    QuaysVersionedSaverService quaysVersionedSaverService) {
+                                    QuaysVersionedSaverService quaysVersionedSaverService, ValidityUpdater validityUpdater) {
         this.stopPlaceFromOriginalIdFinder = stopPlaceFromOriginalIdFinder;
         this.nearbyStopPlaceFinder = nearbyStopPlaceFinder;
         this.stopPlaceCentroidComputer = stopPlaceCentroidComputer;
@@ -82,6 +86,7 @@ public class MergingStopPlaceImporter {
         this.referenceResolver = referenceResolver;
         this.mergingUtils = mergingUtils;
         this.quaysVersionedSaverService = quaysVersionedSaverService;
+        this.validityUpdater = validityUpdater;
     }
 
     /**
@@ -93,20 +98,35 @@ public class MergingStopPlaceImporter {
      * <p>
      * Attempts to use saveAndFlush or hibernate flush mode always have not been successful.
      */
-    public org.rutebanken.netex.model.StopPlace importStopPlace(StopPlace newStopPlace, Boolean containsMobiitiIds, boolean recomputeStopPlacesLocation) throws InterruptedException, ExecutionException {
+    public org.rutebanken.netex.model.StopPlace importStopPlace(StopPlace newStopPlace,
+                                                                Boolean containsMobiitiIds,
+                                                                boolean recomputeStopPlacesLocation)
+            throws InterruptedException, ExecutionException {
 
-        logger.debug("Transaction active: {}. Isolation level: {}", TransactionSynchronizationManager.isActualTransactionActive(), TransactionSynchronizationManager.getCurrentTransactionIsolationLevel());
+        logger.debug("Transaction active: {}. Isolation level: {}",
+                TransactionSynchronizationManager.isActualTransactionActive(),
+                TransactionSynchronizationManager.getCurrentTransactionIsolationLevel());
 
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
             throw new RuntimeException("Transaction with required "
-                    + "TransactionSynchronizationManager.isActualTransactionActive(): " + TransactionSynchronizationManager.isActualTransactionActive());
+                    + "TransactionSynchronizationManager.isActualTransactionActive(): "
+                    + TransactionSynchronizationManager.isActualTransactionActive());
         }
 
+        StopPlace processedStopPlace;
         if (containsMobiitiIds) {
-            return netexMapper.mapToNetexModel(importStopPlaceContainsMobiitiIdsWithoutNetexMapping(newStopPlace, recomputeStopPlacesLocation));
+            processedStopPlace = importStopPlaceContainsMobiitiIdsWithoutNetexMapping(newStopPlace, recomputeStopPlacesLocation);
+        } else {
+            processedStopPlace = importStopPlaceWithoutNetexMapping(newStopPlace, recomputeStopPlacesLocation);
         }
-        return netexMapper.mapToNetexModel(importStopPlaceWithoutNetexMapping(newStopPlace, recomputeStopPlacesLocation));
+
+        if (processedStopPlace == null) {
+            return null;
+        }
+
+        return netexMapper.mapToNetexModel(processedStopPlace);
     }
+
 
     public StopPlace importStopPlaceWithoutNetexMapping(StopPlace incomingStopPlace,
                                                         boolean recomputeStopPlacesLocation) throws InterruptedException,
@@ -117,10 +137,27 @@ public class MergingStopPlaceImporter {
     public StopPlace importStopPlaceContainsMobiitiIdsWithoutNetexMapping(StopPlace incomingStopPlace, boolean recomputeStopPlacesLocation) {
         final StopPlace foundStopPlace = stopPlaceFromOriginalIdFinder.findStopPlace(incomingStopPlace);
 
+        String entityString = (foundStopPlace != null ? foundStopPlace.getNetexId() : "unknown")
+                + " "
+                + (foundStopPlace != null ? foundStopPlace.getVersion() : "N/A");
+
+
+        Instant toDate = foundStopPlace != null ? foundStopPlace.getValidBetween().getToDate() : null;
+        Instant fromDate = foundStopPlace != null ? foundStopPlace.getValidBetween().getFromDate() : null;
+        Instant incomingFromDate = incomingStopPlace.getValidBetween().getFromDate();
+
+        boolean validationToDateAfterNextVersionFromDate = validityUpdater.isValidateNewVersionDateAfter(toDate, incomingFromDate);
+        boolean validationFromDateAfterNextVersionFromDate = validityUpdater.isValidateNewVersionDateAfter(fromDate, incomingFromDate);
+
+        if (!validationToDateAfterNextVersionFromDate || !validationFromDateAfterNextVersionFromDate) {
+            validityUpdater.isNewVersionDateValidWithLogging(validationToDateAfterNextVersionFromDate, validationFromDateAfterNextVersionFromDate,
+                    entityString, toDate, fromDate, incomingFromDate);
+            return null;
+        }
+
         final StopPlace stopPlace;
         if (foundStopPlace != null) {
             stopPlace = handleAlreadyExistingStopPlaceContainsMobiitiIds(foundStopPlace, incomingStopPlace, recomputeStopPlacesLocation);
-
         } else {
             stopPlace = handleCompletelyNewStopPlaceContainsMobiitiIds(incomingStopPlace, recomputeStopPlacesLocation);
         }

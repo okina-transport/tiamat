@@ -26,8 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * When importing site frames with the matching stops concurrently, not thread safe.
  */
@@ -48,30 +46,34 @@ public class TransactionalMergingStopPlacesImporter {
         this.topographicPlaceReferenceUpdater = topographicPlaceReferenceUpdater;
     }
 
-    public Collection<org.rutebanken.netex.model.StopPlace> importStopPlaces(List<StopPlace> stopPlaces,
-                                                                             AtomicInteger stopPlacesCreated,
-                                                                             Boolean containsMobiitiIds,
-                                                                             boolean recomputeStopPlacesLocation) {
+    public Collection<org.rutebanken.netex.model.StopPlace> importStopPlaces(
+            List<StopPlace> stopPlaces,
+            AtomicInteger stopPlacesCreated,
+            Boolean containsMobiitiIds,
+            boolean recomputeStopPlacesLocation) {
 
-        List<org.rutebanken.netex.model.StopPlace> createdStopPlaces = stopPlaces
-                .stream()
+        List<org.rutebanken.netex.model.StopPlace> createdStopPlaces = new ArrayList<>();
+
+        stopPlaces.stream()
                 .filter(Objects::nonNull)
-                .map(stopPlace -> {
-                    org.rutebanken.netex.model.StopPlace importedStop;
+                .forEach(stopPlace -> {
                     try {
                         topographicPlaceReferenceUpdater.updateTopographicReference(stopPlace);
-                        importedStop = mergingStopPlaceImporter.importStopPlace(stopPlace, containsMobiitiIds, recomputeStopPlacesLocation);
+                        org.rutebanken.netex.model.StopPlace imported = mergingStopPlaceImporter.importStopPlace(stopPlace, containsMobiitiIds, recomputeStopPlacesLocation);
+
+                        if (imported != null) {
+                            createdStopPlaces.add(imported);
+                            stopPlacesCreated.incrementAndGet();
+                        }
                     } catch (Exception e) {
-                        throw new RuntimeException("Could not import stop place " + stopPlace, e);
+                        logger.error("Erreur lors de l'import de l'arrêt {}", stopPlace, e);
                     }
-                    stopPlacesCreated.incrementAndGet();
-                    return importedStop;
-                })
-                .filter(Objects::nonNull)
-                .collect(toList());
+                });
 
         return distinctByIdAndHighestVersion(createdStopPlaces);
     }
+
+
 
     /**
      * In order to get a distinct list over stop places, and the newest version if duplicates.

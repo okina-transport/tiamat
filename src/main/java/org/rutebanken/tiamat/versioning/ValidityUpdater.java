@@ -100,11 +100,11 @@ public class ValidityUpdater {
     }
 
     public boolean isValidateNewVersionDateAfter(Instant previousVersionDate, Instant newVersionFromDate) {
-        return previousVersionDate == null || previousVersionDate.isAfter(newVersionFromDate);
+        return previousVersionDate != null && previousVersionDate.isAfter(newVersionFromDate);
     }
 
     public void validateNewVersionDateAfter(String messageKey, String entityId, Instant previousVersionDate, Instant newVersionFromDate) {
-        if(!isValidateNewVersionDateAfter(previousVersionDate, newVersionFromDate)) {
+        if(isValidateNewVersionDateAfter(previousVersionDate, newVersionFromDate)) {
             throw new IllegalArgumentException(messages.get(messageKey, entityId, formatToLocalDateTime(previousVersionDate), formatToLocalDateTime(newVersionFromDate)));
         }
     }

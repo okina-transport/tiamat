@@ -18,8 +18,8 @@ package org.rutebanken.tiamat.exporter;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.general.ExportJobWorker;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
+import org.rutebanken.tiamat.general.ExportJobWorker;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobStatus;
@@ -42,6 +42,8 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -49,6 +51,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_EXPORT_JOB_PATH;
@@ -328,13 +332,13 @@ public class AsyncPublicationDeliveryExporter {
         List<String> poiFileList = new ArrayList<>();
 
         if (StringUtils.equals(tiamatExportDestination, "local") || StringUtils.equals(tiamatExportDestination, "both")){
-            poiFileList.addAll(getPointsOfInterestFileListFromLocalStorage(providerName));
+            poiFileList.addAll(getFileListFromLocalStorage(providerName, maxNbResults, "POI_"));
         }
 
         if (StringUtils.equals(tiamatExportDestination, "gcs") || StringUtils.equals(tiamatExportDestination, "both")){
-            poiFileList.addAll(blobStoreService.listPointsOfInterestInBlob(providerName,maxNbResults));
+            poiFileList.addAll(blobStoreService.listPointsOfInterestInBlob(providerName, maxNbResults));
         }
-        Collections.sort(poiFileList, Collections.reverseOrder());
+
         return poiFileList;
     }
 
@@ -342,16 +346,11 @@ public class AsyncPublicationDeliveryExporter {
         List<String> parkingsFileList = new ArrayList<>();
 
         if (StringUtils.equals(tiamatExportDestination, "local") || StringUtils.equals(tiamatExportDestination, "both")){
-            parkingsFileList.addAll(getParkingsFileListFromLocalStorage(providerName));
+            parkingsFileList.addAll(getFileListFromLocalStorage(providerName, maxNbResults, "PARKING_"));
         }
 
         if (StringUtils.equals(tiamatExportDestination, "gcs") || StringUtils.equals(tiamatExportDestination, "both")){
-            parkingsFileList.addAll(blobStoreService.listParkingsInBlob(providerName,maxNbResults));
-        }
-        Collections.sort(parkingsFileList, Collections.reverseOrder());
-
-        if (maxNbResults > 0 && maxNbResults < parkingsFileList.size()){
-            parkingsFileList = parkingsFileList.subList(0,maxNbResults);
+            parkingsFileList.addAll(blobStoreService.listParkingsInBlob(providerName, maxNbResults));
         }
 
         return parkingsFileList;
@@ -379,45 +378,36 @@ public class AsyncPublicationDeliveryExporter {
         return new ArrayList<>();
     }
 
-    private List<String> getPointsOfInterestFileListFromLocalStorage(String providerName){
-        File providerDir = new File(localExportPath + File.separator +providerName);
+    private List<String> getFileListFromLocalStorage(String providerName, int maxNbResults, String filePrefix) {
+        File providerDir = new File(localExportPath + File.separator + providerName);
 
-        if (!providerDir.exists())
+        if (!providerDir.exists()) {
             return new ArrayList<>();
+        }
 
-        try {
-            return Files.walk(providerDir.toPath())
+        try (Stream<Path> paths = Files.walk(providerDir.toPath(), 1)) {
+            Stream<String> files = paths
+                    .filter(Files::isRegularFile)
+                    .sorted(Comparator.comparing((Path p) -> {
+                        try {
+                            return Files.getLastModifiedTime(p);
+                        } catch (IOException e) {
+                            return FileTime.fromMillis(0L);
+                        }
+                    }).reversed())
                     .map(path -> path.getFileName().toString())
-                    .filter(filename->filename.contains(".zip"))
-                    .filter(filename->filename.contains("POI_"))
-                    .collect(toList());
+                    .filter(filename -> filename.contains(".zip"))
+                    .filter(filename -> filename.contains(filePrefix));
 
+            return maxNbResults == 0
+                    ? files.collect(Collectors.toList())
+                    : files.limit(maxNbResults).collect(Collectors.toList());
+
+        } catch (IOException e) {
+            logger.error("Error while reading local FileStore repository", e);
         }
-        catch (IOException e) {
-            logger.error("Error while reading local FileStore repository");
-            logger.error(e.getMessage());
-        }
+
         return new ArrayList<>();
     }
 
-    private List<String> getParkingsFileListFromLocalStorage(String providerName){
-        File providerDir = new File(localExportPath + File.separator +providerName);
-
-        if (!providerDir.exists())
-            return new ArrayList<>();
-
-        try {
-            return Files.walk(providerDir.toPath())
-                    .map(path -> path.getFileName().toString())
-                    .filter(filename->filename.contains(".zip"))
-                    .filter(filename->filename.contains("PARKING_"))
-                    .collect(toList());
-
-        }
-        catch (IOException e) {
-            logger.error("Error while reading local FileStore repository");
-            logger.error(e.getMessage());
-        }
-        return new ArrayList<>();
-    }
 }

@@ -10,6 +10,8 @@ import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +45,8 @@ public class PostcodeResource {
     @PreAuthorize("@rolesChecker.hasRoleEdit()")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getMissingPostcode() throws IllegalArgumentException, IOException {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
         Job job = new Job();
         job.setType(JobType.MISSING_POSTAL_CODE);
         job.setAction(JobAction.IMPORT);
@@ -52,6 +56,7 @@ public class PostcodeResource {
 
         ImportJobWorker importJobWorker = importJobWorkerBuilder
                 .init(job)
+                .withAuthentication(authentication)
                 .build();
         importService.submit(importJobWorker);
 

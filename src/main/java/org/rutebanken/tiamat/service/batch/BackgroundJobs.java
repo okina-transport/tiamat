@@ -31,7 +31,7 @@ public class BackgroundJobs {
     private static final AtomicLong threadNumber = new AtomicLong();
 
     private final ScheduledExecutorService backgroundJobExecutor =
-            Executors.newScheduledThreadPool(3, (runnable) -> new Thread(runnable, "background-job-"+threadNumber.incrementAndGet()));
+            Executors.newScheduledThreadPool(3, (runnable) -> new Thread(runnable, "background-job-" + threadNumber.incrementAndGet()));
 
     private final GaplessIdGeneratorService gaplessIdGeneratorService;
 
@@ -41,22 +41,23 @@ public class BackgroundJobs {
 
     private final StopPlaceIdMappingService stopPlaceIdMappingService;
 
+    private final ParkingIdMappingService parkingIdMappingService;
+    @Value("${id.synchronization.enabled:true}")
+    boolean shoundSyncIds;
     @Autowired
     private HazelcastInstance hazelcastInstance;
-
     @PersistenceContext
     private EntityManager entityManager;
-
-    @Value("${id.synchronization.enabled:true}") boolean shoundSyncIds;
 
 
     @Autowired
     public BackgroundJobs(GaplessIdGeneratorService gaplessIdGeneratorService, StopPlaceRefUpdaterService stopPlaceRefUpdaterService, QuayIdMappingService quayIdMappingService,
-                          StopPlaceIdMappingService stopPlaceIdMappingService) {
+                          StopPlaceIdMappingService stopPlaceIdMappingService, ParkingIdMappingService parkingIdMappingService) {
         this.gaplessIdGeneratorService = gaplessIdGeneratorService;
         this.stopPlaceRefUpdaterService = stopPlaceRefUpdaterService;
         this.quayIdMappingService = quayIdMappingService;
         this.stopPlaceIdMappingService = stopPlaceIdMappingService;
+        this.parkingIdMappingService = parkingIdMappingService;
     }
 
     @PostConstruct
@@ -68,14 +69,16 @@ public class BackgroundJobs {
         logger.info("Scheduling background job for updating stop places");
         backgroundJobExecutor.scheduleAtFixedRate(stopPlaceRefUpdaterService::updateAllStopPlaces, 30, 280, TimeUnit.MINUTES);
 
-
         logger.info("Scheduling background job for quay id mapping file creation");
         backgroundJobExecutor.scheduleAtFixedRate(quayIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
 
         logger.info("Scheduling background job for stopPlace id mapping file creation");
         backgroundJobExecutor.scheduleAtFixedRate(stopPlaceIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
 
-        if (shoundSyncIds){
+        logger.info("Scheduling background job for parking id mapping file creation");
+        backgroundJobExecutor.scheduleAtFixedRate(parkingIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
+
+        if (shoundSyncIds) {
             syncIdGenerator();
         }
 
@@ -90,11 +93,11 @@ public class BackgroundJobs {
         query.getSingleResult();
         logger.info("Id generator table has been synchronized");
 
-        List<String> queueList = Arrays.asList("StopPlace", "AccessibilityLimitation", "Quay","AccessibilityAssessment");
+        List<String> queueList = Arrays.asList("StopPlace", "AccessibilityLimitation", "Quay", "AccessibilityAssessment");
 
         for (String queueName : queueList) {
             BlockingQueue<Long> queue = hazelcastInstance.getQueue(queueName);
-            if(queue != null){
+            if (queue != null) {
                 logger.info("Clearing queue : " + queueName);
                 queue.clear();
             }

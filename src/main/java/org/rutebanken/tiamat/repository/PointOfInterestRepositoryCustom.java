@@ -2,14 +2,12 @@ package org.rutebanken.tiamat.repository;
 
 
 import org.locationtech.jts.geom.Envelope;
-import org.rutebanken.tiamat.model.Parking;
-import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.model.PointOfInterest;
-import org.rutebanken.tiamat.model.PointOfInterestClassification;
+import org.rutebanken.tiamat.rest.dto.DTOClusterMarker;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Iterator;
+
 import java.util.List;
 import java.util.Set;
 
@@ -49,5 +47,7 @@ public interface PointOfInterestRepositoryCustom extends DataManagedObjectStruct
     List<PointOfInterest> getAllPOIWithoutPostcode();
 
     List<PointOfInterest> findAllPOILastVersionAndValid();
+
+    List<DTOClusterMarker> findClusterMarkers();
 
 }

@@ -24,8 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
@@ -91,22 +90,64 @@ public class ParentStopPlacesFetcher {
         return result;
     }
 
-//    public List<StopPlace> resolveParentsLight(List<StopPlace> stopPlaceList, boolean keepChilds) {
-//
-//        Session session = entityManager.unwrap(Session.class);
-//
-//        if (stopPlaceList == null || stopPlaceList.stream().noneMatch(Objects::nonNull)) {
-//            return stopPlaceList;
-//        }
-//
-//        List<StopPlace> stopsWithParent = stopPlaceList.stream()
-//                .filter(stopPlace -> !stopPlace.isParentStopPlace() && stopPlace.getParentSiteRef() != null)
-//                .toList();
-//
-//        StopPlace parent = stopPlaceRepository.findFirstByNetexIdAndVersion(nonParentStop.getParentSiteRef().getRef(), Long.parseLong(nonParentStop.getParentSiteRef().getVersion()));
-//
-//
-//        return result;
-//    }
+    public List<StopPlace> resolveParentsByBatch(List<StopPlace> stopPlaceList, boolean keepChilds) {
+        Session session = entityManager.unwrap(Session.class);
+
+        if (stopPlaceList == null || stopPlaceList.stream().noneMatch(sp -> sp != null)) {
+            return stopPlaceList;
+        }
+
+        List<StopPlace> result = stopPlaceList.stream().filter(StopPlace::isParentStopPlace).collect(toList());
+
+        List<StopPlace> nonParentStops = stopPlaceList.stream().filter(stopPlace -> !stopPlace.isParentStopPlace()).collect(toList());
+        Set<String> parentsIds = new HashSet();
+
+        nonParentStops.forEach(nonParentStop -> {
+                    if (nonParentStop.getParentSiteRef() != null) {
+                        parentsIds.add(nonParentStop.getParentSiteRef().getRef() + nonParentStop.getParentSiteRef().getVersion());
+                    }
+        });
+
+        List<StopPlace> parentsFromDB = stopPlaceRepository.findAllNetexVersions(new ArrayList<>(parentsIds));
+
+
+        nonParentStops.forEach(nonParentStop -> {
+            if (nonParentStop.getParentSiteRef() != null) {
+                // Parent stop place refs should have version. If not, let it fail.
+                StopPlace parent = getParentFromBatch(parentsFromDB, nonParentStop.getParentSiteRef().getRef(),
+                        Long.parseLong(nonParentStop.getParentSiteRef().getVersion()));
+                if (parent != null) {
+                    logger.info("Resolved parent: {} {} from child {}", parent.getNetexId(), parent.getName(), nonParentStop.getNetexId());
+
+                    if(nonParentStop.getName() == null || Strings.isNullOrEmpty(nonParentStop.getName().getValue())) {
+                        logger.info("Copying name from parent {} to child stop: {}", parent.getId(), parent.getName());
+                        nonParentStop.setName(parent.getName());
+                        session.setReadOnly(nonParentStop, true);
+                    }
+
+                    if (result.stream().noneMatch(stopPlace -> stopPlace.getNetexId() != null
+                            && (stopPlace.getNetexId().equals(parent.getNetexId()) && stopPlace.getVersion() == parent.getVersion()))) {
+                        result.add(parent);
+                    }
+                    if (keepChilds) {
+                        result.add(nonParentStop);
+                    }
+                } else {
+                    logger.warn("Could not resolve parent from {}", nonParentStop.getParentSiteRef());
+                }
+            } else {
+                result.add(nonParentStop);
+            }
+        });
+        return result;
+    }
+
+    private StopPlace getParentFromBatch(List<StopPlace> parentsFromDB, String ref, long version) {
+        return parentsFromDB.stream()
+                .filter(stop -> stop.getNetexId().equals(ref) && stop.getVersion() == version)
+                .findFirst().orElse(null);
+    }
+
+
 
 }

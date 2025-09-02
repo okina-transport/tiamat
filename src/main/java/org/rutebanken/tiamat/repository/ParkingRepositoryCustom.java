@@ -19,6 +19,7 @@ import org.locationtech.jts.geom.Envelope;
 import org.rutebanken.tiamat.exporter.params.ParkingSearch;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
+import org.rutebanken.tiamat.rest.dto.DTOClusterMarker;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -59,5 +60,7 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
     Optional<Parking> findByIdLocAndOsm(String idLoc, String idOsm);
 
     List<Parking> findAllParkingsLastVersionAndValid();
+
+    List<DTOClusterMarker> findClusterMarkers();
 }
 

@@ -59,4 +59,11 @@ public class GeometryTransformer {
         int zone = (int) (1 + Math.floor((longitude+180)/6));
         return "EPSG:326"+zone;
     }
+
+
+    public static double convertMetersToLatitudeDegrees(double meters) {
+        double metersPerDegreeLatitude = 111_000; // 1° latitude ≈ 111 km
+        return meters / metersPerDegreeLatitude;
+    }
+
 }

@@ -25,15 +25,17 @@ import org.hibernate.query.NativeQuery;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.rutebanken.tiamat.geo.GeometryTransformer;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingArea;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
-import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
+import org.rutebanken.tiamat.rest.dto.DTOClusterMarker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -63,6 +65,10 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     private GeometryFactory geometryFactory;
     @Autowired
     private SearchHelper searchHelper;
+
+
+    @Value("${cluster.marker.maximum.distance:10000}")
+    protected long maximumDistance;
 
     /**
      * Find parking's netex ID by key value
@@ -462,4 +468,35 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
                 "ORDER BY p.netex_id, p.version";
         return entityManager.createNativeQuery(sql, Parking.class).getResultList();
     }
+
+    @Override
+    public List<DTOClusterMarker> findClusterMarkers(){
+
+        String completeQuery = """
+                    SELECT cluster_id,
+                           ST_X(ST_Centroid(ST_Collect(centroid))) AS center_lon,
+                           ST_Y(ST_Centroid(ST_Collect(centroid))) AS center_lat,
+                           count(1)
+                    FROM (SELECT ST_ClusterDBSCAN(centroid,:maxDistanceDegrees , 1) OVER () AS cluster_id, * 
+                          FROM (SELECT p.*
+                                FROM parking p
+                                WHERE p.version = (select max(pv.version) from parking pv where pv.netex_id = p.netex_id)
+                                ORDER BY p.netex_id, p.version) single_poi) pois_with_clusters
+                    group by cluster_id
+            """;
+
+
+        Query query = entityManager.createNativeQuery(completeQuery);
+        query.setParameter("maxDistanceDegrees", GeometryTransformer.convertMetersToLatitudeDegrees(maximumDistance));
+
+
+        List<Object[]> result = query.getResultList();
+
+        List<DTOClusterMarker> clusterList = result.stream()
+                .map(DTOClusterMarker::new)
+                .collect(Collectors.toList());
+
+        return clusterList;
+    }
+
 }

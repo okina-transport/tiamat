@@ -87,6 +87,9 @@ public class StopPlaceRegisterGraphQLSchema {
     private PointOfInterestObjectTypeCreator pointOfInterestObjectTypeCreator;
 
     @Autowired
+    private ClusterMarkerObjectTypeCreator clusterMarkerObjectTypeCreator;
+
+    @Autowired
     private GroupOfStopPlacesObjectTypeCreator groupOfStopPlaceObjectTypeCreator;
 
     @Autowired
@@ -100,6 +103,9 @@ public class StopPlaceRegisterGraphQLSchema {
 
     @Autowired
     private PointOfInterestInterfaceCreator pointOfInterestInterfaceCreator;
+
+    @Autowired
+    private ClusterMarkerInterfaceCreator clusterMarkerInterfaceCreator;
 
     @Autowired
     private ParentStopPlaceInputObjectTypeCreator parentStopPlaceInputObjectTypeCreator;
@@ -127,6 +133,15 @@ public class StopPlaceRegisterGraphQLSchema {
 
     @Autowired
     DataFetcher allStopPlacesFetcher;
+
+    @Autowired
+    DataFetcher stopPlaceClusterMarkersFetcher;
+
+    @Autowired
+    DataFetcher poiClusterMarkersFetcher;
+
+    @Autowired
+    DataFetcher parkingClusterMarkersFetcher;
 
     @Autowired
     DataFetcher allParkingsFetcher;
@@ -234,14 +249,17 @@ public class StopPlaceRegisterGraphQLSchema {
         MutableTypeResolver stopPlaceTypeResolver = new MutableTypeResolver();
         MutableTypeResolver parkingTypeResolver = new MutableTypeResolver();
         MutableTypeResolver pointOfInterestTypeResolver = new MutableTypeResolver();
+        MutableTypeResolver clusterTypeResolver = new MutableTypeResolver();
 
         List<GraphQLFieldDefinition> stopPlaceInterfaceFields = stopPlaceInterfaceCreator.createCommonInterfaceFields(tariffZoneObjectType, topographicPlaceObjectType, validBetweenObjectType);
         List<GraphQLFieldDefinition> parkingInterfaceFields = parkingInterfaceCreator.createCommonInterfaceFields(topographicPlaceObjectType, validBetweenObjectType);
         List<GraphQLFieldDefinition> pointOfInterestInterfaceFields = pointOfInterestInterfaceCreator.createCommonInterfaceFields(topographicPlaceObjectType, validBetweenObjectType, poiClassification);
+        List<GraphQLFieldDefinition> clusterInterfaceFields = clusterMarkerInterfaceCreator.createCommonInterfaceFields();
 
         GraphQLInterfaceType stopPlaceInterface = stopPlaceInterfaceCreator.createInterface(stopPlaceInterfaceFields, commonFieldsList, stopPlaceTypeResolver);
         GraphQLInterfaceType parkingInterface = parkingInterfaceCreator.createInterface(parkingInterfaceFields, commonFieldsList, parkingTypeResolver);
         GraphQLInterfaceType pointOfInterestInterface = pointOfInterestInterfaceCreator.createInterface(pointOfInterestInterfaceFields, commonFieldsList, pointOfInterestTypeResolver);
+        GraphQLInterfaceType clusterMarkerInterface = clusterMarkerInterfaceCreator.createInterface(clusterInterfaceFields, clusterTypeResolver);
 
         GraphQLObjectType stopPlaceObjectType = stopPlaceObjectTypeCreator.create(stopPlaceInterface, stopPlaceInterfaceFields, commonFieldsList, quayObjectType);
         GraphQLObjectType parentStopPlaceObjectType = parentStopPlaceObjectTypeCreator.create(stopPlaceInterface, stopPlaceInterfaceFields, commonFieldsList, stopPlaceObjectType);
@@ -272,11 +290,18 @@ public class StopPlaceRegisterGraphQLSchema {
 
         GraphQLObjectType pointOfInterestObjectType = pointOfInterestObjectTypeCreator.create(pointOfInterestInterface, pointOfInterestInterfaceFields, commonFieldsList);
 
+        GraphQLObjectType clusterMarkerObjectType = clusterMarkerObjectTypeCreator.create(clusterMarkerInterface,clusterInterfaceFields);
+
+
         parkingTypeResolver.setResolveFunction(object -> {
             if (object instanceof Parking) {
                 return parkingObjectType;
             }
             throw new IllegalArgumentException("ParkingTypeResolver cannot resolve type of Object " + object + ". Was expecting Parking");
+        });
+
+        clusterTypeResolver.setResolveFunction(object ->{
+            return clusterMarkerObjectType;
         });
 
         pointOfInterestTypeResolver.setResolveFunction(o -> {
@@ -313,6 +338,21 @@ public class StopPlaceRegisterGraphQLSchema {
                         .name(FIND_ALL_STOPPLACES)
                         .description("Find All StopPlaces")
                         .dataFetcher(allStopPlacesFetcher))
+                .field(newFieldDefinition()
+                        .type(new GraphQLList(clusterMarkerInterface))
+                        .name(FIND_STOPPLACES_CLUSTER_MARKERS)
+                        .description("Find StopPlaces cluster markers")
+                        .dataFetcher(stopPlaceClusterMarkersFetcher))
+                .field(newFieldDefinition()
+                        .type(new GraphQLList(clusterMarkerInterface))
+                        .name(FIND_POI_CLUSTER_MARKERS)
+                        .description("Find Poi cluster markers")
+                        .dataFetcher(poiClusterMarkersFetcher))
+                .field(newFieldDefinition()
+                        .type(new GraphQLList(clusterMarkerInterface))
+                        .name(FIND_PARKING_CLUSTER_MARKERS)
+                        .description("Find Parking cluster markers")
+                        .dataFetcher(parkingClusterMarkersFetcher))
                 .field(newFieldDefinition()
                         .type(new GraphQLList(parkingInterface))
                         .name(FIND_ALL_PARKINGS)
@@ -485,6 +525,7 @@ public class StopPlaceRegisterGraphQLSchema {
 
         stopPlaceRegisterSchema = GraphQLSchema.newSchema()
                 .query(stopPlaceRegisterQuery)
+                .additionalType(clusterMarkerObjectType)
                 .mutation(stopPlaceRegisterMutation)
                 .build();
     }

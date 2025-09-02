@@ -24,6 +24,7 @@ import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.repository.search.ChangedStopPlaceSearch;
+import org.rutebanken.tiamat.rest.dto.DTOClusterMarker;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -126,4 +127,8 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
     StopPlace findFirstStopPlaceByNetexQuayOrderByVersionDesc(String quayNetexId);
 
     List<StopPlace> findAllStopplacesLastVersionAndValid(List<String> providerList);
+
+    List<DTOClusterMarker> findClusterMarkers(List<String> providerList);
+
+    List<StopPlace> findAllNetexVersions(List<String> netexVersionsList);
 }

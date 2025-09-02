@@ -190,6 +190,9 @@ public class GraphQLNames {
     public static final String OUTPUT_TYPE_POINT_OF_INTEREST = "PointOfInterest";
     public static final String OUTPUT_TYPE_POINT_OF_INTEREST_INTERFACE = OUTPUT_TYPE_POINT_OF_INTEREST + "Interface";
 
+    public static final String OUTPUT_TYPE_CLUSTER_MARKER = "ClusterMarker";
+    public static final String OUTPUT_TYPE_CLUSTER_MARKER_INTERFACE = OUTPUT_TYPE_CLUSTER_MARKER + "Interface";
+
     public static final String INPUT_TYPE_POINT_OF_INTEREST = OUTPUT_TYPE_POINT_OF_INTEREST + INPUT_TYPE_POSTFIX;
 
     public static final String OUTPUT_TYPE_POI_FACILITY_SET = "PointOfInterestFacilitySet";
@@ -310,6 +313,11 @@ public class GraphQLNames {
     public static final String DRY_RUN = "dryRun";
     public static final String PUBLIC_CODE = "publicCode";
     public static final String WEIGHTING = "weighting";
+
+    public static final String CLUSTER_ID = "clusterId";
+    public static final String LONGITUDE = "longitude";
+    public static final String LATITUDE = "latitude";
+
 
     public static final String IMPORTED_ID_QUERY = "importedId";
     public static final String IMPORTED_ID_ARG_DESCRIPTION = "Searches for StopPlace by importedId.";
@@ -455,6 +463,9 @@ public class GraphQLNames {
     public static final String CHECK_AUTHORIZED = "checkAuthorized";
     public static final String FIND_STOPPLACE_BY_BBOX = "stopPlaceBBox";
     public static final String FIND_ALL_STOPPLACES = "allStopPlaces";
+    public static final String FIND_STOPPLACES_CLUSTER_MARKERS = "stopPlaceClusterMarkers";
+    public static final String FIND_POI_CLUSTER_MARKERS = "poiClusterMarkers";
+    public static final String FIND_PARKING_CLUSTER_MARKERS = "parkingClusterMarkers";
     public static final String FIND_ALL_PARKINGS = "allParkings";
     public static final String FIND_ALL_POI = "allPointsOfInterest";
     public static final String FIND_PARKING_BY_BBOX = "parkingBBox";

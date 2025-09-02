@@ -295,10 +295,12 @@ class StopPlaceFetcher implements DataFetcher {
 
         //By default stop should resolve parent stops
         if (nearbyStopPlaceSearch || onlyMonomodalStopplaces || stopPlacesWithoutQuaySearch || stopPlacesWithMultipleProducersSearch || quaysWithMultipleProducersSearch) {
-           return getStopPlaces(environment, stopPlaces, stopPlaces.size());
+            PageImpl<StopPlace> result = getStopPlaces(environment, stopPlaces, stopPlaces.size());
+            return result;
         } else {
-            List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(stopPlaces, KEEP_CHILDREN);
-            return getStopPlaces(environment, parentsResolved, parentsResolved.size());
+            List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParentsByBatch(stopPlaces, KEEP_CHILDREN);
+            PageImpl<StopPlace> result = getStopPlaces(environment, parentsResolved, parentsResolved.size());
+            return result;
         }
     }
 

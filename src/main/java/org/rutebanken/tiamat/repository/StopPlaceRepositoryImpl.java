@@ -31,6 +31,7 @@ import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
+import org.rutebanken.tiamat.geo.GeometryTransformer;
 import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -39,6 +40,7 @@ import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.ChangedStopPlaceSearch;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
 import org.rutebanken.tiamat.repository.search.StopPlaceQueryFromSearchBuilder;
+import org.rutebanken.tiamat.rest.dto.DTOClusterMarker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,6 +81,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
     @Value("${administration.space.name}")
     protected String administrationSpaceName;
+
+    @Value("${cluster.marker.maximum.distance:20000}")
+    protected long maximumDistance;
 
     /**
      * Part of SQL that checks that either the stop place named as *s* or the parent named *p* is valid at the point in time.
@@ -181,23 +186,31 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                 queryString += "AND " + SQL_IGNORE_STOP_PLACE_ID;
             }
         } else {
-            // If no point in time is set, use max version to only get one version per stop place
-            String subQueryString = "SELECT s.netex_id,max(s.version) FROM stop_place s " +
-                    SQL_LEFT_JOIN_PARENT_STOP +
-                    "WHERE " +
-                    SQL_CHILD_OR_PARENT_WITHIN +
-                    "AND "
-                    + SQL_NOT_PARENT_STOP_PLACE;
 
-
+            String ignoreFilter = "";
             if (ignoreStopPlaceId != null) {
-                subQueryString += "AND " + SQL_IGNORE_STOP_PLACE_ID + "group by s.netex_id";
-            } else {
-                subQueryString += "group by s.netex_id" ;
+                ignoreFilter += " AND s1.netex_id != :ignoreStopPlaceId ";
             }
 
-            queryString = "SELECT s.* FROM stop_place s " +
-                    "WHERE (netex_id,version) in (" + subQueryString + ")" ;
+
+            queryString = """
+                WITH active_rows AS (
+                  SELECT *
+                  FROM stop_place s1
+                  WHERE s1.to_date IS NULL
+                     OR CURRENT_DATE BETWEEN s1.from_date AND s1.to_date
+                        %s                        
+                )
+                SELECT s.* FROM active_rows s
+                                            LEFT JOIN active_rows p ON s.parent_site_ref = p.netex_id AND
+                                                                                 s.parent_site_ref_version = CAST(p.version as text)
+                                              WHERE (ST_within(s.centroid, :filter) = true
+                                                  OR ST_within(p.centroid, :filter) = true)
+                                                AND s.parent_stop_place = false
+                """.formatted(ignoreFilter);
+
+
+
 
         }
 
@@ -1044,6 +1057,63 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         return query.getResultList();
     }
+
+
+
+    @Override
+    public List<DTOClusterMarker> findClusterMarkers(List<String> providerList) {
+
+        String providerFilters = providerList.isEmpty() ? " " : " AND s.provider in :providers";
+
+        String completeQuery = """
+                SELECT cluster_id,
+                       ST_X(ST_Centroid(ST_Collect(centroid))) AS center_lon,
+                       ST_Y(ST_Centroid(ST_Collect(centroid))) AS center_lat,
+                       count(1)
+                FROM (SELECT ST_ClusterDBSCAN(centroid,:maxDistanceDegrees , 1) OVER () AS cluster_id, *
+                      FROM (SELECT s.*
+                            FROM stop_place s
+                                     LEFT JOIN stop_place p
+                                               ON s.parent_site_ref = p.netex_id AND s.parent_site_ref_version = CAST(p.version as text)
+                            WHERE ((p.netex_id IS NOT NULL AND (p.from_date IS NULL OR p.from_date <= :pointInTime) AND
+                                    (p.to_date IS NULL OR p.to_date > :pointInTime)) OR
+                                   (p.netex_id IS NULL AND (s.from_date IS NULL OR s.from_date <= :pointInTime) AND
+                                    (s.to_date IS NULL OR s.to_date > :pointInTime)))) %s single_sps) sps_with_clusters
+                group by cluster_id
+                """.formatted(providerFilters);
+
+
+        Query query = entityManager.createNativeQuery(completeQuery)
+                .setParameter("maxDistanceDegrees", GeometryTransformer.convertMetersToLatitudeDegrees(maximumDistance))
+                .setParameter("pointInTime", Date.from(Instant.now()));
+
+
+
+        if(!providerList.isEmpty()){
+            query.setParameter("providers", providerList);
+        }
+
+        List<Object[]> result = query.getResultList();
+
+        List<DTOClusterMarker> clusterList = result.stream()
+                .map(DTOClusterMarker::new)
+                .collect(Collectors.toList());
+
+        return clusterList;
+    }
+
+    @Override
+    public List<StopPlace> findAllNetexVersions(List<String> netexVersionsList) {
+
+        final String queryString = "SELECT s.* FROM Stop_Place s WHERE CONCAT(s.netex_id,s.version) IN :netexVersionList";
+
+        Query query = entityManager.createNativeQuery(queryString, StopPlace.class);
+        query.setParameter("netexVersionList", netexVersionsList);
+
+        List results = query.getResultList();
+        return results;
+    }
+
 
     @Override
     public List<Quay> findQuayByNetexId(String netexId) {

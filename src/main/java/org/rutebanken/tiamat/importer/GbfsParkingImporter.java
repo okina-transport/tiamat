@@ -112,7 +112,7 @@ public class GbfsParkingImporter {
         GBFSGbfs gbfsV3;
         try {
             gbfsV3 = switch (gbfsFileValidation.version()) {
-                case "2.3" -> {
+                case "2.0", "2.1", "2.2", "2.3" -> {
                     GBFS gbfsV2 =
                             MAPPER.readValue(gbfsFileValidation.fileContents(), GBFS.class);
                     yield gbfsMapper.map(gbfsV2, gbfsV2.getFeedsData().containsKey("fr") ? "fr" : gbfsV2.getFeedsData().keySet().iterator().next());
@@ -171,7 +171,7 @@ public class GbfsParkingImporter {
                 throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
             }
             try {
-                if ("2.3".equals(gbfsFileValidation.version())) {
+                if (List.of("2.0", "2.1", "2.2", "2.3").contains(gbfsFileValidation.version())) {
                     switch (feedName) {
                         case STATION_INFORMATION -> {
                             var stationInformationV2 = MAPPER.readValue(feedFileValidation.fileContents()

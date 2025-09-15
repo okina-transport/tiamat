@@ -178,6 +178,10 @@ public class MdmService {
         return stopPlaceMdmData != null ? Optional.of(stopPlaceMdmData.getSuperId()) : Optional.empty();
     }
 
+    public Set<Long> getStopPlaceIdsByProvider(String provider){
+        return mdmFeignClient.getStopPlaceIdentifiersByDataset(provider);
+    }
+
     public void generateIdentifier(PointOfInterest incomingPointOfInterest) {
         if (!tiamatProperties.isMdmEnabled()) {
             return;

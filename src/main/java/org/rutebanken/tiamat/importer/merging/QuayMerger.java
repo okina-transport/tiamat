@@ -28,7 +28,6 @@ import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -66,7 +65,7 @@ public class QuayMerger {
 
     public QuayMerger(AlternativeNameMerger alternativeNameMerger, KeyValueListAppender keyValueListAppender,
                 MdmService mdmService) {
-            this.alternativeNameMerger = alternativeNameMerger;
+        this.alternativeNameMerger = alternativeNameMerger;
         this.keyValueListAppender = keyValueListAppender;
         this.mdmService = mdmService;
     }

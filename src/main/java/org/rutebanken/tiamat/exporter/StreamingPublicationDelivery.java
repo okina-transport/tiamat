@@ -392,6 +392,11 @@ public class StreamingPublicationDelivery {
                 key = sp.getId() + "-" + sp.getVersion();
             } else if (jaxbElement.getValue() instanceof Quay quay) {
                 key = quay.getId() + "-" + quay.getVersion();
+                if (quay.getKeyList() != null && quay.getKeyList().getKeyValue().isEmpty()){
+                    if (quay.getKeyList().getKeyValue().isEmpty()){
+                        quay.setKeyList(null);
+                    }
+                }
             } else {
                 //all other objects are not filtered
                 filteredList.add(jaxbElement);

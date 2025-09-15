@@ -57,6 +57,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -815,28 +816,54 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void initExportJobTable(Provider provider, Long exportJobId){
 
-        Map<String, Object> parameters = new HashMap<>();
+        String queryStr;
+        Set<Long> stopPlaceSuperIds = new HashSet<>();
+        boolean isProviderSet = provider != null && provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName);
+
+        if (isProviderSet) {
 
 
-        String queryStr = " INSERT INTO job_id_list \n" +
-                "           SELECT :exportJobId,s.id as stop_id FROM stop_place s where s.id in  \n" +
-                "                 ( SELECT max(s1.id) FROM stop_place s1 ";
+            stopPlaceSuperIds = mdmService.getStopPlaceIdsByProvider(provider.getChouetteInfo().getReferential().toLowerCase());
 
-        if (provider != null && provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName)){
-            queryStr = queryStr + " JOIN stop_place_key_values spkv ON spkv.stop_place_id = s1.id\n" +
-                    "            JOIN value_items vi ON spkv.key_values_id = vi.value_id\n" +
-                    "            WHERE LOWER(vi.items) LIKE concat(:providerName, ':%') \n";
-            parameters.put("providerName",  provider.getChouetteInfo().getReferential().toLowerCase());
+            queryStr = """
+                    INSERT INTO job_id_list
+                    SELECT :exportJobId, s.id as stop_id
+                    FROM stop_place s
+                    where s.id in
+                          (SELECT max(s1.id)
+                           FROM stop_place s1   
+                           WHERE CAST(SPLIT_PART(netex_id, ':',3) AS BIGINT) in :superIdList
+                           group by s1.netex_id)
+                      AND (s.from_date <= :pointInTime OR s.from_date IS NULL)
+                      AND (s.to_date >= :pointInTime OR s.to_date IS NULL)
+                      and s.parent_stop_place = false
+                    """;
+        }else{
+
+            queryStr = """
+                    INSERT INTO job_id_list
+                    SELECT :exportJobId, s.id as stop_id
+                    FROM stop_place s
+                    where s.id in
+                          (SELECT max(s1.id)
+                           FROM stop_place s1                                    
+                           group by s1.netex_id)
+                      AND (s.from_date <= :pointInTime OR s.from_date IS NULL)
+                      AND (s.to_date >= :pointInTime OR s.to_date IS NULL)
+                      and s.parent_stop_place = false
+                    """;
+
+
+
         }
 
-        queryStr = queryStr + "  group by s1.netex_id  ) " +
-                "                     AND  (s.from_date <= :pointInTime OR  s.from_date IS NULL) \n" +
-                "                     AND (   s.to_date >= :pointInTime  OR s.to_date IS NULL) \n" +
-                "                        and s.parent_stop_place = false  ";
-
+        Map<String, Object> parameters = new HashMap<>();
+        if (isProviderSet) {
+            parameters.put("superIdList", stopPlaceSuperIds);
+        }
 
         parameters.put("exportJobId", exportJobId);
-        parameters.put("pointInTime", Date.from(Instant.now()));
+        parameters.put("pointInTime", LocalDateTime.now());
 
         Session session = entityManager.unwrap(Session.class);
         NativeQuery query = session.createNativeQuery(queryStr);

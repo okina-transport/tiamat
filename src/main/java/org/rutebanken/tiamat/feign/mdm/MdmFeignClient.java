@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
+import java.util.Set;
 
 @FeignClient(value = "mdmClient", url = "${spring.cloud.openfeign.client.config.mdmClient.url}")
 public interface MdmFeignClient {
@@ -18,6 +19,9 @@ public interface MdmFeignClient {
 
     @GetMapping(value = "/stops/byOriginalId")
     OkinaIdentifier getStopPlaceIdentifiersByOriginalId(@RequestBody OkinaIdentifier stopPlaceIdentifier);
+
+    @GetMapping(value = "/stops/byDataset")
+    Set<Long> getStopPlaceIdentifiersByDataset(@RequestBody String dataset);
 
     @PostMapping(value = "/stops/createOrUpdate")
     void createOrUpdateStopIdentifiers(@RequestBody List<OkinaIdentifier> identifiers);

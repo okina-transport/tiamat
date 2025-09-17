@@ -19,10 +19,11 @@ import org.rutebanken.tiamat.importer.finder.NearbyParkingFinder;
 import org.rutebanken.tiamat.importer.finder.ParkingFromOriginalIdFinder;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
-import org.rutebanken.tiamat.repository.*;
+import org.rutebanken.tiamat.repository.AccessibilityAssessmentRepository;
+import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
-import org.rutebanken.tiamat.versioning.save.*;
 import org.rutebanken.tiamat.versioning.VersionCreator;
+import org.rutebanken.tiamat.versioning.save.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 @Component
 @Qualifier("mergingParkingImporter")
@@ -64,6 +67,8 @@ public class MergingParkingImporter {
 
     private final MergingUtils mergingUtils;
 
+    private final ParkingRepository parkingRepository;
+
     @Autowired
     public MergingParkingImporter(ParkingFromOriginalIdFinder parkingFromOriginalIdFinder,
                                   NearbyParkingFinder nearbyParkingFinder,
@@ -76,7 +81,7 @@ public class MergingParkingImporter {
                                   ParkingPlaceEquipmentsVersionedSaverService parkingPlaceEquipmentsVersionedSaverService,
                                   ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService,
                                   VersionCreator versionCreator,
-                                  MergingUtils mergingUtils, AccessibilityAssessmentRepository accessibilityAssessmentRepository, ParkingBaysVersionedSaverService parkingBaysVersionedSaverService) {
+                                  MergingUtils mergingUtils, AccessibilityAssessmentRepository accessibilityAssessmentRepository, ParkingBaysVersionedSaverService parkingBaysVersionedSaverService, ParkingRepository parkingRepository) {
         this.parkingFromOriginalIdFinder = parkingFromOriginalIdFinder;
         this.nearbyParkingFinder = nearbyParkingFinder;
         this.referenceResolver = referenceResolver;
@@ -89,6 +94,7 @@ public class MergingParkingImporter {
         this.versionCreator = versionCreator;
         this.mergingUtils = mergingUtils;
         this.parkingBaysVersionedSaverService = parkingBaysVersionedSaverService;
+        this.parkingRepository = parkingRepository;
     }
 
     /**
@@ -113,9 +119,21 @@ public class MergingParkingImporter {
     }
 
     public Parking importParkingWithoutNetexMapping(Parking newParking) {
+        String idLocal = extractIdLocal(newParking);
         final Parking foundParking = findNearbyOrExistingParking(newParking);
 
+        if (idLocal != null && !idLocal.isEmpty()) {
+            String netexIdToExclude = (foundParking != null) ? foundParking.getNetexId() : null;
+
+            if (parkingRepository.findByIdLocForOtherParking(idLocal, netexIdToExclude) > 0) {
+                logger.warn("Un parking avec id_local '{}' existe déjà. Le parking {} est esquivé et ne sera ni importé, ni modifié.",
+                        idLocal, newParking.getNetexId());
+                return null;
+            }
+        }
+
         final Parking parking;
+
         if (foundParking != null) {
             parking = handleAlreadyExistingParking(foundParking, newParking);
         } else {
@@ -125,6 +143,20 @@ public class MergingParkingImporter {
         resolveAndFixParentSiteRef(parking);
 
         return parking;
+    }
+
+    private String extractIdLocal(Parking parking) {
+        if (parking == null || parking.getKeyValues() == null) {
+            return null;
+        }
+
+        Value idLocalValueObject = parking.getKeyValues().get("id_local");
+
+        if (idLocalValueObject != null) {
+            return idLocalValueObject.getItems().stream().findFirst().orElse(null);
+        }
+
+        return null;
     }
 
     private void resolveAndFixParentSiteRef(Parking parking) {

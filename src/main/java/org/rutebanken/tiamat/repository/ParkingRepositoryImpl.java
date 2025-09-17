@@ -499,4 +499,33 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         return clusterList;
     }
 
+    @Override
+    public Integer findByIdLocForOtherParking(String idLoc, String netexId) {
+        String queryString = "SELECT" +
+                "                COUNT(*)" +
+                "            FROM" +
+                "                parking p" +
+                "            WHERE EXISTS (" +
+                "                SELECT 1" +
+                "                FROM parking_key_values pkv" +
+                "                JOIN value_items vi ON vi.value_id = pkv.key_values_id" +
+                "                WHERE" +
+                "                    pkv.parking_id = p.id" +
+                "                    AND pkv.key_values_key = 'id_local'" +
+                "                    AND vi.items = LOWER(:name)" +
+                (netexId != null ? "AND LOWER(p.netex_id) != LOWER(:id)" : "") +
+                "            );";
+
+        logger.debug("Finding parking count by idloc: {}", idLoc);
+
+        final Query query = entityManager.createNativeQuery(queryString);
+        query.setParameter("name", idLoc.toLowerCase());
+
+        if (netexId != null) {
+            query.setParameter("id", netexId.toLowerCase());
+        }
+
+        Object result = query.getSingleResult();
+        return ((Number) result).intValue();
+    }
 }

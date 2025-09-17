@@ -16,7 +16,6 @@
 package org.rutebanken.tiamat.repository;
 
 import org.locationtech.jts.geom.Envelope;
-import org.rutebanken.tiamat.exporter.params.ParkingSearch;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.rest.dto.DTOClusterMarker;
@@ -62,5 +61,7 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
     List<Parking> findAllParkingsLastVersionAndValid();
 
     List<DTOClusterMarker> findClusterMarkers();
+
+    Integer findByIdLocForOtherParking(String idLoc, String netexId);
 }
 

@@ -286,6 +286,12 @@ public class StopPlaceSearch implements SearchObject {
         return tags;
     }
 
+    public boolean isEligibleToStandardSearch(){
+        return !getNetexIdList().isEmpty() && getVersion() == null  && getQuery() == null && getStopTypeEnumerations() == null
+                && getSubmode() == null && getTags() == null && getPointInTime() == null  && !isWithoutLocationOnly() && !isWithoutQuaysOnly() && !isHasParking()
+                && !isWithTags() && !isWithDuplicatedQuayImportedIds() && !isWithNearbySimilarDuplicates() && !isDetectMultiModalPoints();
+    }
+
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

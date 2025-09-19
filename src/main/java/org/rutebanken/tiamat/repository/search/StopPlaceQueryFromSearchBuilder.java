@@ -15,12 +15,12 @@
 
 package org.rutebanken.tiamat.repository.search;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -183,6 +183,9 @@ public class StopPlaceQueryFromSearchBuilder {
     @Autowired
     private SearchStopPlacesWithDistantQuaysBuilder searchStopPlacesWithDistantQuaysBuilder;
 
+    @Autowired
+    private StandardStopPlaceSearchQueryBuilder standardStopPlaceSearchQueryBuilder;
+
     /**
      * Configure some common words to be skipped during stop place search by name.
      */
@@ -227,6 +230,13 @@ public class StopPlaceQueryFromSearchBuilder {
             return quayWithMultipleProducersQueryBuilder.buildQuery(stopPlaceSearch);
         }
 
+        boolean hasMunicipalityFilter = CollectionUtils.isNotEmpty(exportParams.getMunicipalityReferences());
+        boolean hasCountyFilter = CollectionUtils.isNotEmpty(exportParams.getCountyReferences());
+        boolean hasCode = exportParams.getCodeSpace() != null;
+
+        if (exportParams.getProviderId() == null && !hasMunicipalityFilter && !hasCountyFilter && !hasCode && CollectionUtils.isEmpty(exportParams.getProviderList()) && stopPlaceSearch.isEligibleToStandardSearch()){
+            return standardStopPlaceSearchQueryBuilder.buildQuery(stopPlaceSearch);
+        }
 
         final ExportParams.VersionValidity versionValidity;
         if(stopPlaceSearch.getPointInTime() == null
@@ -284,8 +294,7 @@ public class StopPlaceQueryFromSearchBuilder {
                 operators.add("and");
             }
 
-            boolean hasMunicipalityFilter = exportParams.getMunicipalityReferences() != null && !exportParams.getMunicipalityReferences().isEmpty();
-            boolean hasCountyFilter = exportParams.getCountyReferences() != null && !exportParams.getCountyReferences().isEmpty();
+
 
             if (hasMunicipalityFilter && !hasIdFilter) {
                 String prefix;
@@ -306,7 +315,7 @@ public class StopPlaceQueryFromSearchBuilder {
                 parameters.put("countyId", exportParams.getCountyReferences());
             }
 
-            boolean hasCode = exportParams.getCodeSpace() != null;
+
 
             if (hasCode) {
                 operators.add("and");

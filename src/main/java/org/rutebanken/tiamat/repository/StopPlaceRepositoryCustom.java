@@ -122,7 +122,7 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     void deleteStopPlaceChildrenByParent(List<StopPlace> stopPlaces);
 
-    List<StopPlace> getStopPlaceWithQuaysWithoutPostCode();
+    Set<Long> getStopPlaceWithQuaysWithoutPostCode();
 
     StopPlace findFirstStopPlaceByNetexQuayOrderByVersionDesc(String quayNetexId);
 

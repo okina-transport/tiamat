@@ -1473,8 +1473,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     }
 
     @Override
-    public List<StopPlace> getStopPlaceWithQuaysWithoutPostCode(){
-        final String queryString = "SELECT DISTINCT ON (sp.netex_id) sp.* " +
+    @Transactional(readOnly = true)
+    public Set<Long> getStopPlaceWithQuaysWithoutPostCode(){
+        final String queryString = "SELECT DISTINCT sp.id " +
                 "FROM stop_place sp " +
                 "INNER JOIN ( " +
                 "SELECT netex_id, MAX(version) AS latest_version " +
@@ -1486,10 +1487,11 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                 "WHERE q.zip_code IS NULL " +
                 "AND (sp.to_date >= :pointInTime OR sp.to_date IS NULL) ";
 
-        Query stopPlaceTypedQuery = entityManager.createNativeQuery(queryString, StopPlace.class);
-        stopPlaceTypedQuery.setParameter("pointInTime", Date.from(Instant.now()));
-        List<StopPlace> results = stopPlaceTypedQuery.getResultList();
-        return results;
+        Query query = entityManager.createNativeQuery(queryString);
+        query.setParameter("pointInTime", Date.from(Instant.now()));
+        Set<Long> stopPlaceIds = new HashSet<>(query.getResultList());
+
+        return stopPlaceIds;
     }
 
     @Override

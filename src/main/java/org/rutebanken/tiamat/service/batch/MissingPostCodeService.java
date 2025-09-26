@@ -1,51 +1,29 @@
 package org.rutebanken.tiamat.service.batch;
 
 import org.apache.commons.lang3.StringUtils;
-import org.rutebanken.tiamat.externalapis.DtoGeocode;
-import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.PointOfInterest;
-import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.versioning.VersionCreator;
-import org.rutebanken.tiamat.versioning.save.PointOfInterestVersionedSaverService;
-import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Set;
 
-import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 
 @Service
-@Transactional(propagation = Propagation.REQUIRES_NEW)
 public class MissingPostCodeService {
     private static final Logger logger = LoggerFactory.getLogger(MissingPostCodeService.class);
 
-    @Autowired
-    private PointOfInterestRepository pointOfInterestRepository;
+    @Autowired private PointOfInterestRepository pointOfInterestRepository;
+    @Autowired private StopPlaceRepository stopPlaceRepository;
+    @Autowired private UpdatePostCodeService updatePostCodeService;
 
-    @Autowired
-    private StopPlaceRepository stopPlaceRepository;
-
-    @Autowired
-    private PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService;
-
-    @Autowired
-    private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
-
-    @Autowired
-    private VersionCreator versionCreator;
-
-    private int nbPostCodeQuays = 0;
-    private int nbPostCodePOI = 0;
 
     public void getMissingPostCode() {
         getMissingPostCodeQuays();
@@ -55,73 +33,63 @@ public class MissingPostCodeService {
     private void getMissingPostCodeQuays() {
         logger.info("Démarrage de la récupération des codes postaux manquants des quais.");
 
-        List<StopPlace> stopPlaces = stopPlaceRepository.getStopPlaceWithQuaysWithoutPostCode();
+        Set<Long> stopPlacesIds = stopPlaceRepository.getStopPlaceWithQuaysWithoutPostCode();
+        logger.info("Nombre total de StopPlaces à traiter : {}", stopPlacesIds.size());
 
-        long nbMissingPostCodeQuays = stopPlaces.stream()
-                .flatMap(stopPlace -> stopPlace.getQuays().stream())
-                .filter(quay -> StringUtils.isEmpty(quay.getZipCode()))
-                .count();
-
-        logger.info("Nombre de codes postaux de quais à récupérer : {}", nbMissingPostCodeQuays);
-
-        List<String> parentStopPlacesRef = getParentStopPlacesRef(stopPlaces);
-
-        List<StopPlace> childStopPlaces = removeStopPlacesWithParentRef(stopPlaces);
-
-        updateParentStopPlaces(parentStopPlacesRef, nbMissingPostCodeQuays);
-        updateStopPlaces(childStopPlaces, nbMissingPostCodeQuays);
-
-        logger.info("Récupération des codes postaux manquants des quais terminée.");
-    }
-
-    private List<String> getParentStopPlacesRef(List<StopPlace> stopPlaces) {
-        return stopPlaces.stream()
-                .filter(stopPlace -> stopPlace.getParentSiteRef() != null)
-                .map(stopPlace -> stopPlace.getParentSiteRef().getRef())
-                .distinct()
-                .collect(Collectors.toList());
-    }
-
-    private List<StopPlace> removeStopPlacesWithParentRef(List<StopPlace> stopPlaces) {
-        return stopPlaces.stream()
-                .filter(stopPlace -> stopPlace.getParentSiteRef() == null)
-                .collect(Collectors.toList());
-    }
-
-    private void updateParentStopPlaces(List<String> parentStopPlacesRef, long nbMissingPostCodeQuays) {
-        for (String oldParentStopPlaceRef : parentStopPlacesRef) {
-            org.rutebanken.tiamat.model.StopPlace existingParentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(oldParentStopPlaceRef);
-            org.rutebanken.tiamat.model.StopPlace newParentStopPlace = versionCreator.createCopy(existingParentStopPlace, org.rutebanken.tiamat.model.StopPlace.class);
-            boolean postCodeUpdated = false;
-
-            for (StopPlace oldStopPlace : existingParentStopPlace.getChildren()) {
-                org.rutebanken.tiamat.model.StopPlace newStopPlace = versionCreator.createCopy(oldStopPlace, org.rutebanken.tiamat.model.StopPlace.class);
-                if (updatePostCodeQuay(newStopPlace)) {
-                    postCodeUpdated = true;
-                    updateChildStopPlace(newParentStopPlace, newStopPlace);
-                }
-            }
-            if (postCodeUpdated) {
-                stopPlaceVersionedSaverService.saveNewVersion(existingParentStopPlace, newParentStopPlace);
-                logger.info("Nombre de codes postaux de quais récupérés : {}/{}", nbPostCodeQuays, nbMissingPostCodeQuays);
-            }
+        if (stopPlacesIds.isEmpty()) {
+            logger.info("Aucun StopPlace à traiter.");
+            return;
         }
-    }
 
+        List<Long> stopPlacesIdsList = new ArrayList<>(stopPlacesIds);
+        int batchSize = 1000;
+        int totalBatches = (stopPlacesIdsList.size() + batchSize - 1) / batchSize;
+        long totalMissingPostCodeQuays = 0;
+        int totalParentsProcessed = 0;
+        int totalChildrenProcessed = 0;
 
-    private void updateStopPlaces(List<StopPlace> stopPlaces, long nbMissingPostCodeQuays) {
-        for (StopPlace oldStopPlace : stopPlaces) {
-            org.rutebanken.tiamat.model.StopPlace newStopPlace = versionCreator.createCopy(oldStopPlace, org.rutebanken.tiamat.model.StopPlace.class);
-            if (updatePostCodeQuay(newStopPlace)) {
-                stopPlaceVersionedSaverService.saveNewVersion(oldStopPlace, newStopPlace);
-                logger.info("Nombre de codes postaux de quais récupérés : {}/{}", nbPostCodeQuays, nbMissingPostCodeQuays);
+        for (int i = 0; i < stopPlacesIdsList.size(); i += batchSize) {
+            int end = Math.min(i + batchSize, stopPlacesIdsList.size());
+            List<Long> batchIds = stopPlacesIdsList.subList(i, end);
+            int currentBatch = (i / batchSize) + 1;
+
+            logger.info("Traitement du batch {}/{} ({} StopPlaces)", currentBatch, totalBatches, batchIds.size());
+
+            List<StopPlace> batchStopPlaces = stopPlaceRepository.getStopPlaceInitializedForExport(new HashSet<>(batchIds));
+
+            long batchMissingPostCodeQuays = batchStopPlaces.stream()
+                    .flatMap(stopPlace -> stopPlace.getQuays().stream())
+                    .filter(quay -> StringUtils.isEmpty(quay.getZipCode()))
+
+                    .count();
+            totalMissingPostCodeQuays += batchMissingPostCodeQuays;
+
+            logger.info("Batch {}/{} - Codes postaux de quais à récupérer : {}",
+                    currentBatch, totalBatches, batchMissingPostCodeQuays);
+
+            List<String> parentStopPlacesRef = updatePostCodeService.getParentStopPlacesRef(batchStopPlaces);
+            List<StopPlace> childStopPlaces = updatePostCodeService.removeStopPlacesWithParentRef(batchStopPlaces);
+
+            if (!parentStopPlacesRef.isEmpty()) {
+                logger.info("Batch {}/{} - Traitement de {} StopPlaces parents",
+                        currentBatch, totalBatches, parentStopPlacesRef.size());
+                updatePostCodeService.updateParentStopPlaces(parentStopPlacesRef);
+                totalParentsProcessed += parentStopPlacesRef.size();
             }
-        }
-    }
 
-    private void updateChildStopPlace(org.rutebanken.tiamat.model.StopPlace newParentStopPlace, org.rutebanken.tiamat.model.StopPlace newStopPlace) {
-        newParentStopPlace.getChildren().removeIf(stopPlace -> stopPlace.getNetexId().equals(newStopPlace.getNetexId()));
-        newParentStopPlace.getChildren().add(newStopPlace);
+            if (!childStopPlaces.isEmpty()) {
+                logger.info("Batch {}/{} - Traitement de {} StopPlaces enfants",
+                        currentBatch, totalBatches, childStopPlaces.size());
+                updatePostCodeService.updateStopPlaces(childStopPlaces);
+                totalChildrenProcessed += childStopPlaces.size();
+            }
+
+            logger.info("Batch {}/{} terminé", currentBatch, totalBatches);
+        }
+
+        logger.info("Récupération des codes postaux manquants des quais terminée. " +
+                        "Total quais manquants: {}, Parents traités: {}, Enfants traités: {}",
+                totalMissingPostCodeQuays, totalParentsProcessed, totalChildrenProcessed);
     }
 
     private void getMissingPostCodePoi() {
@@ -130,46 +98,10 @@ public class MissingPostCodeService {
         List<PointOfInterest> pointOfInterests = pointOfInterestRepository.getAllPOIWithoutPostcode();
         logger.info("Nombre de codes postaux de POI à récupérer : {}", pointOfInterests.size());
 
-        for (PointOfInterest pointOfInterest : pointOfInterests) {
-            updatePostCodePOI(pointOfInterest);
-            logger.info("Nombre de codes postaux de POI récupérés : {}/{}", nbPostCodePOI, pointOfInterests.size());
+        if (!pointOfInterests.isEmpty()) {
+            updatePostCodeService.updatePOIPostCodes(pointOfInterests);
         }
 
         logger.info("Récupération des codes postaux manquants des POI terminée.");
-    }
-
-    private void updatePostCodePOI(PointOfInterest pointOfInterest) {
-        Optional<String> poiId = pointOfInterest.getKeyValues().get(ORIGINAL_ID_KEY).getItems().stream().findFirst();
-        String nameIdPoi = poiId.map(s -> pointOfInterest.getName().getValue() + "-" + s).orElse(pointOfInterest.getName().getValue());
-
-        logger.info("Récupération du code postal du POI : {}", nameIdPoi);
-
-        DtoGeocode geocodeData = ImporterUtils.getGeocodeDataByReverseGeocoding(pointOfInterest.getCentroid().getX(), pointOfInterest.getCentroid().getY());
-        if (StringUtils.isEmpty(geocodeData.getPostCode())) {
-            logger.info("Code postal manquant pour le POI : {}", nameIdPoi);
-        } else {
-            pointOfInterest.setPostalCode(geocodeData.getPostCode());
-            pointOfInterestVersionedSaverService.saveNewVersionForPostalCodeProcess(pointOfInterest);
-            nbPostCodePOI++;
-        }
-    }
-
-    private boolean updatePostCodeQuay(org.rutebanken.tiamat.model.StopPlace newStopPlace) {
-        logger.info("Récupération du code postal de l'arrêt : {}", newStopPlace.getName().getValue());
-
-        boolean postCodeUpdated = false;
-        for (Quay quay : newStopPlace.getQuays()) {
-            if (StringUtils.isEmpty(quay.getZipCode())) {
-                DtoGeocode geocodeData = ImporterUtils.getGeocodeDataByReverseGeocoding(quay.getCentroid().getX(), quay.getCentroid().getY());
-                if (StringUtils.isEmpty(geocodeData.getPostCode())) {
-                    logger.info("Code postal manquant pour l'arrêt : {}", newStopPlace.getName().getValue());
-                } else {
-                    quay.setZipCode(geocodeData.getPostCode());
-                    postCodeUpdated = true;
-                    nbPostCodeQuays++;
-                }
-            }
-        }
-        return postCodeUpdated;
     }
 }

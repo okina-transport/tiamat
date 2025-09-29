@@ -10,6 +10,8 @@ import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.concurrent.DelegatingSecurityContextRunnable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +20,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,7 +43,7 @@ public class PostcodeResource {
     @POST
     @PreAuthorize("@rolesChecker.hasRoleEdit()")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getMissingPostcode() throws IllegalArgumentException, IOException {
+    public Response getMissingPostcode() throws IllegalArgumentException {
         Job job = new Job();
         job.setType(JobType.MISSING_POSTAL_CODE);
         job.setAction(JobAction.IMPORT);
@@ -53,7 +54,13 @@ public class PostcodeResource {
         ImportJobWorker importJobWorker = importJobWorkerBuilder
                 .init(job)
                 .build();
-        importService.submit(importJobWorker);
+
+        Runnable secureRunnable = new DelegatingSecurityContextRunnable(
+                importJobWorker,
+                SecurityContextHolder.getContext()
+        );
+
+        importService.submit(secureRunnable);
 
         return Response.status(200).build();
     }

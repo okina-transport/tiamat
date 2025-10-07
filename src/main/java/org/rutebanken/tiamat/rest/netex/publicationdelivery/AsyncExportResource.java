@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.Api;
+import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.exporter.AsyncPublicationDeliveryExporter;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.job.Job;
@@ -35,6 +36,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -66,11 +69,14 @@ public class AsyncExportResource {
 
     private final NetexExportSummaryMapper netexExportSummaryMapper;
 
+    private final RoleAssignmentExtractor roleAssignmentExtractor;
+
     @Autowired
-    public AsyncExportResource(AsyncPublicationDeliveryExporter asyncPublicationDeliveryExporter, JobRepository jobRepository, NetexExportSummaryMapper netexExportSummaryMapper) {
+    public AsyncExportResource(AsyncPublicationDeliveryExporter asyncPublicationDeliveryExporter, JobRepository jobRepository, NetexExportSummaryMapper netexExportSummaryMapper, RoleAssignmentExtractor roleAssignmentExtractor) {
         this.asyncPublicationDeliveryExporter = asyncPublicationDeliveryExporter;
         this.jobRepository = jobRepository;
         this.netexExportSummaryMapper = netexExportSummaryMapper;
+        this.roleAssignmentExtractor = roleAssignmentExtractor;
     }
 
     @GET
@@ -205,9 +211,18 @@ public class AsyncExportResource {
     @Path("stop-place-file-download/{providerName}/{fileName : .+}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response asyncGetSopPlaceFileList(@PathParam("providerName") String providerName, @PathParam("fileName") String fileName) {
-        File file = asyncPublicationDeliveryExporter.getJobFileContent(providerName,fileName);
-        return Response.ok(file, MediaType.APPLICATION_OCTET_STREAM)
-                .header("filename", file.getName() )
-                .build();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        List<String> providerList = roleAssignmentExtractor.getClientList(auth);
+
+        if (providerList.contains(providerName)) {
+            File file = asyncPublicationDeliveryExporter.getJobFileContent(providerName,fileName);
+            return Response.ok(file, MediaType.APPLICATION_OCTET_STREAM)
+                    .header("filename", file.getName() )
+                    .build();
+        }else{
+            logger.error("Forbidden access. provider: {}, filename:{}, user:{} ", providerName, fileName, auth.getPrincipal());
+            return Response.status(Response.Status.FORBIDDEN)
+                    .build();
+        }
     }
 }

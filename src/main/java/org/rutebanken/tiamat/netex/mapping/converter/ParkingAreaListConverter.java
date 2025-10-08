@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.netex.mapping.converter;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.ObjectFactory;
 import org.rutebanken.netex.model.ParkingAreas_RelStructure;
 import org.rutebanken.netex.model.ParkingBay;
@@ -73,6 +74,14 @@ public class ParkingAreaListConverter extends BidirectionalConverter<List<Parkin
                     .filter(object -> object.getValue() instanceof org.rutebanken.netex.model.ParkingArea)
                     .map(object -> ((org.rutebanken.netex.model.ParkingArea) object.getValue()))
                     .map(netexParkingArea -> {
+
+                        if (!StringUtils.isNumeric(netexParkingArea.getVersion())){
+                            netexParkingArea.setVersion("1");
+                        }
+
+                        if (netexParkingArea.getAccessibilityAssessment() != null && !StringUtils.isNumeric(netexParkingArea.getAccessibilityAssessment().getVersion())){
+                            netexParkingArea.getAccessibilityAssessment().setVersion("1");
+                        }
                         ParkingArea tiamatQuay = mapperFacade.map(netexParkingArea, ParkingArea.class);
                         return tiamatQuay;
                     })

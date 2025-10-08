@@ -495,18 +495,22 @@ public class NetexMapper {
         List<org.rutebanken.tiamat.model.ParkingProperties> parkingPropertiesList = new ArrayList<>();
 
         for (ParkingProperties parkingPropertiesElement : netexParking.getParkingProperties().getParkingProperties()) {
-            List<org.rutebanken.tiamat.model.ParkingCapacity> parkingCapacities = parkingPropertiesElement
-                    .getSpaces()
-                    .getParkingCapacityRefOrParkingCapacity()
-                    .stream()
-                    .filter(parkingCapacity -> parkingCapacity instanceof ParkingCapacity)
-                    .map(parkingCapacity -> (ParkingCapacity) parkingCapacity)
-                    .map(this::mapToTiamatModel)
-                    .collect(Collectors.toList());
 
-            org.rutebanken.tiamat.model.ParkingProperties prop = mapToTiamatModel(parkingPropertiesElement);
-            prop.setSpaces(parkingCapacities);
-            parkingPropertiesList.add(prop);
+            if (parkingPropertiesElement.getSpaces() != null){
+                List<org.rutebanken.tiamat.model.ParkingCapacity> parkingCapacities = parkingPropertiesElement
+                        .getSpaces()
+                        .getParkingCapacityRefOrParkingCapacity()
+                        .stream()
+                        .filter(parkingCapacity -> parkingCapacity instanceof ParkingCapacity)
+                        .map(parkingCapacity -> (ParkingCapacity) parkingCapacity)
+                        .map(this::mapToTiamatModel)
+                        .collect(Collectors.toList());
+
+                org.rutebanken.tiamat.model.ParkingProperties prop = mapToTiamatModel(parkingPropertiesElement);
+                prop.setSpaces(parkingCapacities);
+                parkingPropertiesList.add(prop);
+            }
+
         }
         parking.setParkingProperties(parkingPropertiesList);
     }

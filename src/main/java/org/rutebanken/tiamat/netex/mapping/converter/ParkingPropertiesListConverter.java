@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.netex.mapping.converter;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.ParkingProperties;
 import org.slf4j.Logger;
@@ -83,7 +84,13 @@ public class ParkingPropertiesListConverter extends BidirectionalConverter<List<
         List<ParkingProperties> parkingPropertiesList = new ArrayList<>();
         if (parkingProperties_relStructure != null && parkingProperties_relStructure.getParkingProperties() != null) {
             parkingProperties_relStructure.getParkingProperties().stream()
-                    .map(netexParkingProperty -> mapperFacade.map(netexParkingProperty, ParkingProperties.class))
+                    .map(netexParkingProperty -> {
+                        if (!StringUtils.isNumeric(netexParkingProperty.getVersion())){
+                            netexParkingProperty.setVersion("1");
+                        }
+
+                        return mapperFacade.map(netexParkingProperty, ParkingProperties.class);
+                    })
                     .forEach(parkingPropertiesList::add);
         }
 

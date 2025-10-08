@@ -34,11 +34,11 @@ public class NetexIdHelper {
     // TODO: make it configurable, maybe in ValidPrefixList
     public static final String NSR = "NSR";
     public static final String CITY_INSEE_CODE_RE = "\\d{5}(-\\d{1,2})?";
-    public static final String PARKING_ID_RE = String.format("FR:%s:Parking:[^:]+:[^:]+",
-            CITY_INSEE_CODE_RE);
+    public static final String PARKING_ID_RE = String.format("FR[^:]*:%s:Parking:[^:]+(:LOC)?", CITY_INSEE_CODE_RE);
     public static final Pattern PARKING_ID_PATTERN = Pattern.compile(PARKING_ID_RE);
-    public static final String PARKING_AREA_ID_RE = "[^:]+:ParkingArea:[^:]+:LOC";
-    public static final Pattern PARKING_AREA_ID_PATTERN = Pattern.compile(PARKING_AREA_ID_RE);
+
+    public static final String GENERIC_NETEX_PATTERN = "[^:]+:%s:(?:[^:]+:)*[^:]+(:LOC)?";
+
     public static final String PARKING_PAN_ID_RE = CITY_INSEE_CODE_RE + "-P-[^:-]+";
     public static final Pattern PARKING_PAN_ID_PATTERN = Pattern.compile(PARKING_PAN_ID_RE);
     private static final Logger logger = LoggerFactory.getLogger(NetexIdHelper.class);
@@ -72,8 +72,10 @@ public class NetexIdHelper {
         return PARKING_ID_PATTERN.matcher(netexId).matches();
     }
 
-    public static boolean isParkingAreaNetexId(String netexId) {
-        return PARKING_AREA_ID_PATTERN.matcher(netexId).matches();
+    public static boolean isNetexIdOfType(String idToCheck, String netexType){
+        String genericPatternWithType = String.format(GENERIC_NETEX_PATTERN, netexType);
+        Pattern patternToCheck = Pattern.compile(genericPatternWithType);
+        return patternToCheck.matcher(idToCheck).matches();
     }
 
     /**
@@ -139,7 +141,7 @@ public class NetexIdHelper {
     public String extractIdType(String netexId) {
         if (isParkingNetexId(netexId)) {
             return "Parking";
-        } else if (isParkingAreaNetexId(netexId)) {
+        } else if (isNetexIdOfType(netexId, "ParkingArea")) {
             return "ParkingArea";
         }
         try {
@@ -152,8 +154,12 @@ public class NetexIdHelper {
     public String extractIdPrefix(String netexId) {
         if (isParkingNetexId(netexId)) {
             return netexId.split(":Parking:")[0];
-        } else if (isParkingAreaNetexId(netexId)) {
+        } else if (isNetexIdOfType(netexId, "ParkingArea")) {
             return netexId.split(":ParkingArea:")[0];
+        }else if (isNetexIdOfType(netexId, "AccessibilityAssessment")) {
+            return netexId.split(":AccessibilityAssessment:")[0];
+        }else if (isNetexIdOfType(netexId, "PointOfInterest")){
+            return netexId.split(":PointOfInterest:")[0];
         }
         if (StringUtils.countMatches(netexId, ":") != 2) {
             throw new IllegalArgumentException("Number of colons in ID is not two: " + netexId);

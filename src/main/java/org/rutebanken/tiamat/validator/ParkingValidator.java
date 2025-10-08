@@ -78,8 +78,8 @@ public class ParkingValidator implements Validator {
     }
 
     private void validateParkingArea(@NotNull ParkingArea_VersionStructure parkingArea, @NotNull Errors errors) {
-        if (!isParkingAreaNetexId(parkingArea.getId())) {
-            errors.rejectValue("id", VALIDATION_INVALID_ID_FORMAT, new Object[]{parkingArea.getId(), PARKING_AREA_ID_RE}, null);
+        if (!isNetexIdOfType(parkingArea.getId(), "ParkingArea")) {
+            errors.rejectValue("id", VALIDATION_INVALID_ID_FORMAT, new Object[]{parkingArea.getId(), String.format(GENERIC_NETEX_PATTERN, "ParkingArea")}, null);
         }
         validateParkingComponent(parkingArea, errors);
         if (CollectionUtils.isEmpty(parkingArea.getRest())) {

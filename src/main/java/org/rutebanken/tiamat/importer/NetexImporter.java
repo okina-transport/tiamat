@@ -106,33 +106,60 @@ public class NetexImporter {
             List<ResponsibilitySet> responsibilitySets = new ArrayList<>();
             List<JAXBElement<? extends EntityStructure>> members = null;
 
-            // Première boucle pour traiter GeneralFrame et récupérer les GeneralOrganisations et ResponsibilitySets
-            for (JAXBElement<? extends Common_VersionFrameStructure> frameType : findedFrameType) {
-                if (frameType.getValue() instanceof GeneralFrame) {
-                    members = NetexUtils.getMembersFromPublicationDelivery(publicationDeliveryStructure);
-                    assert members != null;
-                    generalOrganisations = NetexUtils.getMembers(GeneralOrganisation.class, members);
-                    responsibilitySets = NetexUtils.getMembers(ResponsibilitySet.class, members);
-                    generalFrameProcess(members, importParams, atomicInteger, generalOrganisations, responsibilitySets, containsMobiitiIds);
-                    break; // Quitter la boucle après avoir trouvé et traité le GeneralFrame
-                }
+
+            if (hasGeneralFrame(publicationDeliveryStructure)){
+                members = NetexUtils.getMembersFromPublicationDelivery(publicationDeliveryStructure);
+                assert members != null;
+                generalOrganisations = NetexUtils.getMembers(GeneralOrganisation.class, members);
+                responsibilitySets = NetexUtils.getMembers(ResponsibilitySet.class, members);
+                generalFrameProcess(members, importParams, atomicInteger, generalOrganisations, responsibilitySets, containsMobiitiIds);
             }
 
-            // Deuxième boucle pour traiter SiteFrame et utiliser les GeneralOrganisations et ResponsibilitySets si disponibles
-            for (JAXBElement<? extends Common_VersionFrameStructure> frameType : findedFrameType) {
-                if (frameType.getValue() instanceof SiteFrame) {
-                    // Si les GeneralOrganisations et ResponsibilitySets ont été trouvés, les utiliser
-                    siteFrameProcess(publicationDeliveryStructure, importParams, atomicInteger, generalOrganisations, responsibilitySets);
-                    break; // Quitter la boucle après avoir trouvé et traité le SiteFrame
-                }
+            if (hasFrameOfType(publicationDeliveryStructure, SiteFrame.class)){
+                siteFrameProcess(publicationDeliveryStructure, importParams, atomicInteger, generalOrganisations, responsibilitySets);
             }
-
 
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
             MDC.remove(IMPORT_CORRELATION_ID);
         }
+    }
+
+    private boolean hasFrameOfType(PublicationDeliveryStructure publicationDeliveryStructure, Class<?> frameToSearch){
+        List<javax.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = publicationDeliveryStructure.getDataObjects().getCompositeFrameOrCommonFrame();
+        for (JAXBElement<? extends Common_VersionFrameStructure> frameType : findedFrameType) {
+            if (frameToSearch.isInstance(frameType.getValue())) {
+                return true;
+            }
+            if(frameType.getValue() instanceof CompositeFrame){
+                CompositeFrame compositeFrame = (CompositeFrame) frameType.getValue();
+                for (JAXBElement<? extends Common_VersionFrameStructure> subFrame : compositeFrame.getFrames().getCommonFrame()) {
+                    if (frameToSearch.isInstance(subFrame.getValue())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean hasGeneralFrame(PublicationDeliveryStructure publicationDeliveryStructure){
+        List<javax.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = publicationDeliveryStructure.getDataObjects().getCompositeFrameOrCommonFrame();
+        for (JAXBElement<? extends Common_VersionFrameStructure> frameType : findedFrameType) {
+            if (frameType.getValue() instanceof GeneralFrame) {
+                return true;
+            }
+            if(frameType.getValue() instanceof CompositeFrame){
+                CompositeFrame compositeFrame = (CompositeFrame) frameType.getValue();
+                for (JAXBElement<? extends Common_VersionFrameStructure> subFrame : compositeFrame.getFrames().getCommonFrame()) {
+                    if (subFrame.getValue() instanceof GeneralFrame) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private void siteFrameProcess(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams, AtomicInteger atomicInteger, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {

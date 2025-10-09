@@ -214,7 +214,7 @@ public class AsyncExportResource {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         List<String> providerList = roleAssignmentExtractor.getClientList(auth);
 
-        if (providerList.contains(providerName)) {
+        if (providerList.contains(providerName) || roleAssignmentExtractor.isSuperAdmin(auth)) {
             File file = asyncPublicationDeliveryExporter.getJobFileContent(providerName,fileName);
             return Response.ok(file, MediaType.APPLICATION_OCTET_STREAM)
                     .header("filename", file.getName() )

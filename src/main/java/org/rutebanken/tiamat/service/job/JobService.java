@@ -51,6 +51,15 @@ public class JobService {
         throw new ServiceException("subFolder = " + subFolder + " ,id = " + id);
     }
 
+    public Job getJobByFileNameAndSubFolder(String fileName, String subFolder) throws ServiceException {
+
+        Job job = jobRepository.findByFileNameAndSubFolder(fileName, subFolder);
+        if (job != null) {
+            return job;
+        }
+        throw new ServiceException("fileName = " + fileName + ", subFolder = " + subFolder);
+    }
+
     public Job findLatestJobBy(String referential, JobType jobType, JobStatus jobStatus) {
         List<Job> matchingJobs = jobRepository.findAllExportBy(referential, jobType, jobStatus);
         if (CollectionUtils.isNotEmpty(matchingJobs)) {

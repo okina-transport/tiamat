@@ -18,12 +18,7 @@ package org.rutebanken.tiamat.filter;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -46,7 +41,7 @@ public class CorsResponseFilter implements Filter {
 
         httpServletResponse.setHeader("Access-Control-Allow-Origin", "*");
         httpServletResponse.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS, POST, DELETE, PUT");
-        httpServletResponse.setHeader("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Authorization, Accept, X-Correlation-Id, entur-pos, x-okina-referential, maxNbResults, providerName, "
+        httpServletResponse.setHeader("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Authorization, Accept, X-Correlation-Id, entur-pos, x-okina-referential, maxNbResults, providerName, RutebankenUser"
                                             + ET_CLIENT_ID_HEADER + ", " + ET_CLIENT_NAME_HEADER);
         httpServletResponse.setHeader("Access-Control-Max-Age", "3600");
         // If the call is an options call, do not return a body

@@ -12,6 +12,8 @@ public interface JobRepositoryCustom<Job> {
 
     Job findBySubFolderLikeReferentialAndId(String subFolder, Long id);
 
+    Job findByFileNameAndSubFolder(String fileName, String subFolder);
+
     Job terminatedJob(String referential, Long id);
 
     List<Job> findAllExportBy(String referential, JobType jobType, JobStatus status);

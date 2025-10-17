@@ -19,6 +19,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.okina.helper.aws.BlobStoreHelper;
+import org.jetbrains.annotations.NotNull;
+import org.rutebanken.tiamat.model.job.Job;
+import org.rutebanken.tiamat.service.job.JobService;
+import org.rutebanken.tiamat.service.stopplace.ExportFileSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,14 +49,16 @@ public class BlobStoreService {
     private final String bucketName;
     private final String blobPath;
     private final AmazonS3 client;
+    private final JobService jobService;
 
 
     public BlobStoreService(@Value("${blobstore.aws.access.key}") String accessKey,
                             @Value("${blobstore.aws.access.secret}") String accessSecret,
                             @Value("${blobstore.aws.container.name}") String bucketName,
-                            @Value("${blobstore.aws.blob.path}") String blobPath) {
+                            @Value("${blobstore.aws.blob.path}") String blobPath, JobService jobService) {
         this.bucketName = bucketName;
         this.blobPath = blobPath;
+        this.jobService = jobService;
         this.client = getClient(accessKey, accessSecret);
     }
 
@@ -124,23 +130,39 @@ public class BlobStoreService {
         return maxNbResults == 0 ? fileListStream.collect(Collectors.toList()) : fileListStream.limit(maxNbResults).collect(Collectors.toList());
     }
 
-    public List<String> listPointsOfInterestInBlob(String siteId, int maxNbResults){
+    public List<ExportFileSummary> listPointsOfInterestInBlob(String siteId, int maxNbResults){
         List<S3ObjectSummary> poiFileList = BlobStoreHelper.listAllBlobsRecursively(this.client, this.bucketName, siteId+"/exports");
-        Stream<String> fileListStream = poiFileList.stream()
+
+        return poiFileList.stream()
                 .sorted(Comparator.comparing(S3ObjectSummary::getLastModified).reversed())
                 .map(S3ObjectSummary::getKey)
-                .filter(key -> key.contains("POI_"));
-
-        return maxNbResults == 0 ? fileListStream.collect(Collectors.toList()) : fileListStream.limit(maxNbResults).collect(Collectors.toList());
+                .filter(key -> key.contains("POI_"))
+                .limit(maxNbResults == 0 ? Long.MAX_VALUE : maxNbResults)
+                .map(key -> {
+                    return generateExportFileSummary(siteId, key);
+                })
+                .collect(Collectors.toList());
     }
 
-    public List<String> listParkingsInBlob(String siteId, int maxNbResults){
-        List<S3ObjectSummary> poiFileList = BlobStoreHelper.listAllBlobsRecursively(this.client, this.bucketName, siteId+"/exports");
-        Stream<String> fileListStream = poiFileList.stream()
+    public List<ExportFileSummary> listParkingsInBlob(String siteId, int maxNbResults) {
+        List<S3ObjectSummary> parkingFileList = BlobStoreHelper.listAllBlobsRecursively(this.client, this.bucketName, siteId + "/exports");
+
+        return parkingFileList.stream()
                 .sorted(Comparator.comparing(S3ObjectSummary::getLastModified).reversed())
                 .map(S3ObjectSummary::getKey)
-                .filter(key -> key.contains("PARKING_"));
-
-        return maxNbResults == 0 ? fileListStream.collect(Collectors.toList()) : fileListStream.limit(maxNbResults).collect(Collectors.toList());
+                .filter(key -> key.contains("PARKING_"))
+                .limit(maxNbResults == 0 ? Long.MAX_VALUE : maxNbResults)
+                .map(key -> {
+                    return generateExportFileSummary(siteId, key);
+                })
+                .collect(Collectors.toList());
     }
+
+    public @NotNull ExportFileSummary generateExportFileSummary(String siteId, String key) {
+        Job job = jobService.getJobByFileNameAndSubFolder(key, siteId);
+        return new ExportFileSummary(key, job != null ? job.getUserName() : "unknown", job != null && job.getStarted() != null
+                ? job.getStarted()
+                : null);
+    }
+
 }

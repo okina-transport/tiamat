@@ -18,6 +18,7 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
     private static final String ACTION = "action";
     private static final String SUBFOLDER = "subFolder";
     public static final String STATUS = "status";
+    private static final String FILENAME = "fileName";
 
     @PersistenceContext
     private EntityManager em;
@@ -128,6 +129,22 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
         cq.where(finalPredicate);
 
         return em.createQuery(cq).getSingleResult();
+    }
+
+    public Job findByFileNameAndSubFolder(String fileName, String subFolder) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Job> cq = cb.createQuery(Job.class);
+        Root<Job> jobRoot = cq.from(Job.class);
+
+        cq.select(jobRoot);
+
+        Predicate fileNamePredicate = cb.equal(jobRoot.get(FILENAME), fileName);
+        Predicate subFolderPredicate = cb.equal(jobRoot.get(SUBFOLDER), subFolder);
+        Predicate finalPredicate = cb.and(fileNamePredicate, subFolderPredicate);
+        cq.where(finalPredicate);
+
+        List<Job> results = em.createQuery(cq).getResultList();
+        return results.isEmpty() ? null : results.get(0);
     }
 
     public Job terminatedJob(String subFolder, Long id) {

@@ -89,12 +89,14 @@ public class ExportParams {
 
     private List<String> providerList;
 
+    private String userName;
+
     @BeanParam
     @ApiModelProperty(hidden = true)
     private StopPlaceSearch stopPlaceSearch;
 
     private ExportParams(ExportMode topographicPlaceExportMode, ExportMode tariffZoneExportMode, ExportMode groupOfStopPlacesExportMode, List<String> municipalityReferences, List<String> countyReferences,
-                         List<String> countryReferences, StopPlaceSearch stopPlaceSearch, String codeSpace, Long providerId, List<String> providerList) {
+                         List<String> countryReferences, StopPlaceSearch stopPlaceSearch, String codeSpace, Long providerId, List<String> providerList, String userName) {
         this.topographicPlaceExportMode = topographicPlaceExportMode;
         this.tariffZoneExportMode = tariffZoneExportMode;
         this.groupOfStopPlacesExportMode = groupOfStopPlacesExportMode;
@@ -105,6 +107,7 @@ public class ExportParams {
         this.codeSpace = codeSpace;
         this.providerId = providerId;
         this.providerList = providerList;
+        this.userName = userName;
     }
 
     public ExportParams(StopPlaceSearch stopPlaceSearch) {
@@ -152,6 +155,10 @@ public class ExportParams {
         return providerList;
     }
 
+    public String getUserName() { return userName; }
+
+    public void setUserName(String userName) { this.userName = userName; }
+
     public static ExportParams.Builder newExportParamsBuilder() {
         return new Builder();
     }
@@ -169,6 +176,7 @@ public class ExportParams {
                 .add("codeSpace", codeSpace)
                 .add("providerId", providerId)
                 .add("providerList", providerList)
+                .add("userName", userName)
                 .toString();
     }
 
@@ -183,6 +191,7 @@ public class ExportParams {
         private String codeSpace;
         private Long providerId;
         private List<String> providerList;
+        private String userName;
 
         private Builder() {
         }
@@ -252,8 +261,10 @@ public class ExportParams {
             return this;
         }
 
+        public Builder setUserName(String userName) { this.userName = userName; return this; }
+
         public ExportParams build() {
-            return new ExportParams(topographicPlaceExportMode, tariffZoneExportMode, groupOfStopPlacesExportMode, municipalityReferences, countyReferences, countryReferences, stopPlaceSearch, codeSpace, providerId, providerList);
+            return new ExportParams(topographicPlaceExportMode, tariffZoneExportMode, groupOfStopPlacesExportMode, municipalityReferences, countyReferences, countryReferences, stopPlaceSearch, codeSpace, providerId, providerList, userName);
         }
     }
 }

@@ -28,6 +28,7 @@ import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.repository.ProviderRepository;
 import org.rutebanken.tiamat.service.BlobStoreService;
+import org.rutebanken.tiamat.service.stopplace.ExportFileSummary;
 import org.rutebanken.tiamat.time.ExportTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -182,6 +183,7 @@ public class AsyncPublicationDeliveryExporter {
                 job.setStarted(Instant.now());
                 job.setExportParams(exportParams);
                 job.setSubFolder(provider.name);
+                job.setUserName(exportParams.getUserName());
                 job.setType(JobType.NETEX_PARKING);
                 job.setAction(JobAction.EXPORT);
 
@@ -233,6 +235,7 @@ public class AsyncPublicationDeliveryExporter {
                 job.setStarted(Instant.now());
                 job.setExportParams(exportParams);
                 job.setSubFolder(provider.name);
+                job.setUserName(exportParams.getUserName());
                 job.setType(JobType.NETEX_POI);
                 job.setAction(JobAction.EXPORT);
 
@@ -332,8 +335,8 @@ public class AsyncPublicationDeliveryExporter {
         return stopPlaceFileList;
     }
 
-    public List<String> getPointsOfInterestFileListByProviderName(String providerName, int maxNbResults){
-        List<String> poiFileList = new ArrayList<>();
+    public List<ExportFileSummary> getPointsOfInterestFileListByProviderName(String providerName, int maxNbResults){
+        List<ExportFileSummary> poiFileList = new ArrayList<>();
 
         if (StringUtils.equals(tiamatExportDestination, "local") || StringUtils.equals(tiamatExportDestination, "both")){
             poiFileList.addAll(getFileListFromLocalStorage(providerName, maxNbResults, "POI_"));
@@ -346,8 +349,8 @@ public class AsyncPublicationDeliveryExporter {
         return poiFileList;
     }
 
-    public List<String> getParkingsFileListByProviderName(String providerName, int maxNbResults){
-        List<String> parkingsFileList = new ArrayList<>();
+    public List<ExportFileSummary> getParkingsFileListByProviderName(String providerName, int maxNbResults){
+        List<ExportFileSummary> parkingsFileList = new ArrayList<>();
 
         if (StringUtils.equals(tiamatExportDestination, "local") || StringUtils.equals(tiamatExportDestination, "both")){
             parkingsFileList.addAll(getFileListFromLocalStorage(providerName, maxNbResults, "PARKING_"));
@@ -382,7 +385,7 @@ public class AsyncPublicationDeliveryExporter {
         return new ArrayList<>();
     }
 
-    private List<String> getFileListFromLocalStorage(String providerName, int maxNbResults, String filePrefix) {
+    private List<ExportFileSummary> getFileListFromLocalStorage(String providerName, int maxNbResults, String filePrefix) {
         File providerDir = new File(localExportPath + File.separator + providerName);
 
         if (!providerDir.exists()) {
@@ -390,7 +393,7 @@ public class AsyncPublicationDeliveryExporter {
         }
 
         try (Stream<Path> paths = Files.walk(providerDir.toPath(), 1)) {
-            Stream<String> files = paths
+            return paths
                     .filter(Files::isRegularFile)
                     .sorted(Comparator.comparing((Path p) -> {
                         try {
@@ -399,13 +402,16 @@ public class AsyncPublicationDeliveryExporter {
                             return FileTime.fromMillis(0L);
                         }
                     }).reversed())
-                    .map(path -> path.getFileName().toString())
-                    .filter(filename -> filename.contains(".zip"))
-                    .filter(filename -> filename.contains(filePrefix));
-
-            return maxNbResults == 0
-                    ? files.collect(Collectors.toList())
-                    : files.limit(maxNbResults).collect(Collectors.toList());
+                    .filter(path -> {
+                        String filename = path.getFileName().toString();
+                        return filename.contains(".zip") && filename.contains(filePrefix);
+                    })
+                    .limit(maxNbResults == 0 ? Long.MAX_VALUE : maxNbResults)
+                    .map(path -> {
+                        String filename = path.getFileName().toString();
+                        return blobStoreService.generateExportFileSummary(providerName, filename);
+                    })
+                    .collect(Collectors.toList());
 
         } catch (IOException e) {
             logger.error("Error while reading local FileStore repository", e);

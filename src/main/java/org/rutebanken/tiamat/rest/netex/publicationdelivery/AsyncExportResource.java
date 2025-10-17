@@ -28,6 +28,7 @@ import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.repository.JobSpecification;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.mapper.NetexExportSummaryMapper;
+import org.rutebanken.tiamat.service.stopplace.ExportFileSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -126,14 +127,16 @@ public class AsyncExportResource {
 
     @GET
     @Path("poi")
-    public Response asyncPOIExport(@BeanParam ExportParams exportParams) {
+    public Response asyncPOIExport(@HeaderParam("RutebankenUser") String username, @BeanParam ExportParams exportParams) {
+        exportParams.setUserName(username);
         Job job = asyncPublicationDeliveryExporter.startPOIExportJob(exportParams);
         return Response.ok(job).build();
     }
 
     @GET
     @Path("parkings")
-    public Response asyncParkingsExport(@BeanParam ExportParams exportParams) {
+    public Response asyncParkingsExport(@HeaderParam("RutebankenUser") String username, @BeanParam ExportParams exportParams) {
+        exportParams.setUserName(username);
         Job job = asyncPublicationDeliveryExporter.startParkingsExportJob(exportParams);
         return Response.ok(job).build();
     }
@@ -181,30 +184,16 @@ public class AsyncExportResource {
     @Path("poi-file-list-by-provider-name/{providerName}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response asyncGetPOIFileList(@PathParam(value = "providerName") String providerName, @HeaderParam("maxNbResults") Integer maxNbResults) {
-        List<String> pointsOfInterestFileList = asyncPublicationDeliveryExporter.getPointsOfInterestFileListByProviderName(providerName,maxNbResults);
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonString="";
-        try {
-            jsonString = objectMapper.writeValueAsString(pointsOfInterestFileList);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        return Response.ok(jsonString).build();
+        List<ExportFileSummary> pointsOfInterestFileList = asyncPublicationDeliveryExporter.getPointsOfInterestFileListByProviderName(providerName,maxNbResults);
+        return Response.ok(pointsOfInterestFileList).build();
     }
 
     @GET
     @Path("parkings-file-list-by-provider-name/{providerName}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response asyncGetParkingsFileList(@PathParam(value = "providerName") String providerName, @HeaderParam("maxNbResults") Integer maxNbResults) {
-        List<String> parkingsOfInterestFileList = asyncPublicationDeliveryExporter.getParkingsFileListByProviderName(providerName,maxNbResults);
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonString="";
-        try {
-            jsonString = objectMapper.writeValueAsString(parkingsOfInterestFileList);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        return Response.ok(jsonString).build();
+        List<ExportFileSummary> parkingsOfInterestFileList = asyncPublicationDeliveryExporter.getParkingsFileListByProviderName(providerName,maxNbResults);
+        return Response.ok(parkingsOfInterestFileList).build();
     }
 
     @GET

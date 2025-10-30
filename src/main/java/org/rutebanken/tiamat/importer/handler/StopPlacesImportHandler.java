@@ -37,9 +37,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.rutebanken.tiamat.config.Messages.VALIDATION_FROM_DATE_AFTER_NEXT_VERSION_FROM_DATE;
-import static org.rutebanken.tiamat.config.Messages.VALIDATION_TO_DATE_AFTER_NEXT_VERSION_FROM_DATE;
-
 @Component
 public class StopPlacesImportHandler {
 
@@ -90,7 +87,7 @@ public class StopPlacesImportHandler {
         try {
             if (containsMobiitiIds) {
                 logger.info("Starting import of stopPlace with Mobiiti Ids");
-                importedStopPlaces = transactionalMergingStopPlacesImporter.importStopPlaces(stopPlacesParsed, atomicInteger, true, true);
+                importedStopPlaces = transactionalMergingStopPlacesImporter.importStopPlaces(stopPlacesParsed, atomicInteger, containsMobiitiIds, true);
 
             } else {
                 logger.info("Starting import of stopPlace with external provider Ids");

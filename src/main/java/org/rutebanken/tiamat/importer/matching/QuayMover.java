@@ -61,7 +61,7 @@ public class QuayMover {
         if (!incomingStopPlaceAlreadyExists) {
             StopPlace copyIncomingStopPlace = versionCreator.createCopy(incomingStopPlace, StopPlace.class);
             copyIncomingStopPlace.getQuays().clear();
-            targetStopPlace = mergingStopPlaceImporter.handleCompletelyNewStopPlace(copyIncomingStopPlace, true);
+            targetStopPlace = mergingStopPlaceImporter.handleCompletelyNewStopPlace(copyIncomingStopPlace, true, true);
         }
 
         //On construit une liste qui contient l'ensemble des originalIds des quays de l'incoming StopPlace

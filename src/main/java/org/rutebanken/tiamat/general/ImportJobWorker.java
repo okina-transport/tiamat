@@ -205,6 +205,7 @@ public class ImportJobWorker implements Runnable {
         importParams.updateStopAccessibility = updateStopAccessibility;
         importParams.keepStopNames = keepStopNames;
         importParams.keepStopGeolocalisation = keepStopGeolocalisation;
+        importParams.isNetex = true;
 
         netexImporter.importProcess(incomingPublicationDelivery, importParams, containsMobiitiIds);
 

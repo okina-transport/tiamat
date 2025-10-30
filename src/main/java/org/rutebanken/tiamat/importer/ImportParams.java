@@ -75,4 +75,7 @@ public class ImportParams {
     @ApiParam("Specify this to erase existing topographic places with matching id and topographic place type. Example: 'OSM;PLACE_OF_INTEREST'")
     @QueryParam(value = "eraseTopographicPlaceWithIdPrefixAndType")
     public String eraseTopographicPlaceWithIdPrefixAndType;
+
+    @QueryParam(value = "isNetex")
+    public boolean isNetex;
 }

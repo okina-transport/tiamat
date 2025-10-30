@@ -59,7 +59,7 @@ public class TransactionalMergingStopPlacesImporter {
                 .forEach(stopPlace -> {
                     try {
                         topographicPlaceReferenceUpdater.updateTopographicReference(stopPlace);
-                        org.rutebanken.netex.model.StopPlace imported = mergingStopPlaceImporter.importStopPlace(stopPlace, containsMobiitiIds, recomputeStopPlacesLocation);
+                        org.rutebanken.netex.model.StopPlace imported = mergingStopPlaceImporter.importStopPlace(stopPlace, containsMobiitiIds, recomputeStopPlacesLocation, true);
 
                         if (imported != null) {
                             createdStopPlaces.add(imported);

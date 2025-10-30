@@ -47,8 +47,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.stream.Collectors.toList;
-import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.FARE_ZONE;
-import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.RAIL_UIC_KEY;
+import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.*;
 
 @Component
 @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -91,7 +90,14 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
         if (importParams.recomputeStopPlacesLocation) {
             stopPlaceCentroidComputer.computeCentroidForStopPlace(incomingStopPlace);
         }
-        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
+
+        List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces;
+        if (importParams.isNetex && incomingStopPlace.getNetexId().contains("MOBIITI")) {
+            foundStopPlaces = stopPlaceRepository.findByNetexId(incomingStopPlace.getNetexId());
+        } else {
+            foundStopPlaces = stopPlaceByIdFinder.findStopPlace(incomingStopPlace);
+        }
+
         foundStopPlaces = removeExpiredVersions(foundStopPlaces);
 
 
@@ -144,7 +150,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
             StopPlace newStopPlace = null;
             try {
-                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace, false, importParams.recomputeStopPlacesLocation);
+                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace, false, importParams.recomputeStopPlacesLocation, importParams.isNetex);
             } catch (InterruptedException | ExecutionException e) {
                 logger.error("Problem while adding new stop place", e);
             }
@@ -169,7 +175,6 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
                 logger.debug("Found matching stop place {}", existingStopPlace);
 
-
                 boolean keyValuesChanged = keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_ID_KEY, incomingStopPlace, copy);
 
                 if (keyValueListAppender.appendToOriginalId(NetexIdMapper.ORIGINAL_NAME_KEY, incomingStopPlace, copy)) {
@@ -185,6 +190,9 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                     keyValuesChanged = true;
                 }
                 if (keyValueListAppender.appendKeyValue(RAIL_UIC_KEY, incomingStopPlace, copy)) {
+                    keyValuesChanged = true;
+                }
+                if (keyValueListAppender.appendKeyValue(IMPORTED_VERSION,  incomingStopPlace, copy)) {
                     keyValuesChanged = true;
                 }
 

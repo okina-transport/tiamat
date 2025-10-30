@@ -57,6 +57,8 @@ public class NetexIdMapper {
 
     public static final String RAIL_UIC_KEY = "RAIL-UIC";
 
+    public static final String IMPORTED_VERSION = "imported-version";
+
     private static final List<String> IGNORE_KEYS = Arrays.asList(CHANGED_BY, VERSION_COMMENT, IS_PARENT_STOP_PLACE);
 
     @Autowired
@@ -134,7 +136,7 @@ public class NetexIdMapper {
                         continue;
                     }
 
-                    boolean ignoreEmptyPostfix = (key.equals(ORIGINAL_ID_KEY) | key.equals(MERGED_ID_KEY) | key.equals(ORIGINAL_NAME_KEY) || key.equals(ORIGINAL_STOPCODE_KEY) || key.equals(AUTOMATICALY_CREATED_MISSING_QUAY));
+                    boolean ignoreEmptyPostfix = (key.equals(ORIGINAL_ID_KEY) | key.equals(MERGED_ID_KEY) | key.equals(ORIGINAL_NAME_KEY) || key.equals(ORIGINAL_STOPCODE_KEY) || key.equals(AUTOMATICALY_CREATED_MISSING_QUAY) || key.equals(IMPORTED_VERSION));
 
                     if (value.contains(",")) {
                         String[] originalIds = value.split(",");

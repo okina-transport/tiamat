@@ -21,6 +21,7 @@ import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.PlaceEquipment;
+import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.netex.mapping.converter.QuayListConverter;
 import org.rutebanken.tiamat.netex.mapping.mapper.*;
 import org.rutebanken.tiamat.repository.QuayRepository;
@@ -37,6 +38,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.IMPORTED_VERSION;
 
 @Component
 public class NetexMapper {
@@ -443,6 +446,11 @@ public class NetexMapper {
                 if (quayRefStructure instanceof QuayRefStructure) {
                     String netexId = ((QuayRefStructure) quayRefStructure).getRef();
                     for (org.rutebanken.tiamat.model.Quay quay : quaysParsed) {
+                        if (quay.getKeyValues().get(IMPORTED_VERSION) == null) {
+                            Value spValue = new Value();
+                            spValue.getItems().add(String.valueOf(quay.getVersion()));
+                            quay.getKeyValues().put(IMPORTED_VERSION, spValue);
+                        }
                         if (quay.getNetexId().equals(netexId)) {
                             quays.add(quay);
                         }
@@ -456,6 +464,11 @@ public class NetexMapper {
         }
 
         stopPlace.setNetexId(netexStopPlace.getId());
+        if (stopPlace.getKeyValues().get(IMPORTED_VERSION) == null) {
+            Value spValue = new Value();
+            spValue.getItems().add(String.valueOf(stopPlace.getVersion()));
+            stopPlace.getKeyValues().put(IMPORTED_VERSION, spValue);
+        }
         setCreatedTimeForAccessibilityStopPlace(stopPlace);
         return stopPlace;
     }

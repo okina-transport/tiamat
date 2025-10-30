@@ -130,6 +130,9 @@ public class StopPlaceVersionedSaverService {
 
         if (existingVersion == null) {
             existingVersion = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
+            if (existingVersion != null) {
+                newVersion.setVersion(existingVersion.getVersion());
+            }
 
         }
 
@@ -216,6 +219,7 @@ public class StopPlaceVersionedSaverService {
                                                            .collect(Collectors.toList()));
             }
         }
+
         newVersion = stopPlaceRepository.save(newVersion);
         logger.debug("Saved stop place with id: {} and childs {}", newVersion.getId(), newVersion.getChildren().stream().map(ch -> ch.getId()).collect(toList()));
 

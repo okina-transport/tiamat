@@ -95,13 +95,13 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
         SiteFrame siteFrame = new SiteFrame();
 
         // Import first stop place.
-        mergingStopPlaceImporter.importStopPlace(firstStopPlace, false, true);
+        mergingStopPlaceImporter.importStopPlace(firstStopPlace, false, true, false);
 
         StopPlace secondStopPlace = createStopPlace(name, longitude, latitude, null);
         secondStopPlace.getQuays().add(createQuay(name, longitude, latitude, null));
 
         // Import second stop place
-        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace, true);
+        StopPlace importResult = mergingStopPlaceImporter.importStopPlaceWithoutNetexMapping(secondStopPlace, true, false);
 
         assertThat(importResult.getNetexId()).isEqualTo(importResult.getNetexId());
         assertThat(importResult.getQuays()).hasSize(1);
@@ -134,9 +134,9 @@ public class MergingStopPlaceImporterTest extends TiamatIntegrationTest {
     public void reproduceIssueWithCollectionNotAssosiatedWithAnySession() throws ExecutionException, InterruptedException {
         String name = "Skillebekkgata";
         StopPlace firstStopPlace = createStopPlaceWithQuay(name, 6, 60, "MOBIITI:StopPlace:11063200", "MOBIITI:Quay:11063200");
-        mergingStopPlaceImporter.importStopPlace(firstStopPlace, false, true);
+        mergingStopPlaceImporter.importStopPlace(firstStopPlace, false, true, false);
         StopPlace secondStopPlace = createStopPlaceWithQuay(name, 6, 60.0001, "MOBIITI:StopPlace:11063198", "MOBIITI:Quay:11063198");
-        mergingStopPlaceImporter.importStopPlace(secondStopPlace, false, true);
+        mergingStopPlaceImporter.importStopPlace(secondStopPlace, false, true, false);
     }
 
 //    /**

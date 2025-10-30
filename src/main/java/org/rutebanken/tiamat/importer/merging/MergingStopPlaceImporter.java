@@ -100,7 +100,8 @@ public class MergingStopPlaceImporter {
      */
     public org.rutebanken.netex.model.StopPlace importStopPlace(StopPlace newStopPlace,
                                                                 Boolean containsMobiitiIds,
-                                                                boolean recomputeStopPlacesLocation)
+                                                                boolean recomputeStopPlacesLocation,
+                                                                boolean isNetex)
             throws InterruptedException, ExecutionException {
 
         logger.debug("Transaction active: {}. Isolation level: {}",
@@ -117,7 +118,7 @@ public class MergingStopPlaceImporter {
         if (containsMobiitiIds) {
             processedStopPlace = importStopPlaceContainsMobiitiIdsWithoutNetexMapping(newStopPlace, recomputeStopPlacesLocation);
         } else {
-            processedStopPlace = importStopPlaceWithoutNetexMapping(newStopPlace, recomputeStopPlacesLocation);
+            processedStopPlace = importStopPlaceWithoutNetexMapping(newStopPlace, recomputeStopPlacesLocation, isNetex);
         }
 
         if (processedStopPlace == null) {
@@ -129,13 +130,15 @@ public class MergingStopPlaceImporter {
 
 
     public StopPlace importStopPlaceWithoutNetexMapping(StopPlace incomingStopPlace,
-                                                        boolean recomputeStopPlacesLocation) throws InterruptedException,
+                                                        boolean recomputeStopPlacesLocation,
+                                                        boolean isNetex) throws InterruptedException,
             ExecutionException {
-        return handleCompletelyNewStopPlace(incomingStopPlace, recomputeStopPlacesLocation);
+        return handleCompletelyNewStopPlace(incomingStopPlace, recomputeStopPlacesLocation, isNetex);
     }
 
     public StopPlace importStopPlaceContainsMobiitiIdsWithoutNetexMapping(StopPlace incomingStopPlace, boolean recomputeStopPlacesLocation) {
         final StopPlace foundStopPlace = stopPlaceFromOriginalIdFinder.findStopPlace(incomingStopPlace);
+        if (foundStopPlace == null) return null;
 
         String entityString = (foundStopPlace != null ? foundStopPlace.getNetexId() : "unknown")
                 + " "
@@ -167,9 +170,9 @@ public class MergingStopPlaceImporter {
         return stopPlace;
     }
 
-    public StopPlace handleCompletelyNewStopPlace(StopPlace incomingStopPlace, boolean recomputeStopPlacesLocation) throws ExecutionException {
+    public StopPlace handleCompletelyNewStopPlace(StopPlace incomingStopPlace, boolean recomputeStopPlacesLocation, boolean isNetex) throws ExecutionException {
 
-        if (incomingStopPlace.getNetexId() != null) {
+        if (incomingStopPlace.getNetexId() != null && !(isNetex && incomingStopPlace.getNetexId().contains("MOBIITI"))) {
             // This should not be necesarry.
             // Because this is a completely new stop.
             // And original netex ID should have been moved to key values.

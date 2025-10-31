@@ -19,26 +19,21 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.rutebanken.netex.model.*;
-import org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration;
-import org.rutebanken.netex.model.Common_VersionFrameStructure;
-import org.rutebanken.netex.model.EntityStructure;
-import org.rutebanken.netex.model.GeneralFrame;
-import org.rutebanken.netex.model.MultilingualString;
-import org.rutebanken.netex.model.TypeOfPlaceRefs_RelStructure;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
 import org.rutebanken.tiamat.exporter.TypeEnumeration;
+import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
+import org.rutebanken.tiamat.general.ExportJobWorker;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
-import org.rutebanken.tiamat.general.ExportJobWorker;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.repository.JobRepository;
+import org.rutebanken.tiamat.model.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXException;
@@ -103,7 +98,7 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
         LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
 
 
-       ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, testPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.STOP_PLACE, false);
+       ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, testPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.STOP_PLACE);
        exportJobWorker.run();
 
        if (job.getStatus().equals(JobStatus.FAILED)){

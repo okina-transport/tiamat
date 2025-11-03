@@ -57,6 +57,8 @@ public class ExportJobWorker implements Runnable {
     private static String tiamatExportDestination;
     private final TypeEnumeration exportType;
     private final Boolean exportGeneratedMissingQuayser;
+    private final Boolean exportExternalIds;
+
 
     public ExportJobWorker(Job job,
                            StreamingPublicationDelivery streamingPublicationDelivery,
@@ -69,7 +71,8 @@ public class ExportJobWorker implements Runnable {
                            LocalDateTime localDateTime,
                            String tiamatExportDestination,
                            TypeEnumeration exportType,
-                           Boolean exportGeneratedMissingQuayser) {
+                           Boolean exportGeneratedMissingQuayser,
+                           Boolean exportExternalIds) {
         this.job = job;
         this.streamingPublicationDelivery = streamingPublicationDelivery;
         this.localExportPath = localExportPath;
@@ -82,6 +85,7 @@ public class ExportJobWorker implements Runnable {
         this.tiamatExportDestination = tiamatExportDestination;
         this.exportType = exportType;
         this.exportGeneratedMissingQuayser = exportGeneratedMissingQuayser;
+        this.exportExternalIds = exportExternalIds;
     }
 
 
@@ -101,7 +105,7 @@ public class ExportJobWorker implements Runnable {
                     exportParkingsToLocalXmlFile(localExportXmlFile, localDateTime);
                     break;
                 default:
-                    exportToLocalXmlFile(localExportXmlFile, provider, localDateTime, exportGeneratedMissingQuayser);
+                    exportToLocalXmlFile(localExportXmlFile, provider, localDateTime, exportGeneratedMissingQuayser, exportExternalIds);
                     break;
             }
 
@@ -139,10 +143,10 @@ public class ExportJobWorker implements Runnable {
         }
     }
 
-    private void exportToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime, boolean exportGeneratedMissingQuayser) throws IOException, SAXException, JAXBException {
+    private void exportToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime, boolean exportGeneratedMissingQuayser, Boolean exportExternalIds) throws IOException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.stream(fileOutputStream, provider, localDateTime, job.getId(), exportGeneratedMissingQuayser);
+        streamingPublicationDelivery.stream(fileOutputStream, provider, localDateTime, job.getId(), exportGeneratedMissingQuayser, exportExternalIds);
         logger.info("export to local file completed");
     }
 

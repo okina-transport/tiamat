@@ -19,8 +19,8 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.h2.util.IOUtils;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.exporter.TypeEnumeration;
 import org.rutebanken.tiamat.exporter.StreamingPublicationDelivery;
+import org.rutebanken.tiamat.exporter.TypeEnumeration;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.validation.NetexXmlReferenceValidator;
@@ -56,6 +56,7 @@ public class ExportJobWorker implements Runnable {
     private LocalDateTime localDateTime; // ne peut pas être final. Vu qu'on ne le bouge pas, pas gênant mais dommage
     private static String tiamatExportDestination;
     private final TypeEnumeration exportType;
+    private final Boolean exportGeneratedMissingQuayser;
 
     public ExportJobWorker(Job job,
                            StreamingPublicationDelivery streamingPublicationDelivery,
@@ -67,7 +68,8 @@ public class ExportJobWorker implements Runnable {
                            Provider provider,
                            LocalDateTime localDateTime,
                            String tiamatExportDestination,
-                           TypeEnumeration exportType) {
+                           TypeEnumeration exportType,
+                           Boolean exportGeneratedMissingQuayser) {
         this.job = job;
         this.streamingPublicationDelivery = streamingPublicationDelivery;
         this.localExportPath = localExportPath;
@@ -79,6 +81,7 @@ public class ExportJobWorker implements Runnable {
         this.localDateTime = localDateTime;
         this.tiamatExportDestination = tiamatExportDestination;
         this.exportType = exportType;
+        this.exportGeneratedMissingQuayser = exportGeneratedMissingQuayser;
     }
 
 
@@ -98,7 +101,7 @@ public class ExportJobWorker implements Runnable {
                     exportParkingsToLocalXmlFile(localExportXmlFile, localDateTime);
                     break;
                 default:
-                    exportToLocalXmlFile(localExportXmlFile, provider, localDateTime);
+                    exportToLocalXmlFile(localExportXmlFile, provider, localDateTime, exportGeneratedMissingQuayser);
                     break;
             }
 
@@ -136,10 +139,10 @@ public class ExportJobWorker implements Runnable {
         }
     }
 
-    private void exportToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime) throws IOException, SAXException, JAXBException {
+    private void exportToLocalXmlFile(File localExportXmlFile, Provider provider, LocalDateTime localDateTime, boolean exportGeneratedMissingQuayser) throws IOException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.stream(fileOutputStream, provider, localDateTime, job.getId());
+        streamingPublicationDelivery.stream(fileOutputStream, provider, localDateTime, job.getId(), exportGeneratedMissingQuayser);
         logger.info("export to local file completed");
     }
 

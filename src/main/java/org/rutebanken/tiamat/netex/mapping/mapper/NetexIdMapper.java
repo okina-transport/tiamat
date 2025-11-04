@@ -49,6 +49,7 @@ public class NetexIdMapper {
     public static final String ORIGINAL_ID_KEY = "imported-id";
     public static final String ORIGINAL_NAME_KEY = "imported-name";
     public static final String ORIGINAL_STOPCODE_KEY = "imported-stopcode";
+    public static final String AUTOMATICALY_CREATED_MISSING_QUAY = "automaticaly-created-missing-quay";
 
     public static final String MERGED_ID_KEY = "merged-id";
     public static final String EXTERNAL_REF = "external-ref";
@@ -133,7 +134,7 @@ public class NetexIdMapper {
                         continue;
                     }
 
-                    boolean ignoreEmptyPostfix = (key.equals(ORIGINAL_ID_KEY) | key.equals(MERGED_ID_KEY) | key.equals(ORIGINAL_NAME_KEY) || key.equals(ORIGINAL_STOPCODE_KEY));
+                    boolean ignoreEmptyPostfix = (key.equals(ORIGINAL_ID_KEY) | key.equals(MERGED_ID_KEY) | key.equals(ORIGINAL_NAME_KEY) || key.equals(ORIGINAL_STOPCODE_KEY) || key.equals(AUTOMATICALY_CREATED_MISSING_QUAY));
 
                     if (value.contains(",")) {
                         String[] originalIds = value.split(",");
@@ -196,6 +197,10 @@ public class NetexIdMapper {
      */
     public void moveOriginalStopCodeToKeyValueList(DataManagedObjectStructure dataManagedObjectStructure, String stopCode) {
         addKeyValueAvoidEmpty(dataManagedObjectStructure, ORIGINAL_STOPCODE_KEY, stopCode, true);
+    }
+
+    public void moveAutomaticalyCreatedToKeyValueList(DataManagedObjectStructure dataManagedObjectStructure, String stopCode) {
+        addKeyValueAvoidEmpty(dataManagedObjectStructure, AUTOMATICALY_CREATED_MISSING_QUAY, stopCode, true);
     }
 
 

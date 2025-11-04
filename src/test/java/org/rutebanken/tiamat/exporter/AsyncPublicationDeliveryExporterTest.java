@@ -26,19 +26,7 @@ import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
-import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
-import org.rutebanken.tiamat.model.GroupOfStopPlaces;
-import org.rutebanken.tiamat.model.Quay;
-import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.model.StopPlaceReference;
-import org.rutebanken.tiamat.model.StopTypeEnumeration;
-import org.rutebanken.tiamat.model.TariffZone;
-import org.rutebanken.tiamat.model.TariffZoneRef;
-import org.rutebanken.tiamat.model.TopographicPlace;
-import org.rutebanken.tiamat.model.TopographicPlaceRefStructure;
-import org.rutebanken.tiamat.model.TopographicPlaceTypeEnumeration;
-import org.rutebanken.tiamat.model.ValidBetween;
-import org.rutebanken.tiamat.model.Value;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
@@ -163,7 +151,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         Job job = asyncPublicationDeliveryExporter.startExportJob(USERNAME, exportParams);
 
 
-        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId());
+        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId(), false);
         asyncPublicationDeliveryExporter.streamingPublicationDelivery = streamingPublicationDelivery;
 
 
@@ -250,7 +238,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
 
         Job job = asyncPublicationDeliveryExporter.startExportJob("", exportParams);
 
-        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId());
+        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId(), false);
         asyncPublicationDeliveryExporter.streamingPublicationDelivery = streamingPublicationDelivery;
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryUnmarshaller.unmarshal(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
@@ -356,7 +344,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
 
         Job job = asyncPublicationDeliveryExporter.startExportJob("", exportParams);
 
-        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId());
+        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId(), false);
 
         String xml = byteArrayOutputStream.toString();
 
@@ -498,7 +486,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
 
         Job job = asyncPublicationDeliveryExporter.startExportJob("", exportParams);
 
-        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId());
+        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId(), false);
 
         String xml = byteArrayOutputStream.toString();
 

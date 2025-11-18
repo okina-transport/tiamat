@@ -103,7 +103,7 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
         LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
 
 
-       ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, testPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.STOP_PLACE, false, false);
+       ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, testPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.STOP_PLACE, false);
        exportJobWorker.run();
 
        if (job.getStatus().equals(JobStatus.FAILED)){

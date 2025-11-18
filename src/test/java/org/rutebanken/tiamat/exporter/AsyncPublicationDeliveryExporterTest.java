@@ -151,7 +151,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         Job job = asyncPublicationDeliveryExporter.startExportJob(USERNAME, exportParams);
 
 
-        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId(), false, false);
+        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId(), false);
         asyncPublicationDeliveryExporter.streamingPublicationDelivery = streamingPublicationDelivery;
 
 
@@ -238,7 +238,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
 
         Job job = asyncPublicationDeliveryExporter.startExportJob("", exportParams);
 
-        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId(), false, false);
+        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId(), false);
         asyncPublicationDeliveryExporter.streamingPublicationDelivery = streamingPublicationDelivery;
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryUnmarshaller.unmarshal(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
@@ -344,7 +344,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
 
         Job job = asyncPublicationDeliveryExporter.startExportJob("", exportParams);
 
-        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId(), false, false);
+        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId(), false);
 
         String xml = byteArrayOutputStream.toString();
 
@@ -486,7 +486,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
 
         Job job = asyncPublicationDeliveryExporter.startExportJob("", exportParams);
 
-        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId(), false, false);
+        streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId(), false);
 
         String xml = byteArrayOutputStream.toString();
 

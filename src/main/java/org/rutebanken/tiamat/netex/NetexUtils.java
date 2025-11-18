@@ -1,6 +1,7 @@
 package org.rutebanken.tiamat.netex;
 
 import org.rutebanken.netex.model.*;
+import org.rutebanken.tiamat.importer.NetexImporter;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,7 @@ public class NetexUtils {
         }
 
         for (KeyValueStructure keyValueStructure : object.getKeyList().getKeyValue()) {
-            if ("imported-id".equals(keyValueStructure.getKey()) || "external-ref".equals(keyValueStructure.getKey())){
+            if ("imported-id".equals(keyValueStructure.getKey())){
                 keyValueStructure.setTypeOfKey("ALTERNATE_IDENTIFIER");
             }
         }

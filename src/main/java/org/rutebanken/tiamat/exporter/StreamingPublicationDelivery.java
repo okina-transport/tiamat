@@ -64,7 +64,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static javax.xml.bind.JAXBContext.newInstance;
-import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.EXTERNAL_REF;
 
 /**
  * Stream data objects inside already serialized publication delivery.
@@ -169,8 +168,8 @@ public class StreamingPublicationDelivery {
         return doc;
     }
 
-    public void stream(OutputStream outputStream, Provider provider, LocalDateTime localDateTime, Long exportJobId, boolean exportGeneratedMissingQuayser, Boolean exportExternalIds) throws JAXBException, IOException, SAXException {
-        streamForAsyncExportJob(outputStream, provider, localDateTime, exportJobId, exportGeneratedMissingQuayser, exportExternalIds);
+    public void stream(OutputStream outputStream, Provider provider, LocalDateTime localDateTime, Long exportJobId, boolean exportGeneratedMissingQuayser) throws JAXBException, IOException, SAXException {
+        streamForAsyncExportJob(outputStream, provider, localDateTime, exportJobId, exportGeneratedMissingQuayser);
     }
 
     /**
@@ -234,7 +233,7 @@ public class StreamingPublicationDelivery {
      * @throws IOException
      * @throws SAXException
      */
-    public void streamForAsyncExportJob(OutputStream outputStream, Provider provider, LocalDateTime localDateTime, Long exportJobId, boolean exportGeneratedMissingQuayser, Boolean exportExternalIds) throws JAXBException, IOException, SAXException {
+    public void streamForAsyncExportJob(OutputStream outputStream, Provider provider, LocalDateTime localDateTime, Long exportJobId, boolean exportGeneratedMissingQuayser) throws JAXBException, IOException, SAXException {
         org.rutebanken.tiamat.model.GeneralFrame generalFrame =
                 tiamatGeneralFrameExporter.createTiamatGeneralFrame(StringUtils.isNotEmpty(provider.getChouetteInfo().getNameNetexStop()) ? provider.getChouetteInfo().getNameNetexStop() : "MOBI-ITI",
                         localDateTime, TypeEnumeration.STOP_PLACE);
@@ -271,7 +270,7 @@ public class StreamingPublicationDelivery {
                 logger.info("no more stops to export");
                 isDataToExport = false;
             } else {
-                launchBatchExport(batchIdsToExport, mappedStopPlaceCount, listMembers, false, exportGeneratedMissingQuayser, exportExternalIds);
+                launchBatchExport(batchIdsToExport, mappedStopPlaceCount, listMembers, false, exportGeneratedMissingQuayser);
                 stopPlaceRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
 
                 totalStopsProcessed = totalStopsProcessed + batchIdsToExport.size();
@@ -280,7 +279,7 @@ public class StreamingPublicationDelivery {
 
         }
 
-        desanitizeKeyValues(listMembers, provider.getChouetteInfo().getNameNetexStop());
+        desanitizeImportedIds(listMembers, provider.getChouetteInfo().getNameNetexStop());
 
         logger.info("Preparing scrollable iterators");
         prepareTopographicPlaces(mappedTopographicPlacesCount, listMembers, exportJobId);
@@ -346,7 +345,7 @@ public class StreamingPublicationDelivery {
      *
      * @param listMembers
      */
-    private void desanitizeKeyValues(List<JAXBElement<? extends EntityStructure>> listMembers, String prefix) {
+    private void desanitizeImportedIds(List<JAXBElement<? extends EntityStructure>> listMembers, String prefix) {
         for (JAXBElement<? extends EntityStructure> listMember : listMembers) {
             EntityStructure entity = listMember.getValue();
             if (entity instanceof Zone_VersionStructure zone) {
@@ -357,7 +356,7 @@ public class StreamingPublicationDelivery {
                     Iterator<KeyValueStructure> iterator = keyValue.iterator();
                     while (iterator.hasNext()) {
                         KeyValueStructure structure = iterator.next();
-                        if (structure != null && ("imported-id".equals(structure.getKey()) || "fare-zone".equals(structure.getKey()) || "external-ref".equals(structure.getKey()))) {
+                        if (structure != null && ("imported-id".equals(structure.getKey()) || "fare-zone".equals(structure.getKey()))) {
                             structure.setValue(structure.getValue().replace("##3A##", ":"));
                             if (StringUtils.isNotBlank(prefix) && structure.getValue().contains(":")) {
                                 String oldString = structure.getValue().split(":")[0];
@@ -990,7 +989,7 @@ public class StreamingPublicationDelivery {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void launchBatchExport(Set<Long> stopPlacePrimaryIds, AtomicInteger mappedStopPlaceCount, List<JAXBElement<? extends EntityStructure>> listMembers, boolean shouldRecoverParents, boolean exportGeneratedMissingQuayser, Boolean exportExternalIds) {
+    public void launchBatchExport(Set<Long> stopPlacePrimaryIds, AtomicInteger mappedStopPlaceCount, List<JAXBElement<? extends EntityStructure>> listMembers, boolean shouldRecoverParents, boolean exportGeneratedMissingQuayser) {
         logger.info("There are stop places to export");
 
         List<org.rutebanken.tiamat.model.StopPlace> recoveredStopPlaces = stopPlaceRepository.getStopPlaceInitializedForExport(stopPlacePrimaryIds);
@@ -1022,13 +1021,6 @@ public class StreamingPublicationDelivery {
                 quays.getQuayRefOrQuay().forEach(quay -> {
                     Quay netexQuay = (Quay) quay.getValue();
 
-                    if (!exportExternalIds) {
-                        KeyListStructure keyList = netexQuay.getKeyList();
-                        if (keyList != null && keyList.getKeyValue() != null) {
-                            keyList.getKeyValue().removeIf(kv -> EXTERNAL_REF.equals(kv.getKey()));
-                        }
-                    }
-
                     boolean isAutoGenerated = netexQuay.getKeyList().getKeyValue().stream()
                             .anyMatch(keyValue -> "automaticaly-created-missing-quay".equals(keyValue.getKey())
                                     && "true".equals(keyValue.getValue()));
@@ -1056,14 +1048,6 @@ public class StreamingPublicationDelivery {
                     netexStopPlace.setQuays(null);
                 }
             }
-
-            if (!exportExternalIds) {
-                KeyListStructure keyList = netexStopPlace.getKeyList();
-                if (keyList != null && keyList.getKeyValue() != null) {
-                    keyList.getKeyValue().removeIf(kv -> EXTERNAL_REF.equals(kv.getKey()));
-                }
-            }
-
             listMembers.add(netexObjectFactory.createStopPlace(netexStopPlace));
         });
 
@@ -1156,7 +1140,7 @@ public class StreamingPublicationDelivery {
                 JAXBElement<org.rutebanken.netex.model.TariffZone> jaxbElementTariffZone = netexObjectFactory.createTariffZone(tariffZone);
                 jaxbElementList.add(jaxbElementTariffZone);
             });
-            desanitizeKeyValues(jaxbElementList, prefix);
+            desanitizeImportedIds(jaxbElementList, prefix);
             listMembers.addAll(jaxbElementList);
         } else {
             logger.info("No tariff zones to export");

@@ -115,10 +115,10 @@ public class AsyncPublicationDeliveryExporter {
      * @return export job with information about the started process
      */
     public Job startExportJob(String username, ExportParams exportParams) {
-        return startExportJob(username, false, exportParams, false);
+        return startExportJob(username, false, exportParams);
     }
 
-    public Job startExportJob(String username, Boolean exportGeneratedMissingQuayser, ExportParams exportParams, Boolean exportExternalIds) {
+    public Job startExportJob(String username, Boolean exportGeneratedMissingQuayser, ExportParams exportParams) {
 
         Iterable<Provider> providers;
 
@@ -155,7 +155,7 @@ public class AsyncPublicationDeliveryExporter {
                 }
                 job.setFileName(nameFileZip + ".zip");
 
-                ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.STOP_PLACE, exportGeneratedMissingQuayser, exportExternalIds);
+                ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.STOP_PLACE, exportGeneratedMissingQuayser);
                 exportService.submit(exportJobWorker);
                 logger.info("Returning started export job {}", job);
                 setJobUrl(job);
@@ -206,7 +206,7 @@ public class AsyncPublicationDeliveryExporter {
                 }
                 job.setFileName(nameFileZip + ".zip");
 
-                ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.PARKING, false, false);
+                ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.PARKING, false);
                 exportService.submit(exportJobWorker);
                 logger.info("Returning started parkings export job {}", job);
                 setJobUrl(job);
@@ -258,7 +258,7 @@ public class AsyncPublicationDeliveryExporter {
                 }
                 job.setFileName(nameFileZip + ".zip");
 
-                ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.POI, false, false);
+                ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator, provider, localDateTime, tiamatExportDestination, TypeEnumeration.POI, false);
                 exportService.submit(exportJobWorker);
                 logger.info("Returning started POI export job {}", job);
                 setJobUrl(job);

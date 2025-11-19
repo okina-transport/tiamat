@@ -91,6 +91,7 @@ public class NetexMapper {
 
         mapperFactory.classMap(TopographicPlace.class, org.rutebanken.tiamat.model.TopographicPlace.class)
                 .fieldBToA("name", "descriptor.name")
+                .exclude("polygon")
                 .customize(new TopographicPlaceMapper())
                 .byDefault()
                 .register();
@@ -105,6 +106,7 @@ public class NetexMapper {
                 .fieldAToB("topographicPlaceRef.version", "topographicPlace.version")
                 // TODO: Excluding some fields while waiting for NRP-1354
                 .exclude("localServices")
+                .exclude("polygon")
                 .exclude("roadAddress")
                 .customize(new StopPlaceMapper(publicationDeliveryHelper))
                 .byDefault()
@@ -114,17 +116,20 @@ public class NetexMapper {
                 .exclude("localServices")
                 .exclude("roadAddress")
                 .exclude("otherTransportModes")
+                .exclude("polygon")
                 .customize(new QuayMapper())
                 .byDefault()
                 .register();
 
         mapperFactory.classMap(TariffZone.class, org.rutebanken.tiamat.model.TariffZone.class)
+                .exclude("polygon")
                 .customize(new TariffZoneMapper())
                 .byDefault()
                 .register();
 
         mapperFactory.classMap(PointOfInterest.class, org.rutebanken.tiamat.model.PointOfInterest.class)
                 .fieldBToA("netexId", "id")
+                .exclude("polygon")
                 .customize(pointOfInterestMapper)
                 .byDefault()
                 .register();
@@ -140,23 +145,27 @@ public class NetexMapper {
                 .exclude("accessModes")
                 .exclude("vehicleTypes")
                 .exclude("typesOfPaymentMethod")
+                .exclude("polygon")
 //                .exclude("parkingProperties")
                 .customize(new ParkingMapper())
                 .byDefault()
                 .register();
 
         mapperFactory.classMap(ParkingArea.class, org.rutebanken.tiamat.model.ParkingArea.class)
+                .exclude("polygon")
                 .customize(new ParkingAreaMapper())
                 .byDefault()
                 .register();
 
         mapperFactory.classMap(VehiclePoolingParkingArea.class, org.rutebanken.tiamat.model.ParkingArea.class)
+                .exclude("polygon")
                 .customize(new VehiclePoolingParkingAreaMapper())
                 .fieldBToA("netexId", "id")
                 .byDefault()
                 .register();
 
         mapperFactory.classMap(VehicleSharingParkingArea.class, org.rutebanken.tiamat.model.ParkingArea.class)
+                .exclude("polygon")
                 .customize(new VehicleSharingParkingAreaMapper())
                 .fieldBToA("netexId", "id")
                 .byDefault()

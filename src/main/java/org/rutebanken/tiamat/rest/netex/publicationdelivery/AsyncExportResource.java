@@ -120,8 +120,8 @@ public class AsyncExportResource {
 
     @GET
     @Path("initiate")
-    public Response asyncExport(@HeaderParam("RutebankenUser") String username, @HeaderParam("exportGeneratedMissingQuays") String exportGeneratedMissingQuayser, @BeanParam ExportParams exportParams) {
-        Job job = asyncPublicationDeliveryExporter.startExportJob(username, Boolean.valueOf(exportGeneratedMissingQuayser), exportParams);
+    public Response asyncExport(@HeaderParam("RutebankenUser") String username, @HeaderParam("exportGeneratedMissingQuays") String exportGeneratedMissingQuayser, @BeanParam ExportParams exportParams, @HeaderParam("exportExternalIds") String exportExternalIds) {
+        Job job = asyncPublicationDeliveryExporter.startExportJob(username, Boolean.valueOf(exportGeneratedMissingQuayser), exportParams, Boolean.valueOf(exportExternalIds));
         return Response.ok(job).build();
     }
 

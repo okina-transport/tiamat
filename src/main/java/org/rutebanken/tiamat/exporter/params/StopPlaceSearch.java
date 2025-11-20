@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.exporter.params;
 
 import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.rest.graphql.GraphQLNames;
 import org.springframework.data.domain.PageRequest;
@@ -287,7 +288,7 @@ public class StopPlaceSearch implements SearchObject {
     }
 
     public boolean isEligibleToStandardSearch(){
-        return !getNetexIdList().isEmpty() && getVersion() == null  && getQuery() == null && getStopTypeEnumerations() == null
+        return CollectionUtils.isNotEmpty(getNetexIdList()) && getVersion() == null  && getQuery() == null && getStopTypeEnumerations() == null
                 && getSubmode() == null && getTags() == null && getPointInTime() == null  && !isWithoutLocationOnly() && !isWithoutQuaysOnly() && !isHasParking()
                 && !isWithTags() && !isWithDuplicatedQuayImportedIds() && !isWithNearbySimilarDuplicates() && !isDetectMultiModalPoints();
     }

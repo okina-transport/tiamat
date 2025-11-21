@@ -34,7 +34,7 @@ public class NetexIdHelper {
     // TODO: make it configurable, maybe in ValidPrefixList
     public static final String NSR = "NSR";
     public static final String CITY_INSEE_CODE_RE = "\\d{5}(-\\d{1,2})?";
-    public static final String PARKING_ID_RE = String.format("FR[^:]*:%s:Parking:[^:]+(:LOC)?", CITY_INSEE_CODE_RE);
+    public static final String PARKING_ID_RE = String.format("FR[^:]*:%s:Parking:[^:]+(:LOC|:NAP)?", CITY_INSEE_CODE_RE);
     public static final Pattern PARKING_ID_PATTERN = Pattern.compile(PARKING_ID_RE);
 
     public static final String GENERIC_NETEX_PATTERN = "[^:]+:%s:(?:[^:]+:)*[^:]+(:LOC)?";

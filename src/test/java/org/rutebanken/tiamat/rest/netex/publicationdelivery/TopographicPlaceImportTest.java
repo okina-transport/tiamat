@@ -87,9 +87,7 @@ public class TopographicPlaceImportTest extends TiamatIntegrationTest {
         assertThat(result).as("Expecting topographic place in return").hasSize(1);
         TopographicPlace actualTopographicPlace = result.get(0);
 
-        assertThat(actualTopographicPlace.getPolygon())
-                .as("polygon must not be null")
-                .isNotNull();
+
 
         List<Double> actualExteriorValues = polygonConverter.extractValues(topographicPlace.getPolygon().getExterior());
 

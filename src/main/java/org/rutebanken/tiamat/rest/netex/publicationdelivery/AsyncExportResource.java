@@ -18,7 +18,6 @@ package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.Api;
-import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.exporter.AsyncPublicationDeliveryExporter;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.job.Job;
@@ -28,6 +27,7 @@ import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.repository.JobSpecification;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.mapper.NetexExportSummaryMapper;
+import org.rutebanken.tiamat.security.RolesChecker;
 import org.rutebanken.tiamat.service.stopplace.ExportFileSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,24 +60,19 @@ import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportRe
 @Path("/netex/" + ASYNC_EXPORT_JOB_PATH)
 public class AsyncExportResource {
 
-    private static final Logger logger = LoggerFactory.getLogger(AsyncExportResource.class);
-
     public static final String ASYNC_EXPORT_JOB_PATH = "export";
-
+    private static final Logger logger = LoggerFactory.getLogger(AsyncExportResource.class);
     private final AsyncPublicationDeliveryExporter asyncPublicationDeliveryExporter;
-
     private final JobRepository jobRepository;
-
     private final NetexExportSummaryMapper netexExportSummaryMapper;
-
-    private final RoleAssignmentExtractor roleAssignmentExtractor;
+    private final RolesChecker rolesChecker;
 
     @Autowired
-    public AsyncExportResource(AsyncPublicationDeliveryExporter asyncPublicationDeliveryExporter, JobRepository jobRepository, NetexExportSummaryMapper netexExportSummaryMapper, RoleAssignmentExtractor roleAssignmentExtractor) {
+    public AsyncExportResource(AsyncPublicationDeliveryExporter asyncPublicationDeliveryExporter, JobRepository jobRepository, NetexExportSummaryMapper netexExportSummaryMapper, RolesChecker rolesChecker) {
         this.asyncPublicationDeliveryExporter = asyncPublicationDeliveryExporter;
         this.jobRepository = jobRepository;
         this.netexExportSummaryMapper = netexExportSummaryMapper;
-        this.roleAssignmentExtractor = roleAssignmentExtractor;
+        this.rolesChecker = rolesChecker;
     }
 
     @GET
@@ -145,15 +140,10 @@ public class AsyncExportResource {
     @GET
     @Path("stop-place-file-list-by-provider-name/{providerName}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response asyncGetSopPlaceFileList(@PathParam(value = "providerName") String providerName, @HeaderParam("maxNbResults") Integer maxNbResults) {
-        List<String> stopPlaceFileList = asyncPublicationDeliveryExporter.getStopPlaceFileListByProviderName(providerName,maxNbResults);
+    public Response asyncGetSopPlaceFileList(@PathParam(value = "providerName") String providerName, @HeaderParam("maxNbResults") Integer maxNbResults) throws JsonProcessingException {
+        List<String> stopPlaceFileList = asyncPublicationDeliveryExporter.getStopPlaceFileListByProviderName(providerName, maxNbResults);
         ObjectMapper objectMapper = new ObjectMapper();
-        String jsonString="";
-        try {
-            jsonString = objectMapper.writeValueAsString(stopPlaceFileList);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
+        String jsonString = objectMapper.writeValueAsString(stopPlaceFileList);
         return Response.ok(jsonString).build();
     }
 
@@ -166,14 +156,12 @@ public class AsyncExportResource {
             Specification<Job> jobTypeFilter = jobTypeFilter(JobType.NETEX_STOP_PLACE_QUAY);
             Specification<Job> providerFilter = JobSpecification.providerFilter(providerName);
 
-            Specification<Job> combinedFilter = Specification.where(jobActionFilter)
-                    .and(jobTypeFilter)
-                    .and(providerFilter);
+            Specification<Job> combinedFilter = Specification.where(jobActionFilter).and(jobTypeFilter).and(providerFilter);
 
             Pageable pageable = PageRequest.of(0, maxNbResults, Sort.Direction.DESC, "started");
             Page<Job> foundJobs = jobRepository.findAll(combinedFilter, pageable);
             return Response.ok(netexExportSummaryMapper.mapJobToExportSummary(foundJobs.toList())).build();
-        } catch(Exception e) {
+        } catch (Exception e) {
             logger.error("Error getting netex stop exports for provider {}", providerName, e);
         }
 
@@ -184,7 +172,7 @@ public class AsyncExportResource {
     @Path("poi-file-list-by-provider-name/{providerName}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response asyncGetPOIFileList(@PathParam(value = "providerName") String providerName, @HeaderParam("maxNbResults") Integer maxNbResults) {
-        List<ExportFileSummary> pointsOfInterestFileList = asyncPublicationDeliveryExporter.getPointsOfInterestFileListByProviderName(providerName,maxNbResults);
+        List<ExportFileSummary> pointsOfInterestFileList = asyncPublicationDeliveryExporter.getPointsOfInterestFileListByProviderName(providerName, maxNbResults);
         return Response.ok(pointsOfInterestFileList).build();
     }
 
@@ -192,26 +180,23 @@ public class AsyncExportResource {
     @Path("parkings-file-list-by-provider-name/{providerName}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response asyncGetParkingsFileList(@PathParam(value = "providerName") String providerName, @HeaderParam("maxNbResults") Integer maxNbResults) {
-        List<ExportFileSummary> parkingsOfInterestFileList = asyncPublicationDeliveryExporter.getParkingsFileListByProviderName(providerName,maxNbResults);
+        List<ExportFileSummary> parkingsOfInterestFileList = asyncPublicationDeliveryExporter.getParkingsFileListByProviderName(providerName, maxNbResults);
         return Response.ok(parkingsOfInterestFileList).build();
     }
 
     @GET
-    @Path("stop-place-file-download/{providerName}/{fileName : .+}")
+    @Path("stop-place-file-download/{providerName}/{fileName:ARRET_.+\\.zip}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response asyncGetSopPlaceFileList(@PathParam("providerName") String providerName, @PathParam("fileName") String fileName) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        List<String> providerList = roleAssignmentExtractor.getClientList(auth);
-
-        if (providerList.contains(providerName) || roleAssignmentExtractor.isSuperAdmin(auth)) {
-            File file = asyncPublicationDeliveryExporter.getJobFileContent(providerName,fileName);
+        if (rolesChecker.hasRole("downloadNetexStopPlaceAdmin") || rolesChecker.isInClientGroup(auth, providerName)) {
+            File file = asyncPublicationDeliveryExporter.getJobFileContent(providerName, fileName);
             return Response.ok(file, MediaType.APPLICATION_OCTET_STREAM)
                     .header("filename", file.getName() )
                     .build();
-        }else{
+        } else {
             logger.error("Forbidden access. provider: {}, filename:{}, user:{} ", providerName, fileName, auth.getPrincipal());
-            return Response.status(Response.Status.FORBIDDEN)
-                    .build();
+            return Response.status(Response.Status.FORBIDDEN).build();
         }
     }
 }

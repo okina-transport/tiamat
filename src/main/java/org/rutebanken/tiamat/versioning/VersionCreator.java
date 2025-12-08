@@ -50,6 +50,8 @@ public class VersionCreator {
 
     private static final String MODIFICATION_ENUMERATION ="modificationEnumeration";
 
+    private static final String POLYGON_FIELD ="polygon";
+
     private final VersionIncrementor versionIncrementor;
 
     private final MapperFacade defaultMapperFacade;
@@ -91,6 +93,11 @@ public class VersionCreator {
                 .exclude(CHANGED_BY_FIELD)
                 .exclude(VALID_BETWEEN)
                 .exclude(MODIFICATION_ENUMERATION)
+                .byDefault()
+                .register();
+
+        mapperFactory.classMap(PointOfInterest.class, PointOfInterest.class)
+                .exclude(POLYGON_FIELD)
                 .byDefault()
                 .register();
 

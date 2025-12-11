@@ -1,6 +1,8 @@
 package org.rutebanken.tiamat.service.parking;
 
 import org.apache.commons.lang3.StringUtils;
+import org.rutebanken.tiamat.feign.mdm.OkinaIdentifier;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.ParkingRepository;
@@ -27,13 +29,18 @@ public class ParkingsImportedService {
     private final NetexIdMapper netexIdMapper;
     private final ParkingVersionedSaverService parkingVersionedSaverService;
     private final VersionCreator versionCreator;
+    private MdmService mdmService;
+
+    @org.springframework.beans.factory.annotation.Value("${netex.validPrefix:MOBIITI}")
+    String validNetexPrefix;
 
     @Autowired
-    ParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, VersionCreator versionCreator) {
+    ParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, VersionCreator versionCreator, MdmService mdmService) {
         this.parkingRepository = parkingRepository;
         this.netexIdMapper = netexIdMapper;
         this.parkingVersionedSaverService = parkingVersionedSaverService;
         this.versionCreator = versionCreator;
+        this.mdmService = mdmService;
     }
 
     public void createOrUpdateParkings(List<Parking> parkingsToSave) {
@@ -66,11 +73,12 @@ public class ParkingsImportedService {
     }
 
     private Parking retrieveParkingInBDD(Parking parking) {
-        String parkingNetexId = parkingRepository.findFirstByKeyValues(NetexIdMapper.ORIGINAL_ID_KEY,
-                Set.of(parking.getOriginalId()));
-        if (StringUtils.isNotBlank(parkingNetexId)) {
-            Parking foundParking = parkingRepository.findFirstByNetexIdOrderByVersionDesc(parkingNetexId);
-            if (areAtTheSamePlace(foundParking, parking)) {
+
+        String importedId = parking.getOriginalIds().size() > 0 ? parking.getOriginalIds().iterator().next() : parking.getOriginalId();
+        OkinaIdentifier existingMdmId = mdmService.getExistingParkingMdmIdsFromImportedId(importedId);
+        if (existingMdmId != null){
+            Parking foundParking = parkingRepository.findFirstByNetexIdOrderByVersionDesc(validNetexPrefix + ":Parking:" + existingMdmId.getSuperId());
+            if (foundParking != null && areAtTheSamePlace(foundParking, parking)){
                 return foundParking;
             }
         }

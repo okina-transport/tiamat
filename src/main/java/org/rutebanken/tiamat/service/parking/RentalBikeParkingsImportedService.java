@@ -1,7 +1,9 @@
 package org.rutebanken.tiamat.service.parking;
 
 import io.micrometer.core.instrument.util.StringUtils;
+import org.rutebanken.tiamat.feign.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.general.ParkingsCSVHelper;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.AccessibilityAssessment;
 import org.rutebanken.tiamat.model.AccessibilityLimitation;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
@@ -38,13 +40,18 @@ public class RentalBikeParkingsImportedService {
     private NetexIdMapper netexIdMapper;
     private ParkingVersionedSaverService parkingVersionedSaverService;
     private VersionCreator versionCreator;
+    private MdmService mdmService;
+
+    @org.springframework.beans.factory.annotation.Value("${netex.validPrefix:MOBIITI}")
+    String validNetexPrefix;
 
     @Autowired
-    RentalBikeParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, VersionCreator versionCreator){
+    RentalBikeParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, VersionCreator versionCreator, MdmService mdmService) {
         this.parkingRepository = parkingRepository;
         this.netexIdMapper = netexIdMapper;
         this.parkingVersionedSaverService = parkingVersionedSaverService;
         this.versionCreator = versionCreator;
+        this.mdmService = mdmService;
     }
 
     public void createOrUpdateParkings(List<Parking> parkingsToSave){
@@ -72,15 +79,23 @@ public class RentalBikeParkingsImportedService {
     private Optional<Parking> retrieveParkingInBDD(Parking parking) {
         List<String> idLocs = new ArrayList(parking.getKeyValues().get(ID_LOCAL).getItems());
 
+        OkinaIdentifier existingMdmId = mdmService.getExistingParkingMdmIdsFromImportedId(idLocs.get(0));
+        if (existingMdmId != null){
+            Parking existingParking = parkingRepository.findFirstByNetexIdOrderByVersionDesc(validNetexPrefix + ":Parking:" + existingMdmId.getSuperId());
+            if (existingParking != null){
+                return Optional.of(existingParking);
+            }
+        }
 
         Value osmKeyVals = parking.getKeyValues().get(ID_OSM);
         String idOsm = null;
         if (osmKeyVals != null){
             List<String> idOsms = new ArrayList(osmKeyVals.getItems());
             idOsm = idOsms.get(0);
+            return parkingRepository.findByOsm(idOsm);
         }
 
-        return parkingRepository.findByIdLocAndOsm(idLocs.get(0), idOsm);
+        return Optional.empty();
     }
 
 

@@ -22,6 +22,7 @@ import org.locationtech.jts.geom.Point;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.rutebanken.tiamat.importer.ImporterUtils;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.PointOfInterestClassificationRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestFacilitySetRepository;
@@ -76,6 +77,8 @@ class PointOfInterestUpdater implements DataFetcher {
 
     @Autowired
     private GroupOfEntitiesMapper groupOfEntitiesMapper;
+    @Autowired
+    private MdmService mdmService;
 
 
     @Override
@@ -116,6 +119,7 @@ class PointOfInterestUpdater implements DataFetcher {
             authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(existingVersion, updatedPointOfInterest));
 
             logger.info("Saving new version of point of interest {}", updatedPointOfInterest);
+            mdmService.updateImportedIds(updatedPointOfInterest);
             updatedPointOfInterest = pointOfInterestVersionedSaverService.saveNewVersion(updatedPointOfInterest);
 
             return updatedPointOfInterest;

@@ -18,6 +18,9 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.checkerframework.checker.units.qual.A;
+
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.lock.MutateLock;
@@ -33,8 +36,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.*;
 
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CHILDREN;
@@ -72,6 +78,12 @@ class StopPlaceUpdater implements DataFetcher {
     @Autowired
     private Renamer renamer;
 
+    @Autowired
+    private MdmService mdmService;
+
+
+
+
     @Override
     public Object get(DataFetchingEnvironment environment) {
         List<Field> fields = environment.getFields();
@@ -84,7 +96,10 @@ class StopPlaceUpdater implements DataFetcher {
                 stopPlace = createOrUpdateStopPlaceInLock(environment, true);
             }
         }
-        return Arrays.asList(stopPlace);
+        StopPlace copy = versionCreator.createCopy(stopPlace, StopPlace.class);
+        List<StopPlace> results = Arrays.asList(copy);
+        mdmService.fillImportedIds(results);
+        return results;
     }
 
 
@@ -182,7 +197,8 @@ class StopPlaceUpdater implements DataFetcher {
                             }
                         }
                     }
-
+                    mdmService.updateImportedIds(updatedStopPlace);
+                    mdmService.removeImportedIds(updatedStopPlace);
                     updatedStopPlace = stopPlaceVersionedSaverService.saveNewVersion(existingVersion, updatedStopPlace, childStopsUpdated);
 
                     return updatedStopPlace;

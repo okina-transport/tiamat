@@ -20,6 +20,7 @@ import org.locationtech.jts.geom.Point;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
@@ -68,6 +69,8 @@ class ParkingUpdater implements DataFetcher {
 
     @Autowired
     private GroupOfEntitiesMapper groupOfEntitiesMapper;
+    @Autowired
+    private MdmService mdmService;
 
 
     @Override
@@ -103,6 +106,7 @@ class ParkingUpdater implements DataFetcher {
             authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(existingVersion, updatedParking));
 
             logger.info("Saving new version of parking {}", updatedParking);
+            mdmService.updateImportedIds(updatedParking);
             updatedParking = parkingVersionedSaverService.saveNewVersion(updatedParking);
 
             return updatedParking;

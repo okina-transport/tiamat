@@ -52,4 +52,6 @@ public interface PointOfInterestRepositoryCustom extends DataManagedObjectStruct
 
     List<DTOClusterMarker> findClusterMarkers(Map<String, Object> variables);
 
+    List<PointOfInterest> createCopyAndFillImportedIdsFromMDM(List<PointOfInterest> pointsOfInterest);
+
 }

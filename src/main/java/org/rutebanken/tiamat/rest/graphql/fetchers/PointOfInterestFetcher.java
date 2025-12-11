@@ -92,7 +92,8 @@ class PointOfInterestFetcher implements DataFetcher {
                 if (poi.isPresent()) {
                     pointOfInterestList.add(poi.get());
                 }
-                pointOfInterestPage = new PageImpl<>(pointOfInterestList, pageable, 1L);
+                List<PointOfInterest> copiedItems = pointOfInterestRepository.createCopyAndFillImportedIdsFromMDM(pointOfInterestList);
+                pointOfInterestPage = new PageImpl<>(copiedItems, pageable, 1L);
             }
         } else if (environment.getArgument(LONGITUDE_MIN) != null) {
             BoundingBoxDto boundingBox = new BoundingBoxDto();

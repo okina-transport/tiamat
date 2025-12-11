@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.importer.merging;
 
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,13 +39,17 @@ public class TransactionalMergingPointOfInterestssImporter {
 
     private final MergingPointOfInterestImporter mergingPointOfInterestImporter;
 
+    private MdmService mdmService;
+
     @Autowired
-    public TransactionalMergingPointOfInterestssImporter(MergingPointOfInterestImporter mergingPointOfInterestImporter) {
+    public TransactionalMergingPointOfInterestssImporter(MergingPointOfInterestImporter mergingPointOfInterestImporter, MdmService mdmService) {
         this.mergingPointOfInterestImporter = mergingPointOfInterestImporter;
+        this.mdmService = mdmService;
     }
 
 
     public Collection<org.rutebanken.netex.model.PointOfInterest> importPointOfInterests(List<PointOfInterest> pointOfInterests, AtomicInteger created) {
+        mdmService.createOrUpdateExistingIdentifiers(pointOfInterests);
         List<org.rutebanken.netex.model.PointOfInterest> createdPointOfInterests = pointOfInterests
                 .stream()
                 .filter(Objects::nonNull)

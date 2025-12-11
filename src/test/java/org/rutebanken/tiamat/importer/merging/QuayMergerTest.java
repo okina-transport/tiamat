@@ -17,19 +17,19 @@ package org.rutebanken.tiamat.importer.merging;
 
 import com.google.common.collect.Sets;
 import org.geotools.referencing.GeodeticCalculator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -47,15 +47,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class QuayMergerTest {
 
-    private final GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
+    private GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
     private final AlternativeNameMerger alternativeNameMerger = new AlternativeNameMerger();
 
-    @InjectMocks
-    private QuayMerger quayMerger = new QuayMerger(alternativeNameMerger);
-
     @Mock
     private KeyValueListAppender keyValueListAppender;
+
+    @Mock
+    private MdmService mdmService;
+
+    private QuayMerger quayMerger;
+
+    @BeforeEach
+    public void setUp() {
+        quayMerger = new QuayMerger(alternativeNameMerger, keyValueListAppender, mdmService);
+    }
 
     @Test
     public void disableMatchingQuaysWithinLowDistanceBeforeIdMatch() {

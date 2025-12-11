@@ -76,6 +76,7 @@
         <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
         <plexus.compiler.javac.version>2.8.5</plexus.compiler.javac.version>
         <docker.maven.plugin.version>0.21.0</docker.maven.plugin.version>
+        <spring-cloud.version>2021.0.9</spring-cloud.version>
 
 
         <keycloak.version>25.0.3</keycloak.version>
@@ -132,7 +133,7 @@
         <!--TODO temporary manual upgrade of Logback-->
 
         <log4j2.version>2.17.1</log4j2.version>
-
+        <feign-okhttp.version>13.5</feign-okhttp.version>
         <sonar.projectKey>mobi-iti:tiamat</sonar.projectKey>
         <maven.compiler.args>--add-opens java.base/java.lang=ALL-UNNAMED</maven.compiler.args>
         <gbfs-mapper-java.version>2.0.29</gbfs-mapper-java.version>
@@ -227,6 +228,13 @@
                 <scope>import</scope>
             </dependency>
 
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
             <dependency>
                 <groupId>com.okina.helpers</groupId>
@@ -548,6 +556,22 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-okhttp</artifactId>
+            <version>${feign-okhttp.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-httpclient</artifactId>
+            <version>${feign-okhttp.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>com.sun.xml.bind</groupId>

@@ -56,8 +56,6 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
 
     List<Parking> getParkingsInitializedForExport(Set<Long> parkingIds) ;
 
-    Optional<Parking> findByIdLocAndOsm(String idLoc, String idOsm);
-
     List<Parking> findAllParkingsLastVersionAndValid();
 
     List<DTOClusterMarker> findClusterMarkers();
@@ -67,5 +65,9 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
     List<Parking> getAllParkingsWithoutInsee();
 
     Set<String> findNetexIdsByPlaceEquipmentId(String placeEquipmentNetexId);
+
+    Optional<Parking> findByOsm(String idLoc);
+
+    List<Parking> createCopyAndFillImportedIdsFromMDM(List<Parking> parkings);
 }
 

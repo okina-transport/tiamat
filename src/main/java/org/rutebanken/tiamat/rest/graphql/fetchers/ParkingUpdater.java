@@ -20,8 +20,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
-import org.rutebanken.tiamat.auth.UsernameFetcher;
-import org.rutebanken.tiamat.changelog.LoggingService;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.rest.graphql.mappers.GeometryMapper;
@@ -68,12 +67,9 @@ class ParkingUpdater implements DataFetcher {
 
     @Autowired
     private GroupOfEntitiesMapper groupOfEntitiesMapper;
-
     @Autowired
-    private UsernameFetcher usernameFetcher;
+    private MdmService mdmService;
 
-    @Autowired
-    private LoggingService loggingService;
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
@@ -82,13 +78,13 @@ class ParkingUpdater implements DataFetcher {
         List<Parking> parkings = null;
         if (input != null) {
             parkings = input.stream()
-                    .map(m -> createOrUpdateParking(m))
-                    .collect(Collectors.toList());
+             .map(m -> createOrUpdateParking(m))
+            .collect(Collectors.toList());
         }
         return parkings;
     }
 
-    private Parking createOrUpdateParking(Map input) {
+    private Parking createOrUpdateParking(Map input){
         Parking updatedParking;
         Parking existingVersion = null;
         String netexId = (String) input.get(ID);
@@ -104,33 +100,18 @@ class ParkingUpdater implements DataFetcher {
         }
 
         boolean isUpdated = populateParking(input, updatedParking);
-
-        String user = usernameFetcher.getUserNameForAuthenticatedUser();
-
         if (isUpdated) {
             authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(existingVersion, updatedParking));
 
             logger.info("Saving new version of parking {}", updatedParking);
+            mdmService.updateImportedIds(updatedParking);
             updatedParking = parkingVersionedSaverService.saveNewVersion(updatedParking);
-
-            logParking(existingVersion, user, updatedParking);
 
             return updatedParking;
         } else {
             logger.info("No changes - Parking {} NOT updated", netexId);
         }
-
-        logParking(existingVersion, user, updatedParking);
-
         return existingVersion;
-    }
-
-    private void logParking(Parking existingVersion, String user, Parking updatedParking) {
-        if (existingVersion != null) {
-            loggingService.logParkingUpdate(user, existingVersion, updatedParking);
-        } else {
-            loggingService.logParkingCreation(user, updatedParking);
-        }
     }
 
     private boolean populateParking(Map input, Parking updatedParking) {
@@ -518,7 +499,7 @@ class ParkingUpdater implements DataFetcher {
 
     private ParkingArea createParkingAreaFromInputParameters(Map inputParams) {
         ParkingArea newParkingArea = new ParkingArea();
-        if (inputParams.get("specificParkingAreaUsage") != null) {
+        if (inputParams.get("specificParkingAreaUsage") != null){
             newParkingArea.setSpecificParkingAreaUsage((SpecificParkingAreaUsageEnumeration) inputParams.get("specificParkingAreaUsage"));
         }
         newParkingArea.setTotalCapacity((BigInteger) inputParams.get(TOTAL_CAPACITY));

@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.versioning.save;
 
 import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
@@ -46,6 +47,9 @@ public class PointOfInterestVersionedSaverService {
     @Autowired
     private MetricsService metricsService;
 
+    @Autowired
+    private MdmService mdmService;
+
     public PointOfInterest saveNewVersion(PointOfInterest newVersion) {
 
         PointOfInterest existing = poiRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
@@ -64,6 +68,7 @@ public class PointOfInterestVersionedSaverService {
             }
         } else {
             newVersion.setCreated(Instant.now());
+            mdmService.generateIdentifier(newVersion);
         }
 
         newVersion.setValidBetween(null);

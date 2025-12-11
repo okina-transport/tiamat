@@ -18,14 +18,12 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.checkerframework.checker.units.qual.A;
+
+import org.rutebanken.tiamat.importer.mdm.MdmService;
+import org.rutebanken.tiamat.model.*;
 import org.apache.commons.lang3.StringUtils;
-import org.rutebanken.tiamat.auth.UsernameFetcher;
-import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.lock.MutateLock;
-import org.rutebanken.tiamat.model.ModificationEnumeration;
-import org.rutebanken.tiamat.model.Quay;
-import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.rest.graphql.helpers.CleanupHelper;
@@ -38,11 +36,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.*;
 
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CHILDREN;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CREATE_MULTI_MODAL_STOPPLACE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.ID;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.MUTATE_PARENT_STOPPLACE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.MUTATE_STOPPLACE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.OUTPUT_TYPE_PARENT_STOPPLACE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.OUTPUT_TYPE_STOPPLACE;
 
 @Service("stopPlaceUpdater")
 @Transactional
@@ -72,10 +79,10 @@ class StopPlaceUpdater implements DataFetcher {
     private Renamer renamer;
 
     @Autowired
-    private LoggingService loggingService;
+    private MdmService mdmService;
 
-    @Autowired
-    private UsernameFetcher usernameFetcher;
+
+
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
@@ -89,7 +96,10 @@ class StopPlaceUpdater implements DataFetcher {
                 stopPlace = createOrUpdateStopPlaceInLock(environment, true);
             }
         }
-        return Arrays.asList(stopPlace);
+        StopPlace copy = versionCreator.createCopy(stopPlace, StopPlace.class);
+        List<StopPlace> results = Arrays.asList(copy);
+        mdmService.fillImportedIds(results);
+        return results;
     }
 
 
@@ -105,8 +115,6 @@ class StopPlaceUpdater implements DataFetcher {
         if (input == null) {
             input = environment.getArgument(OUTPUT_TYPE_PARENT_STOPPLACE);
         }
-
-        String user = usernameFetcher.getUserNameForAuthenticatedUser();
 
         if (input != null) {
 
@@ -189,14 +197,10 @@ class StopPlaceUpdater implements DataFetcher {
                             }
                         }
                     }
-
+                    mdmService.updateImportedIds(updatedStopPlace);
+                    mdmService.removeImportedIds(updatedStopPlace);
                     updatedStopPlace = stopPlaceVersionedSaverService.saveNewVersion(existingVersion, updatedStopPlace, childStopsUpdated);
 
-                    if (existingVersion != null) {
-                        loggingService.logStopPlaceUpdate(user, existingVersion, updatedStopPlace);
-                    } else {
-                        loggingService.logStopPlaceCreation(user, updatedStopPlace);
-                    }
                     return updatedStopPlace;
                 }
             }
@@ -237,7 +241,7 @@ class StopPlaceUpdater implements DataFetcher {
                 verifyCorrectParentSet(existingChildStopPlace, updatedParentStopPlace);
 
                 logger.info("Populating changes for child stop {} (parent: {})", childNetexId, updatedParentStopPlace.getNetexId());
-                boolean wasUpdated = stopPlaceMapper.populateStopPlaceFromInput((Map) childStopMap, existingChildStopPlace);
+                boolean wasUpdated = stopPlaceMapper.populateStopPlaceFromInput((Map) childStopMap, existingChildStopPlace);;
 
                 if (wasUpdated) {
                     childStopsUpdated.add(existingChildStopPlace.getNetexId());
@@ -275,7 +279,7 @@ class StopPlaceUpdater implements DataFetcher {
     }
 
     private void verifyCorrectStopPlaceName(String updatedStopPlaceName, String correctName) {
-        if (updatedStopPlaceName.equals(correctName)) {
+        if(updatedStopPlaceName.equals(correctName)){
             throw new IllegalArgumentException("For respect the Modalis recommendations, the correct stop place name is : " + correctName);
         }
     }

@@ -19,6 +19,7 @@ package org.rutebanken.tiamat.versioning.save;
 import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
@@ -60,6 +61,9 @@ public class ParkingVersionedSaverService {
     private MetricsService metricsService;
 
     @Autowired
+    private MdmService mdmService;
+
+    @Autowired
     private ReflectionAuthorizationService reflectionAuthorizationService;
 
     public Parking saveNewVersion(Parking newVersion) {
@@ -86,6 +90,7 @@ public class ParkingVersionedSaverService {
 
             parkingRepository.delete(existing);
         } else {
+            mdmService.generateIdentifier(newVersion);
             newVersion.setCreated(Instant.now());
         }
 

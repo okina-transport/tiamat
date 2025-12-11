@@ -221,12 +221,16 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
                 boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS, importParams);
                 boolean centroidChanged = false;
+
                 if (!importParams.keepStopGeolocalisation) {
-                    if (incomingStopPlace.getCentroid() != null && !incomingStopPlace.getCentroid().equalsExact(copy.getCentroid(), 0.0001)) {
-                        copy.setCentroid(incomingStopPlace.getCentroid());
-                        centroidChanged = true;
-                    } else if (importParams.recomputeStopPlacesLocation) {
+                    if (importParams.recomputeStopPlacesLocation) {
                         centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
+                    }
+                    else {
+                        if (incomingStopPlace.getCentroid() != null && !incomingStopPlace.getCentroid().equalsExact(copy.getCentroid(), 0.0001)) {
+                            copy.setCentroid(incomingStopPlace.getCentroid());
+                            centroidChanged = true;
+                        }
                     }
                 }
 

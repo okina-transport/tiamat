@@ -74,7 +74,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
-        ImportParams params = buildImportParams(false, false, false);
+        ImportParams params = buildImportParams(false, false, false, false);
         importer.findAppendAndAdd(stopPlace, matchedStopPlaces, counter, params);
 
 
@@ -117,7 +117,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
         TariffZoneRef tariffZoneRef = setupTariffZone("TEST");
 
         StopPlace stopPlace = createStopPlaceWithQuay(name, longitude, latitude, importedId, quayImportedId, provider, assessment, tariffZoneRef, privateCodeStructure);
-        ImportParams params = buildImportParams(false, false, false);
+        ImportParams params = buildImportParams(false, false, false, false);
         importer.findAppendAndAdd(stopPlace, matchedStopPlaces, counter, params);
 
         assertEquals(1, matchedStopPlaces.size());
@@ -163,7 +163,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         StopPlace stopPlace = createStopPlaceWithQuay(name, longitude, latitude, importedId, quayImportedId, provider, assessment, tariffZoneRef, privateCodeStructure);
 
-        ImportParams params = buildImportParams(false, false, false);
+        ImportParams params = buildImportParams(false, false, false, false);
         importer.findAppendAndAdd(stopPlace, matchedStopPlaces, counter, params);
 
         assertEquals(1, matchedStopPlaces.size());
@@ -207,7 +207,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
-        ImportParams params = buildImportParams(false, false, false);
+        ImportParams params = buildImportParams(false, false, false, false);
 
         StopPlace stopPlaceIncoming = createStopPlaceWithQuay(name, longitude, latitude, importedId, quayImportedId, provider, assessment, tariffZoneRef, privateCodeStructure);
         importer.findAppendAndAdd(stopPlaceIncoming, matchedStopPlaces, counter, params);
@@ -234,7 +234,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
-        ImportParams params = buildImportParams(false, false, false);
+        ImportParams params = buildImportParams(false, false, false, false);
 
         String name2 = "stop2";
         StopPlace stopPlaceIncoming = createStopPlaceWithQuay(name2, longitude, latitude, importedId, quayImportedId, provider, assessment, tariffZoneRef, privateCodeStructure);
@@ -262,7 +262,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
-        ImportParams params = buildImportParams(false, false, true);
+        ImportParams params = buildImportParams(false, false, true, false);
 
         String name2 = "stop2";
         StopPlace stopPlaceIncoming = createStopPlaceWithQuay(name2, longitude, latitude, importedId, quayImportedId, provider, assessment, tariffZoneRef, privateCodeStructure);
@@ -291,7 +291,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
-        ImportParams params = buildImportParams(false, false, false);
+        ImportParams params = buildImportParams(false, false, false, false);
 
         double longitude2 = 1.885889;
         double latitude2 = 48.795513;
@@ -320,7 +320,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
-        ImportParams params = buildImportParams(true, false, false);
+        ImportParams params = buildImportParams(true, false, false, false);
 
         double longitude2 = 1.885889;
         double latitude2 = 48.795513;
@@ -349,7 +349,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
-        ImportParams params = buildImportParams(false, false, false);
+        ImportParams params = buildImportParams(false, false, false, false);
 
         AccessibilityAssessment assessment1 = setupAccessibility(LimitationStatusEnumeration.FALSE);
         StopPlace stopPlaceIncoming = createStopPlaceWithQuay(name, longitude, latitude, importedId, quayImportedId, provider, assessment1, tariffZoneRef, privateCodeStructure);
@@ -377,7 +377,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
-        ImportParams params = buildImportParams(false, true, false);
+        ImportParams params = buildImportParams(false, true, false, false);
 
         AccessibilityAssessment assessment1 = setupAccessibility(LimitationStatusEnumeration.TRUE);
         StopPlace stopPlaceIncoming = createStopPlaceWithQuay(name, longitude, latitude, importedId, quayImportedId, provider, assessment1, tariffZoneRef, privateCodeStructure);
@@ -406,7 +406,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
-        ImportParams params = buildImportParams(false, false, false);
+        ImportParams params = buildImportParams(false, false, false, false);
 
         TariffZoneRef tariffZoneRef1 = setupTariffZone("TEST1");
         StopPlace stopPlaceIncoming = createStopPlaceWithQuay(name, longitude, latitude, importedId, quayImportedId, provider, assessment, tariffZoneRef1, privateCodeStructure);
@@ -434,7 +434,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
-        ImportParams params = buildImportParams(false, false, false);
+        ImportParams params = buildImportParams(false, false, false, false);
 
         PrivateCodeStructure privateCodeStructure1 = setupPrivateCode("TEST_VALUE_PRIVATE_CODE_1", "TEST_TYPE_PRIVATE_CODE_1");
         StopPlace stopPlaceIncoming = createStopPlaceWithQuay(name, longitude, latitude, importedId, quayImportedId, provider, assessment, tariffZoneRef, privateCodeStructure1);
@@ -462,7 +462,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
-        ImportParams params = buildImportParams(false, false, false);
+        ImportParams params = buildImportParams(false, false, false, false);
 
         StopPlace stopPlaceIncoming = createStopPlaceWithQuay(name, longitude, latitude, importedId, quayImportedId, provider, assessment, tariffZoneRef, privateCodeStructure);
         stopPlaceIncoming.setStopPlaceType(StopTypeEnumeration.TRAM_STATION);
@@ -478,6 +478,143 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
         assertEquals(2, stopPlaceSaved.getVersion());
         assertEquals(1, stopPlaceSaved.getQuays().size());
         assertEquals(2, stopPlaceSaved.getQuays().stream().findFirst().get().getVersion());
+    }
+
+    @Test
+    public void testCentroidRecomputeFromQuays_ShouldPrioritizeChildrenLocation() throws TiamatBusinessException {
+        double originalLat = 0.0;
+        double originalLon = 0.0;
+
+        AccessibilityAssessment assessment = setupAccessibility(LimitationStatusEnumeration.FALSE);
+        PrivateCodeStructure privateCodeStructure = setupPrivateCode("CODE", "TYPE");
+        TariffZoneRef tariffZoneRef = setupTariffZone("TEST");
+
+        StopPlace stopPlace = createStopPlaceWithQuay(name, originalLon, originalLat, importedId, quayImportedId, provider, assessment, tariffZoneRef, privateCodeStructure);
+
+        Quay existingQuay = stopPlace.getQuays().iterator().next();
+        double childLat = 10.0;
+        double childLon = 10.0;
+        existingQuay.setCentroid(createPoint(childLon, childLat));
+
+        saveStopPlace(stopPlace);
+
+        List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
+        AtomicInteger counter = new AtomicInteger();
+
+        double incomingLat = 20.0;
+        double incomingLon = 20.0;
+        StopPlace stopPlaceIncoming = createStopPlaceWithQuay(name, incomingLon, incomingLat, importedId, quayImportedId, provider, assessment, tariffZoneRef, privateCodeStructure);
+
+        ImportParams params = buildImportParams(false, false, false, true);
+
+        importer.findAppendAndAdd(stopPlaceIncoming, matchedStopPlaces, counter, params);
+
+        List<StopPlace> stopPlaces = stopPlaceRepository.findAll();
+        assertEquals(2, stopPlaces.size());
+
+        StopPlace stopPlaceSaved = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(stopPlaces.get(0).getNetexId());
+        assertEquals(2, stopPlaceSaved.getVersion());
+
+        assertEquals(incomingLat, stopPlaceSaved.getCentroid().getCoordinate().y, 0.0001);
+        assertEquals(incomingLon, stopPlaceSaved.getCentroid().getCoordinate().x, 0.0001);
+    }
+
+    @Test
+    public void testCentroidKeepGeolocTrue_ShouldDoNothingEvenWithMultipleQuays() throws TiamatBusinessException {
+        double originalLon = 0.0;
+        double originalLat = 0.0;
+
+        AccessibilityAssessment assessment = setupAccessibility(LimitationStatusEnumeration.FALSE);
+        PrivateCodeStructure privateCodeStructure = setupPrivateCode("CODE", "TYPE");
+        TariffZoneRef tariffZoneRef = setupTariffZone("TEST");
+
+
+        StopPlace stopPlace = createStopPlaceWithTwoQuays(importedId, originalLon, originalLat, quayImportedId, 10.0, 10.0, quayImportedId + "2", 20.0, 20.0, assessment, tariffZoneRef, privateCodeStructure);
+        saveStopPlace(stopPlace);
+
+        StopPlace stopPlaceIncoming = createStopPlaceWithTwoQuays(importedId, 30.0, 30.0, quayImportedId, 40.0, 40.0, quayImportedId + "2", 50.0, 50.0, assessment, tariffZoneRef, privateCodeStructure);
+
+        ImportParams paramsA = buildImportParams(true, false, false, false);
+        importer.findAppendAndAdd(stopPlaceIncoming, new ArrayList<>(), new AtomicInteger(), paramsA);
+
+        ImportParams paramsB = buildImportParams(true, false, false, true);
+        importer.findAppendAndAdd(stopPlaceIncoming, new ArrayList<>(), new AtomicInteger(), paramsB);
+
+        List<StopPlace> stopPlaces = stopPlaceRepository.findAll();
+        assertEquals(1, stopPlaces.size());
+
+        StopPlace stopPlaceSaved = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(stopPlaces.get(0).getNetexId());
+        assertEquals(1, stopPlaceSaved.getVersion());
+
+        assertEquals(originalLat, stopPlaceSaved.getCentroid().getCoordinate().y, 0.0001);
+        assertEquals(originalLon, stopPlaceSaved.getCentroid().getCoordinate().x, 0.0001);
+    }
+
+    @Test
+    public void testCentroidNoRecompute_ShouldUseIncomingParentCentroid() throws TiamatBusinessException {
+        AccessibilityAssessment assessment = setupAccessibility(LimitationStatusEnumeration.FALSE);
+        PrivateCodeStructure privateCodeStructure = setupPrivateCode("CODE", "TYPE");
+        TariffZoneRef tariffZoneRef = setupTariffZone("TEST");
+
+        StopPlace stopPlace = createStopPlaceWithTwoQuays(importedId, 0.0, 0.0, quayImportedId, 10.0, 10.0, quayImportedId + "2", 20.0, 20.0, assessment, tariffZoneRef, privateCodeStructure);
+        saveStopPlace(stopPlace);
+
+        double incomingLon = 30.0;
+        double incomingLat = 30.0;
+        StopPlace stopPlaceIncoming = createStopPlaceWithTwoQuays(importedId, incomingLon, incomingLat, quayImportedId, 40.0, 40.0, quayImportedId + "2", 50.0, 50.0, assessment, tariffZoneRef, privateCodeStructure);
+
+        ImportParams params = buildImportParams(false, false, false, false);
+        importer.findAppendAndAdd(stopPlaceIncoming, new ArrayList<>(), new AtomicInteger(), params);
+
+        List<StopPlace> stopPlaces = stopPlaceRepository.findAll();
+        assertEquals(2, stopPlaces.size());
+
+        StopPlace stopPlaceSaved = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(stopPlaces.get(0).getNetexId());
+        assertEquals(2, stopPlaceSaved.getVersion());
+
+        assertEquals(incomingLat, stopPlaceSaved.getCentroid().getCoordinate().y, 0.0001);
+        assertEquals(incomingLon, stopPlaceSaved.getCentroid().getCoordinate().x, 0.0001);
+    }
+
+    @Test
+    public void testCentroidRecomputeTrue_ShouldRecalculateBarycenterFromUpdatedQuays() throws TiamatBusinessException {
+        AccessibilityAssessment assessment = setupAccessibility(LimitationStatusEnumeration.FALSE);
+        PrivateCodeStructure privateCodeStructure = setupPrivateCode("CODE", "TYPE");
+        TariffZoneRef tariffZoneRef = setupTariffZone("TEST");
+
+        StopPlace stopPlace = createStopPlaceWithTwoQuays(importedId, 0.0, 0.0, quayImportedId, 10.0, 10.0, quayImportedId + "2", 20.0, 20.0, assessment, tariffZoneRef, privateCodeStructure);
+        saveStopPlace(stopPlace);
+
+        double q1IncomingLon = 40.0;
+        double q2IncomingLon = 50.0;
+        double expectedLon = (q1IncomingLon + q2IncomingLon) / 2.0;
+        double expectedLat = expectedLon;
+
+        StopPlace stopPlaceIncoming = createStopPlaceWithTwoQuays(importedId, 30.0, 30.0, quayImportedId, q1IncomingLon, expectedLat, quayImportedId + "2", q2IncomingLon, expectedLat, assessment, tariffZoneRef, privateCodeStructure);
+
+        ImportParams params = buildImportParams(false, false, false, true);
+        importer.findAppendAndAdd(stopPlaceIncoming, new ArrayList<>(), new AtomicInteger(), params);
+
+        List<StopPlace> stopPlaces = stopPlaceRepository.findAll();
+        assertEquals(2, stopPlaces.size());
+
+        StopPlace stopPlaceSaved = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(stopPlaces.get(0).getNetexId());
+        assertEquals(2, stopPlaceSaved.getVersion());
+
+        assertEquals(expectedLat, stopPlaceSaved.getCentroid().getCoordinate().y, 0.0001);
+        assertEquals(expectedLon, stopPlaceSaved.getCentroid().getCoordinate().x, 0.0001);
+    }
+
+    private StopPlace createStopPlaceWithTwoQuays(String spId, double spLon, double spLat, String q1Id, double q1Lon, double q1Lat, String q2Id, double q2Lon, double q2Lat, AccessibilityAssessment assessment, TariffZoneRef tariffZoneRef, PrivateCodeStructure privateCodeStructure) {
+        StopPlace stopPlace = createStopPlaceWithQuay(name, spLon, spLat, spId, q1Id, provider, assessment, tariffZoneRef, privateCodeStructure);
+
+        Quay existingQuay1 = stopPlace.getQuays().iterator().next();
+        existingQuay1.setCentroid(createPoint(q1Lon, q1Lat));
+
+        Quay quay2 = createQuay(name + " Quay 2", q2Lon, q2Lat, q2Id);
+        stopPlace.getQuays().add(quay2);
+
+        return stopPlace;
     }
 
     private void saveStopPlace(StopPlace stopPlace) {
@@ -553,11 +690,15 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
     }
 
     @NotNull
-    private ImportParams buildImportParams(boolean keepStopGeolocalisation, boolean updateAccessibility, boolean keepNames) {
+    private ImportParams buildImportParams(boolean keepStopGeolocalisation,
+                                           boolean updateAccessibility,
+                                           boolean keepNames,
+                                           boolean recomputeStopPlacesLocation) {
         ImportParams params = new ImportParams();
         params.keepStopGeolocalisation = keepStopGeolocalisation;
         params.updateStopAccessibility = updateAccessibility;
         params.keepStopNames = keepNames;
+        params.recomputeStopPlacesLocation = recomputeStopPlacesLocation;
         return params;
     }
 }

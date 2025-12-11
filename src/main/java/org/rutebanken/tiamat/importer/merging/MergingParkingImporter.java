@@ -17,13 +17,13 @@ package org.rutebanken.tiamat.importer.merging;
 
 import org.rutebanken.tiamat.importer.finder.NearbyParkingFinder;
 import org.rutebanken.tiamat.importer.finder.ParkingFromOriginalIdFinder;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
-import org.rutebanken.tiamat.repository.AccessibilityAssessmentRepository;
-import org.rutebanken.tiamat.repository.ParkingRepository;
+import org.rutebanken.tiamat.repository.*;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
-import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.*;
+import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,10 +32,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Component
 @Qualifier("mergingParkingImporter")
@@ -72,6 +69,8 @@ public class MergingParkingImporter {
 
     private final ParkingRepository parkingRepository;
 
+    private final MdmService mdmService;
+
     @Autowired
     public MergingParkingImporter(ParkingFromOriginalIdFinder parkingFromOriginalIdFinder,
                                   NearbyParkingFinder nearbyParkingFinder,
@@ -79,12 +78,14 @@ public class MergingParkingImporter {
                                   NetexMapper netexMapper,
                                   ParkingVersionedSaverService parkingVersionedSaverService,
                                   ParkingPropertiesVersionedSaverService parkingPropertiesVersionedSaverService,
-                                  AccessibilityVersionedSaverService accessibilityVersionedSaverService,
                                   ParkingAreasVersionedSaverService parkingAreasVersionedSaverService,
                                   ParkingPlaceEquipmentsVersionedSaverService parkingPlaceEquipmentsVersionedSaverService,
                                   ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService, ParkingEntranceVersionedSaverService parkingEntranceVersionedSaverService,
                                   VersionCreator versionCreator,
-                                  MergingUtils mergingUtils, AccessibilityAssessmentRepository accessibilityAssessmentRepository, ParkingBaysVersionedSaverService parkingBaysVersionedSaverService, ParkingRepository parkingRepository) {
+                                  MergingUtils mergingUtils,
+                                  ParkingBaysVersionedSaverService parkingBaysVersionedSaverService,
+                                  ParkingRepository parkingRepository,
+                                  MdmService mdmService) {
         this.parkingFromOriginalIdFinder = parkingFromOriginalIdFinder;
         this.nearbyParkingFinder = nearbyParkingFinder;
         this.referenceResolver = referenceResolver;
@@ -99,6 +100,7 @@ public class MergingParkingImporter {
         this.mergingUtils = mergingUtils;
         this.parkingBaysVersionedSaverService = parkingBaysVersionedSaverService;
         this.parkingRepository = parkingRepository;
+        this.mdmService = mdmService;
     }
 
     /**
@@ -118,8 +120,10 @@ public class MergingParkingImporter {
             throw new RuntimeException("Transaction with required "
                     + "TransactionSynchronizationManager.isActualTransactionActive(): " + TransactionSynchronizationManager.isActualTransactionActive());
         }
-
-        return netexMapper.mapToNetexModel(importParkingWithoutNetexMapping(parking));
+        Parking importedParking = importParkingWithoutNetexMapping(parking);
+        Parking copiedParking = versionCreator.createCopy(importedParking, Parking.class);
+        mdmService.fillOriginalId(copiedParking);
+        return netexMapper.mapToNetexModel(copiedParking);
     }
 
     public Parking importParkingWithoutNetexMapping(Parking newParking) {

@@ -32,7 +32,9 @@ import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.geo.GeometryTransformer;
+import org.rutebanken.tiamat.feign.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -78,6 +80,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
     @Value("${cluster.marker.maximum.distance:20000}")
     protected long maximumDistance;
+
+    @Autowired
+    private MdmService mdmService;
 
     /**
      * Part of SQL that checks that either the stop place named as *s* or the parent named *p* is valid at the point in time.
@@ -145,6 +150,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
     @Value("${stopPlace.sharing.policy}")
     protected StopPlaceSharingPolicy sharingPolicy;
+
+    @Value("${netex.validPrefix:MOBIITI}")
+    String validNetexPrefix;
 
     /**
      * Find nearby stop places that are valid 'now', specifying a bounding box.
@@ -1214,15 +1222,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         // this will get entry with higher version when there is multiple entries with same netex_id
         String sql = """
             SELECT
-                DISTINCT ON (sp.netex_id) vi.items as original_id, sp.netex_id, sp.name_value
+                DISTINCT ON (sp.netex_id)  sp.netex_id, sp.name_value
             FROM
-               stop_place sp
-            INNER JOIN
-                stop_place_key_values spkv ON sp.id = spkv.stop_place_id
-            INNER JOIN
-                value_items vi ON vi.value_id = spkv.key_values_id
-            WHERE 
-                spkv.key_values_key = 'imported-id'
+               stop_place sp      
             ORDER BY 
                 sp.netex_id, sp.version DESC;
             """;
@@ -1233,9 +1235,37 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         List<Object[]> result = nativeQuery.getResultList();
 
         List<JbvCodeMappingDto> mappingResult = new ArrayList<>();
+        Map<Long, String> netexIdAndName = new HashMap<>();
+
+
         for (Object[] row : result) {
-            mappingResult.add(new JbvCodeMappingDto(row[0].toString(), null, row[1].toString(), row[2].toString()));
+            netexIdAndName.put(Long.valueOf(row[0].toString().split(":")[2]), row[1].toString());
+           // mappingResult.add(new JbvCodeMappingDto(row[0].toString(), null, row[1].toString(), row[2].toString()));
         }
+
+        Set<Long> stopPlaceSuperIds = new HashSet<>(netexIdAndName.keySet());
+        if (stopPlaceSuperIds.isEmpty()){
+            return new ArrayList<>();
+        }
+        List<OkinaIdentifier> mdmIds = mdmService.getAllStopPlacesFromSuperId(stopPlaceSuperIds);
+        for (Map.Entry<Long, String> netexAndNameEntry : netexIdAndName.entrySet()) {
+            Long netexId = netexAndNameEntry.getKey();
+
+            List<OkinaIdentifier> filteredIdsFromMdm = mdmIds.stream()
+                    .filter(okinaId -> okinaId.getSuperId().equals(netexId))
+                    .toList();
+
+            if (filteredIdsFromMdm.isEmpty()){
+                continue;
+            }
+
+            for (OkinaIdentifier okinaIdentifier : filteredIdsFromMdm) {
+                JbvCodeMappingDto newMapping = new JbvCodeMappingDto(okinaIdentifier.getDataset() + ":StopPlace:" + okinaIdentifier.getOriginalId(), null, validNetexPrefix + ":StopPlace:" + netexId, netexAndNameEntry.getValue());
+                mappingResult.add(newMapping);
+            }
+        }
+
+
 
         return mappingResult;
     }

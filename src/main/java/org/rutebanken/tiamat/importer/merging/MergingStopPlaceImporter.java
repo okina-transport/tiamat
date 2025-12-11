@@ -19,6 +19,7 @@ import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMappi
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
 import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceFromOriginalIdFinder;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
@@ -35,9 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Component
@@ -67,6 +66,8 @@ public class MergingStopPlaceImporter {
 
     private final ValidityUpdater validityUpdater;
 
+    private final MdmService mdmService;
+
     @Autowired
     public MergingStopPlaceImporter(StopPlaceFromOriginalIdFinder stopPlaceFromOriginalIdFinder,
                                     NearbyStopPlaceFinder nearbyStopPlaceFinder,
@@ -76,7 +77,9 @@ public class MergingStopPlaceImporter {
                                     VersionCreator versionCreator,
                                     ReferenceResolver referenceResolver,
                                     MergingUtils mergingUtils,
-                                    QuaysVersionedSaverService quaysVersionedSaverService, ValidityUpdater validityUpdater) {
+                                    QuaysVersionedSaverService quaysVersionedSaverService,
+                                    ValidityUpdater validityUpdater,
+                                    MdmService mdmService) {
         this.stopPlaceFromOriginalIdFinder = stopPlaceFromOriginalIdFinder;
         this.nearbyStopPlaceFinder = nearbyStopPlaceFinder;
         this.stopPlaceCentroidComputer = stopPlaceCentroidComputer;
@@ -87,6 +90,7 @@ public class MergingStopPlaceImporter {
         this.mergingUtils = mergingUtils;
         this.quaysVersionedSaverService = quaysVersionedSaverService;
         this.validityUpdater = validityUpdater;
+        this.mdmService = mdmService;
     }
 
     /**
@@ -158,6 +162,7 @@ public class MergingStopPlaceImporter {
             return null;
         }
 
+        mdmService.createOrUpdateExistingIdentifiers(incomingStopPlace);
         final StopPlace stopPlace;
         if (foundStopPlace != null) {
             stopPlace = handleAlreadyExistingStopPlaceContainsMobiitiIds(foundStopPlace, incomingStopPlace, recomputeStopPlacesLocation);

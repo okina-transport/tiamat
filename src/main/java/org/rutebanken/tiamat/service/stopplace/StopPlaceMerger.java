@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.service.stopplace;
 
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -81,6 +82,9 @@ public class StopPlaceMerger {
     @Autowired
     private VersionCreator versionCreator;
 
+    @Autowired
+    private MdmService mdmService;
+
 
     public StopPlace mergeStopPlaces(String fromStopPlaceId, String toStopPlaceId, String fromVersionComment, String toVersionComment, boolean isDryRun) {
 
@@ -143,7 +147,7 @@ public class StopPlaceMerger {
         if (fromStopPlaceToTerminate.getKeyValues() != null) {
             keyValuesMerger.mergeKeyValues(fromStopPlaceToTerminate.getKeyValues(), mergedStopPlace.getKeyValues());
         }
-
+        mdmService.mergeStopIdentifier(fromStopPlaceToTerminate.getNetexId(), mergedStopPlace.getNetexId());
         mergedStopPlace.getOrCreateValues(MERGED_ID_KEY).add(fromStopPlaceToTerminate.getNetexId());
 
         if (fromStopPlaceToTerminate.getPlaceEquipments() != null) {

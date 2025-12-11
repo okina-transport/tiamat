@@ -25,6 +25,7 @@ import org.rutebanken.tiamat.exporter.async.NetexMappingIterator;
 import org.rutebanken.tiamat.exporter.async.ParentStopFetchingIterator;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.TariffZone;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.VehicleModeEnumeration;
@@ -89,7 +90,7 @@ public class StreamingPublicationDelivery {
     private final NetexMapper netexMapper;
     private final TariffZoneRepository tariffZoneRepository;
     private final TopographicPlaceRepository topographicPlaceRepository;
-    private final GroupOfStopPlacesRepository groupOfStopPlacesRepository;
+    private final MdmService mdmService;
     private final NeTExValidator neTExValidator = NeTExValidator.getNeTExValidator();
     /**
      * Validate against netex schema using the {@link NeTExValidator}
@@ -107,8 +108,7 @@ public class StreamingPublicationDelivery {
                                         TiamatGeneralFrameExporter tiamatGeneralFrameExporter,
                                         NetexMapper netexMapper,
                                         TariffZoneRepository tariffZoneRepository,
-                                        TopographicPlaceRepository topographicPlaceRepository,
-                                        GroupOfStopPlacesRepository groupOfStopPlacesRepository,
+                                        TopographicPlaceRepository topographicPlaceRepository, MdmService mmdService,
                                         @Value("${asyncNetexExport.validateAgainstSchema:false}") boolean validateAgainstSchema) throws IOException, SAXException {
         this.stopPlaceRepository = stopPlaceRepository;
         this.parkingRepository = parkingRepository;
@@ -120,7 +120,7 @@ public class StreamingPublicationDelivery {
         this.netexMapper = netexMapper;
         this.tariffZoneRepository = tariffZoneRepository;
         this.topographicPlaceRepository = topographicPlaceRepository;
-        this.groupOfStopPlacesRepository = groupOfStopPlacesRepository;
+        this.mdmService = mmdService;
         this.validateAgainstSchema = validateAgainstSchema;
     }
 
@@ -252,13 +252,13 @@ public class StreamingPublicationDelivery {
         GeneralFrame netexGeneralFrame = netexMapper.mapToNetexModel(generalFrame);
 
         stopPlaceRepository.initExportJobTable(provider, exportJobId);
-        logger.info("Initialization completed for table job_id_list. jobId :" + exportJobId);
+        logger.info("Initialization completed for table job_id_list. jobId: {}", exportJobId);
 
         stopPlaceRepository.addParentStopPlacesToExportJobTable(exportJobId);
         logger.info("Parent stop places has been added successfully");
 
         int totalNbOfStops = stopPlaceRepository.countStopsInExport(exportJobId);
-        logger.info("Total nb of stops to export:" + totalNbOfStops);
+        logger.info("Total nb of stops to export: {}", totalNbOfStops);
 
         boolean isDataToExport = true;
         int totalStopsProcessed = 0;
@@ -268,7 +268,7 @@ public class StreamingPublicationDelivery {
 
             Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(exportJobId);
             totalIdsToExport = batchIdsToExport.size() > totalIdsToExport.size() ? batchIdsToExport : totalIdsToExport;
-            if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
+            if (batchIdsToExport == null || batchIdsToExport.isEmpty()) {
                 logger.info("no more stops to export");
                 isDataToExport = false;
             } else {
@@ -276,7 +276,7 @@ public class StreamingPublicationDelivery {
                 stopPlaceRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
 
                 totalStopsProcessed = totalStopsProcessed + batchIdsToExport.size();
-                logger.info("total stops processed:" + totalStopsProcessed);
+                logger.info("total stops processed: {}", totalStopsProcessed);
             }
 
         }
@@ -416,10 +416,10 @@ public class StreamingPublicationDelivery {
 
         pointOfInterestRepository.initExportJobTable(exportJobId);
 
-        logger.info("Initialization completed for table job_id_list. jobId :" + exportJobId);
+        logger.info("Initialization completed for table job_id_list. jobId : {}", exportJobId);
 
         int totalNbOfPoi = pointOfInterestRepository.countPOIInExport(exportJobId);
-        logger.info("Total nb of POI to export:" + totalNbOfPoi);
+        logger.info("Total nb of POI to export: {}", totalNbOfPoi);
 
         logger.info("Streaming POI export initiated. Export params: {}", exportParams);
         logger.info("Mapping site frame to netex poi list model");
@@ -435,17 +435,17 @@ public class StreamingPublicationDelivery {
 
         while (isDataToExport) {
             Set<Long> batchIdsToExport = pointOfInterestRepository.getNextBatchToProcess(exportJobId);
-            if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
+            if (batchIdsToExport == null || batchIdsToExport.isEmpty()) {
                 logger.info("no more POI to export");
                 isDataToExport = false;
             } else {
                 initializedPoi.addAll(pointOfInterestRepository.getPOIInitializedForExport(batchIdsToExport));
                 pointOfInterestRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
                 totalPoiProcessed += batchIdsToExport.size();
-                logger.info("total poi processed:" + totalPoiProcessed);
+                logger.info("total poi processed: {}", totalPoiProcessed);
             }
         }
-
+        mdmService.fillPoiImportedIds(initializedPoi);
         pointOfInterestClassificationRepository.initExportJobTable(exportJobId);
 
         isDataToExport = true;
@@ -453,14 +453,14 @@ public class StreamingPublicationDelivery {
 
         while (isDataToExport) {
             Set<Long> batchIdsToExport = pointOfInterestClassificationRepository.getNextBatchToProcess(exportJobId);
-            if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
+            if (batchIdsToExport == null || batchIdsToExport.isEmpty()) {
                 logger.info("no more POI classification to export");
                 isDataToExport = false;
             } else {
                 initializedPoiClassification.addAll(pointOfInterestClassificationRepository.getPOIClassificationInitializedForExport(batchIdsToExport));
                 pointOfInterestClassificationRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
                 totalPoiClassificationProcessed += batchIdsToExport.size();
-                logger.info("total poi classification processed:" + totalPoiClassificationProcessed);
+                logger.info("total poi classification processed: {}", totalPoiClassificationProcessed);
             }
         }
 
@@ -886,7 +886,7 @@ public class StreamingPublicationDelivery {
     private Iterator<org.rutebanken.tiamat.model.Parking> getIteratorForParkingManualExport(Long exportJobId) {
         parkingRepository.initExportJobTable(exportJobId);
         int totalNbOfParkings = stopPlaceRepository.countStopsInExport(exportJobId);
-        logger.info("Total nb of parkings to export:" + totalNbOfParkings);
+        logger.info("Total nb of parkings to export: {}", totalNbOfParkings);
 
 
         boolean isDataToExport = true;
@@ -897,15 +897,16 @@ public class StreamingPublicationDelivery {
         while (isDataToExport) {
 
             Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(exportJobId);
-            if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
+            if (batchIdsToExport == null || batchIdsToExport.isEmpty()) {
                 logger.info("no more parkings to export");
                 isDataToExport = false;
             } else {
                 List<org.rutebanken.tiamat.model.Parking> initializedParkings = parkingRepository.getParkingsInitializedForExport(batchIdsToExport);
+                mdmService.fillParkingImportedIds(initializedParkings);
                 completeParkingList.addAll(initializedParkings);
                 stopPlaceRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
                 totalparkingProcessed = totalparkingProcessed + batchIdsToExport.size();
-                logger.info("total parking processed:" + totalparkingProcessed);
+                logger.info("total parking processed: {}", totalparkingProcessed);
             }
         }
 
@@ -915,7 +916,7 @@ public class StreamingPublicationDelivery {
     private Iterator<org.rutebanken.tiamat.model.PointOfInterest> getIteratorForPointOfInterestManualExport(Long exportJobId) {
         pointOfInterestRepository.initExportJobTable(exportJobId);
         int totalNbOfPointOfInterests = pointOfInterestRepository.countPOIInExport(exportJobId);
-        logger.info("Total nb of point of interest to export:" + totalNbOfPointOfInterests);
+        logger.info("Total nb of point of interest to export: {}", totalNbOfPointOfInterests);
 
         boolean isDataToExport = true;
         int totalPointOfInterestProcessed = 0;
@@ -924,7 +925,7 @@ public class StreamingPublicationDelivery {
 
         while (isDataToExport) {
             Set<Long> batchIdsToExport = pointOfInterestRepository.getNextBatchToProcess(exportJobId);
-            if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
+            if (batchIdsToExport == null || batchIdsToExport.isEmpty()) {
                 logger.info("no more point of interests to export");
                 isDataToExport = false;
             } else {
@@ -932,7 +933,7 @@ public class StreamingPublicationDelivery {
                 completeList.addAll(initialized);
                 pointOfInterestRepository.deleteProcessedIds(exportJobId, batchIdsToExport);
                 totalPointOfInterestProcessed = totalPointOfInterestProcessed + batchIdsToExport.size();
-                logger.info("total point of interests processed:" + totalPointOfInterestProcessed);
+                logger.info("total point of interests processed: {}", totalPointOfInterestProcessed);
             }
         }
 
@@ -1017,6 +1018,7 @@ public class StreamingPublicationDelivery {
         logger.info("There are stop places to export");
 
         List<org.rutebanken.tiamat.model.StopPlace> recoveredStopPlaces = stopPlaceRepository.getStopPlaceInitializedForExport(stopPlacePrimaryIds);
+        mdmService.fillImportedIds(recoveredStopPlaces);
 
         recoveredStopPlaces.forEach(this::addAdditionalInfo);
         logger.info("Feed of addAdditionalInfo completed");
@@ -1093,6 +1095,8 @@ public class StreamingPublicationDelivery {
         logger.info("Feed of listmembers completed.");
     }
 
+
+
     private void addAdditionalInfo(org.rutebanken.tiamat.model.StopPlace stopPlace) {
         if (stopPlace.getTransportMode() == null) {
             VehicleModeEnumeration transportMode = TiamatVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(stopPlace.getStopPlaceType());
@@ -1137,7 +1141,7 @@ public class StreamingPublicationDelivery {
         topographicPlaceRepository.addParentTopographicPlacesToExportJobTable(jobid);
 
         int totalNbOfTopographicPlaces = stopPlaceRepository.countStopsInExport(jobid);
-        logger.info("Total nb of topographicPlaces to export:" + totalNbOfTopographicPlaces);
+        logger.info("Total nb of topographicPlaces to export: {}", totalNbOfTopographicPlaces);
 
 
         boolean isDataToExport = true;
@@ -1147,7 +1151,7 @@ public class StreamingPublicationDelivery {
 
         while (isDataToExport) {
             Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(jobid);
-            if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
+            if (batchIdsToExport == null || batchIdsToExport.isEmpty()) {
                 logger.info("no more topographic places to export");
                 isDataToExport = false;
             } else {
@@ -1155,7 +1159,7 @@ public class StreamingPublicationDelivery {
                 completeTopographicPlacesList.addAll(initializedTopos);
                 stopPlaceRepository.deleteProcessedIds(jobid, batchIdsToExport);
                 totalTopographicPlacesProcessed = totalTopographicPlacesProcessed + batchIdsToExport.size();
-                logger.info("total topographic places processed:" + totalTopographicPlacesProcessed);
+                logger.info("total topographic places processed: {}", totalTopographicPlacesProcessed);
             }
         }
 
@@ -1191,7 +1195,7 @@ public class StreamingPublicationDelivery {
         tariffZoneRepository.initExportJobTable(jobid, listStopPlaces);
 
         int totalNbOfTariffZones = stopPlaceRepository.countStopsInExport(jobid);
-        logger.info("Total nb of tariff zones to export:" + totalNbOfTariffZones);
+        logger.info("Total nb of tariff zones to export: {}", totalNbOfTariffZones);
 
 
         boolean isDataToExport = true;
@@ -1201,7 +1205,7 @@ public class StreamingPublicationDelivery {
 
         while (isDataToExport) {
             Set<Long> batchIdsToExport = stopPlaceRepository.getNextBatchToProcess(jobid);
-            if (batchIdsToExport == null || batchIdsToExport.size() == 0) {
+            if (batchIdsToExport == null || batchIdsToExport.isEmpty()) {
                 logger.info("no more tariff zones to export");
                 isDataToExport = false;
             } else {
@@ -1209,7 +1213,7 @@ public class StreamingPublicationDelivery {
                 completeTariffZonesList.addAll(initializedTariffZones);
                 stopPlaceRepository.deleteProcessedIds(jobid, batchIdsToExport);
                 totalTariffZonesProcessed = totalTariffZonesProcessed + batchIdsToExport.size();
-                logger.info("total tariff zones processed:" + totalTariffZonesProcessed);
+                logger.info("total tariff zones processed: {}", totalTariffZonesProcessed);
             }
         }
 

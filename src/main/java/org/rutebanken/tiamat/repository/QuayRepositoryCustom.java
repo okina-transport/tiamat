@@ -60,4 +60,7 @@ public interface QuayRepositoryCustom extends DataManagedObjectStructureReposito
     Set<String> findByKeyValues(String key, Set<String> values);
 
     String findNearbyQuay(Envelope envelope, String name, String publicCode);
+
+    Optional<Quay> findQuayByMdmId(Long mdmId);
+
 }

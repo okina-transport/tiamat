@@ -22,4 +22,8 @@ public class JobSpecification {
     public static Specification<Job> providerFilter(String provider) {
         return (root, query, cb) -> cb.equal(root.get("subFolder"), provider);
     }
+
+    public static Specification<Job> postProcessFilter() {
+        return (root, query, cb) -> cb.equal(root.get("isLugCompleted"), true);
+    }
 }

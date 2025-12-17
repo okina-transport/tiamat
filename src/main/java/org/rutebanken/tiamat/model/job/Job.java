@@ -76,6 +76,8 @@ public class Job {
 
     private String userName;
 
+    private Boolean isLugCompleted;
+
     public Job() {
     }
 
@@ -206,6 +208,14 @@ public class Job {
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public Boolean getLugCompleted() {
+        return isLugCompleted;
+    }
+
+    public void setLugCompleted(Boolean lugCompleted) {
+        isLugCompleted = lugCompleted;
     }
 
     @XmlType

@@ -39,7 +39,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.RequestBody;
 
+import javax.transaction.Transactional;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -47,6 +49,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import static org.rutebanken.tiamat.repository.JobSpecification.jobActionFilter;
 import static org.rutebanken.tiamat.repository.JobSpecification.jobTypeFilter;
@@ -115,9 +118,30 @@ public class AsyncExportResource {
 
     @GET
     @Path("initiate")
-    public Response asyncExport(@HeaderParam("RutebankenUser") String username, @HeaderParam("exportGeneratedMissingQuays") String exportGeneratedMissingQuayser, @BeanParam ExportParams exportParams, @HeaderParam("exportExternalIds") String exportExternalIds) {
-        Job job = asyncPublicationDeliveryExporter.startExportJob(username, Boolean.valueOf(exportGeneratedMissingQuayser), exportParams, Boolean.valueOf(exportExternalIds));
+    public Response asyncExport(@HeaderParam("RutebankenUser") String username, @HeaderParam("exportGeneratedMissingQuays") String exportGeneratedMissingQuayser, @BeanParam ExportParams exportParams,
+                                @HeaderParam("exportExternalIds") String exportExternalIds,  @HeaderParam("hasPostProcess") Boolean hasPostProcess) {
+        Job job = asyncPublicationDeliveryExporter.startExportJob(username, Boolean.valueOf(exportGeneratedMissingQuayser), exportParams, Boolean.valueOf(exportExternalIds), hasPostProcess);
         return Response.ok(job).build();
+    }
+
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("setPostProcessCompleted/{jobId}")
+    @Transactional
+    public Response setPostProcessCompleted(@PathParam(value = "jobId") Long jobId){
+
+        Optional<Job> existingJobOpt = jobRepository.findById(jobId);
+
+        if (existingJobOpt.isEmpty()) {
+            logger.error("Unable to set PostProcessCompleted for job with id " + jobId);
+            return Response.noContent().build();
+        }
+
+        Job job = existingJobOpt.get();
+        job.setLugCompleted(true);
+        jobRepository.save(job);
+        return Response.ok().build();
     }
 
     @GET
@@ -155,8 +179,9 @@ public class AsyncExportResource {
             Specification<Job> jobActionFilter = jobActionFilter(JobAction.EXPORT);
             Specification<Job> jobTypeFilter = jobTypeFilter(JobType.NETEX_STOP_PLACE_QUAY);
             Specification<Job> providerFilter = JobSpecification.providerFilter(providerName);
+            Specification<Job> postProcessFilter = JobSpecification.postProcessFilter();
 
-            Specification<Job> combinedFilter = Specification.where(jobActionFilter).and(jobTypeFilter).and(providerFilter);
+            Specification<Job> combinedFilter = Specification.where(jobActionFilter).and(jobTypeFilter).and(providerFilter).and(postProcessFilter);
 
             Pageable pageable = PageRequest.of(0, maxNbResults, Sort.Direction.DESC, "started");
             Page<Job> foundJobs = jobRepository.findAll(combinedFilter, pageable);

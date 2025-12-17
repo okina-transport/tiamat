@@ -210,7 +210,7 @@ public class AsyncExportResource {
     }
 
     @GET
-    @Path("stop-place-file-download/{providerName}/{fileName:ARRET_.+\\.zip}")
+    @Path("stop-place-file-download/{providerName}/{fileName : .+}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response asyncGetSopPlaceFileList(@PathParam("providerName") String providerName, @PathParam("fileName") String fileName) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

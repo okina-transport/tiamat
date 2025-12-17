@@ -3,7 +3,7 @@ package org.rutebanken.tiamat.service.delete;
 import org.rutebanken.tiamat.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,15 +18,6 @@ public class DeleteService {
 
     @PersistenceContext
     private EntityManager entityManager;
-
-    @Autowired
-    PointOfInterestFacilitySetRepository pointOfInterestFacilitySetRepository;
-
-    @Autowired
-    PointOfInterestClassificationRepository pointOfInterestClassificationRepository;
-
-    @Autowired
-    ParkingRepository parkingRepository;
 
     @Transactional
     public void deleteAllPoi() {
@@ -58,13 +49,111 @@ public class DeleteService {
         }
     }
 
-    public void deleteAllParkings(){
-        try {
-            parkingRepository.deleteAll();
-            logger.info("Parkings deleted successfully");
-        } catch (Exception e) {
-            logger.error("Error occurred: ", e);
-            throw e;
-        }
+    @Transactional
+    @Async
+    public void deleteAllParkings() {
+        logger.info("All parking data deleting.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_area_check_constraints").executeUpdate();
+        logger.info("Executed DELETE on parking_area_check_constraints.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_bay_check_constraints").executeUpdate();
+        logger.info("Executed DELETE on parking_bay_check_constraints.");
+
+        entityManager.createNativeQuery(
+                "DELETE FROM installed_equipment_version_structure_installed_equipment " +
+                        "WHERE place_equipment_id IN (SELECT place_equipments_id FROM parking)"
+        ).executeUpdate();
+        logger.info("Executed DELETE on installed_equipment_version_structure_installed_equipment.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_equipment_places").executeUpdate();
+        logger.info("Executed DELETE on parking_equipment_places.");
+
+        entityManager.createNativeQuery(
+                "DELETE FROM value_items WHERE value_id IN (SELECT key_values_id FROM parking_area_key_values)"
+        ).executeUpdate();
+        logger.info("Executed DELETE on value_items for parking_area_key_values.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_area_key_values").executeUpdate();
+        logger.info("Executed DELETE on parking_area_key_values.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_parking_areas").executeUpdate();
+        logger.info("Executed DELETE on parking_parking_areas.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_area").executeUpdate();
+        logger.info("Executed DELETE on parking_area.");
+
+        entityManager.createNativeQuery(
+                "DELETE FROM value_items WHERE value_id IN (SELECT key_values_id FROM parking_key_values)"
+        ).executeUpdate();
+        logger.info("Executed DELETE on value_items for parking_key_values.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_key_values").executeUpdate();
+        logger.info("Executed DELETE on parking_key_values.");
+
+        entityManager.createNativeQuery(
+                "DELETE FROM alternative_name WHERE id IN (SELECT alternative_names_id FROM parking_alternative_names)"
+        ).executeUpdate();
+        logger.info("Executed DELETE on alternative_name.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_alternative_names").executeUpdate();
+        logger.info("Executed DELETE on parking_alternative_names.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_adjacent_sites").executeUpdate();
+        logger.info("Executed DELETE on parking_adjacent_sites.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_parking_payment_methods").executeUpdate();
+        logger.info("Executed DELETE on parking_parking_payment_methods.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_parking_payment_process").executeUpdate();
+        logger.info("Executed DELETE on parking_parking_payment_process.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_type_of_payment_methods").executeUpdate();
+        logger.info("Executed DELETE on parking_type_of_payment_methods.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_parking_properties").executeUpdate();
+        logger.info("Executed DELETE on parking_parking_properties.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_properties_spaces").executeUpdate();
+        logger.info("Executed DELETE on parking_properties_spaces.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_properties_parking_vehicle_types").executeUpdate();
+        logger.info("Executed DELETE on parking_properties_parking_vehicle_types.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_properties_parking_user_types").executeUpdate();
+        logger.info("Executed DELETE on parking_properties_parking_user_types.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_properties").executeUpdate();
+        logger.info("Executed DELETE on parking_properties.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_parking_vehicle_types").executeUpdate();
+        logger.info("Executed DELETE on parking_parking_vehicle_types.");
+
+        entityManager.createNativeQuery("DELETE FROM parking_transport_types").executeUpdate();
+        logger.info("Executed DELETE on parking_transport_types.");
+
+        entityManager.createNativeQuery(
+                "DELETE FROM accessibility_limitation " +
+                        "WHERE id IN (SELECT limitations_id FROM accessibility_assessment_limitations " +
+                        "WHERE accessibility_assessment_id IN (SELECT accessibility_assessment_id FROM parking))"
+        ).executeUpdate();
+        logger.info("Executed DELETE on accessibility_limitation.");
+
+        entityManager.createNativeQuery(
+                "DELETE FROM accessibility_assessment_limitations " +
+                        "WHERE accessibility_assessment_id IN (SELECT accessibility_assessment_id FROM parking)"
+        ).executeUpdate();
+        logger.info("Executed DELETE on accessibility_assessment_limitations.");
+
+        entityManager.createNativeQuery(
+                "DELETE FROM accessibility_assessment WHERE id IN (SELECT accessibility_assessment_id FROM parking)"
+        ).executeUpdate();
+        logger.info("Executed DELETE on accessibility_assessment.");
+
+        entityManager.createNativeQuery("DELETE FROM parking").executeUpdate();
+        logger.info("Executed DELETE on parking.");
+
+
+        logger.info("All parking data successfully deleted.");
     }
 }

@@ -25,7 +25,7 @@ public class DeleteRessource {
     @POST
     @Path("/parkings")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteAllParkings() throws IOException, IllegalArgumentException {
+    public Response deleteAllParkings() throws IllegalArgumentException {
         deleteService.deleteAllParkings();
         return Response.status(200).build();
     }
@@ -33,7 +33,7 @@ public class DeleteRessource {
     @POST
     @Path("/poi")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteAllPoi() throws IOException, IllegalArgumentException {
+    public Response deleteAllPoi() throws IllegalArgumentException {
         deleteService.deleteAllPoi();
         return Response.status(200).build();
     }

@@ -3,22 +3,24 @@ package org.rutebanken.tiamat.service.batch;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.rutebanken.tiamat.importer.ImporterUtils;
+import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.PointOfInterestVersionedSaverService;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -27,11 +29,21 @@ import java.util.stream.Collectors;
 public class UpdatePostCodeService {
     private static final Logger logger = LoggerFactory.getLogger(UpdatePostCodeService.class);
 
-    @Autowired private StopPlaceRepository stopPlaceRepository;
-    @Autowired private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
-    @Autowired private VersionCreator versionCreator;
-    @Autowired private EntityManager entityManager;
-    @Autowired private PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService;
+    private final StopPlaceRepository stopPlaceRepository;
+    private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final VersionCreator versionCreator;
+    private final EntityManager entityManager;
+    private final PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService;
+    private final ParkingRepository parkingRepository;
+
+    public UpdatePostCodeService(StopPlaceRepository stopPlaceRepository, StopPlaceVersionedSaverService stopPlaceVersionedSaverService, VersionCreator versionCreator, EntityManager entityManager, PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService, ParkingRepository parkingRepository) {
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
+        this.versionCreator = versionCreator;
+        this.entityManager = entityManager;
+        this.pointOfInterestVersionedSaverService = pointOfInterestVersionedSaverService;
+        this.parkingRepository = parkingRepository;
+    }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateParentStopPlaces(List<String> parentStopPlacesRef) {
@@ -99,6 +111,24 @@ public class UpdatePostCodeService {
         }
         if (processed > 0) {
             entityManager.flush();
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void updateParkings(List<Parking> parkings) {
+        int processed = 0;
+        for (Parking parking : parkings) {
+            Optional<String> insee = ImporterUtils.getInseeFromLatLng(parking.getCentroid().getX(), parking.getCentroid().getY());
+            if (insee.isPresent()) {
+                parking.setInsee(insee.get());
+                parkingRepository.save(parking);
+                processed++;
+            } else {
+                logger.info("Code INSEE non trouvé pour le parking : {}", parking.getNetexId());
+            }
+        }
+        if (processed > 0) {
+            parkingRepository.flush();
         }
     }
 

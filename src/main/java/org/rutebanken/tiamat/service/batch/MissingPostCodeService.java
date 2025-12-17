@@ -1,13 +1,15 @@
 package org.rutebanken.tiamat.service.batch;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,14 +22,22 @@ import java.util.Set;
 public class MissingPostCodeService {
     private static final Logger logger = LoggerFactory.getLogger(MissingPostCodeService.class);
 
-    @Autowired private PointOfInterestRepository pointOfInterestRepository;
-    @Autowired private StopPlaceRepository stopPlaceRepository;
-    @Autowired private UpdatePostCodeService updatePostCodeService;
+    private final PointOfInterestRepository pointOfInterestRepository;
+    private final StopPlaceRepository stopPlaceRepository;
+    private final ParkingRepository parkingRepository;
+    private final UpdatePostCodeService updatePostCodeService;
 
+    public MissingPostCodeService(PointOfInterestRepository pointOfInterestRepository, StopPlaceRepository stopPlaceRepository, ParkingRepository parkingRepository, UpdatePostCodeService updatePostCodeService) {
+        this.pointOfInterestRepository = pointOfInterestRepository;
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.parkingRepository = parkingRepository;
+        this.updatePostCodeService = updatePostCodeService;
+    }
 
     public void getMissingPostCode() {
         getMissingPostCodeQuays();
         getMissingPostCodePoi();
+        getMissingInseeParking();
     }
 
     private void getMissingPostCodeQuays() {
@@ -103,5 +113,18 @@ public class MissingPostCodeService {
         }
 
         logger.info("Récupération des codes postaux manquants des POI terminée.");
+    }
+
+    private void getMissingInseeParking() {
+        logger.info("Démarrage de la récupération des codes INSEE manquants des parkings.");
+
+        List<Parking> parkings = parkingRepository.getAllParkingsWithoutInsee();
+        logger.info("Nombre de codes INSEE de parkings à récupérer : {}", parkings.size());
+
+        if (CollectionUtils.isNotEmpty(parkings)) {
+            updatePostCodeService.updateParkings(parkings);
+        }
+
+        logger.info("Récupération des codes INSEE manquants des parkings terminée.");
     }
 }

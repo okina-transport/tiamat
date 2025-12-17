@@ -63,5 +63,7 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
     List<DTOClusterMarker> findClusterMarkers();
 
     Integer findByIdLocForOtherParking(String idLoc, String netexId);
+
+    List<Parking> getAllParkingsWithoutInsee();
 }
 

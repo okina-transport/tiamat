@@ -528,4 +528,14 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         Object result = query.getSingleResult();
         return ((Number) result).intValue();
     }
+
+    @Override
+    public List<Parking> getAllParkingsWithoutInsee() {
+        String sql = "SELECT p.* FROM parking p " +
+                "WHERE p.insee IS NULL OR p.insee = '';";
+
+        Query q = entityManager.createNativeQuery(sql, Parking.class);
+
+        return (List<Parking>) q.getResultList();
+    }
 }

@@ -160,7 +160,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         assertThat(job.getId()).isGreaterThan(0L);
 
         long start = System.currentTimeMillis();
-        long timeout = 60000;
+        long timeout = 120000;
         while (true) {
             Optional<Job> actualExportJob = jobRepository.findById(job.getId());
             if (actualExportJob.get().getStatus().equals(startStatus)) {

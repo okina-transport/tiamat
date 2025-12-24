@@ -1,7 +1,8 @@
 package org.rutebanken.tiamat.service.parking;
 
 import io.micrometer.core.instrument.util.StringUtils;
-import org.rutebanken.tiamat.feign.mdm.OkinaIdentifier;
+import org.apache.commons.collections4.CollectionUtils;
+import org.rutebanken.tiamat.feign.mdm.ParkingIdentifier;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Parking;
@@ -29,15 +30,10 @@ public class BikeParkingsImportedService {
     private static final String ID_LOCAL = "id_local";
     private static final String ID_OSM = "id_osm";
 
-
-    private ParkingRepository parkingRepository;
-    private NetexIdMapper netexIdMapper;
-    private ParkingVersionedSaverService parkingVersionedSaverService;
-    private MdmService mdmService;
-
-    @org.springframework.beans.factory.annotation.Value("${netex.validPrefix:MOBIITI}")
-    String validNetexPrefix;
-
+    private final ParkingRepository parkingRepository;
+    private final NetexIdMapper netexIdMapper;
+    private final ParkingVersionedSaverService parkingVersionedSaverService;
+    private final MdmService mdmService;
 
     @Autowired
     BikeParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, MdmService mdmService) {
@@ -52,9 +48,9 @@ public class BikeParkingsImportedService {
 
             Optional<Parking> parkingInBDDOpt = retrieveBikeParkingInBDD(bikeParkingToSave);
 
-            if (!parkingInBDDOpt.isPresent()) {
+            if (parkingInBDDOpt.isEmpty()) {
 
-                if (StringUtils.isNotEmpty(bikeParkingToSave.getName().getValue())){
+                if (StringUtils.isNotEmpty(bikeParkingToSave.getName().getValue())) {
                     netexIdMapper.moveOriginalNameToKeyValueList(bikeParkingToSave, bikeParkingToSave.getName().getValue());
 
                     bikeParkingToSave.setName(new EmbeddableMultilingualString(bikeParkingToSave.getName().getValue()));
@@ -69,26 +65,40 @@ public class BikeParkingsImportedService {
     }
 
 
-
     private Optional<Parking> retrieveBikeParkingInBDD(Parking parking) {
         List<String> idLocs = new ArrayList<>(parking.getKeyValues().get(ID_LOCAL).getItems());
-
-        OkinaIdentifier existingMdmId = mdmService.getExistingParkingMdmIdsFromImportedId(idLocs.get(0));
-        if (existingMdmId != null){
-            Parking existingParking = parkingRepository.findFirstByNetexIdOrderByVersionDesc(validNetexPrefix + ":Parking:" + existingMdmId.getSuperId());
-            if (existingParking != null){
-                return Optional.of(existingParking);
+        if (mdmService.isMdmEnabled()) {
+            String importedId = CollectionUtils.isNotEmpty(parking.getOriginalIds()) ?
+                    parking.getOriginalIds().iterator().next() : parking.getOriginalId();
+            Optional<ParkingIdentifier> existingMdmId =
+                    mdmService.getExistingParkingMdmIdsFromImportedId(parking.getOperator(), importedId);
+            if (existingMdmId.isPresent()) {
+                Parking existingParking =
+                        parkingRepository.findFirstByNetexIdOrderByVersionDesc(existingMdmId.get().getSuperId());
+                if (existingParking != null) {
+                    return Optional.of(existingParking);
+                }
             }
-        }
 
-        Value osmKeyVals = parking.getKeyValues().get(ID_OSM);
-        String idOsm = null;
-        if (osmKeyVals != null){
-            List<String> idOsms = new ArrayList<>(osmKeyVals.getItems());
-            idOsm = idOsms.get(0);
+            Value osmKeyVals = parking.getKeyValues().get(ID_OSM);
+            String idOsm;
+            if (osmKeyVals != null) {
+                List<String> idOsms = new ArrayList<>(osmKeyVals.getItems());
+                idOsm = idOsms.get(0);
+            return parkingRepository.findByIdLocAndOsm(idLocs.get(0), idOsm);
+            }
+
+            return Optional.empty();
+        } else {
+
+            Value osmKeyVals = parking.getKeyValues().get(ID_OSM);
+            String idOsm = null;
+            if (osmKeyVals != null) {
+                List<String> idOsms = new ArrayList<>(osmKeyVals.getItems());
+                idOsm = idOsms.get(0);
+            }
+
             return parkingRepository.findByIdLocAndOsm(idLocs.get(0), idOsm);
         }
-
-        return Optional.empty();
     }
 }

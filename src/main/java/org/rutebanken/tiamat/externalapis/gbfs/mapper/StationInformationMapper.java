@@ -90,10 +90,6 @@ public class StationInformationMapper {
         };
     }
 
-    private static @NotNull String toNetexId(GBFSStation gbfsStation) {
-        return "MOBIITI:PARKING:" + gbfsStation.getStationId().replace(":", "##3A##");
-    }
-
     private static @NotNull EmbeddableMultilingualString toParkingName(GBFSStation gbfsStation) {
         GBFSName gbfsName = gbfsStation.getName().stream()
                 .filter(s -> "fr".equals(s.getLanguage()))
@@ -168,7 +164,7 @@ public class StationInformationMapper {
                     centroid.getCoordinate().y);
             return dtoGeocode.getCityCode();
         } catch (Exception e) {
-            logger.error("Error retrieving INSEE code for parking: {}", toNetexId(station), e);
+            logger.error("Error retrieving INSEE code for parking: {}", station.getStationId(), e);
             return StringUtils.EMPTY;
         }
     }
@@ -177,7 +173,6 @@ public class StationInformationMapper {
                              GBFSVehicleTypes gbfsVehicleTypes, ParkingTypeEnumeration parkingType,
                              SpecificParkingAreaUsageEnumeration parkingAreaType) {
         Parking parking = new Parking();
-        parking.setNetexId(toNetexId(gbfsStation));
         parking.setOriginalId(gbfsStation.getStationId());
         parking.setName(toParkingName(gbfsStation));
         parking.setShortName(toShortName(gbfsStation));
@@ -216,6 +211,7 @@ public class StationInformationMapper {
         // required by Netex Parking FRANCE profile v1.2
         parking.setParkingLayout(toParkingLayout(gbfsStation));
         parking.setOrganisation(organisation);
+        parking.setOperator(organisation.getOriginalId());
         parking.setParkingType(parkingType);
         parking.setParkingProperties(toParkingProperties(gbfsStation, gbfsVehicleTypes));
         parking.setParkingAreas(toParkingAreas(gbfsStation, parkingAreaType));

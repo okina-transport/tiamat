@@ -18,7 +18,6 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import org.checkerframework.checker.units.qual.A;
 
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
@@ -36,20 +35,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.util.*;
 
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CHILDREN;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CREATE_MULTI_MODAL_STOPPLACE;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.ID;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.MUTATE_PARENT_STOPPLACE;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.MUTATE_STOPPLACE;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.OUTPUT_TYPE_PARENT_STOPPLACE;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.OUTPUT_TYPE_STOPPLACE;
+import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
 
 @Service("stopPlaceUpdater")
 @Transactional

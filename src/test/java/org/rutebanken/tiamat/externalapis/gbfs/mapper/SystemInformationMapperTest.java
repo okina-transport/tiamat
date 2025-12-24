@@ -7,6 +7,7 @@ import org.mobilitydata.gbfs.v3_0.system_information.GBFSSystemInformation;
 import org.rutebanken.tiamat.model.Organisation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class SystemInformationMapperTest {
 
@@ -93,7 +94,7 @@ public class SystemInformationMapperTest {
         Organisation output = tested.toOrganisation(si);
 
         // Assert
-        assertEquals("MOBIITI:ORGANISATION:nantes", output.getNetexId());
+        assertNull(output.getNetexId());
         assertEquals("fr", output.getLanguage());
         assertEquals("NANTES - Naolib", output.getName());
         assertEquals("Naolib", output.getShortName());

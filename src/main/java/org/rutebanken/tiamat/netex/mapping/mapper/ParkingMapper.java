@@ -34,8 +34,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.rutebanken.tiamat.netex.id.NetexIdHelper.*;
-import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 
 public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.model.Parking> {
 
@@ -244,16 +242,7 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
         super.mapBtoA(tiamatParking, netexParking, context);
         NetexUtils.fillTypeOfKey(netexParking);
 
-        String originalId =
-                tiamatParking.getKeyValues().get(ORIGINAL_ID_KEY).getItems().stream().findFirst().orElse(null);
-
-        if (PARKING_ID_PATTERN.matcher(originalId).matches()) {
-            netexParking.setId(originalId);
-        } else if (PARKING_PAN_ID_PATTERN.matcher(originalId).matches()) {
-            netexParking.setId(panParkingIdToNetexParkingId(originalId));
-        } else {
-            netexParking.setId(otherParkingIdToNetexParkingId(originalId, tiamatParking.getInsee()));
-        }
+        netexParking.setId(tiamatParking.getNetexId());
 
         mapPaymentMethodBtoA(tiamatParking, netexParking);
         mapVehicleEntrancesMethodBtoA(tiamatParking, netexParking);

@@ -112,8 +112,6 @@ class StopPlaceFetcher implements DataFetcher {
         this.mdmService = mdmService;
     }
 
-
-
     public Object get(DataFetchingEnvironment environment) {
         List<StopPlace> stopPlaces = getDataFromDB(environment);
 

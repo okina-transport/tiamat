@@ -28,6 +28,7 @@ import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.feign.mdm.OkinaIdentifier;
+import org.rutebanken.tiamat.feign.mdm.ParkingIdentifier;
 import org.rutebanken.tiamat.geo.GeometryTransformer;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
@@ -329,7 +330,6 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         }
 
         return Optional.of(results.get(0));
-
     }
 
     @Override
@@ -339,19 +339,18 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
             return new ArrayList<>();
         }
 
-        Set<Long> superIds = new HashSet<>();
+        Set<String> superIds = new HashSet<>();
         for (Parking parking : parkings) {
             results.add(versionCreator.createCopy(parking, Parking.class));
-            superIds.add(Long.valueOf(parking.getNetexId().split(":")[2]));
+            superIds.add(parking.getNetexId());
         }
 
-        List<OkinaIdentifier> mdmIds = mdmService.getAllParkingsFromSuperId(superIds);
+        List<ParkingIdentifier> mdmIds = mdmService.getAllParkingsFromSuperId(superIds);
 
         for (Parking parking : results) {
-            Long superId = Long.valueOf(parking.getNetexId().split(":")[2]);
             String originalId = mdmIds.stream()
-                    .filter(mdmId -> mdmId.getSuperId().equals(superId))
-                    .map(OkinaIdentifier::getOriginalId)
+                    .filter(mdmId -> mdmId.getSuperId().equals(parking.getNetexId()))
+                    .map(ParkingIdentifier::getOriginalId)
                     .findFirst().orElse(null);
             parking.getOriginalIds().add(originalId);
         }

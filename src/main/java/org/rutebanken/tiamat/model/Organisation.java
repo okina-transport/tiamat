@@ -1,25 +1,10 @@
 package org.rutebanken.tiamat.model;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import jakarta.persistence.*;
-import java.time.Instant;
 import java.util.Set;
 
 @Entity
-public class Organisation {
-    @Id
-    @GeneratedValue(generator = "sequence_per_table_generator")
-    private Long id;
-
-    private String netexId;
-
-    @UpdateTimestamp
-    private Instant changed;
-
-    @CreationTimestamp
-    private Instant created;
+public class Organisation extends DataManagedObjectStructure {
 
     private String name;
 
@@ -52,37 +37,8 @@ public class Organisation {
     @OneToMany(mappedBy="organisation")
     private Set<Parking> parkings;
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getNetexId() {
-        return netexId;
-    }
-
-    public void setNetexId(String netexId) {
-        this.netexId = netexId;
-    }
-
-    public Instant getChanged() {
-        return changed;
-    }
-
-    public void setChanged(Instant changed) {
-        this.changed = changed;
-    }
-
-    public Instant getCreated() {
-        return created;
-    }
-
-    public void setCreated(Instant created) {
-        this.created = created;
-    }
+    @Transient
+    protected String originalId;
 
     public String getName() {
         return name;
@@ -194,5 +150,13 @@ public class Organisation {
 
     public void setTimezone(String timezone) {
         this.timezone = timezone;
+    }
+
+    public String getOriginalId() {
+        return originalId;
+    }
+
+    public void setOriginalId(String originalId) {
+        this.originalId = originalId;
     }
 }

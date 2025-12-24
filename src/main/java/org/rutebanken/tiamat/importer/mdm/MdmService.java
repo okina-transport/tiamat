@@ -1,12 +1,10 @@
 package org.rutebanken.tiamat.importer.mdm;
 
+import feign.FeignException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.config.TiamatProperties;
-import org.rutebanken.tiamat.feign.mdm.IdentifierToCheck;
-import org.rutebanken.tiamat.feign.mdm.MdmFeignClient;
-import org.rutebanken.tiamat.feign.mdm.MergeIdentifier;
-import org.rutebanken.tiamat.feign.mdm.OkinaIdentifier;
+import org.rutebanken.tiamat.feign.mdm.*;
 import org.rutebanken.tiamat.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +63,18 @@ public class MdmService {
         OkinaIdentifier mdmData = new OkinaIdentifier();
         mdmData.setOriginalId(rawOriginalId);
         mdmData.setSuperId(getIdentifierFromNetexId(rawNetexId));
+        return mdmData;
+    }
+
+    private static ParkingIdentifier buildParkingIdentifier(Parking parking) {
+        ParkingIdentifier mdmData = new ParkingIdentifier();
+        mdmData.setOperator(parking.getOperator());
+        mdmData.setOriginalId(parking.getOriginalIds().stream().iterator().next());
+        mdmData.setCountryCode("FR");
+        mdmData.setInsee(parking.getInsee());
+        if (StringUtils.isNotBlank(parking.getNetexId())) {
+            mdmData.setSuperId(parking.getNetexId());
+        }
         return mdmData;
     }
 
@@ -200,12 +210,23 @@ public class MdmService {
             return;
         }
 
+        ParkingIdentifier parkingIdentifier = buildParkingIdentifier(parking);
+        List<ParkingIdentifier> mdmData = mdmFeignClient.generateParkingIdentifiers(List.of(parkingIdentifier));
+        String superId = mdmData.get(0).getSuperId();
+        parking.setNetexId(superId);
+    }
+
+    public void generateIdentifier(Organisation organisation) {
+        if (!tiamatProperties.isMdmEnabled()) {
+            return;
+        }
+
         OkinaIdentifier okinaIdentifier = new OkinaIdentifier();
-        okinaIdentifier.setOriginalId(parking.getOriginalIds().iterator().next());
-        List<OkinaIdentifier> mdmData = mdmFeignClient.generateParkingIdentifiers(List.of(okinaIdentifier));
+        okinaIdentifier.setDataset("unused");
+        okinaIdentifier.setOriginalId(organisation.getOriginalId());
+        List<OkinaIdentifier> mdmData = mdmFeignClient.generateOrganisationIdentifiers(List.of(okinaIdentifier));
         Long superId = mdmData.get(0).getSuperId();
-        parking.setNetexId(validNetexPrefix + ":Parking:" + superId);
-        parking.getOriginalIds().clear();
+        organisation.setNetexId(validNetexPrefix + ":Organisation:" + superId);
     }
 
     public void generateIdentifier(StopPlace incomingStopPlace) {
@@ -273,7 +294,7 @@ public class MdmService {
         return mdmFeignClient.getPoisIdentifiers(superIds.stream().toList());
     }
 
-    public List<OkinaIdentifier> getAllParkingsFromSuperId(Set<Long> superIds) {
+    public List<ParkingIdentifier> getAllParkingsFromSuperId(Set<String> superIds) {
         return mdmFeignClient.getParkingIdentifiers(superIds.stream().toList());
     }
 
@@ -298,13 +319,25 @@ public class MdmService {
         return results != null && !results.isEmpty() ? results.get(0) : null;
     }
 
-    public OkinaIdentifier getExistingParkingMdmIdsFromImportedId(String importedId) {
-        OkinaIdentifier okinaId = new OkinaIdentifier();
-        okinaId.setOriginalId(importedId);
-        List<OkinaIdentifier> results = mdmFeignClient.getParkingsIdentifiersByOriginalId(List.of(okinaId));
-        return results != null && !results.isEmpty() ? results.get(0) : null;
+    public Optional<ParkingIdentifier> getExistingParkingMdmIdsFromImportedId(String operator, String importedId) {
+        try {
+            return Optional.of(mdmFeignClient.getParkingIdentifierbyOperatorAndOriginalId(operator,
+                    importedId));
+        } catch (FeignException.NotFound e) {
+            return Optional.empty();
+        }
     }
 
+    public Optional<OkinaIdentifier> getExistingOrganisationMdmIdsFromImportedId(String importedId) {
+        OkinaIdentifier okinaId = new OkinaIdentifier();
+        okinaId.setOriginalId(importedId);
+        try {
+            List<OkinaIdentifier> results = mdmFeignClient.getOrganisationsIdentifiersByOriginalId(List.of(okinaId));
+            return Optional.of(results.get(0));
+        } catch (FeignException.NotFound e) {
+            return Optional.empty();
+        }
+    }
 
     /**
      * Send identifiers to mdm to update imported ids
@@ -344,11 +377,9 @@ public class MdmService {
      * @param incomingParking incomingParking with MOBIITI id
      */
     public void updateImportedIds(Parking incomingParking) {
-        List<OkinaIdentifier> parkingImportedIds = new ArrayList<>(incomingParking.getOriginalIds().size());
+        List<ParkingIdentifier> parkingImportedIds = new ArrayList<>(incomingParking.getOriginalIds().size());
 
-        for (String originalId : incomingParking.getOriginalIds()) {
-            parkingImportedIds.add(buildMdmIdentifier(incomingParking.getNetexId(), originalId));
-        }
+        parkingImportedIds.add(buildParkingIdentifier(incomingParking));
 
         mdmFeignClient.updateParkingsImportedIds(parkingImportedIds);
     }
@@ -390,8 +421,7 @@ public class MdmService {
      * @param parking object that needs to be filled with originalId
      */
     public void fillOriginalId(Parking parking) {
-        Long superId = getIdentifierFromNetexId(parking.getNetexId());
-        List<OkinaIdentifier> mdmData = mdmFeignClient.getParkingIdentifiers(List.of(superId));
+        List<ParkingIdentifier> mdmData = mdmFeignClient.getParkingIdentifiers(List.of(parking.getNetexId()));
         parking.getOriginalIds().add(mdmData.get(0).getOriginalId());
     }
 
@@ -420,21 +450,20 @@ public class MdmService {
 
     public void fillParkingImportedIds(List<Parking> initializedParking) {
         if (CollectionUtils.isNotEmpty(initializedParking)) {
-            Map<Long, Parking> databaseParking = new HashMap<>(initializedParking.size());
-            List<Long> identifiers = new ArrayList<>(initializedParking.size());
+            Map<String, Parking> databaseParking = new HashMap<>(initializedParking.size());
+            List<String> identifiers = new ArrayList<>(initializedParking.size());
             for (Parking parking : initializedParking) {
-                Long identifierFromNetexId = getIdentifierFromNetexId(parking.getNetexId());
-                identifiers.add(identifierFromNetexId);
-                databaseParking.put(identifierFromNetexId, parking);
+                identifiers.add(parking.getNetexId());
+                databaseParking.put(parking.getNetexId(), parking);
             }
 
-            List<OkinaIdentifier> parkingCompletedIdentifiers = mdmFeignClient.getParkingIdentifiers(identifiers);
+            List<ParkingIdentifier> parkingCompletedIdentifiers = mdmFeignClient.getParkingIdentifiers(identifiers);
 
             Parking parking;
-            for (OkinaIdentifier okinaIdentifier : parkingCompletedIdentifiers) {
-                parking = databaseParking.get(okinaIdentifier.getSuperId());
+            for (ParkingIdentifier parkingIdentifier : parkingCompletedIdentifiers) {
+                parking = databaseParking.get(parkingIdentifier.getSuperId());
                 if (parking != null) {
-                    parking.getOriginalIds().add(okinaIdentifier.getOriginalId());
+                    parking.getOriginalIds().add(parkingIdentifier.getOriginalId());
                 }
             }
         }

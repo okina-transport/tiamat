@@ -86,10 +86,7 @@ class StopPlaceUpdater implements DataFetcher {
                 stopPlace = createOrUpdateStopPlaceInLock(environment, true);
             }
         }
-        StopPlace copy = versionCreator.createCopy(stopPlace, StopPlace.class);
-        List<StopPlace> results = Arrays.asList(copy);
-        mdmService.fillImportedIds(results);
-        return results;
+        return Arrays.asList(stopPlace);
     }
 
 
@@ -188,7 +185,6 @@ class StopPlaceUpdater implements DataFetcher {
                         }
                     }
                     mdmService.updateImportedIds(updatedStopPlace);
-                    mdmService.removeImportedIds(updatedStopPlace);
                     updatedStopPlace = stopPlaceVersionedSaverService.saveNewVersion(existingVersion, updatedStopPlace, childStopsUpdated);
 
                     return updatedStopPlace;

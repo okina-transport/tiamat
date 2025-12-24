@@ -148,7 +148,7 @@ public abstract class TiamatIntegrationTest {
     protected ReflectionAuthorizationService reflectionAuthorizationService;
 
     @MockBean
-    private MdmFeignClient mdmFeignClient;
+    protected MdmFeignClient mdmFeignClient;
 
     @MockBean
     public GBFSMapper gbfsMapper;

@@ -1,7 +1,7 @@
 package org.rutebanken.tiamat.service.parking;
 
-import org.apache.commons.lang3.StringUtils;
-import org.rutebanken.tiamat.feign.mdm.OkinaIdentifier;
+import org.apache.commons.collections4.CollectionUtils;
+import org.rutebanken.tiamat.feign.mdm.ParkingIdentifier;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
@@ -13,10 +13,7 @@ import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
 import java.math.BigInteger;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -29,18 +26,17 @@ public class ParkingsImportedService {
     private final NetexIdMapper netexIdMapper;
     private final ParkingVersionedSaverService parkingVersionedSaverService;
     private final VersionCreator versionCreator;
+    private final OrganisationsImportedService organisationsImportedService;
     private MdmService mdmService;
 
-    @org.springframework.beans.factory.annotation.Value("${netex.validPrefix:MOBIITI}")
-    String validNetexPrefix;
-
     @Autowired
-    ParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, VersionCreator versionCreator, MdmService mdmService) {
+    ParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, VersionCreator versionCreator, MdmService mdmService, OrganisationsImportedService organisationsImportedService) {
         this.parkingRepository = parkingRepository;
         this.netexIdMapper = netexIdMapper;
         this.parkingVersionedSaverService = parkingVersionedSaverService;
         this.versionCreator = versionCreator;
         this.mdmService = mdmService;
+        this.organisationsImportedService = organisationsImportedService;
     }
 
     public void createOrUpdateParkings(List<Parking> parkingsToSave) {
@@ -67,17 +63,24 @@ public class ParkingsImportedService {
                 netexIdMapper.moveOriginalIdToKeyValueList(parkingToSave, parkingToSave.getOriginalId());
                 netexIdMapper.moveOriginalNameToKeyValueList(parkingToSave, parkingToSave.getName().getValue());
 
+                if (parkingToSave.getOrganisation() != null) {
+                    organisationsImportedService.createOrUpdateOrganisation(parkingToSave.getOrganisation());
+                }
+
+                parkingToSave.setName(new EmbeddableMultilingualString(parkingToSave.getName().getValue()));
                 parkingVersionedSaverService.saveNewVersion(parkingToSave);
             }
         }
     }
 
     private Parking retrieveParkingInBDD(Parking parking) {
-
-        String importedId = parking.getOriginalIds().size() > 0 ? parking.getOriginalIds().iterator().next() : parking.getOriginalId();
-        OkinaIdentifier existingMdmId = mdmService.getExistingParkingMdmIdsFromImportedId(importedId);
-        if (existingMdmId != null){
-            Parking foundParking = parkingRepository.findFirstByNetexIdOrderByVersionDesc(validNetexPrefix + ":Parking:" + existingMdmId.getSuperId());
+        String importedId = CollectionUtils.isNotEmpty(parking.getOriginalIds()) ?
+                parking.getOriginalIds().iterator().next() : parking.getOriginalId();
+        Optional<ParkingIdentifier> existingMdmId =
+                mdmService.getExistingParkingMdmIdsFromImportedId(parking.getOperator(), importedId);
+        if (existingMdmId.isPresent()){
+            Parking foundParking =
+                    parkingRepository.findFirstByNetexIdOrderByVersionDesc(existingMdmId.get().getSuperId());
             if (foundParking != null && areAtTheSamePlace(foundParking, parking)){
                 return foundParking;
             }
@@ -281,6 +284,12 @@ public class ParkingsImportedService {
                     isUpdated |= updateIfDifferent(existingSpace::getNumberOfTwoWheeledVehicle, updatedSpace::getNumberOfTwoWheeledVehicle, existingSpace::setNumberOfTwoWheeledVehicle);
                 }
             }
+        }
+
+        if (existingParking.getOrganisation() != null) {
+            Organisation organisation = organisationsImportedService.createOrUpdateOrganisation(existingParking.getOrganisation());
+            updatedParking.setOrganisation(organisation);
+            isUpdated = true;
         }
 
         return isUpdated;

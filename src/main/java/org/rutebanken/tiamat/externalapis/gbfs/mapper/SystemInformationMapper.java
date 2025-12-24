@@ -15,8 +15,8 @@ public class SystemInformationMapper {
             return organisation;
         }
         GBFSData data = si.getData();
-        organisation.setNetexId("MOBIITI:ORGANISATION:" + data.getSystemId());
         String language = data.getLanguages().get(0);
+        organisation.setOriginalId(data.getSystemId());
         organisation.setLanguage(language);
         organisation.setName(data.getName().get(0).getText());
         if (CollectionUtils.isNotEmpty(data.getShortName())) {

@@ -4,6 +4,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.Set;
@@ -63,15 +64,28 @@ public interface MdmFeignClient {
     void updatePoiImportedIds(@RequestBody List<OkinaIdentifier> identifiers);
 
     @PostMapping(value = "/parkings")
-    List<OkinaIdentifier> generateParkingIdentifiers(@RequestBody List<OkinaIdentifier> identifiers);
+    List<ParkingIdentifier> generateParkingIdentifiers(@RequestBody List<ParkingIdentifier> identifiers);
 
     @GetMapping(value = "/parkings")
-    List<OkinaIdentifier> getParkingIdentifiers(@RequestBody List<Long> parkingIds);
+    List<ParkingIdentifier> getParkingIdentifiers(@RequestBody List<String> parkingIds);
 
-    @GetMapping(value = "/parkings/byOriginalId")
-    List<OkinaIdentifier> getParkingsIdentifiersByOriginalId(@RequestBody List<OkinaIdentifier> quayIdentifiers);
+    @GetMapping(value = "/parkings/byOperatorAndOriginalId")
+    ParkingIdentifier getParkingIdentifierbyOperatorAndOriginalId(@RequestParam("operator") String operator,
+                                                                  @RequestParam("originalId") String originalId);
 
     @PostMapping(value = "/parkings/updateImportedIds")
-    void updateParkingsImportedIds(@RequestBody List<OkinaIdentifier> identifiers);
+    void updateParkingsImportedIds(@RequestBody List<ParkingIdentifier> identifiers);
+
+    @PostMapping(value = "/organisations")
+    List<OkinaIdentifier> generateOrganisationIdentifiers(@RequestBody List<OkinaIdentifier> identifiers);
+
+    @GetMapping(value = "/organisations")
+    List<OkinaIdentifier> getOrganisationIdentifiers(@RequestBody List<Long> organisationIds);
+
+    @GetMapping(value = "/organisations/byOriginalId")
+    List<OkinaIdentifier> getOrganisationsIdentifiersByOriginalId(@RequestBody List<OkinaIdentifier> quayIdentifiers);
+
+    @PostMapping(value = "/organisations/updateImportedIds")
+    void updateOrganisationsImportedIds(@RequestBody List<OkinaIdentifier> identifiers);
 
 }

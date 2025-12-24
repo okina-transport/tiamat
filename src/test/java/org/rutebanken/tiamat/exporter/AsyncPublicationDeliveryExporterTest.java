@@ -57,16 +57,18 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import static jakarta.xml.bind.JAXBContext.newInstance;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest {
@@ -110,7 +112,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
 
 
         clearDB();
-
+        Set<Long> mdmIds = new HashSet<>();
 
         final int numberOfStopPlaces = StopPlaceSearch.DEFAULT_PAGE_SIZE;
         for (int i = 0; i < numberOfStopPlaces; i++) {
@@ -137,10 +139,11 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
             stopPlace.getQuays().add(quay);
 
             stopPlaceRepository.save(stopPlace);
-
+            mdmIds.add((long) i);
         }
         stopPlaceRepository.flush();
 
+        when(mdmFeignClient.getStopPlaceIdentifiersByDataset("test")).thenReturn(mdmIds);
 
         Provider provider = providerRepository.getProviders().iterator().next();
         ExportParams exportParams = ExportParams.newExportParamsBuilder()
@@ -198,7 +201,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         String sqybus = asyncPublicationDeliveryExporter.createFileNameWithoutExtention("41", "SQYBUS", LocalDateTime.now(ZoneOffset.UTC), true);
 
         // THEN
-        assertTrue(sqybus.length() > 0);
+        assertFalse(sqybus.isEmpty());
     }
 
 
@@ -332,6 +335,9 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
                 .setGroupOfStopPlacesExportMode(ExportParams.ExportMode.RELEVANT)
                 .setProviderId(provider.getId())
                 .build();
+
+
+        when(mdmFeignClient.getStopPlaceIdentifiersByDataset("test")).thenReturn(Set.of(1L, 2L));
 
         Job job = asyncPublicationDeliveryExporter.startExportJob("", exportParams);
 

@@ -69,7 +69,7 @@ public class MdmService {
     private static ParkingIdentifier buildParkingIdentifier(Parking parking) {
         ParkingIdentifier mdmData = new ParkingIdentifier();
         mdmData.setOperator(parking.getOperator());
-        mdmData.setOriginalId(parking.getOriginalIds().stream().iterator().next());
+        mdmData.setOriginalId(CollectionUtils.isNotEmpty(parking.getOriginalIds()) ? parking.getOriginalIds().iterator().next() : "");
         mdmData.setCountryCode("FR");
         mdmData.setInsee(parking.getInsee());
         if (StringUtils.isNotBlank(parking.getNetexId())) {
@@ -350,7 +350,9 @@ public class MdmService {
         mdmFeignClient.updateStopImportedIds(stopPlaceMdmData);
 
         List<OkinaIdentifier> quayMdmData = getQuaysIdentifiers(incomingStopPlace);
-        mdmFeignClient.updateQuaysImportedIds(quayMdmData);
+        if (CollectionUtils.isNotEmpty(quayMdmData)) {
+            mdmFeignClient.updateQuaysImportedIds(quayMdmData);
+        }
     }
 
 

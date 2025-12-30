@@ -1,9 +1,7 @@
 package org.rutebanken.tiamat.model;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import jakarta.persistence.Entity;
 import java.time.Instant;
-import java.util.Set;
 
 @Entity
 public class TimeBand extends EntityInVersionStructure{

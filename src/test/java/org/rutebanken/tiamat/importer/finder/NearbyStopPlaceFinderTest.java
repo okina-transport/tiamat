@@ -17,7 +17,7 @@ package org.rutebanken.tiamat.importer.finder;
 
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.general.PeriodicCacheLogger;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.importer.AlternativeStopTypes;

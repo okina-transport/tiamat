@@ -25,10 +25,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Query;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.Query;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -281,12 +281,11 @@ public class GaplessIdGeneratorService {
         Query sqlQuery = entityManager.createNativeQuery(sql);
 
         @SuppressWarnings("unchecked")
-        List<BigInteger> results = sqlQuery.getResultList();
+        List<Long> results = sqlQuery.getResultList();
 
         logger.trace("Got generated values: {}", results);
 
         return results.stream()
-                .map(bigInteger -> bigInteger.longValue())
                 .sorted((v1, v2) -> Long.compare(v1, v2))
                 .collect(toList());
     }

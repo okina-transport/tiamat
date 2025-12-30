@@ -16,18 +16,17 @@
 package org.rutebanken.tiamat.service.stopplace;
 
 import org.locationtech.jts.geom.Coordinate;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.*;
-import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+
 import org.rutebanken.tiamat.repository.CleanTablesTools;
-import org.rutebanken.tiamat.service.stopplace.StopPlaceQuayMerger;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.math.BigInteger;
-import java.time.Instant;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;

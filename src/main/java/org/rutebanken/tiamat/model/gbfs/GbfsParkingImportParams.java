@@ -1,10 +1,11 @@
 package org.rutebanken.tiamat.model.gbfs;
 
+import jakarta.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.URL;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
 
-import javax.validation.constraints.NotNull;
+
 import java.net.URI;
 
 public class GbfsParkingImportParams {

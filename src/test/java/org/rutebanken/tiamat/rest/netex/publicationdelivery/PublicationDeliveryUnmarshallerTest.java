@@ -15,12 +15,12 @@
 
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.UnmarshalException;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.UnmarshalException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;

@@ -16,8 +16,9 @@
 package org.rutebanken.tiamat.rest.dto;
 
 import io.restassured.RestAssured;
-import org.junit.Before;
-import org.junit.Test;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -44,7 +45,7 @@ public class DtoResourceIntegrationTest extends TiamatIntegrationTest {
     @Autowired
     StopPlaceVersionedSaverService saverService;
 
-    @Before
+    @BeforeEach
     public void configureRestAssured() {
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = port;

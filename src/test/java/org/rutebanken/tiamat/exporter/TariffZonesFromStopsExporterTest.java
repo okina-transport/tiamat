@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.exporter;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.TariffZone;
@@ -23,7 +23,7 @@ import org.rutebanken.tiamat.repository.TariffZoneRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 
-import javax.xml.bind.JAXBElement;
+
 import javax.xml.namespace.QName;
 import java.util.Arrays;
 import java.util.List;
@@ -65,7 +65,7 @@ public class TariffZonesFromStopsExporterTest extends TiamatIntegrationTest {
         tariffZonesFromStopsExporter.resolveTariffZones(Arrays.asList(netexStopPlace, netexStopPlace2), siteFrame);
 
 
-        List<org.rutebanken.netex.model.TariffZone> tariffZones = siteFrame.getTariffZones().getTariffZone_()
+        List<org.rutebanken.netex.model.TariffZone> tariffZones = siteFrame.getTariffZones().getTariffZone()
                 .stream()
                 .map(jaxbElement -> (org.rutebanken.netex.model.TariffZone) jaxbElement.getValue())
                 .collect(Collectors.toList());
@@ -111,11 +111,11 @@ public class TariffZonesFromStopsExporterTest extends TiamatIntegrationTest {
         netexStopPlace.withTariffZones(new TariffZoneRefs_RelStructure().withTariffZoneRef_(netexObjectFactory.createTariffZoneRef(new TariffZoneRef().withRef(tariffZone.getNetexId()).withVersion("1"))));
 
         SiteFrame siteFrame = new SiteFrame();
-        siteFrame.withTariffZones(new TariffZonesInFrame_RelStructure().withTariffZone_(netexObjectFactory.createTariffZone(alreadyAddedTariffZone)));
+        siteFrame.withTariffZones(new TariffZonesInFrame_RelStructure().withTariffZone(netexObjectFactory.createTariffZone(alreadyAddedTariffZone)));
         tariffZonesFromStopsExporter.resolveTariffZones(Arrays.asList(netexStopPlace), siteFrame);
 
 
-        List<org.rutebanken.netex.model.TariffZone> tarifZones = siteFrame.getTariffZones().getTariffZone_()
+        List<org.rutebanken.netex.model.TariffZone> tarifZones = siteFrame.getTariffZones().getTariffZone()
                 .stream()
                 .map(jaxbElement -> (org.rutebanken.netex.model.TariffZone) jaxbElement.getValue())
                 .collect(Collectors.toList());

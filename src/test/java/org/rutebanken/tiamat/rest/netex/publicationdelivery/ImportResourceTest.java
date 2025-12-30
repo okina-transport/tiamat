@@ -16,23 +16,31 @@
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 import com.google.common.collect.Sets;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
+import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.transaction.TestTransaction;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import javax.xml.bind.JAXBException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
+import jakarta.xml.bind.JAXBException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -45,6 +53,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -62,6 +71,24 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     private PublicationDeliveryHelper publicationDeliveryHelper;
 
     private LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+
+    @Autowired
+    StopPlaceRepository stopPlaceRepository;
+
+    @PersistenceContext
+    private EntityManager em;
+
+
+    @Autowired
+    private TransactionTemplate transactionTemplate;
+
+
+    public void purgeInstalledEquipment() {
+        transactionTemplate.execute(status -> {
+            em.createNativeQuery("DELETE FROM installed_equipment").executeUpdate();
+            return em.createNativeQuery("DELETE FROM installed_equipment_version_structure").executeUpdate();
+        });
+    }
 
 
     private ImportParams createStandardParamsForImport() {
@@ -134,7 +161,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    @Ignore //disable test as stop place types are different, they should not be merged
+    @Disabled //disable test as stop place types are different, they should not be merged
     public void publicationDeliveriesWithBusStationStopAndOnStreetBus() throws Exception {
 
         StopPlace stopPlace = new StopPlace()
@@ -195,7 +222,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void ignoreStopPlaceTypes() throws Exception {
 
         StopPlace stopPlace = new StopPlace()
@@ -216,7 +243,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void allowOnlyStopPlaceTypes() throws Exception {
 
         StopPlace stopPlace = new StopPlace()
@@ -815,7 +842,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    @Ignore //no remove is done on names in mobiiti
+    @Disabled //no remove is done on names in mobiiti
     public void importPublicationDeliveryAndExpectCertainWordsToBeRemovedFromNames() throws Exception {
         StopPlace stopPlace = new StopPlace()
                 .withId("XYZ:stoparea:1")
@@ -859,7 +886,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    @Ignore // no remove is done on child now, even if it is same as parent
+    @Disabled // no remove is done on child now, even if it is same as parent
     public void expectQuayNameToBeRemovedIfSameAsParentStopPlaceName() throws Exception {
         StopPlace stopPlace = new StopPlace()
                 .withId("XYZ:stoparea:2")
@@ -1085,7 +1112,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
 
         List<StopPlace> changedStopPlaces = publicationDeliveryTestHelper.extractStopPlaces(response, false);
-        Assert.assertEquals(1, changedStopPlaces.size());
+        assertEquals(1, changedStopPlaces.size());
         StopPlace stopPlace = changedStopPlaces.get(0);
 
         List<ValidBetween> actualValidBetween = stopPlace.getValidBetween();
@@ -1104,7 +1131,7 @@ public class ImportResourceTest extends TiamatIntegrationTest {
      * Partially copied from https://github.com/rutebanken/netex-norway-examples/blob/master/examples/stops/BasicStopPlace_example.xml
      */
     @Test
-    @Ignore
+    @Disabled
     public void importBasicStopPlace() throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
 
         String xml = "<PublicationDelivery\n" +
@@ -1149,6 +1176,9 @@ public class ImportResourceTest extends TiamatIntegrationTest {
 
     @Test
     public void importNSBStopPlace() throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
+        stopPlaceRepository.deleteAll();
+        purgeInstalledEquipment();
+
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<PublicationDelivery xmlns=\"http://www.netex.org.uk/netex\">\n" +
                 "   <PublicationTimestamp>2017-04-18T12:57:27.796+02:00</PublicationTimestamp>\n" +
@@ -1283,6 +1313,12 @@ public class ImportResourceTest extends TiamatIntegrationTest {
 
     @Test
     public void importNSBStopPlaceWithTicketValidatorEquipment() throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
+
+        stopPlaceRepository.deleteAll();
+        purgeInstalledEquipment();
+
+
+
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<PublicationDelivery xmlns=\"http://www.netex.org.uk/netex\">\n" +
                 "   <PublicationTimestamp>2017-04-18T12:57:27.796+02:00</PublicationTimestamp>\n" +

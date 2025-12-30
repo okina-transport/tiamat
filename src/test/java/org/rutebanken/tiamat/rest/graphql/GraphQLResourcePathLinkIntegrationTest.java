@@ -17,9 +17,10 @@ package org.rutebanken.tiamat.rest.graphql;
 
 import com.google.common.collect.Sets;
 import io.restassured.response.ValidatableResponse;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+
+
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateSequence;
 import org.locationtech.jts.geom.LineString;
@@ -46,6 +47,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.DEFAULT_DURATION;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.FIND_PATH_LINK;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.FREQUENT_TRAVELLER_DURATION;
@@ -53,7 +55,7 @@ import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.MUTATE_PATH_LINK;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.TRANSFER_DURATION;
 import static org.rutebanken.tiamat.versioning.VersionIncrementor.INITIAL_VERSION;
 
-@Ignore
+@Disabled
 public class GraphQLResourcePathLinkIntegrationTest extends AbstractGraphQLResourceIntegrationTest {
 
     @Autowired
@@ -182,7 +184,7 @@ public class GraphQLResourcePathLinkIntegrationTest extends AbstractGraphQLResou
                 RoleAssignmentListBuilder.builder().withStopPlaceOfType(StopTypeEnumeration.BUS_STATION).build());
         PathLinkQuery query = createNewPathLinkQuery(StopTypeEnumeration.FERRY_STOP);
         final ValidatableResponse validatableResponse = executeGraphqQLQueryOnly(query.query, HttpStatus.FORBIDDEN.value());
-        Assert.assertNotNull(validatableResponse);
+        assertNotNull(validatableResponse);
     }
 
     @Test

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Set;
 
 public interface PointOfInterestRepositoryCustom extends DataManagedObjectStructureRepository<PointOfInterest> {
-    int countResult();
+    Long countResult();
 
     Set<Long> scrollPointsOfInterest();
 

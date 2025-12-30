@@ -19,11 +19,19 @@ import com.google.common.base.MoreObjects;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+@SqlResultSetMapping(
+        name = "ParkingMapping",
+        entities = @EntityResult(
+                entityClass = Parking.class
+        )
+)
 @Entity
 public class Parking
         extends Site_VersionStructure {
@@ -104,6 +112,17 @@ public class Parking
     private Organisation organisation;
     private String rentalUriIos;
     private String rentalUriAndroid;
+
+    @ElementCollection(targetClass = SiteRefStructure.class, fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "parking_adjacent_sites",
+            joinColumns = @JoinColumn(name = "parking_id")
+    )
+    @AttributeOverrides({
+            @AttributeOverride(name = "ref", column = @Column(name = "ref")),
+            @AttributeOverride(name = "version", column = @Column(name = "version"))
+    })
+    protected Set<SiteRefStructure> adjacentSites = new HashSet<>();
 
     public List<TypeOfPaymentMethod> getTypeOfPaymentMethods() {
         return typeOfPaymentMethods;
@@ -430,6 +449,15 @@ public class Parking
 
     public void setRentalUriAndroid(String rentalUriAndroid) {
         this.rentalUriAndroid = rentalUriAndroid;
+    }
+
+
+    public Set<SiteRefStructure> getAdjacentSites() {
+        return adjacentSites;
+    }
+
+    public void setAdjacentSites(Set<SiteRefStructure> adjacentSites) {
+        this.adjacentSites = adjacentSites;
     }
 
     @Override

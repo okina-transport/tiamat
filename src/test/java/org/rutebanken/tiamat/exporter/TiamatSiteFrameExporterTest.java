@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.exporter;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.SiteFrame;

@@ -16,7 +16,7 @@
 package org.rutebanken.tiamat.repository;
 
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.SQLQuery;
+
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
@@ -32,9 +32,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import java.util.*;
 
 public class GroupOfStopPlacesRepositoryImpl implements GroupOfStopPlacesRepositoryCustom {
@@ -55,7 +55,7 @@ public class GroupOfStopPlacesRepositoryImpl implements GroupOfStopPlacesReposit
 
         Pair<String, Map<String, Object>> pair = groupOfStopPlacesQueryFromSearchBuilder.buildQueryFromSearch(search);
         Session session = entityManager.unwrap(SessionImpl.class);
-        NativeQuery query = session.createSQLQuery(pair.getFirst());
+        NativeQuery query = session.createNativeQuery(pair.getFirst());
         query.addEntity(GroupOfStopPlaces.class);
 
         searchHelper.addParams(query, pair.getSecond());
@@ -96,7 +96,7 @@ public class GroupOfStopPlacesRepositoryImpl implements GroupOfStopPlacesReposit
 
     private Iterator<GroupOfStopPlaces> scrollGroupOfStopPlaces(String sql) {
         Session session = entityManager.unwrap(Session.class);
-        SQLQuery sqlQuery = session.createSQLQuery(sql);
+        NativeQuery sqlQuery = session.createNativeQuery(sql);
 
         final int fetchSize = 100;
 

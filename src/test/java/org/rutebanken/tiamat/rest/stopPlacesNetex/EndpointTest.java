@@ -1,50 +1,115 @@
 package org.rutebanken.tiamat.rest.stopPlacesNetex;
 
 import io.restassured.http.ContentType;
-import org.junit.Test;
+
+import org.entur.gbfs.http.GBFSHttpClient;
+import org.entur.gbfs.mapper.GBFSMapper;
+import org.entur.gbfs.validation.GbfsValidator;
+import org.junit.jupiter.api.Test;
+
 import org.rutebanken.tiamat.TiamatIntegrationTest;
+import org.rutebanken.tiamat.TiamatTestApplication;
+import org.rutebanken.tiamat.security.RolesChecker;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.*;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 
-import java.util.List;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
-import static io.restassured.RestAssured.given;
-import static org.assertj.core.api.Java6Assertions.assertThat;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 
-public class EndpointTest extends TiamatIntegrationTest {
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
+
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
+
+
+
+
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = TiamatTestApplication.class)
+@AutoConfigureWebTestClient
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+public class EndpointTest {
+
+
+
+    @Autowired
+    private WebTestClient webTestClient;
+
+
+    @MockBean
+    private JwtDecoder jwtDecoder;
+
+
+    @MockBean
+    private RolesChecker rolesChecker;
+
+    @MockBean
+    public GBFSMapper gbfsMapper;
+
+    @MockBean
+    public GbfsValidator gbfsValidator;
+
+    @MockBean
+    public GBFSHttpClient gbfsHttpClient;
+
+
 
     @Test
-    public void testDownloadFileEndpointWithCorrectName() {
+    public void testDownloadFileEndpointWithCorrectName() throws Exception {
+
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .claim("sub", "user123")
+                .claim("scope", "read")
+                .claim("scope", "downloadNetexStopPlaceAdmin")
+                .build();
+
+        when(jwtDecoder.decode(anyString())).thenReturn(jwt);
+
+        doReturn(true).when(rolesChecker).hasRole("downloadNetexStopPlaceAdmin");
 
 
         // first case with correct name (test.zip). Status should be 500. It means the method has been called but it failed because of authentication
-        given()
-                .port(port)
-                .contentType(ContentType.JSON)
-                .when()
-                .get("/services/stop_places/netex/export/stop-place-file-download/technique/test.zip")
-                .then()
-                .log().body()
-                .statusCode(500)
-                .assertThat();
+        webTestClient.get()
+                .uri("/services/stop_places/netex/export/stop-place-file-download/technique/test.zip")
+                .header("Authorization", "Bearer un-token-bidon")
+                .exchange()
+                .expectStatus().is5xxServerError();
+
 
     }
 
     @Test
     public void testDownloadFileEndpointWithIncorrectName() {
 
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .claim("sub", "user123")
+                .claim("scope", "read")
+                .claim("scope", "downloadNetexStopPlaceAdmin")
+                .build();
+
+        when(jwtDecoder.decode(anyString())).thenReturn(jwt);
+
+        doReturn(true).when(rolesChecker).hasRole("downloadNetexStopPlaceAdmin");
+
 
         // second case with empty name. Status should be 404. It means the method has  NOT been called because file pattern is not correct
-        given()
-                .port(port)
-                .contentType(ContentType.JSON)
-                .when()
-                .get("/services/stop_places/netex/export/stop-place-file-download/technique/")
-                .then()
-                .log().body()
-                .statusCode(404)
-                .assertThat();
+        webTestClient.get()
+                .uri("/services/stop_places/netex/export/stop-place-file-download/technique/")
+                .header("Authorization", "Bearer un-token-bidon")
+                .exchange()
+                .expectStatus().is4xxClientError();
+
+
+
+
 
     }
 

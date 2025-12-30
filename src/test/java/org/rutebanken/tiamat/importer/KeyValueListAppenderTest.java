@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.importer;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.Value;

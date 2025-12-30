@@ -15,9 +15,9 @@
 
 package org.rutebanken.tiamat.model;
 
-import javax.persistence.Embedded;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Transient;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Transient;
 
 @MappedSuperclass
 public abstract class StopPlaceSpace_VersionStructure

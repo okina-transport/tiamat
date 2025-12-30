@@ -16,14 +16,15 @@
 package org.rutebanken.tiamat.service.stopplace;
 
 import org.hibernate.Session;
-import org.junit.Before;
-import org.junit.Test;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.springframework.test.annotation.DirtiesContext;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -44,7 +45,7 @@ public class ParentStopPlacesFetcherTest {
     private ParentStopPlacesFetcher parentStopPlacesFetcher = new ParentStopPlacesFetcher(stopPlaceRepository, entityManager);
     private RoleAssignmentExtractor roleAssignmentExtractor = mock(RoleAssignmentExtractor.class);
 
-    @Before
+    @BeforeEach
     public void before() {
         when(entityManager.unwrap(any())).thenReturn(mock(Session.class));
     }

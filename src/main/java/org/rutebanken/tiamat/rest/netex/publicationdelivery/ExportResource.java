@@ -15,7 +15,8 @@
 
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
-import io.swagger.annotations.Api;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.rutebanken.tiamat.dtoassembling.disassembler.ChangedStopPlaceSearchDisassembler;
 import org.rutebanken.tiamat.dtoassembling.dto.ChangedStopPlaceSearchDto;
 import org.rutebanken.tiamat.exporter.PublicationDeliveryExporter;
@@ -35,14 +36,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.xml.sax.SAXException;
 
-import javax.transaction.Transactional;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-import javax.xml.bind.JAXBException;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -52,7 +53,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-@Api(tags = {"Sync export resource"}, produces = "application/xml")
+@Schema(description = "Sync export resource")
 @Produces("application/xml")
 @Path("netex")
 public class ExportResource {

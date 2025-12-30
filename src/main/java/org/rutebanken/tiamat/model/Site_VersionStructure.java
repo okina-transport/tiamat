@@ -17,12 +17,9 @@ package org.rutebanken.tiamat.model;
 
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-import javax.persistence.*;
-import javax.xml.bind.JAXBElement;
+import jakarta.persistence.*;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @MappedSuperclass
 public abstract class Site_VersionStructure
@@ -55,8 +52,7 @@ public abstract class Site_VersionStructure
     @Embedded
     protected SiteRefStructure parentSiteRef;
 
-    @ElementCollection(targetClass = SiteRefStructure.class, fetch = FetchType.EAGER)
-    protected Set<SiteRefStructure> adjacentSites = new HashSet<>();
+
 
     @Transient
     protected SiteEntrances_RelStructure entrances;
@@ -123,9 +119,7 @@ public abstract class Site_VersionStructure
         this.parentSiteRef = value;
     }
 
-    public Set<SiteRefStructure> getAdjacentSites() {
-        return adjacentSites;
-    }
+
 
     public SiteEntrances_RelStructure getEntrances() {
         return entrances;

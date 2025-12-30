@@ -17,7 +17,7 @@ package org.rutebanken.tiamat.model;
 
 import com.google.common.base.MoreObjects;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @MappedSuperclass
 public abstract class Equipment_VersionStructure

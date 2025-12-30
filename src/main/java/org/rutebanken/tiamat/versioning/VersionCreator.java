@@ -96,6 +96,11 @@ public class VersionCreator {
                 .byDefault()
                 .register();
 
+        mapperFactory.classMap(Value.class, Value.class)
+                .exclude("id")
+                .byDefault()
+                .register();
+
         mapperFactory.classMap(PointOfInterest.class, PointOfInterest.class)
                 .exclude(POLYGON_FIELD)
                 .byDefault()

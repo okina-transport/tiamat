@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.rest.graphql.types;
 
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLObjectType;
 import org.rutebanken.tiamat.rest.graphql.fetchers.KeyValuesDataFetcher;
 import org.rutebanken.tiamat.rest.graphql.fetchers.OriginalIdsDataFetcher;
 import org.rutebanken.tiamat.rest.graphql.fetchers.OtherTransportModesFetcher;
@@ -51,7 +52,7 @@ public class ZoneCommonFieldListCreator {
     @Autowired
     private PolygonFetcher polygonFetcher;
 
-    public List<GraphQLFieldDefinition> create() {
+    public List<GraphQLFieldDefinition> create(GraphQLObjectType validBetweenObjectType) {
 
         List<GraphQLFieldDefinition> zoneFieldList = new ArrayList<>();
         zoneFieldList.add(netexIdFieldDefinition);
@@ -59,25 +60,24 @@ public class ZoneCommonFieldListCreator {
         zoneFieldList.add(newFieldDefinition().name(SHORT_NAME).type(embeddableMultilingualStringObjectType).build());
         zoneFieldList.add(newFieldDefinition().name(DESCRIPTION).type(embeddableMultilingualStringObjectType).build());
         zoneFieldList.add(newFieldDefinition().name(VERSION).type(GraphQLString).build());
+        zoneFieldList.add(newFieldDefinition().name(VALID_BETWEEN).type(validBetweenObjectType).build());
         zoneFieldList.add(geometryFieldDefinition);
+
 
         zoneFieldList.add(newFieldDefinition()
                 .name(IMPORTED_ID)
                 .deprecate("Moved to keyValues")
                 .type(new GraphQLList(GraphQLString))
-                .dataFetcher(originalIdsDataFetcher)
                 .build());
 
         zoneFieldList.add(newFieldDefinition()
                 .name(KEY_VALUES)
                 .type(new GraphQLList(keyValuesObjectType))
-                .dataFetcher(keyValuesDataFetcher)
                 .build());
 
         zoneFieldList.add(newFieldDefinition()
                 .name(POLYGON)
                 .type(geoJsonObjectType)
-                .dataFetcher(polygonFetcher)
                 .build());
 
         return zoneFieldList;

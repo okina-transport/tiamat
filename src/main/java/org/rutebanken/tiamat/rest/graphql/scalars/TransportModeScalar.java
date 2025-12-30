@@ -138,7 +138,7 @@ public class TransportModeScalar {
         return transportModeFieldList;
     }
 
-    private Object resolveSubmode(DataFetchingEnvironment env) {
+    public Object resolveSubmode(DataFetchingEnvironment env) {
         Object o = env.getSource();
         if (o instanceof StopPlace) {
             StopPlace stopPlace = (StopPlace) o;

@@ -15,8 +15,7 @@
 
 package org.rutebanken.tiamat.exporter;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.rutebanken.netex.model.GeneralFrame;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
@@ -42,12 +41,12 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Propagation;
 import org.xml.sax.SAXException;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -61,8 +60,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static javax.xml.bind.JAXBContext.newInstance;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import static jakarta.xml.bind.JAXBContext.newInstance;
 import static org.awaitility.Awaitility.await;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -101,7 +103,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
     private CleanTablesTools cleanTablesTools;
 
     @Test
-    public void test() throws JAXBException, IOException, SAXException {
+    public void test() throws  JAXBException, IOException, SAXException {
 
         asyncPublicationDeliveryExporter.providerRepository = providerRepository;
 
@@ -155,6 +157,8 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId(), false, false);
         asyncPublicationDeliveryExporter.streamingPublicationDelivery = streamingPublicationDelivery;
 
+
+
         assertThat(job.getId()).isGreaterThan(0L);
 
         await().timeout(Duration.of(10, ChronoUnit.MINUTES)).until(() -> {
@@ -193,7 +197,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         String sqybus = asyncPublicationDeliveryExporter.createFileNameWithoutExtention("41", "SQYBUS", LocalDateTime.now(ZoneOffset.UTC), true);
 
         // THEN
-        Assert.assertFalse(sqybus.isEmpty());
+        assertTrue(sqybus.length() > 0);
     }
 
 

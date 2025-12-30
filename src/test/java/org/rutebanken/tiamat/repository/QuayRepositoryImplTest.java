@@ -16,8 +16,8 @@
 package org.rutebanken.tiamat.repository;
 
 import com.google.common.collect.Sets;
-import org.junit.Assert;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.model.*;
@@ -30,6 +30,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.MERGED_ID_KEY;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 
@@ -174,27 +176,27 @@ public class QuayRepositoryImplTest extends TiamatIntegrationTest {
         Quay currentMatchingQuay = saveQuay(currentMatchingStop, "NSR:Quay:2", 1l, orgIdKey, orgId);
 
         List<IdMappingDto> currentMapping = quayRepository.findKeyValueMappingsForQuay(now, now, 0, 2000);
-        Assert.assertEquals(1, currentMapping.size());
-        Assert.assertEquals(orgId, currentMapping.get(0).originalId);
-        Assert.assertEquals(currentMatchingQuay.getNetexId(), currentMapping.get(0).netexId);
-        Assert.assertEquals(currentMatchingStop.getValidBetween().getFromDate(), currentMapping.get(0).validFrom);
-        Assert.assertEquals(currentMatchingStop.getValidBetween().getToDate(), currentMapping.get(0).validTo);
+        assertEquals(1, currentMapping.size());
+        assertEquals(orgId, currentMapping.get(0).originalId);
+        assertEquals(currentMatchingQuay.getNetexId(), currentMapping.get(0).netexId);
+        assertEquals(currentMatchingStop.getValidBetween().getFromDate(), currentMapping.get(0).validFrom);
+        assertEquals(currentMatchingStop.getValidBetween().getToDate(), currentMapping.get(0).validTo);
 
         Instant hundredSecondsAgo = now.minusSeconds(100);
         List<IdMappingDto> historicMapping = quayRepository.findKeyValueMappingsForQuay(hundredSecondsAgo, hundredSecondsAgo, 0, 2000);
-        Assert.assertEquals(1, historicMapping.size());
-        Assert.assertEquals(orgId, historicMapping.get(0).originalId);
-        Assert.assertEquals(historicMatchingQuay.getNetexId(), historicMapping.get(0).netexId);
-        Assert.assertEquals(historicMatchingStopV1.getValidBetween().getFromDate(), historicMapping.get(0).validFrom);
-        Assert.assertEquals(historicMatchingStopV1.getValidBetween().getToDate(), historicMapping.get(0).validTo);
+        assertEquals(1, historicMapping.size());
+        assertEquals(orgId, historicMapping.get(0).originalId);
+        assertEquals(historicMatchingQuay.getNetexId(), historicMapping.get(0).netexId);
+        assertEquals(historicMatchingStopV1.getValidBetween().getFromDate(), historicMapping.get(0).validFrom);
+        assertEquals(historicMatchingStopV1.getValidBetween().getToDate(), historicMapping.get(0).validTo);
 
 
         // No imported-ids or merged-ids are valid for point in time 300 seconds ago
         Instant threeHundredSecondsAgo = now.minusSeconds(300);
-        Assert.assertTrue(quayRepository.findKeyValueMappingsForQuay(threeHundredSecondsAgo, threeHundredSecondsAgo, 0, 2000).isEmpty());
+        assertTrue(quayRepository.findKeyValueMappingsForQuay(threeHundredSecondsAgo, threeHundredSecondsAgo, 0, 2000).isEmpty());
 
         List<IdMappingDto> allMappings = quayRepository.findKeyValueMappingsForQuay(hundredSecondsAgo, now, 0, 2000);
-        Assert.assertEquals(2, allMappings.size());
+        assertEquals(2, allMappings.size());
     }
 
     private StopPlace saveStop(String id, Long version, Instant startOfPeriod, Instant endOfPeriod) {

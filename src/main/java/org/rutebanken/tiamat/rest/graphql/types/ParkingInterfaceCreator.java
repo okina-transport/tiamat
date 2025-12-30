@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static graphql.Scalars.*;
+import static graphql.scalars.ExtendedScalars.GraphQLBigInteger;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;

@@ -47,7 +47,7 @@ package org.rutebanken.tiamat.exporter.params;
 
 import com.google.common.base.MoreObjects;
 
-import javax.ws.rs.QueryParam;
+import jakarta.ws.rs.QueryParam;
 
 public class TariffZoneSearch implements SearchObject {
 

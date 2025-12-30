@@ -1,22 +1,27 @@
 package org.rutebanken.tiamat.importer.handler;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import org.aspectj.lang.annotation.Before;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.repository.QuayRepository;
 
 import java.util.List;
 
+
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class StopPlaceGeocodeHandlerTest {
 
     private StopPlaceGeocodeHandler stopPlaceGeocodeHandler;
@@ -24,7 +29,7 @@ public class StopPlaceGeocodeHandlerTest {
     @Mock
     private QuayRepository quayRepository;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         stopPlaceGeocodeHandler = new StopPlaceGeocodeHandler(quayRepository);
     }

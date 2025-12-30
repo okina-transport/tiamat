@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.exporter.async;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.springframework.test.annotation.DirtiesContext;

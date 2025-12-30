@@ -16,12 +16,13 @@
 package org.rutebanken.tiamat;
 
 import com.hazelcast.core.HazelcastInstance;
+import org.aspectj.lang.annotation.Before;
 import org.entur.gbfs.http.GBFSHttpClient;
 import org.entur.gbfs.mapper.GBFSMapper;
 import org.entur.gbfs.validation.GbfsValidator;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
@@ -48,9 +49,9 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,7 +62,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService.INITIAL_LAST_ID;
 
-@RunWith(SpringRunner.class)
+
 @SpringBootTest(webEnvironment= SpringBootTest.WebEnvironment.RANDOM_PORT, classes = TiamatTestApplication.class)
 @ActiveProfiles("test")
 @EnableAspectJAutoProxy(proxyTargetClass = true)
@@ -157,7 +158,7 @@ public abstract class TiamatIntegrationTest {
     @Value("${local.server.port}")
     protected int port;
 
-    @Before
+    @BeforeEach
     public void initProviderRepository() {
 
         Provider prov1 = createProvider("PROV1", 2L);
@@ -198,8 +199,8 @@ public abstract class TiamatIntegrationTest {
         return provider;
     }
 
-    @Before
-    @After
+    @BeforeEach
+    @AfterEach
     public void clearRepositories() {
 
         groupOfStopPlacesRepository.flush();

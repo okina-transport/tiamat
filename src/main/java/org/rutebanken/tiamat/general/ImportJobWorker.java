@@ -44,8 +44,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
@@ -212,7 +212,7 @@ public class ImportJobWorker implements Runnable {
     }
 
     private void replaceIdsAndRemoveImportedIds(PublicationDeliveryStructure incomingPublicationDelivery) {
-        List<javax.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = incomingPublicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame();
+        List<jakarta.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = incomingPublicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame();
         List<JAXBElement<? extends EntityStructure>> members = null;
 
         for (JAXBElement<? extends Common_VersionFrameStructure> frameType : findedFrameType) {
@@ -276,7 +276,7 @@ public class ImportJobWorker implements Runnable {
      */
     private boolean isUsingSuperIds(PublicationDeliveryStructure incomingPublicationDelivery) {
 
-        List<javax.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = incomingPublicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame();
+        List<jakarta.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = incomingPublicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame();
         List<JAXBElement<? extends EntityStructure>> members = null;
 
         for (JAXBElement<? extends Common_VersionFrameStructure> frameType : findedFrameType) {

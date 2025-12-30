@@ -15,27 +15,14 @@
 
 package org.rutebanken.tiamat.rest.exception;
 
-import com.google.common.collect.Sets;
-import org.rutebanken.helper.organisation.NotAuthenticatedException;
-import org.springframework.core.NestedRuntimeException;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.access.AccessDeniedException;
 
-import javax.persistence.EntityExistsException;
-import javax.persistence.EntityNotFoundException;
-import javax.persistence.OptimisticLockException;
-import javax.validation.ValidationException;
-import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
-import static javax.ws.rs.core.Response.Status.*;
-import static org.rutebanken.tiamat.rest.exception.TiamatBusinessException.DUPLICATE_IMPORTED_ID;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+
+import static jakarta.ws.rs.core.Response.Status.*;
+
 import static org.rutebanken.tiamat.rest.exception.TiamatBusinessException.TRANSPORT_MODE_MISMATCH;
 
 @Provider

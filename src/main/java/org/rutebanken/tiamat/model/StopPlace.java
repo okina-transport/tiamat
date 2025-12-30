@@ -23,7 +23,7 @@ import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
 import org.rutebanken.tiamat.model.tag.Tag;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.*;
 
@@ -105,6 +105,19 @@ public class StopPlace
     private ModificationEnumeration modificationEnumeration;
 
     private String provider;
+
+    @ElementCollection(targetClass = SiteRefStructure.class, fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "stop_place_adjacent_sites",
+            joinColumns = @JoinColumn(name = "stop_place_id")
+    )
+    @AttributeOverrides({
+            @AttributeOverride(name = "ref", column = @Column(name = "ref")),
+            @AttributeOverride(name = "version", column = @Column(name = "version"))
+    })
+    protected Set<SiteRefStructure> adjacentSites = new HashSet<>();
+
+
 
     @Transient
     private Set<Tag> tags = new HashSet<>();
@@ -325,6 +338,14 @@ public class StopPlace
 
     public String getProvider() {
         return provider;
+    }
+
+    public Set<SiteRefStructure> getAdjacentSites() {
+        return adjacentSites;
+    }
+
+    public void setAdjacentSites(Set<SiteRefStructure> adjacentSites) {
+        this.adjacentSites = adjacentSites;
     }
 
     public void setProvider(String provider) {

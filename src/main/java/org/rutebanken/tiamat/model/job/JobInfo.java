@@ -1,10 +1,9 @@
 package org.rutebanken.tiamat.model.job;
 
 import com.amazonaws.services.directory.model.ServiceException;
-import io.swagger.models.parameters.AbstractParameter;
-
-import javax.ws.rs.core.UriInfo;
-import javax.xml.bind.annotation.*;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.xml.bind.annotation.*;
 import java.util.*;
 
 @XmlRootElement(name = "job_info")
@@ -42,7 +41,7 @@ public class JobInfo {
 	private List<LinkInfo> linkInfos;
 
 	@XmlElementRef(name = "action_parameters")
-	private AbstractParameter actionParameters;
+	private Parameter actionParameters;
 
 	public JobInfo(Job job, UriInfo uriInfo) throws ServiceException {
 		this(job, true, uriInfo);

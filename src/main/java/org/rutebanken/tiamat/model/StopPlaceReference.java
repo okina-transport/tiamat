@@ -15,9 +15,9 @@
 
 package org.rutebanken.tiamat.model;
 
-import javax.persistence.Embeddable;
+import jakarta.persistence.MappedSuperclass;
 
-@Embeddable
+@MappedSuperclass
 public class StopPlaceReference extends SiteRefStructure {
 
     public StopPlaceReference() {

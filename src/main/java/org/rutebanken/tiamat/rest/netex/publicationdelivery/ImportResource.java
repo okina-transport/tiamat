@@ -15,8 +15,9 @@
 
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiParam;
+
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.importer.ImportParams;
@@ -31,10 +32,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.xml.bind.JAXBException;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
@@ -44,7 +45,7 @@ import java.util.Set;
  * Import publication deliveries
  */
 @Component
-@Api(tags = {"Import resource"}, produces = "application/xml")
+@Tag(name = "Import resource")
 @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
 @Path("netex")
 public class ImportResource {
@@ -74,7 +75,7 @@ public class ImportResource {
     @POST
     @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
-    public Response importPublicationDelivery(@ApiParam(hidden = true) InputStream inputStream, @BeanParam ImportParams importParams) throws IOException, JAXBException, SAXException, TiamatBusinessException, BindException {
+    public Response importPublicationDelivery(@Parameter(hidden = true) InputStream inputStream, @BeanParam ImportParams importParams) throws IOException, JAXBException, SAXException, TiamatBusinessException, BindException {
         logger.info("Received Netex publication delivery, starting to parse...");
         logger.info(".........................................................(importParams.providerCode = {})", importParams.providerCode);
 

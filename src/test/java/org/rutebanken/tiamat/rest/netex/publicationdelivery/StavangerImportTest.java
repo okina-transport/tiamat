@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;

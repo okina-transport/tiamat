@@ -1,15 +1,17 @@
 package org.rutebanken.tiamat.rest.stopPlacesNetex;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.List;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class ImportStopPlacesNetexResourceTest extends TiamatIntegrationTest {
 
     @Autowired

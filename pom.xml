@@ -18,9 +18,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>com.okina.springboot</groupId>
+        <artifactId>superpom</artifactId>
+        <version>2.0.23-SNAPSHOT</version>
+    </parent>
+
+
     <groupId>org.rutebanken</groupId>
     <artifactId>tiamat</artifactId>
-    <version>2.8.8-mobi-iti-SNAPSHOT</version>
+    <version>2.8.8-mobi-iti-SNAPSHOT-J21</version>
     <packaging>jar</packaging>
 
     <name>Tiamat</name>
@@ -58,46 +65,50 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>17</java.version>
-        <maven.compiler.target>17</maven.compiler.target>
-        <maven.compiler.source>17</maven.compiler.source>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.resources.sourceEncoding>UTF-8</maven.resources.sourceEncoding>
+
+
+        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
         <plexus.compiler.javac.version>2.8.5</plexus.compiler.javac.version>
         <docker.maven.plugin.version>0.21.0</docker.maven.plugin.version>
-        <spring-boot-plugin.version>2.7.18</spring-boot-plugin.version>
-        <spring-boot.version>2.7.18</spring-boot.version>
-        <spring.security.version>5.3.5.RELEASE</spring.security.version>
-        <keycloak.version>19.0.3</keycloak.version>
+
+
+        <keycloak.version>25.0.3</keycloak.version>
         <postgresql.version>42.7.2</postgresql.version>
         <geodb.version>0.9</geodb.version>
         <geotools.version>29.1</geotools.version>
         <gt-jts-wrapper.version>24.4.01</gt-jts-wrapper.version>
-        <activemq-client.version>5.16.7</activemq-client.version>
+        <activemq-client.version>6.2.0</activemq-client.version>
         <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
         <flyway-core.version>8.5.10</flyway-core.version>
         <logstash-logback.version>5.2</logstash-logback.version>
-        <kubernetes-client.version>4.1.1</kubernetes-client.version>
+
         <janino.version>3.0.8</janino.version>
         <assertj-core.version>3.10.0</assertj-core.version>
-        <rest-assured.version>4.5.1</rest-assured.version>
+        <rest-assured.version>5.5.6</rest-assured.version>
         <javax.el.version>3.0.0</javax.el.version>
         <!--        <com.h2database.version>2.2.224</com.h2database.version>-->
         <hikariCP.version>3.2.0</hikariCP.version>
         <commons.lang3.version>3.7</commons.lang3.version>
         <orika-core.version>1.5.4</orika-core.version>
         <guava.version>33.1.0-jre</guava.version>
-        <graphql-java.version>11.0</graphql-java.version>
-
+        <graphql-java.version>25.0</graphql-java.version>
+        <graphql-java-extended-scalars.version>24.0</graphql-java-extended-scalars.version>
         <hazelcast-hibernate53.version>5.1.0</hazelcast-hibernate53.version>
         <hazelcast.version>5.2.4</hazelcast.version>
 
-        <hibernate.version>5.6.15.Final</hibernate.version>
+        <hibernate.version>6.6.38.Final</hibernate.version>
         <hibernate-spatial.version>5.4.0.Final</hibernate-spatial.version>
-        <groovy-all.version>3.0.9</groovy-all.version>
+        <groovy-all.version>5.0.3</groovy-all.version>
         <jaxb-version>2.3.0.1</jaxb-version>
         <swagger-jersey2.version>1.6.2</swagger-jersey2.version>
-        <jackson-version>2.13.5</jackson-version>
-        <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
+        <jackson-version>3.0.3</jackson-version>
+        <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <sonar-maven-plugin.version>3.9.1.2184</sonar-maven-plugin.version>
 
         <!-- TODO supprimer ?-->
@@ -106,19 +117,20 @@
 
         <!-- NB: Concious choice of using snapshot version. This is to keep in
             sync, and fail fast if incompatibilities -->
-        <netex-java-model.version>2.0.5-NETEX-FR</netex-java-model.version>
-        <okina-helper.version>1.0.24-2</okina-helper.version>
+        <netex-java-model.version>2.0.6-NETEX-FR</netex-java-model.version>
+        <okina-helper.version>1.0.34</okina-helper.version>
         <fabric8.version>2.3.7</fabric8.version>
         <metrics.version>3.2.3</metrics.version>
+
 
         <javax-jms.version>2.0.1</javax-jms.version>
         <jts-core.version>1.19.0</jts-core.version>
 
-        <maven-surefire-plugin.version>3.0.0-M6</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
         <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
         <argLine/>
         <!--TODO temporary manual upgrade of Logback-->
-        <logback.version>1.2.12</logback.version>
+
         <log4j2.version>2.17.1</log4j2.version>
 
         <sonar.projectKey>mobi-iti:tiamat</sonar.projectKey>
@@ -154,9 +166,14 @@
         <dependencies>
 
             <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-web</artifactId>
-                <version>5.3.32</version>
+                <groupId>org.apache.groovy</groupId>
+                <artifactId>groovy-test</artifactId>
+                <version>5.0.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.hk2</groupId>
+                <artifactId>hk2-api</artifactId>
+                <version>3.1.1</version>
             </dependency>
 
             <dependency>
@@ -191,11 +208,7 @@
                 <version>2.1.6</version>
             </dependency>
 
-            <dependency>
-                <groupId>org.glassfish.hk2</groupId>
-                <artifactId>hk2-api</artifactId>
-                <version>2.6.1</version>
-            </dependency>
+
 
             <dependency>
                 <groupId>io.rest-assured</groupId>
@@ -203,17 +216,13 @@
                 <version>4.5.1</version>
             </dependency>
 
-            <dependency>
-                <groupId>org.glassfish.hk2</groupId>
-                <artifactId>hk2-locator</artifactId>
-                <version>2.6.1</version>
-            </dependency>
+
 
 
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
+                <version>3.5.9</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -221,7 +230,13 @@
 
             <dependency>
                 <groupId>com.okina.helpers</groupId>
-                <artifactId>organisation</artifactId>
+                <artifactId>oauth2</artifactId>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.keycloak</groupId>
+                        <artifactId>keycloak-spring-security-adapter</artifactId>
+                    </exclusion>
+                </exclusions>
                 <version>${okina-helper.version}</version>
             </dependency>
 
@@ -255,8 +270,7 @@
                 </groupId>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1652 -->
                 <artifactId>log4j-to-slf4j
                 </artifactId>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1653 -->
-                <version>${log4j2.version}
-                </version>  <!-- org.springframework.boot:spring-boot-dependencies:2.1.1.RELEASE, line 1654 -->
+
             </dependency>
 
             <dependency>
@@ -272,6 +286,56 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.graphql-java</groupId>
+            <artifactId>graphql-java-extended-scalars</artifactId>
+            <version>${graphql-java-extended-scalars.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-jaxb</artifactId>
+            <version>3.1.11</version>
+        </dependency>
+        <dependency>
+            <groupId>com.okina.helpers</groupId>
+            <artifactId>oauth2</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-spring-security-adapter</artifactId>
+                </exclusion>
+            </exclusions>
+            <version>${okina-helper.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-multipart</artifactId>
+            <version>3.1.11</version>
+        </dependency>
+
+
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-artemis</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <version>${hazelcast.version}</version>
@@ -280,13 +344,13 @@
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>json-path</artifactId>
-            <version>4.5.1</version>
+            <version>5.5.6</version>
         </dependency>
 
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
             <artifactId>jakarta.ws.rs-api</artifactId>
-            <version>2.1.6</version>
+            <version>3.1.0</version>
         </dependency>
 
         <dependency>
@@ -299,11 +363,8 @@
             <artifactId>jaxb-xjc</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-jaxb</artifactId>
-            <version>2.19</version>
-        </dependency>
+
+
 
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -331,26 +392,18 @@
         </dependency>
 
         <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-jersey2-jaxrs</artifactId>
-            <version>${swagger-jersey2.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.6.0</version>
         </dependency>
-
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson-version}</version>
         </dependency>
         <dependency>
-            <groupId>javax.jms</groupId>
-            <artifactId>javax.jms-api</artifactId>
-            <version>${javax-jms.version}</version>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
@@ -367,9 +420,18 @@
                     <groupId>com.hazelcast</groupId>
                     <artifactId>hazelcast</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>kubernetes-client</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>4.13.0</version>
+        </dependency>
         <dependency>
             <groupId>com.okina.helpers</groupId>
             <artifactId>organisation</artifactId>
@@ -387,38 +449,29 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- Due to maven artifact cache, this dependency needs to be explicit -->
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-client</artifactId>
-            <version>${kubernetes-client.version}</version>
-        </dependency>
+
         <dependency>
             <groupId>com.graphql-java</groupId>
             <artifactId>graphql-java</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.antlr</groupId>
+                    <artifactId>antlr4-runtime</artifactId>
+                </exclusion>
+            </exclusions>
             <version>${graphql-java.version}</version>
         </dependency>
 
         <dependency>
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
-            <version>${logstash-logback.version}</version>
+            <version>8.0</version>
         </dependency>
         <!--TODO temporary manual upgrade of Logback-->
         <dependency>
             <groupId>com.okina</groupId>
             <artifactId>netex-java-model</artifactId>
             <version>${netex-java-model.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-core</artifactId>
-            <version>${logback.version}</version>
         </dependency>
 
         <dependency>
@@ -456,7 +509,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
-            <version>${spring-boot.version}</version>
+
         </dependency>
 
         <dependency>
@@ -502,23 +555,11 @@
             <version>3.0.0</version>
             <scope>runtime</scope>
         </dependency>
-        <!--        <dependency>-->
-        <!--            <groupId>org.glassfish.jersey.media</groupId>-->
-        <!--            <artifactId>jersey-media-jaxb</artifactId>-->
-        <!--            <version>3.0.2</version>-->
-        <!--        </dependency>-->
 
 
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-config</artifactId>
-            <version>${spring.security.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-web</artifactId>
-            <version>${spring.security.version}</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
         <dependency>
@@ -542,6 +583,7 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-spatial</artifactId>
+            <version>6.6.38.Final</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.vividsolutions</groupId>
@@ -646,10 +688,20 @@
         </dependency>
 
         <dependency>
-            <groupId>org.codehaus.groovy</groupId>
+            <groupId>org.apache.groovy</groupId>
             <artifactId>groovy-all</artifactId>
             <version>${groovy-all.version}</version>
             <type>pom</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.ant</groupId>
+                    <artifactId>ant-junit</artifactId>
+                </exclusion>
+            </exclusions>
             <scope>test</scope>
         </dependency>
 
@@ -660,23 +712,8 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-jetty94-adapter</artifactId>
-            <version>${keycloak.version}</version>
-        </dependency>
 
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-spring-security-adapter</artifactId>
-            <version>${keycloak.version}</version>
-        </dependency>
 
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-spring-boot-2-adapter</artifactId>
-            <version>${keycloak.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -733,12 +770,12 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-client</artifactId>
-            <version>3.1.4.Final</version>
+            <version>6.2.9.Final</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jackson2-provider</artifactId>
-            <version>3.1.4.Final</version>
+            <version>6.2.9.Final</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -802,13 +839,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.maven.surefire</groupId>
-                        <artifactId>surefire-junit4</artifactId>
-                        <version>${maven-surefire-plugin.version}</version>
-                    </dependency>
-                </dependencies>
                 <configuration>
                     <!--                    <excludes>-->
                     <!--                        <exclude>**/*IntegrationTest.java</exclude>-->

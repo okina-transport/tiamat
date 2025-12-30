@@ -43,9 +43,8 @@ import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 
-import javax.persistence.*;
-import javax.transaction.Transactional;
-import java.math.BigInteger;
+import jakarta.persistence.*;
+import jakarta.transaction.Transactional;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -138,7 +137,7 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         Session session = entityManager.unwrap(Session.class);
         NativeQuery query = session.createNativeQuery("SELECT COUNT(*) from (" + sqlWithParams.getFirst() + ") as numberOfParkings");
         searchHelper.addParams(query, sqlWithParams.getSecond());
-        return ((BigInteger) query.uniqueResult()).intValue();
+        return ((Long) query.uniqueResult()).intValue();
     }
 
     private Iterator<Parking> scrollParkings(Pair<String, Map<String, Object>> sqlWithParams) {

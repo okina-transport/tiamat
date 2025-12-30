@@ -17,7 +17,7 @@ package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.rutebanken.tiamat.exporter.AsyncPublicationDeliveryExporter;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.job.Job;
@@ -39,12 +39,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.RequestBody;
 
-import javax.transaction.Transactional;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Collection;
@@ -58,7 +58,7 @@ import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportRe
 /**
  * Export publication delivery data to google cloud storage. Some parts like stops and parking asynchronously
  */
-@Api(tags = {"Async export resource"}, produces = "application/xml")
+@Schema(description = "Async export resource")
 @Produces(MediaType.APPLICATION_XML + "; charset=UTF-8")
 @Path("/netex/" + ASYNC_EXPORT_JOB_PATH)
 public class AsyncExportResource {

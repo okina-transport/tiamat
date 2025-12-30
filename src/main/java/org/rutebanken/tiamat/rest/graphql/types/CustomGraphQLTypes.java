@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static graphql.Scalars.*;
+import static graphql.scalars.ExtendedScalars.GraphQLBigInteger;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
 import static graphql.schema.GraphQLObjectType.newObject;
@@ -438,7 +439,7 @@ public class CustomGraphQLTypes {
                     .dataFetcher(env -> getEquipmentOfType(GeneralSign.class, env)))
             .build();
 
-    private static List getEquipmentOfType(Class clazz, DataFetchingEnvironment env) {
+    public static List getEquipmentOfType(Class clazz, DataFetchingEnvironment env) {
         List<InstalledEquipment_VersionStructure> installedEquipment = ((PlaceEquipment) env.getSource()).getInstalledEquipment();
         List equipments = new ArrayList<>();
         for (InstalledEquipment_VersionStructure ie : installedEquipment) {

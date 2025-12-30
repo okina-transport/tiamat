@@ -543,4 +543,28 @@ public class GraphQLNames {
     public static final String END_TIME_PM = "endTimePm";
     //todo changer le nom
     public static final String DAY_HALF_DAY = "facility";
+
+    public static final String PERMISSIONS = "permissions";
+    public static final String ENTITY_PERMISSIONS= "entityPermissions";
+    public static final String OUTPUT_TYPE_ENTITY_PERMISSIONS= "EntityPermissions";
+    public static final String USER_PERMISSIONS= "userPermissions";
+    public static final String OUTPUT_TYPE_USER_PERMISSIONS= "UserPermissions";
+    public static final String USER_CONTEXT= "userContext";
+    public static final String LOCATION_PERMISSIONS= "locationPermissions";
+    public static final String STOPPLACES_REGISTER = "StopPlaceRegister";
+    public static  final String PURPOSE_OF_GROUPING = "purposeOfGrouping";
+    public static final String GROUP_OF_TARIFF_ZONES = "groupOfTariffZones";
+    public static final String FARE_ZONES = "fareZones";
+    public static final String FARE_ZONES_MEMBERS = "members";
+    public static final String FARE_ZONES_NEIGHBOURS= "neighbours";
+    public static final String FARE_ZONES_ZONE_TOPOLOGY= "zoneTopology";
+    public static final String FARE_ZONES_SCOPING_METHOD ="scopingMethod";
+    public static final String FARE_ZONES_AUTHORITY_REF ="authorityRef";
+    public static final String FARE_ZONES_AUTHORITIES = "fareZonesAuthorities";
+    public static final String STOPPLACES_MUTATION = "StopPlaceMutation";
+
+    public static final String OUTPUT_TYPE_BOARDING_POSITION = "BoardingPosition";
+    public static final String OUTPUT_TYPE_FARE_ZONE = "FareZone";
+    public static final String URL = "url";
+    public static final String LEGACY_COORDINATES = "legacyCoordinates";
 }

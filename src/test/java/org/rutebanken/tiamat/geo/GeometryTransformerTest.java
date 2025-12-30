@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.geo;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;

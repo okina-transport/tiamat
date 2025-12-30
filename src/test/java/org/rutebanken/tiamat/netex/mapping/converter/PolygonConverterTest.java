@@ -20,7 +20,7 @@ import org.locationtech.jts.geom.impl.CoordinateArraySequence;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.TypeBuilder;
 import net.opengis.gml._3.*;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.geo.DoubleValuesToCoordinateSequence;
 import org.springframework.test.annotation.DirtiesContext;

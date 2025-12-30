@@ -16,8 +16,8 @@
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 import org.glassfish.jersey.uri.internal.JerseyUriBuilder;
-import org.junit.Assert;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
 import org.mockito.Mockito;
@@ -35,10 +35,10 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import javax.xml.bind.JAXBException;
+import jakarta.ws.rs.core.Link;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -46,6 +46,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.rutebanken.tiamat.exporter.params.ExportParams.newExportParamsBuilder;
 import static org.rutebanken.tiamat.exporter.params.StopPlaceSearch.newStopPlaceSearchBuilder;
 
@@ -177,7 +179,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
 
         List<StopPlace> stopPlaces = publicationDeliveryTestHelper.extractStopPlacesFromGeneralFrame(netexGeneralFrame, true);
 
-        Assert.assertEquals(2, stopPlaces.size());
+        assertEquals(2, stopPlaces.size());
 
         GroupOfStopPlaces netexGroupOfStopPlaces = publicationDeliveryTestHelper.extractGroupOfStopPlaces(netexSiteFrame);
 
@@ -267,11 +269,11 @@ public class ExportResourceTest extends TiamatIntegrationTest {
 
         Response response = exportResource.exportStopPlacesWithEffectiveChangedInPeriod(search, newExportParamsBuilder().build(), uriInfoMock);
         List<StopPlace> changedStopPlaces = publicationDeliveryTestHelper.extractStopPlaces(response, false);
-        Assert.assertEquals(1, changedStopPlaces.size());
-        Assert.assertEquals(stopPlace1.getName().getValue(), changedStopPlaces.get(0).getName().getValue());
+        assertEquals(1, changedStopPlaces.size());
+        assertEquals(stopPlace1.getName().getValue(), changedStopPlaces.get(0).getName().getValue());
 
         Link link = response.getLink("next");
-        Assert.assertNotNull(link);
+        assertNotNull(link);
     }
 
     @Test
@@ -298,7 +300,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         List<StopPlace> recoveredStopPlaces = (List<StopPlace>) response.getEntity();
 
         //only inAreaFullTAD and inAreaPartialTAD should be recovered. noTAD and outOfArea should be ignored
-        Assert.assertEquals(2, recoveredStopPlaces.size());
+        assertEquals(2, recoveredStopPlaces.size());
 
     }
 
@@ -344,7 +346,7 @@ public class ExportResourceTest extends TiamatIntegrationTest {
         ChangedStopPlaceSearchDto search = new ChangedStopPlaceSearchDto(historicTime, historicTime, 0, 1);
 
         Response response = exportResource.exportStopPlacesWithEffectiveChangedInPeriod(search, newExportParamsBuilder().build(), uriInfoMock);
-        Assert.assertEquals(response.getStatus(), HttpStatus.NO_CONTENT.value());
+        assertEquals(response.getStatus(), HttpStatus.NO_CONTENT.value());
     }
 
     private void insertTestStopsWithTopographicPlace() throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {

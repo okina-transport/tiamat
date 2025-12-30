@@ -16,15 +16,11 @@
 package org.rutebanken.tiamat.netex.id;
 
 import com.hazelcast.collection.IQueue;
-import com.hazelcast.core.HazelcastInstance;
 
-import org.hibernate.Hibernate;
-import org.hibernate.SQLQuery;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.jpa.HibernateEntityManagerFactory;
-import org.junit.Test;
+
+
+
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
@@ -32,18 +28,19 @@ import org.rutebanken.tiamat.model.StopPlace;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-import java.math.BigInteger;
+import jakarta.persistence.EntityManager;
+
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static junit.framework.TestCase.assertEquals;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService.LOW_LEVEL_AVAILABLE_IDS;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -100,8 +97,7 @@ public class GaplessIdGeneratorServiceTest extends TiamatIntegrationTest {
 
         List list = query.getResultList();
         assertThat(list).hasSize(1);
-        BigInteger actual = (BigInteger) list.get(0);
-        return actual.longValue();
+        return (Long) list.get(0);
     }
 
     private Quay insertQuay(long wantedId, Quay quay) {

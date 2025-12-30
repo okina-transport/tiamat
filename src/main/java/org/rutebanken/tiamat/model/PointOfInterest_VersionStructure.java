@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.model;
 
-import javax.persistence.Transient;
+import jakarta.persistence.Transient;
 
 public class PointOfInterest_VersionStructure
         extends Site_VersionStructure {

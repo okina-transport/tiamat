@@ -15,10 +15,11 @@
 
 package org.rutebanken.tiamat.netex.mapping;
 
+import org.junit.jupiter.api.Disabled;
 import org.locationtech.jts.geom.Coordinate;
 import ma.glasnost.orika.MappingContext;
-import org.junit.Ignore;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
@@ -281,7 +282,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     /**
      * Ignored because the logic for handling incoming NSR IDs must be implemented differently.
      */
-    @Ignore
+    @Disabled
     @Test
     public void mapNetexQuayIdToInternal() {
         org.rutebanken.netex.model.Quay netexQuay = new org.rutebanken.netex.model.Quay();

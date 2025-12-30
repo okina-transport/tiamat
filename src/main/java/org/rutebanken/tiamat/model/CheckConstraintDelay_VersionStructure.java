@@ -15,8 +15,8 @@
 
 package org.rutebanken.tiamat.model;
 
-import javax.xml.datatype.Duration;
 
+import javax.xml.datatype.Duration;
 
 public class CheckConstraintDelay_VersionStructure
         extends Assignment_VersionStructure {

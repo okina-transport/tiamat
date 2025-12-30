@@ -17,7 +17,7 @@ package org.rutebanken.tiamat.model;
 
 import com.google.common.base.MoreObjects;
 
-import javax.persistence.Embeddable;
+import jakarta.persistence.Embeddable;
 import java.time.Instant;
 
 @Embeddable

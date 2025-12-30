@@ -15,8 +15,18 @@
 
 package org.rutebanken.tiamat.model;
 
-import javax.persistence.Entity;
+import jakarta.persistence.Entity;
 
 @Entity
 public class TariffZone extends Zone_VersionStructure {
+
+    @Override
+    public Long getId(){
+        return this.id;
+    }
+
+
+    public Long id(){
+        return this.id;
+    }
 }

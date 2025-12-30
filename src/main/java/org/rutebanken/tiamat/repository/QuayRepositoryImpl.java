@@ -28,7 +28,7 @@ import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZonedDateTime;

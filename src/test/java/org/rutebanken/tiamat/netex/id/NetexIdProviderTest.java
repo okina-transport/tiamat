@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.netex.id;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.springframework.test.annotation.DirtiesContext;
 

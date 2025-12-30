@@ -16,7 +16,7 @@
 package org.rutebanken.tiamat.netex.mapping.mapper;
 
 import ma.glasnost.orika.MappingContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.model.KeyListStructure;
 import org.rutebanken.netex.model.KeyValueStructure;
 import org.rutebanken.tiamat.model.StopPlace;

@@ -16,9 +16,9 @@
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 import com.google.common.collect.Sets;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+
+
+import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.importer.ImportParams;
@@ -27,26 +27,14 @@ import org.rutebanken.tiamat.netex.NetexUtils;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
-import org.xml.sax.SAXException;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import javax.xml.bind.JAXBException;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class OkinaStopPlaceManagementRulesTest extends TiamatIntegrationTest {
 
@@ -111,13 +99,13 @@ public class OkinaStopPlaceManagementRulesTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
 
         List<StopPlace> changedStopPlaces = publicationDeliveryTestHelper.extractStopPlaces(response, false);
-        Assert.assertEquals(1, changedStopPlaces.size());
+        assertEquals(1, changedStopPlaces.size());
         StopPlace resultSp = changedStopPlaces.get(0);
-        Assert.assertEquals("created stop place should have initial name",initialStopName, resultSp.getName().getValue());
+        assertEquals(initialStopName, resultSp.getName().getValue(),"created stop place should have initial name");
         List<Quay> quays = NetexUtils.getQuaysFromStopPlace(resultSp);
-        Assert.assertEquals(1, quays.size());
+        assertEquals(1, quays.size());
         Quay createdQuay = quays.get(0);
-        Assert.assertEquals("created quay should have initial name",initialQuayName, createdQuay.getName().getValue());
+        assertEquals(initialQuayName, createdQuay.getName().getValue(), "created quay should have initial name");
 
 
         ///2nd import : same stop place/quay with different names
@@ -148,13 +136,13 @@ public class OkinaStopPlaceManagementRulesTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure response2 = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery2);
 
         List<StopPlace> changedStopPlaces2 = publicationDeliveryTestHelper.extractStopPlaces(response2, false);
-        Assert.assertEquals(1, changedStopPlaces2.size());
+        assertEquals(1, changedStopPlaces2.size());
         StopPlace resultSp2 = changedStopPlaces2.get(0);
-        Assert.assertEquals("created stop place should have initial name",initialStopName, resultSp2.getName().getValue());
+        assertEquals(initialStopName, resultSp2.getName().getValue(),"created stop place should have initial name");
         List<Quay> quays2 = NetexUtils.getQuaysFromStopPlace(resultSp2);
-        Assert.assertEquals(1, quays2.size());
+        assertEquals(1, quays2.size());
         Quay createdQuay2 = quays2.get(0);
-        Assert.assertEquals("created quay should have initial name",initialQuayName, createdQuay2.getName().getValue());
+        assertEquals(initialQuayName, createdQuay2.getName().getValue(),"created quay should have initial name");
 
 
 

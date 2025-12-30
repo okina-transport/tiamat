@@ -32,7 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -449,7 +449,7 @@ public class NetexMapper {
         if (netexStopPlace.getQuays() != null && netexStopPlace.getQuays().getQuayRefOrQuay() != null) {
             Quays_RelStructure quaysRelStructure = netexStopPlace.getQuays();
 
-            for (javax.xml.bind.JAXBElement<?> quayElement : quaysRelStructure.getQuayRefOrQuay()) {
+            for (jakarta.xml.bind.JAXBElement<?> quayElement : quaysRelStructure.getQuayRefOrQuay()) {
                 Object quayRefStructure = quayElement.getValue();
 
                 if (quayRefStructure instanceof QuayRefStructure) {

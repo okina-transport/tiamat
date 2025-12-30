@@ -20,11 +20,8 @@ import com.google.common.collect.Sets;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
-import org.rutebanken.tiamat.diff.generic.Difference;
-import org.rutebanken.tiamat.diff.generic.GenericDiffConfig;
-import org.rutebanken.tiamat.diff.generic.GenericObjectDiffer;
 import org.rutebanken.tiamat.model.*;
 import org.springframework.test.annotation.DirtiesContext;
 

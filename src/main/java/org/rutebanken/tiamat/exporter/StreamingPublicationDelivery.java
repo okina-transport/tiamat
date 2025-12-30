@@ -45,10 +45,10 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -64,7 +64,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static javax.xml.bind.JAXBContext.newInstance;
+import static jakarta.xml.bind.JAXBContext.newInstance;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.EXTERNAL_REF;
 
 /**
@@ -623,10 +623,10 @@ public class StreamingPublicationDelivery {
             pointOfInterestIterator = getIteratorForPointOfInterestManualExport(exportJobId);
         }
 
-        int pointOfInterestCount = pointOfInterestRepository.countResult();
+        Long pointOfInterestCount = pointOfInterestRepository.countResult();
         if (pointOfInterestCount > 0) {
             logger.info("Point of interest count is {}, will create point of interest in publication delivery", pointOfInterestCount);
-            mappedPointOfInterestCount.set(pointOfInterestCount);
+            mappedPointOfInterestCount.set(Math.toIntExact(pointOfInterestCount));
 
             Set<String> seenIds = new HashSet<>();
 
@@ -940,7 +940,7 @@ public class StreamingPublicationDelivery {
     }
 
     private void preparePointsOfInterest(SiteFrame netexSiteFrame, List<PointOfInterest> initializedPoi) {
-        int poiCount = pointOfInterestRepository.countResult();
+        Long poiCount = pointOfInterestRepository.countResult();
         if (poiCount > 0) {
             logger.info("POI count is {}, will create poi in publication delivery", poiCount);
             PointsOfInterestInFrame_RelStructure pointsOfInterestInFrame_relStructure = new PointsOfInterestInFrame_RelStructure();
@@ -957,7 +957,7 @@ public class StreamingPublicationDelivery {
     }
 
     private void preparePointsOfInterestClassification(SiteFrame netexSiteFrame, List<PointOfInterestClassification> netexClassification) {
-        int poiClassificationCount = pointOfInterestClassificationRepository.countResult();
+        Long poiClassificationCount = pointOfInterestClassificationRepository.countResult();
         if (poiClassificationCount > 0) {
             logger.info("POI count is {}, will create poi classifications in publication delivery", poiClassificationCount);
 
@@ -1242,8 +1242,8 @@ public class StreamingPublicationDelivery {
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         marshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, "");
         marshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
-        marshaller.setProperty("com.sun.xml.bind.xmlDeclaration", Boolean.FALSE);
-        marshaller.setProperty("com.sun.xml.bind.xmlHeaders", "<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        marshaller.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
+        marshaller.setProperty("org.glassfish.jaxb.xmlHeaders", "<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 
         if (validateAgainstSchema) {
             marshaller.setSchema(neTExValidator.getSchema());

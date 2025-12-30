@@ -1,6 +1,6 @@
 package org.rutebanken.tiamat.importer;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

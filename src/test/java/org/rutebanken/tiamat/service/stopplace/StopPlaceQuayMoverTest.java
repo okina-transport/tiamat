@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.service.stopplace;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Transactional
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -188,21 +189,31 @@ public class StopPlaceQuayMoverTest extends TiamatIntegrationTest {
                 .extracting(quay -> quay.getNetexId()).contains(quayToMove.getNetexId());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void doNotAcceptInvalidQuayId() {
-        stopPlaceQuayMover.moveQuays(Arrays.asList("NSR:Quay:99999999"), null, null, null);
+
+        assertThrows(IllegalArgumentException.class, () ->
+                stopPlaceQuayMover.moveQuays(Arrays.asList("NSR:Quay:99999999"), null, null, null)
+        );
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void doNotAcceptInvalidStopPlaceDestionationId() {
-        StopPlace fromStopPlace = new StopPlace();
 
-        Quay quayToMove = new Quay(new EmbeddableMultilingualString("quay to be moved 4"));
-        quayToMove.setVersion(1L);
-        fromStopPlace.getQuays().add(quayToMove);
-        fromStopPlace.setVersion(1L);
-        stopPlaceRepository.save(fromStopPlace);
+        assertThrows(IllegalArgumentException.class, () -> {
+                    StopPlace fromStopPlace = new StopPlace();
 
-        stopPlaceQuayMover.moveQuays(Arrays.asList(quayToMove.getNetexId()), "NSR:StopPlace:91919191", null, null);
+                    Quay quayToMove = new Quay(new EmbeddableMultilingualString("quay to be moved 4"));
+                    quayToMove.setVersion(1L);
+                    fromStopPlace.getQuays().add(quayToMove);
+                    fromStopPlace.setVersion(1L);
+                    stopPlaceRepository.save(fromStopPlace);
+
+                    stopPlaceQuayMover.moveQuays(Arrays.asList(quayToMove.getNetexId()), "NSR:StopPlace:91919191", null, null);
+                }
+        );
+
+
+
     }
 }

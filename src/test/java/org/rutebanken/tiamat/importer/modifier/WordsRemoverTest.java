@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.importer.modifier;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.importer.modifier.WordsRemover;
 import org.springframework.test.annotation.DirtiesContext;
 

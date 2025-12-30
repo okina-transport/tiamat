@@ -16,11 +16,12 @@
 package org.rutebanken.tiamat.repository;
 
 import com.google.common.collect.Sets;
+
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Envelope;
 import org.assertj.core.api.Assertions;
-import org.junit.Assert;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
@@ -48,7 +49,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.junit.Assert.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.rutebanken.tiamat.exporter.params.ExportParams.newExportParamsBuilder;
 import static org.rutebanken.tiamat.exporter.params.StopPlaceSearch.newStopPlaceSearchBuilder;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.MERGED_ID_KEY;
@@ -994,9 +996,9 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
         Page<StopPlace> changedStopsP0 = stopPlaceRepository.findStopPlacesWithEffectiveChangeInPeriod(new ChangedStopPlaceSearch(startOfPeriod, endOfPeriod, PageRequest.of(0, 2)));
 
-        Assert.assertTrue(changedStopsP0.hasNext());
+        assertTrue(changedStopsP0.hasNext());
         Page<StopPlace> changedStopsP1 = stopPlaceRepository.findStopPlacesWithEffectiveChangeInPeriod(new ChangedStopPlaceSearch(startOfPeriod, endOfPeriod, PageRequest.of(1, 2)));
-        Assert.assertFalse(changedStopsP1.hasNext());
+        assertFalse(changedStopsP1.hasNext());
 
         List<StopPlace> accumulatedStops = new ArrayList<>(changedStopsP0.getContent());
         accumulatedStops.addAll(changedStopsP1.getContent());
@@ -1092,13 +1094,13 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         saveQuay(currentMatchingStop, "NSR:Quay:2", 1l, ORIGINAL_ID_KEY, orgId);
 
         List<String> currentMatchingStopPlaceIds = stopPlaceRepository.findStopPlaceFromQuayOriginalId(orgId, now);
-        Assert.assertEquals(Arrays.asList(currentMatchingStop.getNetexId()), currentMatchingStopPlaceIds);
+        assertEquals(Arrays.asList(currentMatchingStop.getNetexId()), currentMatchingStopPlaceIds);
 
         List<String> historicMatchingStopPlaceIds = stopPlaceRepository.findStopPlaceFromQuayOriginalId(orgId, now.minusSeconds(100));
-        Assert.assertEquals(Arrays.asList(historicMatchingStopV1.getNetexId()), historicMatchingStopPlaceIds);
+        assertEquals(Arrays.asList(historicMatchingStopV1.getNetexId()), historicMatchingStopPlaceIds);
 
         // No imported-ids are valid for point in time 300 seconds ago
-        Assert.assertTrue(CollectionUtils.isEmpty(stopPlaceRepository.findStopPlaceFromQuayOriginalId(orgId, now.minusSeconds(300))));
+        assertTrue(CollectionUtils.isEmpty(stopPlaceRepository.findStopPlaceFromQuayOriginalId(orgId, now.minusSeconds(300))));
     }
 
     @Test
@@ -1121,13 +1123,13 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         saveQuay(stopPlace3, "NSR:Quay:31", 1l, ORIGINAL_ID_KEY, "XXX:Quay:31");
 
         Map<String, Set<String>> stops = stopPlaceRepository.listStopPlaceIdsAndQuayIds(now, null);
-        Assert.assertEquals(3, stops.size());
-        Assert.assertTrue(stops.containsKey("NSR:StopPlace:1"));
-        Assert.assertTrue(stops.containsKey("NSR:StopPlace:2"));
-        Assert.assertTrue(stops.containsKey("NSR:StopPlace:3"));
-        Assert.assertEquals(3, stops.get("NSR:StopPlace:1").size());
-        Assert.assertEquals(4, stops.get("NSR:StopPlace:2").size());
-        Assert.assertEquals(1, stops.get("NSR:StopPlace:3").size());
+        assertEquals(3, stops.size());
+        assertTrue(stops.containsKey("NSR:StopPlace:1"));
+        assertTrue(stops.containsKey("NSR:StopPlace:2"));
+        assertTrue(stops.containsKey("NSR:StopPlace:3"));
+        assertEquals(3, stops.get("NSR:StopPlace:1").size());
+        assertEquals(4, stops.get("NSR:StopPlace:2").size());
+        assertEquals(1, stops.get("NSR:StopPlace:3").size());
 
     }
 
@@ -1469,26 +1471,26 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         stopPlaceRepository.save(currentMatchingStop);
 
         List<IdMappingDto> currentMapping = stopPlaceRepository.findKeyValueMappingsForStop(now, now, 0, 2000);
-        Assert.assertEquals(1, currentMapping.size());
-        Assert.assertEquals(orgId, currentMapping.get(0).originalId);
-        Assert.assertEquals(currentMatchingStop.getNetexId(), currentMapping.get(0).netexId);
-        Assert.assertEquals(currentMatchingStop.getValidBetween().getFromDate().getEpochSecond(), currentMapping.get(0).validFrom.getEpochSecond());
-        Assert.assertEquals(currentMatchingStop.getValidBetween().getToDate(), currentMapping.get(0).validTo);
+        assertEquals(1, currentMapping.size());
+        assertEquals(orgId, currentMapping.get(0).originalId);
+        assertEquals(currentMatchingStop.getNetexId(), currentMapping.get(0).netexId);
+        assertEquals(currentMatchingStop.getValidBetween().getFromDate().getEpochSecond(), currentMapping.get(0).validFrom.getEpochSecond());
+        assertEquals(currentMatchingStop.getValidBetween().getToDate(), currentMapping.get(0).validTo);
 
         Instant hundredSecondsAgo = now.minusSeconds(100);
         List<IdMappingDto> historicMapping = stopPlaceRepository.findKeyValueMappingsForStop(hundredSecondsAgo, hundredSecondsAgo, 0, 2000);
-        Assert.assertEquals(1, historicMapping.size());
-        Assert.assertEquals(orgId, historicMapping.get(0).originalId);
-        Assert.assertEquals(historicMatchingStopV1.getNetexId(), historicMapping.get(0).netexId);
-        Assert.assertEquals(historicMatchingStopV1.getValidBetween().getFromDate().getEpochSecond(), historicMapping.get(0).validFrom.getEpochSecond());
-        Assert.assertEquals(historicMatchingStopV1.getValidBetween().getToDate().getEpochSecond(), historicMapping.get(0).validTo.getEpochSecond());
+        assertEquals(1, historicMapping.size());
+        assertEquals(orgId, historicMapping.get(0).originalId);
+        assertEquals(historicMatchingStopV1.getNetexId(), historicMapping.get(0).netexId);
+        assertEquals(historicMatchingStopV1.getValidBetween().getFromDate().getEpochSecond(), historicMapping.get(0).validFrom.getEpochSecond());
+        assertEquals(historicMatchingStopV1.getValidBetween().getToDate().getEpochSecond(), historicMapping.get(0).validTo.getEpochSecond());
 
         // No imported-ids or merged-ids are valid for point in time 300 seconds ago
         Instant threeHundredSecondsAgo = now.minusSeconds(300);
-        Assert.assertTrue(stopPlaceRepository.findKeyValueMappingsForStop(threeHundredSecondsAgo, threeHundredSecondsAgo, 0, 2000).isEmpty());
+        assertTrue(stopPlaceRepository.findKeyValueMappingsForStop(threeHundredSecondsAgo, threeHundredSecondsAgo, 0, 2000).isEmpty());
 
         List<IdMappingDto> allMappings = stopPlaceRepository.findKeyValueMappingsForStop(hundredSecondsAgo, now, 0, 2000);
-        Assert.assertEquals(2, allMappings.size());
+        assertEquals(2, allMappings.size());
     }
 
     @Test
@@ -1534,7 +1536,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 //
 //        // THEN
 //        assertThat(searchResult).isNotEmpty();
-//        Assert.assertEquals(3, searchResult.getContent().size());
+//        assertEquals(3, searchResult.getContent().size());
 //    }
 //
 //    @Test
@@ -1555,8 +1557,8 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 //
 //        // THEN
 //        assertThat(searchResultWithExistingProvider).isNotEmpty();
-//        Assert.assertEquals(1, searchResultWithExistingProvider.getContent().size());
-//        Assert.assertEquals(new Long(1L), searchResultWithExistingProvider.getContent().get(0).getProvider().getId());
+//        assertEquals(1, searchResultWithExistingProvider.getContent().size());
+//        assertEquals(new Long(1L), searchResultWithExistingProvider.getContent().get(0).getProvider().getId());
 //    }
 //
 //    @Test
@@ -1594,8 +1596,8 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
 
     private void assertContainsOnlyInExactVersion(Collection<StopPlace> actual, StopPlace... expected) {
         List<StopPlace> expectedList = Arrays.asList(expected);
-        Assert.assertEquals(expectedList.size(), actual.size());
-        Assert.assertTrue(expectedList.stream().allMatch(expectedStop -> actual.stream().anyMatch(actualStop -> actualStop.getNetexId().equals(expectedStop.getNetexId()) && actualStop.getVersion() == expectedStop.getVersion())));
+        assertEquals(expectedList.size(), actual.size());
+        assertTrue(expectedList.stream().allMatch(expectedStop -> actual.stream().anyMatch(actualStop -> actualStop.getNetexId().equals(expectedStop.getNetexId()) && actualStop.getVersion() == expectedStop.getVersion())));
     }
 
     private StopPlace saveStop(String id, Long version, Instant startOfPeriod, Instant endOfPeriod) {
@@ -1749,7 +1751,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         stopPlace.setNetexId("NSR:StopPlace:1");
         saveQuay(stopPlace, "NSR:Quay:1", 1L, ORIGINAL_ID_KEY, importedId);
 
-        Assert.assertTrue(CollectionUtils.isEmpty(stopPlaceRepository.findStopPlaceFromQuayOriginalId(importedIdToFind, Instant.now())));
+        assertTrue(CollectionUtils.isEmpty(stopPlaceRepository.findStopPlaceFromQuayOriginalId(importedIdToFind, Instant.now())));
     }
 
     @Test
@@ -1761,7 +1763,7 @@ public class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
         stopPlace.getKeyValues().put(ORIGINAL_ID_KEY, new Value(importedId));
         stopPlaceRepository.save(stopPlace);
 
-        Assert.assertTrue(CollectionUtils.isEmpty(stopPlaceRepository.findByKeyValues(ORIGINAL_ID_KEY, Sets.newHashSet(importedIdToFind), true)));
+        assertTrue(CollectionUtils.isEmpty(stopPlaceRepository.findByKeyValues(ORIGINAL_ID_KEY, Sets.newHashSet(importedIdToFind), true)));
     }
 
 

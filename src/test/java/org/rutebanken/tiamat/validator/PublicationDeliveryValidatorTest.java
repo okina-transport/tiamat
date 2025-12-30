@@ -1,12 +1,14 @@
 package org.rutebanken.tiamat.validator;
 
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.rutebanken.tiamat.netex.NetexConstants;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -14,7 +16,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -27,7 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.rutebanken.tiamat.config.Messages.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class PublicationDeliveryValidatorTest {
 
     private static final File NETEX_PARKING_XML_MORE_THAN_3_PARKING_LEVELS = new File("src/test/resources/manualImports/parkingsNetex/parkings_v1.2_3_or_more_parking_levels.xml");

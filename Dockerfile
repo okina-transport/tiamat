@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17.0.9_9-jdk-jammy
+FROM eclipse-temurin:21.0.5_11-jre
 ARG JAR_FILE
 
 

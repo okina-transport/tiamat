@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.config;
 
-import org.rutebanken.helper.organisation.KeycloakRoleAssignmentExtractor;
+import org.entur.oauth2.JwtRoleAssignmentExtractor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Configuration;
 public class RoleAssignmentExtractorConfig {
 
     @Bean
-    public KeycloakRoleAssignmentExtractor getKeycloakRoleAssignmentExtractor() {
-        return new KeycloakRoleAssignmentExtractor();
+    public JwtRoleAssignmentExtractor getKeycloakRoleAssignmentExtractor() {
+        return new JwtRoleAssignmentExtractor();
     }
 }

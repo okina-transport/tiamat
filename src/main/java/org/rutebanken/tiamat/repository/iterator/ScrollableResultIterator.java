@@ -26,7 +26,7 @@ import java.util.Optional;
 
 public class ScrollableResultIterator<T> implements Iterator<T> {
     private static final Logger logger = LoggerFactory.getLogger(ScrollableResultIterator.class);
-    private final ScrollableResults scrollableResults;
+    private final ScrollableResults<Object[]> scrollableResults;
     private final int fetchSize;
     private final Session session;
     private int counter;
@@ -78,8 +78,13 @@ public class ScrollableResultIterator<T> implements Iterator<T> {
 
     @SuppressWarnings("unchecked")
     private Optional<T> getNext() {
-        if (scrollableResults.next() && scrollableResults.get() != null && scrollableResults.get().length > 0) {
-            return Optional.of((T) scrollableResults.get()[0]);
+
+        if (scrollableResults.next() && scrollableResults.get() != null) {
+            if (!(scrollableResults.get() instanceof Object[])) {
+                return  Optional.of((T) scrollableResults.get());
+            }else{
+                return Optional.of((T) scrollableResults.get()[0]);
+            }
         } else {
             return Optional.empty();
         }

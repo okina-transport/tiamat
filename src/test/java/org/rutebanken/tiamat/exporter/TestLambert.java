@@ -15,18 +15,12 @@
 
 package org.rutebanken.tiamat.exporter;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.geo.geo.Lambert;
 import org.rutebanken.tiamat.geo.geo.LambertPoint;
 import org.rutebanken.tiamat.geo.geo.LambertZone;
 
-import static javax.xml.bind.JAXBContext.newInstance;
-import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Test streaming publication delivery with h2 database
- * {@link StreamingPublicationDeliveryTest} is without database and spring context.
- */
 public class TestLambert {
 
 

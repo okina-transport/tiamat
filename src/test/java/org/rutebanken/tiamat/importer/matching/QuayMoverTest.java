@@ -1,6 +1,6 @@
 package org.rutebanken.tiamat.importer.matching;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;

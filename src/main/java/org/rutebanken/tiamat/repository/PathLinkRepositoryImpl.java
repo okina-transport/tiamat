@@ -19,11 +19,10 @@ package org.rutebanken.tiamat.repository;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.model.PathLink;
 
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-import java.math.BigInteger;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -50,11 +49,11 @@ public class PathLinkRepositoryImpl implements PathLinkRepositoryCustom {
 
         try {
             @SuppressWarnings("unchecked")
-            List<BigInteger> results = query.getResultList();
+            List<Long> results = query.getResultList();
             if (results.isEmpty()) {
                 return null;
             } else {
-                return results.get(0).longValue();
+                return results.get(0);
             }
         } catch (NoResultException noResultException) {
             return null;

@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.service.stopplace;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.ModificationEnumeration;
@@ -25,11 +25,13 @@ import org.rutebanken.tiamat.model.ValidBetween;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StopPlaceTerminatorTest extends TiamatIntegrationTest {
 
@@ -101,17 +103,22 @@ public class StopPlaceTerminatorTest extends TiamatIntegrationTest {
      * When attempting to deactivate stop place that is already deactivate, expect exception.
      */
     @Transactional
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDeactivateStopPlaceWithFromDate() {
 
-        Instant now = Instant.now();
+        assertThrows(IllegalArgumentException.class, () -> {
+            Instant now = Instant.now();
 
-        StopPlace savedStopPlace = stopPlaceVersionedSaverService.saveNewVersion(new StopPlace(new EmbeddableMultilingualString("LIAB")));
-        stopPlaceRepository.save(savedStopPlace);
-        savedStopPlace.setValidBetween(new ValidBetween(now, now.plusSeconds(10)));
-        String stopPlaceNetexId = savedStopPlace.getNetexId();
+            StopPlace savedStopPlace = stopPlaceVersionedSaverService.saveNewVersion(new StopPlace(new EmbeddableMultilingualString("LIAB")));
+            stopPlaceRepository.save(savedStopPlace);
+            savedStopPlace.setValidBetween(new ValidBetween(now, now.plusSeconds(10)));
+            String stopPlaceNetexId = savedStopPlace.getNetexId();
 
-        Instant terminateDate = now.plusSeconds(20);
-        stopPlaceTerminator.terminateStopPlace(stopPlaceNetexId, terminateDate, "Deactivating Stop",null);
+            Instant terminateDate = now.plusSeconds(20);
+            stopPlaceTerminator.terminateStopPlace(stopPlaceNetexId, terminateDate, "Deactivating Stop",null);
+
+                });
+
+
     }
 }

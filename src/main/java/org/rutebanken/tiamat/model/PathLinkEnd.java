@@ -20,7 +20,7 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -31,7 +31,7 @@ public class PathLinkEnd extends IdentifiedEntity {
             @AttributeOverride(name = "ref", column = @Column(name = "place_ref")),
             @AttributeOverride(name = "version", column = @Column(name = "place_version"))
     })
-    private AddressablePlaceRefStructure placeRef;
+    private FixedAddressablePlaceRef placeRef;
 
     @Transient
     @OneToOne
@@ -54,7 +54,12 @@ public class PathLinkEnd extends IdentifiedEntity {
     }
 
     public PathLinkEnd(AddressablePlaceRefStructure placeRef) {
-        this.placeRef = placeRef;
+        if (placeRef != null) {
+            FixedAddressablePlaceRef ref = new FixedAddressablePlaceRef();
+            ref.setRef(placeRef.getRef());
+            ref.setVersion(placeRef.getVersion());
+            this.placeRef = ref;
+        }
     }
 
 
@@ -80,7 +85,12 @@ public class PathLinkEnd extends IdentifiedEntity {
     }
 
     public void setPlaceRef(AddressablePlaceRefStructure placeRef) {
-        this.placeRef = placeRef;
+        if (placeRef != null) {
+            FixedAddressablePlaceRef ref = new FixedAddressablePlaceRef();
+            ref.setRef(placeRef.getRef());
+            ref.setVersion(placeRef.getVersion());
+            this.placeRef = ref;
+        }
     }
 
     public SiteEntrance getEntrance() {

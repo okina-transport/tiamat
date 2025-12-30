@@ -17,16 +17,19 @@ package org.rutebanken.tiamat.model;
 
 import com.google.common.base.MoreObjects;
 
-import javax.persistence.MappedSuperclass;
+import jakarta.persistence.Column;
+import jakarta.persistence.MappedSuperclass;
 import java.io.Serializable;
 import java.util.Objects;
 
 @MappedSuperclass
 public class VersionOfObjectRefStructure implements Serializable {
 
-    private String ref;
+    @Column(name = "ref")
+    protected String ref;
 
-    private String version;
+    @Column(name = "version")
+    protected String version;
 
     public VersionOfObjectRefStructure() {
     }

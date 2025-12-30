@@ -15,7 +15,8 @@
 
 package org.rutebanken.tiamat.rest.dto;
 
-import io.swagger.annotations.Api;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
@@ -35,10 +36,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import javax.xml.bind.JAXBElement;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
+import jakarta.xml.bind.JAXBElement;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -49,7 +50,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
-@Api(tags = {"Stop place resource"}, produces = "text/plain")
+@Schema(description = "Stop place resource")
 @Produces("application/json")
 @Path("/")
 @Transactional

@@ -30,7 +30,7 @@ import java.util.Map;
 public class KeyValuesDataFetcher implements DataFetcher {
 
     @Override
-    public Object get(DataFetchingEnvironment dataFetchingEnvironment) {
+    public List<KeyValueWrapper> get(DataFetchingEnvironment dataFetchingEnvironment) {
         DataManagedObjectStructure source = (DataManagedObjectStructure) dataFetchingEnvironment.getSource();
         if (source != null) {
             List<KeyValueWrapper> keyValuesList = new ArrayList();

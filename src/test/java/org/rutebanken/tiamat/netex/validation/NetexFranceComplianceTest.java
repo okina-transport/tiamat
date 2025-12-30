@@ -15,8 +15,8 @@
 
 package org.rutebanken.tiamat.netex.validation;
 
-import org.junit.Assert;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.netex.model.AllVehicleModesOfTransportEnumeration;
@@ -43,10 +43,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -59,6 +59,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class NetexFranceComplianceTest extends TiamatIntegrationTest {
@@ -88,7 +90,7 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
 
         Job job = new Job(JobStatus.PROCESSING);
         job.setFileName(fileNameWithoutExtention);
-        job.setId(1L);
+
         ExportParams exportParams = ExportParams.newExportParamsBuilder()
                                                 .setStopPlaceSearch(
                                                         StopPlaceSearch
@@ -99,6 +101,8 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
                                                 .build();
         job.setExportParams(exportParams);
 
+        jobRepository.save(job);
+
         Provider provider = Collections.singletonList(providerRepository.getProvider(1L)).get(0);
         LocalDateTime localDateTime = LocalDateTime.now(ZoneOffset.UTC).withNano(0);
 
@@ -107,7 +111,7 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
        exportJobWorker.run();
 
        if (job.getStatus().equals(JobStatus.FAILED)){
-           Assert.fail("Failure in Netex France generation");
+           fail("Failure in Netex France generation");
        }
 
         unzipFile(completeFilePath,testPath+"/test");
@@ -122,11 +126,11 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
 
     private void checkDataObjects(PublicationDeliveryStructure.DataObjects dataObjects){
         Common_VersionFrameStructure firstFrame = dataObjects.getCompositeFrameOrCommonFrame().stream().findFirst().get().getValue();
-        Assert.assertTrue(firstFrame.getId().startsWith("MOBI-ITI:GeneralFrame:"));
+        assertTrue(firstFrame.getId().startsWith("MOBI-ITI:GeneralFrame:"));
 
-        Assert.assertEquals("wrong version","1",firstFrame.getVersion());
-        //Assert.assertEquals("wrong typeOffFrame ref",firstFrame.getTypeOfFrameRef().getRef(),"FR:TypeOfFrame:NETEX_ARRET");
-        //Assert.assertEquals("wrong typeOffFrame value",firstFrame.getTypeOfFrameRef().getValue(),"version=\"1.1:FR-NETEX_ARRET-2.2\"");
+        assertEquals("1",firstFrame.getVersion(),"wrong version");
+        //assertEquals("wrong typeOffFrame ref",firstFrame.getTypeOfFrameRef().getRef(),"FR:TypeOfFrame:NETEX_ARRET");
+        //assertEquals("wrong typeOffFrame value",firstFrame.getTypeOfFrameRef().getValue(),"version=\"1.1:FR-NETEX_ARRET-2.2\"");
         /*((SiteFrame)firstFrame).getStopPlaces().getStopPlace()
                                                .forEach(this::checkStopPlace);*/
         GeneralFrame generalFrame = (GeneralFrame) firstFrame;
@@ -168,13 +172,13 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
     private void checkQuayValues(org.rutebanken.netex.model.Quay quay){
         String quayNb = quay.getId().split(":")[2];
 
-        Assert.assertEquals("wrong id","NSR:Quay:"+quayNb,quay.getId());
+        assertEquals("NSR:Quay:"+quayNb,quay.getId(), "wrong id");
 
 
-        Assert.assertEquals("wrong version","0",quay.getVersion());
+        assertEquals("0",quay.getVersion(), "wrong version");
 
-        Assert.assertEquals("wrong position","48.000000",quay.getCentroid().getLocation().getLongitude().toString());
-        Assert.assertEquals("wrong position","2.000000",quay.getCentroid().getLocation().getLatitude().toString());
+        assertEquals("48.000000",quay.getCentroid().getLocation().getLongitude().toString(), "wrong position");
+        assertEquals("2.000000",quay.getCentroid().getLocation().getLatitude().toString(),"wrong position");
 
 
       //  checkPlaceType(quay.getPlaceTypes());
@@ -182,31 +186,31 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
         PostalAddress postalAddress = quay.getPostalAddress();
         String postalAdressId = postalAddress.getId();
 
-        Assert.assertEquals("wrong postalAdressId","NSR:PostalAddress:"+quayNb,postalAdressId);
+        assertEquals("NSR:PostalAddress:"+quayNb,postalAdressId, "wrong postalAdressId");
         MultilingualString postalAdressName = postalAddress.getName();
 
-        Assert.assertEquals("wrong address name","Quay_"+quayNb,postalAdressName.getValue());
+        assertEquals("Quay_"+quayNb,postalAdressName.getValue(), "wrong address name");
 
 
-        Assert.assertEquals("wrong postal regions","75000",postalAddress.getPostalRegion());
+        assertEquals("75000",postalAddress.getPostalRegion(), "wrong postal regions");
 
 
 
         int stopPlaceNumber = Integer.valueOf(quayNb) + 1;
-        Assert.assertEquals("wrong site ref","NSR:StopPlace:"+stopPlaceNumber,quay.getSiteRef().getRef());
-        Assert.assertEquals("wrong transport mode", AllVehicleModesOfTransportEnumeration.BUS,quay.getTransportMode());
+        assertEquals("NSR:StopPlace:"+stopPlaceNumber,quay.getSiteRef().getRef(), "wrong site ref");
+        assertEquals( AllVehicleModesOfTransportEnumeration.BUS,quay.getTransportMode(), "wrong transport mode");
 
 
 
     }
 
     private void checkPlaceType(TypeOfPlaceRefs_RelStructure placeTypes){
-        Assert.assertEquals("wrong typeofplace","monomodalStopPlace",placeTypes.getTypeOfPlaceRef().get(0).getRef());
+        assertEquals("monomodalStopPlace",placeTypes.getTypeOfPlaceRef().get(0).getRef(), "wrong typeofplace");
     }
 
     private void checkGeneralInfo( PublicationDeliveryStructure publicationDelivery ){
-        Assert.assertTrue(publicationDelivery.getPublicationTimestamp() != null );
-        Assert.assertEquals("wrong participant ref","MOBIITI",publicationDelivery.getParticipantRef());
+        assertTrue(publicationDelivery.getPublicationTimestamp() != null );
+        assertEquals("MOBIITI",publicationDelivery.getParticipantRef(),"wrong participant ref");
     }
 
 

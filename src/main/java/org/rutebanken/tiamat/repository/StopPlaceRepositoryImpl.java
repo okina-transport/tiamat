@@ -17,7 +17,7 @@ package org.rutebanken.tiamat.repository;
 
 
 import com.google.common.collect.Sets;
-import org.hibernate.Criteria;
+
 import org.hibernate.Hibernate;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
@@ -52,12 +52,12 @@ import org.springframework.data.util.Pair;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityGraph;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityGraph;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -689,12 +689,14 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     public Iterator<StopPlace> scrollStopPlaces() {
         Session session = entityManager.unwrap(Session.class);
 
-        Criteria criteria = session.createCriteria(StopPlace.class);
+        final String queryString = "select s.* from stop_place s";
+        final NativeQuery<StopPlace> nativeQuery = session.createNativeQuery(queryString, StopPlace.class);
 
-        criteria.setReadOnly(true);
-        criteria.setFetchSize(SCROLL_FETCH_SIZE);
-        criteria.setCacheable(false);
-        ScrollableResults results = criteria.scroll(ScrollMode.FORWARD_ONLY);
+        nativeQuery.setReadOnly(true);
+        nativeQuery.setFetchSize(SCROLL_FETCH_SIZE);
+        nativeQuery.setCacheable(false);
+
+        ScrollableResults results = nativeQuery.scroll(ScrollMode.FORWARD_ONLY);
 
         ScrollableResultIterator<StopPlace> stopPlaceEntityIterator = new ScrollableResultIterator<>(results, SCROLL_FETCH_SIZE, session);
 
@@ -707,7 +709,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         Session session = entityManager.unwrap(Session.class);
 
         Pair<String, Map<String, Object>> queryWithParams = stopPlaceQueryFromSearchBuilder.buildQueryString(exportParams);
-        NativeQuery nativeQuery = session.createSQLQuery(queryWithParams.getFirst());
+        NativeQuery<StopPlace> nativeQuery = session.createNativeQuery(queryWithParams.getFirst(),StopPlace.class);
         searchHelper.addParams(nativeQuery, queryWithParams.getSecond());
 
         return scrollStopPlaces(nativeQuery, session);
@@ -716,11 +718,10 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     @Override
     public Iterator<StopPlace> scrollStopPlaces(Set<Long> stopPlacePrimaryIds) {
         Session session = entityManager.unwrap(Session.class);
-
-        NativeQuery nativeQuery = session.createSQLQuery(generateStopPlaceQueryFromStopPlaceIds(stopPlacePrimaryIds));
+        NativeQuery<StopPlace> sqlQuery = session.createNativeQuery(generateStopPlaceQueryFromStopPlaceIds(stopPlacePrimaryIds), StopPlace.class);
 
         logger.info("Scrolling {} stop places", stopPlacePrimaryIds.size());
-       return scrollStopPlaces(nativeQuery, session);
+       return scrollStopPlaces(sqlQuery, session);
     }
 
     public List<StopPlace> getStopPlaceInitializedForExport(Set<Long> stopPlacePrimaryIds) {
@@ -886,8 +887,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         Set<Long> result = new HashSet<>();
         for(Object object : query.list()) {
-            BigInteger bigInteger = (BigInteger) object;
-            result.add(bigInteger.longValue());
+            result.add((Long) object);
 
         }
         return result;
@@ -1351,7 +1351,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     public boolean deleteAllStopPlacesQuaysByOrganisation(String organisation){
         Query query = entityManager.createNativeQuery("SELECT clean_orga(:organisation)");
         query.setParameter("organisation", organisation);
-        query.setHint("javax.persistence.query.timeout", 300000);
+        query.setHint("jakarta.persistence.query.timeout", 300000);
         return (boolean) query.getSingleResult();
     }
 

@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.Quay;
 import org.rutebanken.netex.model.StopPlace;

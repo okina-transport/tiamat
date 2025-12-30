@@ -17,7 +17,7 @@ package org.rutebanken.tiamat.repository.listener;
 import org.rutebanken.tiamat.config.ApplicationContextProvider;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 
-import javax.persistence.PrePersist;
+import jakarta.persistence.PrePersist;
 
 
 public class IdentifiedEntityListener {

@@ -16,8 +16,8 @@
 package org.rutebanken.tiamat.repository;
 
 import com.google.common.collect.Sets;
-import org.junit.Assert;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
@@ -37,6 +37,7 @@ import java.time.temporal.TemporalUnit;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StopPlaceRepositoryTest extends TiamatIntegrationTest {
@@ -92,7 +93,7 @@ public class StopPlaceRepositoryTest extends TiamatIntegrationTest {
 		StopPlace savedStop = stopPlaceRepository.save(stopPlace);
 
 		StopPlace foundStop = stopPlaceRepository.findByQuay(quay);
-		Assert.assertEquals(savedStop, foundStop);
+		assertEquals(savedStop, foundStop);
 	}
 
 	@Test

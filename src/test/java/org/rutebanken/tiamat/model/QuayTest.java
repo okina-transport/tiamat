@@ -16,8 +16,8 @@
 package org.rutebanken.tiamat.model;
 
 import org.locationtech.jts.geom.Coordinate;
-import org.junit.Ignore;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;

@@ -15,9 +15,10 @@
 
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.importer.ImportParams;
@@ -32,7 +33,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.Principal;
@@ -49,7 +50,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
     @Autowired
     private PublicationDeliveryTestHelper publicationDeliveryTestHelper;
 
-    @Before
+    @BeforeEach
     public void init() {
         Authentication auth = new TestingAuthenticationToken((Principal) () -> "test", null);
         SecurityContextHolder.getContext().setAuthentication(auth);
@@ -189,7 +190,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
      * https://rutebanken.atlassian.net/browse/NRP-1718
      */
     @Test
-    @Ignore
+    @Disabled
     public void matchMultipleStopsBasedOnQuayOriginalId() throws Exception {
 
         StopPlace firstStopPlace = new StopPlace()
@@ -266,7 +267,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
      * fall back to look for nearby stops.
      */
     @Test
-    @Ignore
+    @Disabled
     public void matchNearByStopPlaceIfIDMatchIsTooFarAway() throws Exception {
 
         StopPlace tooFarAwayStopPlace = new StopPlace()
@@ -330,7 +331,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
      * @throws Exception
      */
     @Test
-    @Ignore
+    @Disabled
     public void matchImportedStopOnNonNumericId() throws Exception {
 
         StopPlace stopPlaceToBeMatched = new StopPlace()
@@ -371,7 +372,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
      */
 
     @Test
-    @Ignore
+    @Disabled
     public void doNotmatchStopOnSimilarOriginalId() throws Exception {
 
         StopPlace stopPlaceNotToBeMatched = new StopPlace()
@@ -412,7 +413,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
      * @throws Exception
      */
     @Test
-    @Ignore
+    @Disabled
     public void matchImportedStopWithoutLeadingZeroOriginalId() throws Exception {
 
         StopPlace stopPlaceToBeMatched = new StopPlace()
@@ -452,7 +453,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
      * @throws Exception
      */
     @Test
-    @Ignore
+    @Disabled
     public void matchImportedStopOnLeadingZeroOriginalId() throws Exception {
 
         StopPlace stopPlaceToBeMatched = new StopPlace()
@@ -602,7 +603,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
      * @throws Exception
      */
     @Test
-    @Ignore
+    @Disabled
     public void matchStopsOnQuayNonNumericImportedId() throws Exception {
 
         StopPlace stopPlace1 = new StopPlace()
@@ -647,7 +648,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
      * @throws Exception
      */
     @Test
-    @Ignore
+    @Disabled
     public void matchStopsWithZeroPaddedQuayOriginalId() throws Exception {
 
         StopPlace stopPlace1 = new StopPlace()
@@ -693,7 +694,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
      * @throws Exception
      */
     @Test
-    @Ignore
+    @Disabled
     public void matchStopsOnQuayNetexId() throws Exception {
 
         StopPlace stopPlace1 = new StopPlace()
@@ -737,7 +738,7 @@ public class StopPlaceMatchingTest extends TiamatIntegrationTest {
      * https://rutebanken.atlassian.net/browse/NRP-1558
      */
     @Test
-    @Ignore
+    @Disabled
     public void matchOneIncomingStopToMultipleTiamatStops() throws JAXBException, IOException, SAXException, TiamatBusinessException, BindException {
 
         String initiallyImportedStops = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

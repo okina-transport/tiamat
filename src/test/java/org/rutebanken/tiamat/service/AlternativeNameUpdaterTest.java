@@ -30,8 +30,9 @@
 
 package org.rutebanken.tiamat.service;
 
-import org.junit.Ignore;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
+import org.rutebanken.tiamat.lock.LockException;
 import org.rutebanken.tiamat.model.AlternativeName;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.NameTypeEnumeration;
@@ -42,6 +43,7 @@ import java.time.Instant;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class AlternativeNameUpdaterTest {
@@ -89,20 +91,24 @@ public class AlternativeNameUpdaterTest {
 
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void doNotAllowMultipleTranslationsPerLanguage() {
 
-        StopPlace stopPlace = new StopPlace();
+        assertThrows(IllegalArgumentException.class, () -> {
+            StopPlace stopPlace = new StopPlace();
 
-        AlternativeName translation1 = new AlternativeName();
-        translation1.setName(new EmbeddableMultilingualString("Oslo lufthavn", "nb"));
-        translation1.setNameType(NameTypeEnumeration.TRANSLATION);
+            AlternativeName translation1 = new AlternativeName();
+            translation1.setName(new EmbeddableMultilingualString("Oslo lufthavn", "nb"));
+            translation1.setNameType(NameTypeEnumeration.TRANSLATION);
 
-        AlternativeName translation2 = new AlternativeName();
-        translation2.setName(new EmbeddableMultilingualString("new value", "nb"));
-        translation2.setNameType(NameTypeEnumeration.TRANSLATION);
+            AlternativeName translation2 = new AlternativeName();
+            translation2.setName(new EmbeddableMultilingualString("new value", "nb"));
+            translation2.setNameType(NameTypeEnumeration.TRANSLATION);
 
-        alternativeNameUpdater.updateAlternativeNames(stopPlace, Arrays.asList(translation1, translation2));
+            alternativeNameUpdater.updateAlternativeNames(stopPlace, Arrays.asList(translation1, translation2));
+                });
+
+
 
     }
 }

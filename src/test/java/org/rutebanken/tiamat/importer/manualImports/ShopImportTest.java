@@ -1,8 +1,8 @@
 package org.rutebanken.tiamat.importer.manualImports;
 
 import org.hibernate.Hibernate;
-import org.junit.Assert;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.model.PointOfInterestClassification;
@@ -19,8 +19,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 @Transactional
@@ -115,12 +116,12 @@ public class ShopImportTest extends TiamatIntegrationTest {
     private void checkCompleteFile(){
 
         List<PointOfInterest> persistedPOI = poiRepository.findAllAndInitialize();
-        Assert.assertEquals("Wrong number of persisted POI in DB",15,persistedPOI.size());
+        assertEquals(15,persistedPOI.size(), "Wrong number of persisted POI in DB");
 
         persistedPOI.forEach(this::checkPersistedPOI);
 
         List<PointOfInterestClassification> persistedClassifications = poiClassRepository.findAll();
-        Assert.assertEquals("Wrong number of persisted classifications in DB",4,persistedClassifications.size());
+        assertEquals(4,persistedClassifications.size(), "Wrong number of persisted classifications in DB");
     }
 
 
@@ -130,8 +131,8 @@ public class ShopImportTest extends TiamatIntegrationTest {
      */
     private void checkPersistedPOI(PointOfInterest poi){
         Hibernate.initialize(poi.getClassifications());
-        assertTrue("POI must have a classification",poi.getClassifications().size() > 0);
-        assertTrue("shop POI must have a facility set",poi.getPointOfInterestFacilitySet() != null);
+        assertTrue(poi.getClassifications().size() > 0, "POI must have a classification");
+        assertTrue(poi.getPointOfInterestFacilitySet() != null, "shop POI must have a facility set");
     }
 
 }

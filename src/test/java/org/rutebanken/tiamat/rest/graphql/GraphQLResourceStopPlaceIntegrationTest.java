@@ -15,9 +15,11 @@
 
 package org.rutebanken.tiamat.rest.graphql;
 
+import org.aspectj.lang.annotation.Before;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.tiamat.changelog.EntityChangedEvent;
@@ -54,12 +56,12 @@ import org.rutebanken.tiamat.repository.CleanTablesTools;
 import org.rutebanken.tiamat.service.stopplace.MultiModalStopPlaceEditor;
 import org.rutebanken.tiamat.time.ExportTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Propagation;
+
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 import java.math.BigInteger;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -100,7 +102,7 @@ public class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLReso
 
 
 
-    @Before
+    @BeforeEach
     public void cleanReceivedJMS(){
         entityChangedJMSListener.popEvents();
     }
@@ -546,7 +548,7 @@ public class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLReso
         // Verify that pointInTime *before* validity-period returns null
         graphQlJsonQuery = """
                 {
-                stopPlace: stopPlace (query:"Gamleveien", pointInTime:"%s") { "
+                stopPlace: stopPlace (query:"Gamleveien", pointInTime:"%s") { 
                     name {value}
                   }
                 }""".formatted(stopPlace.getValidBetween().getFromDate().minusSeconds(100).toString());

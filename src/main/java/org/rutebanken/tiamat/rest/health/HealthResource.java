@@ -15,22 +15,23 @@
 
 package org.rutebanken.tiamat.rest.health;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Component;
+
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Response;
 
-@Api(tags = {"Application status resource"}, produces = "text/plain")
+
+@Tag(name = "Application status resource", description = "Endpoints pour le suivi de l'état de l'application")
 @Produces("application/json")
 @Path("/")
 @Transactional
@@ -40,10 +41,8 @@ public class HealthResource {
 
     @GET
     @Path("/ready")
-    @ApiOperation(value = "Returns OK if Tiamat is ready and can read from the database", response = Void.class)
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "application is running")
-    })
+    @Operation(summary = "Returns OK if Tiamat is ready and can read from the database")
+    @ApiResponse(responseCode = "200", description = "OK")
     public Response readinessProbe() {
         stopPlaceRepository.findAllByOrderByChangedDesc(PageRequest.of(1, 1));
         return Response.status(Response.Status.OK).build();
@@ -51,10 +50,8 @@ public class HealthResource {
 
     @GET
     @Path("/live")
-    @ApiOperation(value = "Returns 200 OK if Tiamat is running", response = Void.class)
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "application is running")
-    })
+    @Operation(summary = "Returns 200 OK if Tiamat is running")
+    @ApiResponse(responseCode = "200", description = "OK")
     public Response livenessProbe() {
         return Response.ok().build();
     }

@@ -16,7 +16,7 @@
 package org.rutebanken.tiamat.importer.filter;
 
 import com.google.common.collect.Sets;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;

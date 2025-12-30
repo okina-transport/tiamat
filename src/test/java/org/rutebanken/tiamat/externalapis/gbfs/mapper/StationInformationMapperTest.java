@@ -2,7 +2,7 @@ package org.rutebanken.tiamat.externalapis.gbfs.mapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mobilitydata.gbfs.v3_0.station_information.GBFSStationInformation;
 import org.mobilitydata.gbfs.v3_0.vehicle_types.GBFSVehicleTypes;
 import org.rutebanken.tiamat.model.*;

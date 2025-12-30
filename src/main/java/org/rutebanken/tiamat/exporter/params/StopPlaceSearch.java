@@ -16,15 +16,16 @@
 package org.rutebanken.tiamat.exporter.params;
 
 import com.google.common.base.MoreObjects;
-import io.swagger.annotations.ApiParam;
+
+import io.swagger.v3.oas.annotations.Parameter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.rest.graphql.GraphQLNames;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.QueryParam;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.QueryParam;
 import java.time.Instant;
 import java.util.List;
 
@@ -43,105 +44,105 @@ public class StopPlaceSearch implements SearchObject {
 
     @QueryParam(value = "page")
     @DefaultValue(value = "0")
-    @ApiParam(value = PAGE_ARG_DESCRIPTION)
+    @Parameter(description = PAGE_ARG_DESCRIPTION)
     private int page = DEFAULT_PAGE;
 
     @QueryParam(value = "size")
     @DefaultValue(value = "20")
-    @ApiParam(value = SIZE_ARG_DESCRIPTION)
+    @Parameter(description = SIZE_ARG_DESCRIPTION)
     private int size = DEFAULT_PAGE_SIZE;
 
     @QueryParam(value = "q")
-    @ApiParam(value = QUERY_ARG_DESCRIPTION)
+    @Parameter(description = QUERY_ARG_DESCRIPTION)
     private String query;
 
     @QueryParam(value = "stopPlaceType")
-    @ApiParam(value = STOP_PLACE_TYPE_ARG_DESCRIPTION)
+    @Parameter(description = STOP_PLACE_TYPE_ARG_DESCRIPTION)
     private List<StopTypeEnumeration> stopTypeEnumerations;
 
     @QueryParam(value = "submode")
-    @ApiParam(value = "Only return stop places with matching submode")
+    @Parameter(description = "Only return stop places with matching submode")
     private String submode;
 
     @QueryParam(value = "idList")
-    @ApiParam(value = "Provide a list of stop place Ids. If using this argument, most other arguments will be disabled.")
+    @Parameter(description = "Provide a list of stop place Ids. If using this argument, most other arguments will be disabled.")
     private List<String> netexIdList;
 
     @QueryParam(value = "allVersions")
-    @ApiParam(value = ALL_VERSIONS_ARG_DESCRIPTION)
+    @Parameter(description = ALL_VERSIONS_ARG_DESCRIPTION)
     private boolean allVersions;
 
     @QueryParam(value = "versionValidity")
-    @ApiParam(value = VERSION_VALIDITY_ARG_DESCRIPTION)
+    @Parameter(description = VERSION_VALIDITY_ARG_DESCRIPTION)
     private ExportParams.VersionValidity versionValidity;
 
     @QueryParam(value = "withoutLocationOnly")
-    @ApiParam(value = WITHOUT_LOCATION_ONLY_ARG_DESCRIPTION)
+    @Parameter(description = WITHOUT_LOCATION_ONLY_ARG_DESCRIPTION)
     private boolean withoutLocationOnly;
 
     @QueryParam(value = "withoutQuaysOnly")
-    @ApiParam(value = WITHOUT_QUAYS_ONLY_ARG_DESCRIPTION)
+    @Parameter(description = WITHOUT_QUAYS_ONLY_ARG_DESCRIPTION)
     private boolean withoutQuaysOnly;
 
     @QueryParam(value = "withDuplicatedQuayImportedIds")
-    @ApiParam(value = WITH_DUPLICATED_QUAY_IMPORTED_IDS_ARG_DESCRIPTION)
+    @Parameter(description = WITH_DUPLICATED_QUAY_IMPORTED_IDS_ARG_DESCRIPTION)
     private boolean withDuplicatedQuayImportedIds;
 
     @QueryParam(value = "withNearbySimilarDuplicates")
-    @ApiParam(value = WITH_NEARBY_SIMILAR_DUPLICATES_ARG_DESCRIPTION)
+    @Parameter(description = WITH_NEARBY_SIMILAR_DUPLICATES_ARG_DESCRIPTION)
     private boolean withNearbySimilarDuplicates;
 
 
     @QueryParam(value = "nearbyStopPlaces")
-    @ApiParam(value = NEARBY_STOP_PLACES)
+    @Parameter(description = NEARBY_STOP_PLACES)
     private boolean nearbyStopPlaces;
 
     @QueryParam(value = "stopPlacesWithoutQuay")
-    @ApiParam(value = STOP_PLACES_WITHOUT_QUAY)
+    @Parameter(description = STOP_PLACES_WITHOUT_QUAY)
     private boolean stopPlacesWithoutQuay;
 
     @QueryParam(value = "stopPlacesWithMultipleProducers")
-    @ApiParam(value = STOP_PLACES_WITH_MULTIPLE_PRODUCERS)
+    @Parameter(description = STOP_PLACES_WITH_MULTIPLE_PRODUCERS)
     private boolean stopPlacesWithMultipleProducers;
 
     @QueryParam(value = "quaysWithMultipleProducers")
-    @ApiParam(value = QUAYS_WITH_MULTIPLE_PRODUCERS)
+    @Parameter(description = QUAYS_WITH_MULTIPLE_PRODUCERS)
     private boolean quaysWithMultipleProducers;
 
     @QueryParam(value = "nearbyRadius")
-    @ApiParam(value = NEARBY_RADIUS)
+    @Parameter(description = NEARBY_RADIUS)
     private int nearbyRadius;
 
     @QueryParam(value = "detectMultiModalPoints")
-    @ApiParam(value = DETECT_MULTI_MODAL_POINTS)
+    @Parameter(description = DETECT_MULTI_MODAL_POINTS)
     private boolean detectMultiModalPoints;
 
     @QueryParam(value = "organisationName")
-    @ApiParam(value = ORGANISATION_NAME)
+    @Parameter(description = ORGANISATION_NAME)
     private String organisationName;
 
     @QueryParam(value = "withDistantQuays")
-    @ApiParam(value = WITH_DISTANT_QUAYS)
+    @Parameter(description = WITH_DISTANT_QUAYS)
     private boolean withDistantQuays;
 
     @QueryParam(value = "hasParking")
-    @ApiParam(value = HAS_PARKING)
+    @Parameter(description = HAS_PARKING)
     private boolean hasParking;
 
     @QueryParam(value = "version")
-    @ApiParam(value = GraphQLNames.VERSION_ARG_DESCRIPTION)
+    @Parameter(description = GraphQLNames.VERSION_ARG_DESCRIPTION)
     private Long version;
 
     @QueryParam(value = "tag")
-    @ApiParam(value = TAGS_ARG_DESCRIPTION)
+    @Parameter(description = TAGS_ARG_DESCRIPTION)
     private List<String> tags;
 
     @QueryParam(value = "withTags")
-    @ApiParam(value = WITH_TAGS_ARG_DESCRIPTION)
+    @Parameter(description = WITH_TAGS_ARG_DESCRIPTION)
     private boolean withTags;
 
     @QueryParam(value = "pointInTime")
-    @ApiParam(value = POINT_IN_TIME_ARG_DESCRIPTION)
+    @Parameter(description = POINT_IN_TIME_ARG_DESCRIPTION)
     private Instant pointInTime;
 
     public StopPlaceSearch() {}

@@ -15,8 +15,10 @@
 
 package org.rutebanken.tiamat.rest.dto;
 
-import org.junit.Before;
-import org.junit.Test;
+
+import org.aspectj.lang.annotation.Before;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDtoCsvMapper;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -25,8 +27,8 @@ import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.time.ExportTimeZone;
 import org.springframework.test.annotation.DirtiesContext;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -47,7 +49,7 @@ public class DtoStopPlaceResourceTest {
     private DtoStopPlaceResource dtoStopPlaceResource;
     private Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 
-    @Before
+    @BeforeEach
     public void setUp() {
         dtoStopPlaceResource = new DtoStopPlaceResource(stopPlaceRepository, mock(DtoMappingSemaphore.class), new IdMappingDtoCsvMapper(new ExportTimeZone()), quayPlaceRepository);
     }

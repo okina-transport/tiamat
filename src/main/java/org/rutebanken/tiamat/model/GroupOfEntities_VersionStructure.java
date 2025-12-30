@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.model;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @MappedSuperclass
 public abstract class GroupOfEntities_VersionStructure

@@ -2,9 +2,9 @@ package org.rutebanken.tiamat.model;
 
 import org.rutebanken.netex.model.PaymentMethodEnumeration;
 
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.MappedSuperclass;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.MappedSuperclass;
 
 @MappedSuperclass
 public class TypeOfPaymentMethod_ValueStructure extends TypeOfValue_VersionStructure {

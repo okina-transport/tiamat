@@ -25,11 +25,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-import static graphql.Scalars.GraphQLBigInteger;
+
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
+import static graphql.scalars.ExtendedScalars.GraphQLBigInteger;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
-import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
 import static graphql.schema.GraphQLObjectType.newObject;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CARPOOLING_AVAILABLE;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.CARSHARING_AVAILABLE;

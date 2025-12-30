@@ -1,15 +1,16 @@
 package org.rutebanken.tiamat.rest.tariffzone;
 
-import io.swagger.annotations.Api;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.rutebanken.tiamat.repository.TariffZoneRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Response;
 
 @Component
-@Api(tags = {"TariffZone resource"}, produces = "text/plain")
+@Schema(description = "TariffZone resource")
 @Produces("application/json")
 @Path("tariff-zone")
 public class TariffZoneRessource {

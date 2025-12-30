@@ -15,13 +15,14 @@
 
 package org.rutebanken.tiamat.importer.filter;
 
+import org.junit.jupiter.api.Disabled;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
-import org.junit.Ignore;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +39,7 @@ public class ZoneTopographicPlaceFilterTest extends TiamatIntegrationTest {
     @Autowired
     private ZoneTopographicPlaceFilter zoneTopographicPlaceFilter;
 
-    @Ignore
+    @Disabled
     @Test
     public void filterByCountyMatch() throws Exception {
 

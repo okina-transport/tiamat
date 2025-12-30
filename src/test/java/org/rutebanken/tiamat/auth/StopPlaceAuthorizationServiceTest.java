@@ -16,8 +16,9 @@
 package org.rutebanken.tiamat.auth;
 
 import com.google.common.collect.Sets;
-import org.junit.Before;
-import org.junit.Test;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.helper.organisation.RoleAssignment;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
@@ -122,7 +123,7 @@ public class StopPlaceAuthorizationServiceTest extends TiamatIntegrationTest {
      * Set up stopPlaceAuthorizationService with custom roleAssignmentExtractor.
      * Borrowing the config class to get field mappings.
      */
-    @Before
+    @BeforeEach
     public void StopPlaceAuthorizationServiceTest() {
         roleAssignmentExtractor = mock(RoleAssignmentExtractor.class);
 

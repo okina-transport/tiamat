@@ -15,13 +15,15 @@
 
 package org.rutebanken.tiamat.changelog;
 
-import org.junit.Assert;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.ValidBetween;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Instant;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class EntityChangedEventJMSPublisherTest {
@@ -35,9 +37,9 @@ public class EntityChangedEventJMSPublisherTest {
         StopPlace stopPlace = stopPlace(1l, NOW, null);
 
         EntityChangedEvent event = jmsPublisher.toEntityChangedEvent(stopPlace, false);
-        Assert.assertEquals(EntityChangedEvent.EntityType.STOP_PLACE, event.entityType);
-        Assert.assertEquals(stopPlace.getNetexId(), event.entityId);
-        Assert.assertEquals(EntityChangedEvent.CrudAction.CREATE, event.crudAction);
+        assertEquals(EntityChangedEvent.EntityType.STOP_PLACE, event.entityType);
+        assertEquals(stopPlace.getNetexId(), event.entityId);
+        assertEquals(EntityChangedEvent.CrudAction.CREATE, event.crudAction);
     }
 
 
@@ -46,9 +48,9 @@ public class EntityChangedEventJMSPublisherTest {
         StopPlace stopPlace = stopPlace(2l, NOW, null);
 
         EntityChangedEvent event = jmsPublisher.toEntityChangedEvent(stopPlace, false);
-        Assert.assertEquals(EntityChangedEvent.EntityType.STOP_PLACE, event.entityType);
-        Assert.assertEquals(stopPlace.getNetexId(), event.entityId);
-        Assert.assertEquals(EntityChangedEvent.CrudAction.UPDATE, event.crudAction);
+        assertEquals(EntityChangedEvent.EntityType.STOP_PLACE, event.entityType);
+        assertEquals(stopPlace.getNetexId(), event.entityId);
+        assertEquals(EntityChangedEvent.CrudAction.UPDATE, event.crudAction);
     }
 
 
@@ -57,9 +59,9 @@ public class EntityChangedEventJMSPublisherTest {
         StopPlace stopPlace = stopPlace(4l, NOW, NOW.plusMillis(2000));
 
         EntityChangedEvent event = jmsPublisher.toEntityChangedEvent(stopPlace, false);
-        Assert.assertEquals(EntityChangedEvent.EntityType.STOP_PLACE, event.entityType);
-        Assert.assertEquals(stopPlace.getNetexId(), event.entityId);
-        Assert.assertEquals(EntityChangedEvent.CrudAction.REMOVE, event.crudAction);
+        assertEquals(EntityChangedEvent.EntityType.STOP_PLACE, event.entityType);
+        assertEquals(stopPlace.getNetexId(), event.entityId);
+        assertEquals(EntityChangedEvent.CrudAction.REMOVE, event.crudAction);
     }
 
 
@@ -68,9 +70,9 @@ public class EntityChangedEventJMSPublisherTest {
         StopPlace stopPlace = stopPlace(1l, NOW, null);
 
         EntityChangedEvent event = jmsPublisher.toEntityChangedEvent(stopPlace, true);
-        Assert.assertEquals(EntityChangedEvent.EntityType.STOP_PLACE, event.entityType);
-        Assert.assertEquals(stopPlace.getNetexId(), event.entityId);
-        Assert.assertEquals(EntityChangedEvent.CrudAction.DELETE, event.crudAction);
+        assertEquals(EntityChangedEvent.EntityType.STOP_PLACE, event.entityType);
+        assertEquals(stopPlace.getNetexId(), event.entityId);
+        assertEquals(EntityChangedEvent.CrudAction.DELETE, event.crudAction);
     }
 
 

@@ -1,6 +1,6 @@
 package org.rutebanken.tiamat.model;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.math.BigInteger;
 
 @Entity

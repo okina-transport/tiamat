@@ -15,8 +15,9 @@
 
 package org.rutebanken.tiamat.exporter;
 
-import org.junit.Ignore;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.validation.NeTExValidator;
 import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXException;
@@ -34,7 +35,7 @@ import java.io.IOException;
 public class ValidationTest {
 
 
-    @Ignore
+    @Disabled
     @Test
     public void test() throws IOException, SAXException {
 

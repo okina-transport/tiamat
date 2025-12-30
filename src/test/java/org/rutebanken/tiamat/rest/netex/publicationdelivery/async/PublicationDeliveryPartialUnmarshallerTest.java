@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.rest.netex.publicationdelivery.async;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.springframework.test.annotation.DirtiesContext;
 import org.xml.sax.SAXException;

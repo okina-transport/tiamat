@@ -34,7 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -99,7 +99,7 @@ public class NetexImporter {
 
 
         AtomicInteger atomicInteger = new AtomicInteger(0);
-        List<javax.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = publicationDeliveryStructure.getDataObjects().getCompositeFrameOrCommonFrame();
+        List<jakarta.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = publicationDeliveryStructure.getDataObjects().getCompositeFrameOrCommonFrame();
 
         try {
             List<GeneralOrganisation> generalOrganisations = new ArrayList<>();
@@ -127,7 +127,7 @@ public class NetexImporter {
     }
 
     private boolean hasFrameOfType(PublicationDeliveryStructure publicationDeliveryStructure, Class<?> frameToSearch){
-        List<javax.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = publicationDeliveryStructure.getDataObjects().getCompositeFrameOrCommonFrame();
+        List<jakarta.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = publicationDeliveryStructure.getDataObjects().getCompositeFrameOrCommonFrame();
         for (JAXBElement<? extends Common_VersionFrameStructure> frameType : findedFrameType) {
             if (frameToSearch.isInstance(frameType.getValue())) {
                 return true;
@@ -145,7 +145,7 @@ public class NetexImporter {
     }
 
     private boolean hasGeneralFrame(PublicationDeliveryStructure publicationDeliveryStructure){
-        List<javax.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = publicationDeliveryStructure.getDataObjects().getCompositeFrameOrCommonFrame();
+        List<jakarta.xml.bind.JAXBElement<? extends org.rutebanken.netex.model.Common_VersionFrameStructure>> findedFrameType = publicationDeliveryStructure.getDataObjects().getCompositeFrameOrCommonFrame();
         for (JAXBElement<? extends Common_VersionFrameStructure> frameType : findedFrameType) {
             if (frameType.getValue() instanceof GeneralFrame) {
                 return true;

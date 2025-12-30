@@ -21,7 +21,7 @@ import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.PlaceEquipment;
 import org.springframework.stereotype.Component;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 import java.util.List;
 import java.util.stream.Collectors;
 

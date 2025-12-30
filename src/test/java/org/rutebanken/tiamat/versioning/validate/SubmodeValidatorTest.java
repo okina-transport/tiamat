@@ -15,24 +15,31 @@
 
 package org.rutebanken.tiamat.versioning.validate;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.model.BusSubmodeEnumeration;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.TramSubmodeEnumeration;
 import org.rutebanken.tiamat.versioning.validate.SubmodeValidator;
 import org.springframework.test.annotation.DirtiesContext;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class SubmodeValidatorTest {
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void validateExpectIllegalArgumentException() {
 
-        StopPlace stopPlace = new StopPlace();
-        stopPlace.setBusSubmode(BusSubmodeEnumeration.RAIL_REPLACEMENT_BUS);
-        stopPlace.setTramSubmode(TramSubmodeEnumeration.LOCAL_TRAM);
+        assertThrows(IllegalArgumentException.class, () -> {
+            StopPlace stopPlace = new StopPlace();
+            stopPlace.setBusSubmode(BusSubmodeEnumeration.RAIL_REPLACEMENT_BUS);
+            stopPlace.setTramSubmode(TramSubmodeEnumeration.LOCAL_TRAM);
 
-        new SubmodeValidator().validate(stopPlace);
+            new SubmodeValidator().validate(stopPlace);
+
+                });
+
+
     }
 
     @Test

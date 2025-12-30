@@ -15,11 +15,12 @@
 
 package org.rutebanken.tiamat.importer.finder;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
 import org.geotools.referencing.GeodeticCalculator;
-import org.junit.Before;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
@@ -46,7 +47,7 @@ public class NearbyStopsWithSameTypeFinderTest extends TiamatIntegrationTest {
     @Autowired
     private NearbyStopsWithSameTypeFinder nearbyStopsWithSameTypeFinder;
 
-    @Before
+    @BeforeEach
     public void cleanRepositories() {
         stopPlaceRepository.deleteAll();
     }

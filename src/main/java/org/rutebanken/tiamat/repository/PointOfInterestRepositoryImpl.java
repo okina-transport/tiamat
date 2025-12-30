@@ -25,12 +25,12 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
-import java.math.BigInteger;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
+
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -63,15 +63,15 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
     }
 
     @Override
-    public int countResult() {
+    public Long countResult() {
         return countResult(getPointsOfInterest());
     }
 
-    private int countResult(Pair<String, Map<String, Object>> sqlWithParams) {
+    private Long countResult(Pair<String, Map<String, Object>> sqlWithParams) {
         Session session = entityManager.unwrap(Session.class);
         NativeQuery query = session.createNativeQuery("SELECT COUNT(*) from (" + sqlWithParams.getFirst() + ") as numberOfPointsOfInterest");
         searchHelper.addParams(query, sqlWithParams.getSecond());
-        return ((BigInteger) query.uniqueResult()).intValue();
+        return (Long)query.uniqueResult();
     }
 
     @Override
@@ -317,8 +317,7 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
 
         Set<Long> result = new HashSet<>();
         for(Object object : query.list()) {
-            BigInteger bigInteger = (BigInteger) object;
-            result.add(bigInteger.longValue());
+            result.add((Long)object);
         }
         return result;
     }

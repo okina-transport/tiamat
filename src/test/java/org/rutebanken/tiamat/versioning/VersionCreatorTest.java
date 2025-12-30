@@ -15,9 +15,10 @@
 
 package org.rutebanken.tiamat.versioning;
 
+import org.junit.jupiter.api.Disabled;
 import org.locationtech.jts.geom.Coordinate;
-import org.junit.Ignore;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
@@ -105,7 +106,7 @@ public class VersionCreatorTest extends TiamatIntegrationTest {
         assertThat(actualStopPlaceId).isNull();
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void deepCopiedObjectShouldHaveOriginalId() {
         StopPlace stopPlace = new StopPlace();
@@ -134,7 +135,7 @@ public class VersionCreatorTest extends TiamatIntegrationTest {
     }
 
 
-    @Ignore // Should be testing future path link saver service
+    @Disabled // Should be testing future path link saver service
     @Test
     public void createNewVersionOfPathLink() {
         Quay fromQuay = new Quay();
@@ -205,7 +206,7 @@ public class VersionCreatorTest extends TiamatIntegrationTest {
      * See NRP-2348 and relevant queries for detecting this issue here: https://github.com/entur/tiamat-scripts/tree/master/fix_inconsistent_equipment
      */
     @Test
-    @Ignore //Place equipments are now copied with netex and version
+    @Disabled //Place equipments are now copied with netex and version
     public void stopPlacePlaceEquipmentSholdBeCopiedWithoutNetexIdAndVersion() {
         StopPlace stopPlace = new StopPlace();
         stopPlace.setNetexId(randomizedTestNetexIdGenerator.generateRandomizedNetexId(stopPlace));
@@ -229,7 +230,7 @@ public class VersionCreatorTest extends TiamatIntegrationTest {
     }
 
     @Test
-    @Ignore //place equipments are now copied with netex and version
+    @Disabled //place equipments are now copied with netex and version
     public void quayPlaceEquipmentSholdBeCopiedWithoutNetexIdAndVersion() {
         Quay quay = new Quay();
         quay.setNetexId(randomizedTestNetexIdGenerator.generateRandomizedNetexId(quay));

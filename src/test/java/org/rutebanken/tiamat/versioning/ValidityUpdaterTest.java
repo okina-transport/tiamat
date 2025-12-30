@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.versioning;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -23,13 +23,12 @@ import org.rutebanken.tiamat.model.ValidBetween;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 
-import javax.persistence.Version;
-import javax.persistence.criteria.CriteriaBuilder;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class ValidityUpdaterTest extends TiamatIntegrationTest {
@@ -92,44 +91,61 @@ public class ValidityUpdaterTest extends TiamatIntegrationTest {
     }
 
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void doNotAcceptFromDateAfterToDate() {
-        StopPlace stopPlace = new StopPlace();
-        stopPlace.setVersion(1L);
-        Instant now = Instant.now();
-        stopPlace.setValidBetween(new ValidBetween(now, now.minusSeconds(10)));
 
-        validityUpdater.updateValidBetween(stopPlace, now);
+        assertThrows(IllegalArgumentException.class, () -> {
+            StopPlace stopPlace = new StopPlace();
+            stopPlace.setVersion(1L);
+            Instant now = Instant.now();
+            stopPlace.setValidBetween(new ValidBetween(now, now.minusSeconds(10)));
+
+            validityUpdater.updateValidBetween(stopPlace, now);
+
+                });
+
+
+
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void doNotAcceptFromDateBeforePreviousVersionEndDate() {
-        StopPlace previousVersion = new StopPlace();
-        previousVersion.setVersion(1L);
-        Instant now = Instant.now();
-        previousVersion.setValidBetween(new ValidBetween(now.minusSeconds(1000), now));
 
-        StopPlace newVersion = new StopPlace();
-        newVersion.setVersion(2L);
-        newVersion.setValidBetween(new ValidBetween(previousVersion.getValidBetween().getToDate().minusSeconds(10)));
+        assertThrows(IllegalArgumentException.class, () -> {
+            StopPlace previousVersion = new StopPlace();
+            previousVersion.setVersion(1L);
+            Instant now = Instant.now();
+            previousVersion.setValidBetween(new ValidBetween(now.minusSeconds(1000), now));
 
-        validityUpdater.updateValidBetween(previousVersion, newVersion, now);
+            StopPlace newVersion = new StopPlace();
+            newVersion.setVersion(2L);
+            newVersion.setValidBetween(new ValidBetween(previousVersion.getValidBetween().getToDate().minusSeconds(10)));
+
+            validityUpdater.updateValidBetween(previousVersion, newVersion, now);
+                });
+
+
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void doNotAcceptFromDateBeforePreviousVersionFromDate() {
-        StopPlace previousVersion = new StopPlace();
-        previousVersion.setVersion(1L);
-        Instant now = Instant.now();
 
-        // No to date
-        previousVersion.setValidBetween(new ValidBetween(now.minusSeconds(1000), null));
+        assertThrows(IllegalArgumentException.class, () -> {
+            StopPlace previousVersion = new StopPlace();
+            previousVersion.setVersion(1L);
+            Instant now = Instant.now();
 
-        StopPlace newVersion = new StopPlace();
-        newVersion.setVersion(2L);
-        newVersion.setValidBetween(new ValidBetween(previousVersion.getValidBetween().getFromDate().minusSeconds(10)));
+            // No to date
+            previousVersion.setValidBetween(new ValidBetween(now.minusSeconds(1000), null));
 
-        validityUpdater.updateValidBetween(previousVersion, newVersion, now);
+            StopPlace newVersion = new StopPlace();
+            newVersion.setVersion(2L);
+            newVersion.setValidBetween(new ValidBetween(previousVersion.getValidBetween().getFromDate().minusSeconds(10)));
+
+            validityUpdater.updateValidBetween(previousVersion, newVersion, now);
+        });
+
+
     }
 
     @Test

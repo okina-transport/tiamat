@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.model.job;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;

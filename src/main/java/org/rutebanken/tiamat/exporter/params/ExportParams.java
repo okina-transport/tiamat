@@ -16,13 +16,14 @@
 package org.rutebanken.tiamat.exporter.params;
 
 import com.google.common.base.MoreObjects;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.annotations.ApiParam;
 
-import javax.ws.rs.BeanParam;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.QueryParam;
+
+
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.ws.rs.BeanParam;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.QueryParam;
 import java.util.Arrays;
 import java.util.List;
 
@@ -32,7 +33,7 @@ import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
  * Export parameters.
  * Parameters specific for search related to a certain type like StopPlace does not necessary belong here.
  */
-@ApiModel(description = "Export parameters")
+@Schema(description = "Export parameters")
 public class ExportParams {
 
     public enum ExportMode {NONE, RELEVANT, ALL}
@@ -47,44 +48,44 @@ public class ExportParams {
 
     @QueryParam(value = "topographicPlaceExportMode")
     @DefaultValue(value = "RELEVANT")
-    @ApiParam(value = "Controls exported topographic places. If set to relevant, only topographic places relevant to exported stop places are exported.")
-    @ApiModelProperty("Topographic place export mode")
+    @Parameter(description = "Controls exported topographic places. If set to relevant, only topographic places relevant to exported stop places are exported.")
+    @Schema(description = "Topographic place export mode", requiredMode = Schema.RequiredMode.REQUIRED)
     private ExportMode topographicPlaceExportMode = DEFAULT_TOPOGRAPHIC_PLACE_EXPORT_MODE;
 
     @QueryParam(value = "tariffZoneExportMode")
     @DefaultValue(value = "RELEVANT")
-    @ApiParam(value = "Controls exported tariff zones. If set to relevant, only tariff zones relevant to exported stop places are exported.")
-    @ApiModelProperty("Tariff zone export mode")
+    @Parameter(description = "Controls exported tariff zones. If set to relevant, only tariff zones relevant to exported stop places are exported.")
+    @Schema(description = "Tariff zone export mode")
     private ExportMode tariffZoneExportMode = DEFAULT_TARIFF_ZONE_EXPORT_MODE;
 
     @QueryParam(value = "groupOfStopPlacesExportMode")
     @DefaultValue(value = "RELEVANT")
-    @ApiParam(value = "Controls exported group of stop places. If set to relevant, only group of stop places relevant to exported stop places are exported.")
-    @ApiModelProperty("Group of stop places export mode")
+    @Parameter(description = "Controls exported group of stop places. If set to relevant, only group of stop places relevant to exported stop places are exported.")
+    @Schema(description = "Group of stop places export mode")
     private ExportMode groupOfStopPlacesExportMode = DEFAULT_GROUP_OF_STOP_PLACES_EXPORT_MODE;
 
     @QueryParam(value = "municipalityReference")
-    @ApiParam(value = MUNICIPALITY_REF_ARG_DESCRIPTION)
-    @ApiModelProperty("municipalityReference")
+    @Parameter(description = MUNICIPALITY_REF_ARG_DESCRIPTION)
+    @Schema(description = "municipalityReference")
     private List<String> municipalityReferences;
 
     @QueryParam(value = "countyReference")
-    @ApiParam(value = COUNTY_REF_ARG_DESCRIPTION)
-    @ApiModelProperty("countyReference")
+    @Parameter(description = COUNTY_REF_ARG_DESCRIPTION)
+    @Schema(description = "countyReference")
     private List<String> countyReferences;
 
     @QueryParam(value = "countryReference")
-    @ApiParam(value = COUNTRY_REF_ARG_DESCRIPTION)
-    @ApiModelProperty("countryReference")
+    @Parameter(description = COUNTRY_REF_ARG_DESCRIPTION)
+    @Schema(description = "countryReference")
     private List<String> countryReferences;
 
     @QueryParam(value = "codeSpace")
-    @ApiParam(value = SEARCH_WITH_CODE_SPACE_ARG_DESCRIPTION)
-    @ApiModelProperty("codeSpace")
+    @Parameter(description = SEARCH_WITH_CODE_SPACE_ARG_DESCRIPTION)
+    @Schema(description = "codeSpace")
     private String codeSpace;
 
     @QueryParam(value = "providerId")
-    @ApiParam(value = SEARCH_WITH_PROVIDER_ID_ARG_DESCRIPTION)
+    @Parameter(description = SEARCH_WITH_PROVIDER_ID_ARG_DESCRIPTION)
     private Long providerId;
 
     private List<String> providerList;
@@ -92,7 +93,7 @@ public class ExportParams {
     private String userName;
 
     @BeanParam
-    @ApiModelProperty(hidden = true)
+    @Schema( hidden = true)
     private StopPlaceSearch stopPlaceSearch;
 
     private ExportParams(ExportMode topographicPlaceExportMode, ExportMode tariffZoneExportMode, ExportMode groupOfStopPlacesExportMode, List<String> municipalityReferences, List<String> countyReferences,

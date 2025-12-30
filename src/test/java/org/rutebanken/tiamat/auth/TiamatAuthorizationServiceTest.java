@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.auth;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.helper.organisation.RoleAssignment;
 import org.rutebanken.tiamat.TiamatIntegrationTest;

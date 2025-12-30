@@ -47,8 +47,7 @@ public class TagFetcher implements DataFetcher<Set<Tag>> {
     public Set<Tag> get(DataFetchingEnvironment dataFetchingEnvironment) {
         if(dataFetchingEnvironment.getSource() instanceof IdentifiedEntity) {
             IdentifiedEntity source = dataFetchingEnvironment.getSource();
-            if ((source instanceof StopPlace stopPlace) && FIND_STOP_FOR_REPORT.equals(dataFetchingEnvironment.getExecutionContext()
-                    .getOperationDefinition().getName())) {
+            if ((source instanceof StopPlace stopPlace) && FIND_STOP_FOR_REPORT.equals(dataFetchingEnvironment.getOperationDefinition().getName())) {
                 return stopPlace.getTags();
             }
             if (source != null) {

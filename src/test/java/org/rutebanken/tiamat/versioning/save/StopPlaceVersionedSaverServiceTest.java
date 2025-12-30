@@ -15,10 +15,11 @@
 
 package org.rutebanken.tiamat.versioning.save;
 
+import org.junit.jupiter.api.Disabled;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
-import org.junit.Ignore;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.CleanTablesTools;
@@ -38,6 +39,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.rutebanken.tiamat.versioning.save.DefaultVersionedSaverService.MILLIS_BETWEEN_VERSIONS;
 
 @Transactional
@@ -178,31 +180,42 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         assertThat(newVersion.getValidBetween().getToDate()).isEqualTo(terminated);
     }
 
-    @Test(expected = Exception.class)
+    @Test
     public void saveStopWithAdjacentSiteTooFarAwayFromEachOther() {
-        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Adjacent"));
-        stopPlace.setVersion(1L);
-        stopPlace.setCentroid(point(60.000, 10.78));
-        stopPlace = stopPlaceRepository.save(stopPlace);
 
-        StopPlace adjacentStopPlace = new StopPlace(new EmbeddableMultilingualString("adjacentStopPlace"));
-        adjacentStopPlace.setVersion(1L);
-        adjacentStopPlace.setCentroid(point(70.000, 10.78));
-        adjacentStopPlace = stopPlaceRepository.save(adjacentStopPlace);
+        assertThrows(Exception.class, () -> {
+            StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Adjacent"));
+            stopPlace.setVersion(1L);
+            stopPlace.setCentroid(point(60.000, 10.78));
+            stopPlace = stopPlaceRepository.save(stopPlace);
 
-        stopPlace.getAdjacentSites().add(new SiteRefStructure(adjacentStopPlace.getNetexId()));
-        stopPlaceVersionedSaverService.saveNewVersion(stopPlace);
+            StopPlace adjacentStopPlace = new StopPlace(new EmbeddableMultilingualString("adjacentStopPlace"));
+            adjacentStopPlace.setVersion(1L);
+            adjacentStopPlace.setCentroid(point(70.000, 10.78));
+            adjacentStopPlace = stopPlaceRepository.save(adjacentStopPlace);
+
+            stopPlace.getAdjacentSites().add(new SiteRefStructure(adjacentStopPlace.getNetexId()));
+            stopPlaceVersionedSaverService.saveNewVersion(stopPlace);
+                });
+
+
     }
 
-    @Test(expected = Exception.class)
+    @Test
     public void saveStopWithAdjacentSiteWithSameId() {
-        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Adjacent"));
-        stopPlace.setVersion(1L);
-        stopPlace.setCentroid(point(60.000, 10.78));
-        stopPlace = stopPlaceRepository.save(stopPlace);
 
-        stopPlace.getAdjacentSites().add(new SiteRefStructure(stopPlace.getNetexId()));
-        stopPlaceVersionedSaverService.saveNewVersion(stopPlace);
+
+        assertThrows(Exception.class, () -> {
+            StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Adjacent"));
+            stopPlace.setVersion(1L);
+            stopPlace.setCentroid(point(60.000, 10.78));
+            stopPlace = stopPlaceRepository.save(stopPlace);
+
+            stopPlace.getAdjacentSites().add(new SiteRefStructure(stopPlace.getNetexId()));
+            stopPlaceVersionedSaverService.saveNewVersion(stopPlace);
+
+                });
+
     }
 
     @Test
@@ -251,24 +264,28 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
         stopPlaceVersionedSaverService.saveNewVersion(existingVersion, newVersion);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void doNotAcceptFromDateBeforePreviousVersionFromDate() {
-        StopPlace previousVersion = new StopPlace();
-        previousVersion.setVersion(1L);
 
-        stopPlaceRepository.save(previousVersion);
+        assertThrows(IllegalArgumentException.class, () -> {
+            StopPlace previousVersion = new StopPlace();
+            previousVersion.setVersion(1L);
 
-        Instant now = Instant.now();
+            stopPlaceRepository.save(previousVersion);
 
-        // No to date
-        previousVersion.setValidBetween(new ValidBetween(now.minusSeconds(1000), null));
+            Instant now = Instant.now();
 
-        StopPlace newVersion = new StopPlace();
-        newVersion.setVersion(2L);
-        newVersion.setValidBetween(new ValidBetween(previousVersion.getValidBetween().getFromDate().minusSeconds(10)));
-        newVersion.setNetexId(previousVersion.getNetexId());
+            // No to date
+            previousVersion.setValidBetween(new ValidBetween(now.minusSeconds(1000), null));
 
-        stopPlaceVersionedSaverService.saveNewVersion(previousVersion, newVersion);
+            StopPlace newVersion = new StopPlace();
+            newVersion.setVersion(2L);
+            newVersion.setValidBetween(new ValidBetween(previousVersion.getValidBetween().getFromDate().minusSeconds(10)));
+            newVersion.setNetexId(previousVersion.getNetexId());
+
+            stopPlaceVersionedSaverService.saveNewVersion(previousVersion, newVersion);
+                });
+
     }
 
     @Test
@@ -332,26 +349,31 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
     }
 
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void updateStopPlaceDifferentIdShouldFail() {
 
-        StopPlace stopPlace = new StopPlace();
-        stopPlace.setName(new EmbeddableMultilingualString("Initial name"));
+        assertThrows(IllegalArgumentException.class, () -> {
+            StopPlace stopPlace = new StopPlace();
+            stopPlace.setName(new EmbeddableMultilingualString("Initial name"));
 
-        stopPlaceVersionedSaverService.saveNewVersion(stopPlace);
+            stopPlaceVersionedSaverService.saveNewVersion(stopPlace);
 
-        StopPlace stopPlace1 = new StopPlace();
-        stopPlace1.setName(new EmbeddableMultilingualString("Initial name"));
+            StopPlace stopPlace1 = new StopPlace();
+            stopPlace1.setName(new EmbeddableMultilingualString("Initial name"));
 
-        stopPlaceVersionedSaverService.saveNewVersion(stopPlace1);
+            stopPlaceVersionedSaverService.saveNewVersion(stopPlace1);
 
-        StopPlace actualStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlace.getNetexId());
-        StopPlace actualStopPlace1 = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlace1.getNetexId());
+            StopPlace actualStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlace.getNetexId());
+            StopPlace actualStopPlace1 = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlace1.getNetexId());
 
-        actualStopPlace.setName(new EmbeddableMultilingualString("Failing StopPlace"));
-        actualStopPlace1.setName(new EmbeddableMultilingualString("Another failing StopPlace"));
+            actualStopPlace.setName(new EmbeddableMultilingualString("Failing StopPlace"));
+            actualStopPlace1.setName(new EmbeddableMultilingualString("Another failing StopPlace"));
 
-        stopPlaceVersionedSaverService.saveNewVersion(actualStopPlace, actualStopPlace1);
+            stopPlaceVersionedSaverService.saveNewVersion(actualStopPlace, actualStopPlace1);
+
+                });
+
+
     }
 
     @Test
@@ -434,7 +456,7 @@ public class StopPlaceVersionedSaverServiceTest extends TiamatIntegrationTest {
 
 
     @Test
-    @Ignore
+    @Disabled
     public void newVersionOfStopPlaceGetsChangedBySet() {
 
         TopographicPlace topographicPlace = new TopographicPlace();

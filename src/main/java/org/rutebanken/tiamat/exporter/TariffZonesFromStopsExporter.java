@@ -31,7 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -61,13 +61,14 @@ public class TariffZonesFromStopsExporter {
 
         Map<String, TariffZone> tariffZoneMap = new HashMap<>();
 
-        if (responseSiteFrame.getTariffZones() != null && responseSiteFrame.getTariffZones().getTariffZone_() != null) {
+
+        if (responseSiteFrame.getTariffZones() != null && responseSiteFrame.getTariffZones().getTariffZone() != null) {
 
 
-            List<org.rutebanken.netex.model.TariffZone> tarifZones = responseSiteFrame.getTariffZones().getTariffZone_()
+            List<org.rutebanken.netex.model.TariffZone> tarifZones = responseSiteFrame.getTariffZones().getTariffZone()
                     .stream()
                     .map(jaxbElement -> (org.rutebanken.netex.model.TariffZone) jaxbElement.getValue())
-                    .collect(Collectors.toList());
+                    .toList();
 
             tarifZones.forEach(tariffZone -> tariffZoneMap.put(key(tariffZone.getId(), tariffZone.getVersion()), tariffZone));
         }
@@ -100,7 +101,7 @@ public class TariffZonesFromStopsExporter {
                     .map(tariffZone -> new JAXBElement<TariffZone>(qname, TariffZone.class, tariffZone))
                     .collect(Collectors.toList());
 
-            responseSiteFrame.withTariffZones(new TariffZonesInFrame_RelStructure().withTariffZone_(jaxbTariffZone));
+            responseSiteFrame.withTariffZones(new TariffZonesInFrame_RelStructure().withTariffZone(jaxbTariffZone));
         }
     }
 

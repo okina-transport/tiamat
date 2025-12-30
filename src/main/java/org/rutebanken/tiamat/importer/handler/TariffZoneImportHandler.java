@@ -59,7 +59,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -93,7 +93,7 @@ public class TariffZoneImportHandler {
 
         List<StopPlace> tiamatStops = hasStopsTariffZones(netexSiteFrame);
         if (publicationDeliveryHelper.hasTariffZones(netexSiteFrame) && importParams.importType != ImportType.ID_MATCH) {
-            List<org.rutebanken.tiamat.model.TariffZone> tiamatTariffZones = netexMapper.getFacade().mapAsList(netexSiteFrame.getTariffZones().getTariffZone_(), org.rutebanken.tiamat.model.TariffZone.class);
+            List<org.rutebanken.tiamat.model.TariffZone> tiamatTariffZones = netexMapper.getFacade().mapAsList(netexSiteFrame.getTariffZones().getTariffZone(), org.rutebanken.tiamat.model.TariffZone.class);
             logger.debug("Mapped {} tariff zones from netex to internal model", tiamatTariffZones.size());
             importedTariffZones.addAll(tariffZoneImporter.importTariffZones(tiamatTariffZones));
             logger.debug("Got {} imported tariffZones ", importedTariffZones.size());
@@ -122,7 +122,7 @@ public class TariffZoneImportHandler {
                     .map(tariffZone -> netexObectFactory.createTariffZone(tariffZone))
                     .collect(Collectors.toList());
 
-            responseSiteframe.withTariffZones(netexObectFactory.createTariffZonesInFrame_RelStructure().withTariffZone_(newTariffZone));
+            responseSiteframe.withTariffZones(netexObectFactory.createTariffZonesInFrame_RelStructure().withTariffZone(newTariffZone));
         }
     }
 

@@ -17,8 +17,9 @@ package org.rutebanken.tiamat.importer.matching;
 
 
 import org.jetbrains.annotations.NotNull;
-import org.junit.Ignore;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
@@ -48,7 +49,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @TestPropertySource(locations = "classpath:application-ISOLATEDMODE.properties")
@@ -82,8 +84,8 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
         assertEquals(1, matchedStopPlaces.size());
         org.rutebanken.netex.model.StopPlace importedStopPlace = matchedStopPlaces.get(0);
         assertEquals(name, importedStopPlace.getName().getValue());
-        assertEquals("Wrong longitude", longitude, importedStopPlace.getCentroid().getLocation().getLongitude().doubleValue(), 0.0d);
-        assertEquals("Wrong latitude", latitude, importedStopPlace.getCentroid().getLocation().getLatitude().doubleValue(), 0.0d);
+        assertEquals( longitude, importedStopPlace.getCentroid().getLocation().getLongitude().doubleValue(), 0.0d, "Wrong longitude");
+        assertEquals(latitude, importedStopPlace.getCentroid().getLocation().getLatitude().doubleValue(), 0.0d,"Wrong latitude" );
         Optional<String> importedIdOpt = NetexMapper.getImportedId(importedStopPlace);
         assertTrue(importedIdOpt.isPresent());
         assertEquals(importedId, importedIdOpt.get());
@@ -92,8 +94,8 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
         assertEquals(1, importedStopPlace.getQuays().getQuayRefOrQuay().size());
         org.rutebanken.netex.model.Quay quay1 = (org.rutebanken.netex.model.Quay) importedStopPlace.getQuays().getQuayRefOrQuay().get(0).getValue();
         assertEquals(name, quay1.getName().getValue());
-        assertEquals("Wrong longitude", longitude, quay1.getCentroid().getLocation().getLongitude().doubleValue(), 0.0d);
-        assertEquals("Wrong latitude", latitude, quay1.getCentroid().getLocation().getLatitude().doubleValue(), 0.0d);
+        assertEquals(longitude, quay1.getCentroid().getLocation().getLongitude().doubleValue(), 0.0d, "Wrong longitude");
+        assertEquals( latitude, quay1.getCentroid().getLocation().getLatitude().doubleValue(), 0.0d,"Wrong latitude");
         Optional<String> quayImportedIdOpt = NetexMapper.getImportedId(quay1);
         assertTrue(quayImportedIdOpt.isPresent());
         assertEquals(quayImportedId, quayImportedIdOpt.get());
@@ -143,8 +145,8 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         assertEquals(1, importedStopPlaceOnProv2.getQuays().getQuayRefOrQuay().size());
         org.rutebanken.netex.model.Quay newQuay = (org.rutebanken.netex.model.Quay) importedStopPlaceOnProv2.getQuays().getQuayRefOrQuay().get(0).getValue();
-        assertEquals("Wrong longitude", longitude, newQuay.getCentroid().getLocation().getLongitude().doubleValue(), 0.0d);
-        assertEquals("Wrong latitude", latitude, newQuay.getCentroid().getLocation().getLatitude().doubleValue(), 0.0d);
+        assertEquals( longitude, newQuay.getCentroid().getLocation().getLongitude().doubleValue(), 0.0d,"Wrong longitude");
+        assertEquals( latitude, newQuay.getCentroid().getLocation().getLatitude().doubleValue(), 0.0d,"Wrong latitude");
         Optional<String> newQuayImportedIdOpt = NetexMapper.getImportedId(newQuay);
         assertTrue(newQuayImportedIdOpt.isPresent());
         assertEquals(quayImportedIdPt2, newQuayImportedIdOpt.get());
@@ -152,7 +154,7 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
 
     @Test
-    @Ignore //in isolated mode, no nearby recovery is done, even for the same provider
+    @Disabled //in isolated mode, no nearby recovery is done, even for the same provider
     public void checkStopPlaceRecoveredFromSameProvider() throws TiamatBusinessException {
         List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
@@ -189,8 +191,8 @@ public class MatchingAppendingImporterIsolatedModeTest extends TiamatIntegration
 
         assertEquals(1, importedStopPlaceOnProv2.getQuays().getQuayRefOrQuay().size());
         org.rutebanken.netex.model.Quay newQuay = (org.rutebanken.netex.model.Quay) importedStopPlaceOnProv2.getQuays().getQuayRefOrQuay().get(0).getValue();
-        assertEquals("Wrong longitude", longitude, newQuay.getCentroid().getLocation().getLongitude().doubleValue(), 0.0d);
-        assertEquals("Wrong latitude", latitude, newQuay.getCentroid().getLocation().getLatitude().doubleValue(), 0.0d);
+        assertEquals(longitude, newQuay.getCentroid().getLocation().getLongitude().doubleValue(), 0.0d, "Wrong longitude");
+        assertEquals(latitude, newQuay.getCentroid().getLocation().getLatitude().doubleValue(), 0.0d, "Wrong latitude");
         Optional<String> newQuayImportedIdOpt = NetexMapper.getImportedId(newQuay);
         assertTrue(newQuayImportedIdOpt.isPresent());
         assertEquals(quayImportedId + "," + quayImportedIdPt2, newQuayImportedIdOpt.get());

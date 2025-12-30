@@ -15,13 +15,14 @@
 
 package org.rutebanken.tiamat.service;
 
-import org.junit.Ignore;
+
+import org.junit.jupiter.api.Disabled;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.impl.CoordinateArraySequence;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.TopographicPlace;
@@ -49,7 +50,7 @@ public class TopographicPlaceLookupServiceTest extends TiamatIntegrationTest {
      * Test is implemented after merging of two counties (Sør- and Nordtrøndelag), were municipalities got new IDs.
      */
     @Test
-    @Ignore //no topographic place import on mobiiti. To reactivate if needed
+    @Disabled //no topographic place import on mobiiti. To reactivate if needed
     public void findTopographicPlace() {
 
         Point point = geometryFactory.createPoint(new Coordinate(9.84, 59.26));

@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.model;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 
 
 public class PurposeOfGrouping_ValueStructure

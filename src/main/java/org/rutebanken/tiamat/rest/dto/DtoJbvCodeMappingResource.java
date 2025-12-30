@@ -1,6 +1,7 @@
 package org.rutebanken.tiamat.rest.dto;
 
-import io.swagger.annotations.Api;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
@@ -8,9 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -18,7 +19,7 @@ import java.util.List;
 
 import static org.rutebanken.tiamat.repository.QuayRepositoryImpl.JBV_CODE;
 
-@Api
+@Schema
 @Produces("application/json")
 @Path("jbv_code_mapping")
 public class DtoJbvCodeMappingResource {

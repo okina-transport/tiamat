@@ -17,7 +17,7 @@ package org.rutebanken.tiamat.rest.graphql.types;
 
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
 import org.springframework.test.annotation.DirtiesContext;
@@ -28,8 +28,10 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static junit.framework.TestCase.assertTrue;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class CustomGraphQLTypesTest {
 
@@ -63,7 +65,7 @@ public class CustomGraphQLTypesTest {
                 }
             }
         }
-        assertTrue("No custom GraphQL-enums have been tested!", counter.get() > 0);
+        assertTrue( counter.get() > 0, "No custom GraphQL-enums have been tested!");
     }
 
     @Test

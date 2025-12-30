@@ -18,7 +18,8 @@ package org.rutebanken.tiamat.model;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
+
 import javax.xml.datatype.Duration;
 import java.util.ArrayList;
 import java.util.List;

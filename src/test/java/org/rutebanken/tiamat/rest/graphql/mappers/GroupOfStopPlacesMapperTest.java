@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.rest.graphql.mappers;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.model.GroupOfStopPlaces;
 import org.rutebanken.tiamat.model.StopPlaceReference;
 import org.springframework.test.annotation.DirtiesContext;

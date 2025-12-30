@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.importer.matching;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.model.DataManagedObjectStructure;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.netex.id.NetexIdHelper;

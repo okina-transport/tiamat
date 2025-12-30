@@ -15,8 +15,9 @@
 
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
-import org.junit.Ignore;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.importer.ImportType;
@@ -24,10 +25,9 @@ import org.rutebanken.tiamat.importer.ImportParams;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
 import java.math.BigDecimal;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,7 +43,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
     private QName qname = new QName("http://www.netex.org.uk/netex", "TariffZone_");
 
-    @Ignore("Problème avec xsd netex : voir analyse dans teams : DEV/TU/analyse_erreur_tariffZoneImport.docx")
+    @Disabled("Problème avec xsd netex : voir analyse dans teams : DEV/TU/analyse_erreur_tariffZoneImport.docx")
     @Test
     public void publicationDeliveryWithTariffZone() throws Exception {
         TariffZone tariffZone = new TariffZone()
@@ -55,14 +55,14 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
         SiteFrame siteFrame = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
-                .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone)));
+                .withTariffZone(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone)));
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.publicationDelivery(siteFrame);
 
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDeliveryStructure);
 
         List<TariffZone> actualZones = publicationDeliveryTestHelper.findSiteFrame(response)
-                                                                    .getTariffZones().getTariffZone_()
+                                                                    .getTariffZones().getTariffZone()
                                                                     .stream()
                                                                     .map(jaxbElement -> (TariffZone)jaxbElement.getValue())
                                                                     .collect(Collectors.toList());
@@ -71,7 +71,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
         assertThat(actualZones.get(0).getName().getValue()).isEqualTo(tariffZone.getName().getValue());
     }
 
-    @Ignore("Problème avec xsd netex : voir analyse dans teams : DEV/TU/analyse_erreur_tariffZoneImport.docx")
+    @Disabled("Problème avec xsd netex : voir analyse dans teams : DEV/TU/analyse_erreur_tariffZoneImport.docx")
     @Test
     public void publicationDeliveryWithTariffZoneAndStopPlace() throws Exception {
         TariffZone tariffZone = new TariffZone()
@@ -89,7 +89,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
         SiteFrame siteFrame = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
-                        .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone)))
+                        .withTariffZone(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone)))
                 .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace_(netexObjectFactory.createStopPlace(stopPlace)));
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.publicationDelivery(siteFrame);
@@ -103,7 +103,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDeliveryStructure, importParams);
 
         List<TariffZone> actualZones = publicationDeliveryTestHelper.findSiteFrame(response)
-                .getTariffZones().getTariffZone_()
+                .getTariffZones().getTariffZone()
                 .stream()
                 .map(jaxbElement -> (TariffZone)jaxbElement.getValue())
                 .collect(Collectors.toList());
@@ -114,7 +114,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
         assertThat(actualZones.get(0).getVersion()).isEqualTo("1");
     }
 
-    @Ignore("Problème avec xsd netex : voir analyse dans teams : DEV/TU/analyse_erreur_tariffZoneImport.docx")
+    @Disabled("Problème avec xsd netex : voir analyse dans teams : DEV/TU/analyse_erreur_tariffZoneImport.docx")
     @Test
     public void publicationDeliveryWithTariffZoneAndStopPlaceMergeZonesImportTypeMatch() throws Exception {
 
@@ -142,7 +142,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
         SiteFrame siteFrame = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
-                        .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone1)))
+                        .withTariffZone(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone1)))
                 .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace_(netexObjectFactory.createStopPlace(stopPlace)));
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.publicationDelivery(siteFrame);
@@ -168,7 +168,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
         SiteFrame siteFrame2 = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
-                        .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone2)))
+                        .withTariffZone(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone2)))
                 .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace_(netexObjectFactory.createStopPlace(stopPlace)));
 
         PublicationDeliveryStructure publicationDeliveryStructure2 = publicationDeliveryTestHelper.publicationDelivery(siteFrame2);
@@ -179,7 +179,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure response = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDeliveryStructure2, importParams);
 
         List<TariffZone> actualZones = publicationDeliveryTestHelper.findSiteFrame(response)
-                .getTariffZones().getTariffZone_()
+                .getTariffZones().getTariffZone()
                 .stream()
                 .map(jaxbElement -> (TariffZone)jaxbElement.getValue())
                 .collect(Collectors.toList());
@@ -189,7 +189,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
     }
 
-    @Ignore("Problème avec xsd netex : voir analyse dans teams : DEV/TU/analyse_erreur_tariffZoneImport.docx")
+    @Disabled("Problème avec xsd netex : voir analyse dans teams : DEV/TU/analyse_erreur_tariffZoneImport.docx")
     @Test
     public void mergeTariffZonesForStopPlace() throws Exception {
 
@@ -217,7 +217,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
         SiteFrame siteFrame = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
-                        .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone1)))
+                        .withTariffZone(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone1)))
                 .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace_(netexObjectFactory.createStopPlace(stopPlace)));
 
         PublicationDeliveryStructure publicationDeliveryStructure = publicationDeliveryTestHelper.publicationDelivery(siteFrame);
@@ -245,7 +245,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
 
         SiteFrame siteFrame2 = publicationDeliveryTestHelper.siteFrame()
                 .withTariffZones(new TariffZonesInFrame_RelStructure()
-                        .withTariffZone_(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone2)))
+                        .withTariffZone(new JAXBElement<TariffZone>(qname,TariffZone.class,tariffZone2)))
                 .withStopPlaces(new StopPlacesInFrame_RelStructure().withStopPlace_(netexObjectFactory.createStopPlace(stopPlace2)));
 
         PublicationDeliveryStructure publicationDeliveryStructure2 = publicationDeliveryTestHelper.publicationDelivery(siteFrame2);
@@ -256,7 +256,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure matchReponse = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDeliveryStructure2, importParams);
 
         List<TariffZone> actualZones = publicationDeliveryTestHelper.findSiteFrame(matchReponse)
-                .getTariffZones().getTariffZone_()
+                .getTariffZones().getTariffZone()
                 .stream()
                 .map(jaxbElement -> (TariffZone)jaxbElement.getValue())
                 .collect(Collectors.toList());
@@ -273,7 +273,7 @@ public class TariffZoneImportTest extends TiamatIntegrationTest {
         PublicationDeliveryStructure idMatchResponse = publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDeliveryStructure2, importParams);
 
         actualZones = publicationDeliveryTestHelper.findSiteFrame(idMatchResponse)
-                .getTariffZones().getTariffZone_()
+                .getTariffZones().getTariffZone()
                 .stream()
                 .map(jaxbElement -> (TariffZone)jaxbElement.getValue())
                 .collect(Collectors.toList());

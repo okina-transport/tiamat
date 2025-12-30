@@ -18,7 +18,7 @@ package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 import org.locationtech.jts.geom.Coordinate;
 import net.opengis.gml._3.*;
 import net.opengis.gml._3.ObjectFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.importer.ImportParams;
@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class TopographicPlaceImportTest extends TiamatIntegrationTest {
@@ -199,21 +200,29 @@ public class TopographicPlaceImportTest extends TiamatIntegrationTest {
         assertThat(result.get(0).getVersion()).isEqualTo("2");
     }
 
-    @Test(expected = Exception.class)
+    @Test
     public void publicationDeliveryWithInvalidParentTopographicPlaceRef() throws Exception {
 
-        MultilingualString municipalityName = new MultilingualString().withValue("Larvik").withLang("nb");
 
-        TopographicPlace municipality = new TopographicPlace()
-                .withId("KVE:TopographicPlace:08")
-                .withName(municipalityName)
-                .withVersion("1")
-                .withDescriptor(new TopographicPlaceDescriptor_VersionedChildStructure().withName(municipalityName))
-                .withTopographicPlaceType(TopographicPlaceTypeEnumeration.MUNICIPALITY)
-                .withParentTopographicPlaceRef(new TopographicPlaceRefStructure().withRef("KVE:TopographicPlace:1").withVersion("1"));
+        assertThrows(Exception.class, () -> {
+            MultilingualString municipalityName = new MultilingualString().withValue("Larvik").withLang("nb");
 
-        PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryTopographicPlace(municipality);
+            TopographicPlace municipality = new TopographicPlace()
+                    .withId("KVE:TopographicPlace:08")
+                    .withName(municipalityName)
+                    .withVersion("1")
+                    .withDescriptor(new TopographicPlaceDescriptor_VersionedChildStructure().withName(municipalityName))
+                    .withTopographicPlaceType(TopographicPlaceTypeEnumeration.MUNICIPALITY)
+                    .withParentTopographicPlaceRef(new TopographicPlaceRefStructure().withRef("KVE:TopographicPlace:1").withVersion("1"));
 
-        publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
+            PublicationDeliveryStructure publicationDelivery = publicationDeliveryTestHelper.createPublicationDeliveryTopographicPlace(municipality);
+
+            publicationDeliveryTestHelper.postAndReturnPublicationDelivery(publicationDelivery);
+
+                });
+
+
+
+
     }
 }

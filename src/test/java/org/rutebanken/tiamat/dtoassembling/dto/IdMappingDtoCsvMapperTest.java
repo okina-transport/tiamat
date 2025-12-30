@@ -1,12 +1,14 @@
 package org.rutebanken.tiamat.dtoassembling.dto;
 
-import org.junit.Assert;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.time.ExportTimeZone;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Instant;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class IdMappingDtoCsvMapperTest {
@@ -17,18 +19,18 @@ public class IdMappingDtoCsvMapperTest {
     @Test
     public void whenNotIncludeStopTypeOrInterval_ignoreStopTypeAndInterval() {
         IdMappingDto dto = new IdMappingDto("orgId", "netexId", Instant.now(), Instant.now(), StopTypeEnumeration.AIRPORT);
-        Assert.assertEquals("orgId,netexId", mapper.toCsvString(dto, false, false));
+        assertEquals("orgId,netexId", mapper.toCsvString(dto, false, false));
     }
 
     @Test
     public void whenIncludeStopTypeOrInterval_printStopTypeAndInterval() {
         IdMappingDto dto = new IdMappingDto("orgId", "netexId", Instant.EPOCH, Instant.EPOCH.plusSeconds(1), StopTypeEnumeration.AIRPORT);
-        Assert.assertEquals("orgId,airport,netexId,1970-01-01T01:00:00,1970-01-01T01:00:01", mapper.toCsvString(dto, true, true));
+        assertEquals("orgId,airport,netexId,1970-01-01T01:00:00,1970-01-01T01:00:01", mapper.toCsvString(dto, true, true));
     }
 
     @Test
     public void whenOptionalFieldsAreNull_printEmptyString() {
         IdMappingDto dto = new IdMappingDto("orgId", "netexId", null, null, null);
-        Assert.assertEquals("orgId,,netexId,,", mapper.toCsvString(dto, true, true));
+        assertEquals("orgId,,netexId,,", mapper.toCsvString(dto, true, true));
     }
 }

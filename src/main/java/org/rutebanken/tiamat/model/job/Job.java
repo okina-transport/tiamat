@@ -16,34 +16,34 @@
 package org.rutebanken.tiamat.model.job;
 
 import com.google.common.base.MoreObjects;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.importer.ImportParams;
 
-import javax.persistence.*;
-import javax.xml.bind.annotation.XmlEnum;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.persistence.*;
+import jakarta.xml.bind.annotation.XmlEnum;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Entity
 @XmlRootElement
-@ApiModel(description = "Job model")
+@Schema(description = "Job model")
 public class Job {
 
     @Id
-    @GeneratedValue
-    @ApiModelProperty("Unique id for the entity")
+    @GeneratedValue(generator = "sequence_per_table_generator")
+    @Schema(description = "Unique id for the entity")
     private Long id;
 
     @Deprecated
-    @ApiModelProperty("JobUrl property  is deprecated")
+    @Schema(description = "JobUrl property  is deprecated")
     private String jobUrl;
 
-    @ApiModelProperty("File name of exported file")
+    @Schema(description = "File name of exported file")
     private String fileName;
 
     private String subFolder;
@@ -54,7 +54,7 @@ public class Job {
 
     private Instant finished;
 
-    @ApiModelProperty("Job status")
+    @Schema(description = "Job status")
     private JobStatus status;
 
     @Enumerated(EnumType.STRING)

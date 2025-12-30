@@ -15,8 +15,9 @@
 
 package org.rutebanken.tiamat.rest.dto;
 
-import io.swagger.annotations.Api;
-import org.apache.commons.lang3.StringUtils;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDtoCsvMapper;
 import org.rutebanken.tiamat.model.Quay;
@@ -26,9 +27,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -37,7 +38,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
-@Api(tags = {"Quay resource"}, produces = "text/plain")
+@Schema(description = "Quay resource")
 @Produces("application/json")
 @Path("/")
 public class DtoQuayResource {

@@ -25,12 +25,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.*;
+import jakarta.xml.bind.*;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
 
 import static com.google.common.io.ByteStreams.toByteArray;
-import static javax.xml.bind.JAXBContext.*;
+import static jakarta.xml.bind.JAXBContext.*;
 
 @Component
 public class PublicationDeliveryUnmarshaller {
@@ -58,7 +58,7 @@ public class PublicationDeliveryUnmarshaller {
 
     public PublicationDeliveryStructure unmarshal(InputStream inputStream) throws JAXBException, IOException, SAXException {
         Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-        jaxbUnmarshaller.setEventHandler(new javax.xml.bind.helpers.DefaultValidationEventHandler());
+        jaxbUnmarshaller.setEventHandler(new jakarta.xml.bind.helpers.DefaultValidationEventHandler());
 
 
         if(logger.isDebugEnabled()) {

@@ -9,7 +9,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;

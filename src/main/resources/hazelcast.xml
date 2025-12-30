@@ -4,7 +4,7 @@
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
            http://www.hazelcast.com/schema/config/hazelcast-config-5.1.xsd">
-    <cluster-name>ara</cluster-name>
+    <cluster-name>lmd</cluster-name>
     <instance-name>hz-tiamat</instance-name>
     <network>
         <port auto-increment="true" >5705</port>

@@ -18,7 +18,7 @@ package org.rutebanken.tiamat.netex.mapping;
 import org.rutebanken.netex.model.*;
 import org.springframework.stereotype.Component;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -47,7 +47,7 @@ public class PublicationDeliveryHelper {
     }
 
     public boolean hasTariffZones(SiteFrame netexSiteFrame) {
-        return netexSiteFrame.getTariffZones() != null && netexSiteFrame.getTariffZones().getTariffZone_() != null;
+        return netexSiteFrame.getTariffZones() != null && netexSiteFrame.getTariffZones().getTariffZone() != null;
     }
 
     public boolean hasPathLinks(SiteFrame netexSiteFrame) {

@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.model;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 public class MultilingualStringEntity extends MultilingualString {

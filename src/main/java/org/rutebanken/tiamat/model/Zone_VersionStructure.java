@@ -19,7 +19,7 @@ import com.google.common.base.MoreObjects;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 
 @MappedSuperclass

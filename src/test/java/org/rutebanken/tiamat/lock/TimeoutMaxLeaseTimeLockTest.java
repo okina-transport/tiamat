@@ -17,7 +17,7 @@ package org.rutebanken.tiamat.lock;
 
 import com.hazelcast.core.HazelcastInstance;
 import org.assertj.core.api.Assertions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +27,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class TimeoutMaxLeaseTimeLockTest extends TiamatIntegrationTest {
@@ -74,42 +75,47 @@ public class TimeoutMaxLeaseTimeLockTest extends TiamatIntegrationTest {
                 .as("ms thread slept within lock");
     }
 
-    @Test(expected = LockException.class)
+    @Test
     public void testWaitingForLocktTimeout() throws InterruptedException {
 
-        int waitTimeoutSeconds = 1;
-        TimeoutMaxLeaseTimeLock timeoutMaxLeaseTimeLock = new TimeoutMaxLeaseTimeLock(hazelcastInstance);
+        assertThrows(LockException.class, () -> {
 
-        // Sleep more than the wait time to trigger exception
-        long sleep = (waitTimeoutSeconds * 3 * 1000);
-        AtomicBoolean threadGotLock = new AtomicBoolean(false);
+            int waitTimeoutSeconds = 1;
+            TimeoutMaxLeaseTimeLock timeoutMaxLeaseTimeLock = new TimeoutMaxLeaseTimeLock(hazelcastInstance);
 
-        Thread t1 = new Thread(() -> {
-            timeoutMaxLeaseTimeLock.executeInLock(() -> {
-                try {
-                    threadGotLock.set(true);
-                    logger.info("Sleeping " + sleep + " millis");
-                    Thread.sleep(sleep);
-                    logger.info("Slept " + sleep + " millis");
-                    return null;
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+            // Sleep more than the wait time to trigger exception
+            long sleep = (waitTimeoutSeconds * 3 * 1000);
+            AtomicBoolean threadGotLock = new AtomicBoolean(false);
 
-            }, TEST_LOCK_NAME, waitTimeoutSeconds, 10);
+            Thread t1 = new Thread(() -> {
+                timeoutMaxLeaseTimeLock.executeInLock(() -> {
+                    try {
+                        threadGotLock.set(true);
+                        logger.info("Sleeping " + sleep + " millis");
+                        Thread.sleep(sleep);
+                        logger.info("Slept " + sleep + " millis");
+                        return null;
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                }, TEST_LOCK_NAME, waitTimeoutSeconds, 10);
+            });
+
+            t1.start();
+
+            logger.info("thread started");
+
+            logger.info("Make sure the thread gets the lock first");
+            while (!threadGotLock.get()) {
+            }
+            logger.info("Thread did get the lock");
+
+            logger.info("expecting exception");
+            // Should throw exception because the wait time was too long
+            timeoutMaxLeaseTimeLock.executeInLock(() -> System.currentTimeMillis(), TEST_LOCK_NAME, waitTimeoutSeconds, 10);
         });
 
-        t1.start();
 
-        logger.info("thread started");
-
-        logger.info("Make sure the thread gets the lock first");
-        while (!threadGotLock.get()) {
-        }
-        logger.info("Thread did get the lock");
-
-        logger.info("expecting exception");
-        // Should throw exception because the wait time was too long
-        timeoutMaxLeaseTimeLock.executeInLock(() -> System.currentTimeMillis(), TEST_LOCK_NAME, waitTimeoutSeconds, 10);
     }
 }

@@ -18,7 +18,7 @@ package org.rutebanken.tiamat.model;
 import com.google.common.base.MoreObjects;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.math.BigInteger;
 
 

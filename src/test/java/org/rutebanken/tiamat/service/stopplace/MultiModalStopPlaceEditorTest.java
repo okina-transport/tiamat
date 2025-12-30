@@ -16,8 +16,8 @@
 package org.rutebanken.tiamat.service.stopplace;
 
 import com.google.common.collect.Sets;
-import org.junit.Test;
-import org.junit.runner.notification.StoppedByUserException;
+import org.junit.jupiter.api.Test;
+
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Transactional
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -246,15 +247,19 @@ public class MultiModalStopPlaceEditorTest extends TiamatIntegrationTest {
                 .isEqualTo(new EmbeddableMultilingualString(parentStopPlaceName, lang));
     }
 
-    @Test(expected = Exception.class)
+    @Test
     public void testNotAllowsChildStopWithFutureVersion() {
 
-        StopPlace child = createStopPlace("child candidate");
-        child.setValidBetween(new ValidBetween(now.plus(10, ChronoUnit.DAYS)));
-        child = stopPlaceRepository.save(child);
+        assertThrows(Exception.class, () -> {
+            StopPlace child = createStopPlace("child candidate");
+            child.setValidBetween(new ValidBetween(now.plus(10, ChronoUnit.DAYS)));
+            child = stopPlaceRepository.save(child);
 
-        String parentStopPlaceName = "Super StopPlace";
-        multiModalStopPlaceEditor.createMultiModalParentStopPlace(Arrays.asList(child.getNetexId()), new EmbeddableMultilingualString(parentStopPlaceName));
+            String parentStopPlaceName = "Super StopPlace";
+            multiModalStopPlaceEditor.createMultiModalParentStopPlace(Arrays.asList(child.getNetexId()), new EmbeddableMultilingualString(parentStopPlaceName));
+                });
+
+
     }
 
     private void verifyChildValidBetween(StopPlace parentStopPlace) {

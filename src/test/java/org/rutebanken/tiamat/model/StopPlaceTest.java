@@ -15,9 +15,10 @@
 
 package org.rutebanken.tiamat.model;
 
+import org.junit.jupiter.api.Disabled;
 import org.locationtech.jts.geom.Coordinate;
-import org.junit.Ignore;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
@@ -232,7 +233,7 @@ public class StopPlaceTest extends TiamatIntegrationTest {
 //        assertThat(((SiteElement)actualStopPlace.getFacilities().getSiteFacilitySetRefOrSiteFacilitySet().get(0)).getNetexId()).isEqualTo(luggageLockerEquipment.getNetexId());
     }
 
-    @Ignore // level is transient
+    @Disabled // level is transient
     @Test
     public void persistStopPlaceWithLevels() {
         StopPlace stopPlace = new StopPlace();
@@ -275,7 +276,7 @@ public class StopPlaceTest extends TiamatIntegrationTest {
         assertThat(actualValidBetween.getToDate()).isEqualTo(validBetween.getToDate());
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void persistStopPlaceWithParentReference() {
         StopPlace stopPlace = new StopPlace();
@@ -292,7 +293,7 @@ public class StopPlaceTest extends TiamatIntegrationTest {
         assertThat(actualStopPlace.getParentSiteRef().getRef()).isEqualTo(stopPlaceReference.getRef());
     }
 
-    @Ignore // other vehicle mode is transient
+    @Disabled // other vehicle mode is transient
     @Test
     public void persistStopPlaceWithOtherVehicleMode() {
         StopPlace stopPlace = new StopPlace();
@@ -418,7 +419,7 @@ public class StopPlaceTest extends TiamatIntegrationTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void saveModifiedStopPlaceWithModifiedQuayAndNewQuay() throws Exception {
         Quay quay = new Quay();
         quay.setName(new EmbeddableMultilingualString("existing quay"));

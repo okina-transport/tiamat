@@ -15,17 +15,23 @@
 
 package org.rutebanken.tiamat.model;
 
+import org.hibernate.annotations.JdbcTypeCode;
+
 import java.time.Duration;
 
 
 public class TransferDuration {
 
+    @JdbcTypeCode(java.sql.Types.VARBINARY)
     protected Duration defaultDuration;
 
+    @JdbcTypeCode(java.sql.Types.VARBINARY)
     protected Duration frequentTravellerDuration;
 
+    @JdbcTypeCode(java.sql.Types.VARBINARY)
     protected Duration occasionalTravellerDuration;
 
+    @JdbcTypeCode(java.sql.Types.VARBINARY)
     protected Duration mobilityRestrictedTravellerDuration;
 
     public Duration getDefaultDuration() {

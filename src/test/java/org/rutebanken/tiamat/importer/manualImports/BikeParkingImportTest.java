@@ -1,8 +1,8 @@
 package org.rutebanken.tiamat.importer.manualImports;
 
 
-import org.junit.Assert;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -171,7 +171,7 @@ public class BikeParkingImportTest extends TiamatIntegrationTest {
     private void checkCompleteFile() {
 
         List<Parking> persistedEnt = parkingRepository.findAll();
-        Assert.assertEquals("Wrong number of persisted parking in DB", 11, persistedEnt.size());
+        assertEquals(11, persistedEnt.size(), "Wrong number of persisted parking in DB");
 
         persistedEnt.forEach(this::checkPersistedEnt);
 
@@ -184,7 +184,7 @@ public class BikeParkingImportTest extends TiamatIntegrationTest {
      * @param bikeParking
      */
     private void checkPersistedEnt(Parking bikeParking) {
-        assertEquals("Wrong parking type for bike import", ParkingTypeEnumeration.OTHER, bikeParking.getParkingType());
+        assertEquals( ParkingTypeEnumeration.OTHER, bikeParking.getParkingType(), "Wrong parking type for bike import");
     }
 
 }

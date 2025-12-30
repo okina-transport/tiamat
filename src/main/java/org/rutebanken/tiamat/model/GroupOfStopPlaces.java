@@ -18,7 +18,7 @@ package org.rutebanken.tiamat.model;
 import com.google.common.base.MoreObjects;
 import org.locationtech.jts.geom.Point;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,10 +29,17 @@ public class GroupOfStopPlaces extends GroupOfEntities_VersionStructure {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private final List<AlternativeName> alternativeNames = new ArrayList<>();
-    @ElementCollection(targetClass = StopPlaceReference.class, fetch = FetchType.EAGER)
+
+
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
-            name = "group_of_stop_places_members"
+            name = "group_of_stop_places_members",
+            joinColumns = @JoinColumn(name = "group_of_stop_places_id")
     )
+    @AttributeOverrides({
+            @AttributeOverride(name = "ref", column = @Column(name = "ref")),
+            @AttributeOverride(name = "version", column = @Column(name = "version"))
+    })
     private Set<StopPlaceReference> members = new HashSet<>();
     private Point centroid;
 

@@ -16,7 +16,7 @@
 package org.rutebanken.tiamat.importer.matching;
 
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
@@ -39,8 +39,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @TestPropertySource(locations="classpath:application.properties")
@@ -73,8 +73,8 @@ public class MatchingAppendingImporterSharedModeTest extends TiamatIntegrationTe
         assertTrue(matchedStopPlaces.size() == 1);
         org.rutebanken.netex.model.StopPlace importedStopPlace = matchedStopPlaces.get(0);
         assertEquals(name,importedStopPlace.getName().getValue());
-        assertEquals("Wrong longitude",importedStopPlace.getCentroid().getLocation().getLongitude().doubleValue(),longitude,0.0d);
-        assertEquals("Wrong latitude",importedStopPlace.getCentroid().getLocation().getLatitude().doubleValue(),latitude,0.0d);
+        assertEquals(importedStopPlace.getCentroid().getLocation().getLongitude().doubleValue(),longitude,0.0d, "Wrong longitude");
+        assertEquals(importedStopPlace.getCentroid().getLocation().getLatitude().doubleValue(),latitude,0.0d, "Wrong latitude");
         Optional<String> importedIdOpt = NetexMapper.getImportedId(importedStopPlace);
         assertTrue(importedIdOpt.isPresent());
         assertEquals(importedId,importedIdOpt.get());
@@ -83,8 +83,8 @@ public class MatchingAppendingImporterSharedModeTest extends TiamatIntegrationTe
         assertTrue(importedStopPlace.getQuays().getQuayRefOrQuay().size() == 1);
         org.rutebanken.netex.model.Quay quay1 = (org.rutebanken.netex.model.Quay) importedStopPlace.getQuays().getQuayRefOrQuay().get(0).getValue();
         assertEquals(name,quay1.getName().getValue());
-        assertEquals("Wrong longitude",quay1.getCentroid().getLocation().getLongitude().doubleValue(),longitude,0.0d);
-        assertEquals("Wrong latitude",quay1.getCentroid().getLocation().getLatitude().doubleValue(),latitude,0.0d);
+        assertEquals(quay1.getCentroid().getLocation().getLongitude().doubleValue(),longitude,0.0d,"Wrong longitude");
+        assertEquals(quay1.getCentroid().getLocation().getLatitude().doubleValue(),latitude,0.0d, "Wrong latitude");
         Optional<String> quayImportedIdOpt = NetexMapper.getImportedId(quay1);
         assertTrue(quayImportedIdOpt.isPresent());
         assertEquals(quayImportedId,quayImportedIdOpt.get());
@@ -131,8 +131,8 @@ public class MatchingAppendingImporterSharedModeTest extends TiamatIntegrationTe
 
         assertTrue(importedStopPlaceOnProv2.getQuays().getQuayRefOrQuay().size() == 1);
         org.rutebanken.netex.model.Quay newQuay = (org.rutebanken.netex.model.Quay) importedStopPlaceOnProv2.getQuays().getQuayRefOrQuay().get(0).getValue();
-        assertEquals("Wrong longitude",newQuay.getCentroid().getLocation().getLongitude().doubleValue(),longitude,0.0d);
-        assertEquals("Wrong latitude",newQuay.getCentroid().getLocation().getLatitude().doubleValue(),latitude,0.0d);
+        assertEquals(newQuay.getCentroid().getLocation().getLongitude().doubleValue(),longitude,0.0d, "Wrong longitude");
+        assertEquals(newQuay.getCentroid().getLocation().getLatitude().doubleValue(),latitude,0.0d,"Wrong latitude");
         Optional<String> newQuayImportedIdOpt = NetexMapper.getImportedId(newQuay);
         assertTrue(newQuayImportedIdOpt.isPresent());
         assertEquals(quayImportedId+","+quayImportedIdPt2,newQuayImportedIdOpt.get());

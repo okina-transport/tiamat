@@ -15,10 +15,9 @@
 
 package org.rutebanken.tiamat.model;
 
-import javax.persistence.Embeddable;
-import javax.persistence.MappedSuperclass;
 
-@Embeddable
+import jakarta.persistence.MappedSuperclass;
+
 @MappedSuperclass
 public class SiteRefStructure extends SiteElementRefStructure {
 

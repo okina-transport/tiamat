@@ -10,7 +10,7 @@ import java.util.Set;
 
 public interface PointOfInterestClassificationRepositoryCustom extends DataManagedObjectStructureRepository<PointOfInterestClassification>{
 
-    int countResult();
+    Long countResult();
     Iterator<PointOfInterestClassification> scrollPointOfInterestClassifications();
 
     List<PointOfInterestClassification> getPOIClassificationInitializedForExport(Set<Long> poiIds);

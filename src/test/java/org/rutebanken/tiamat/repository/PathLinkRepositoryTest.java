@@ -15,7 +15,7 @@
 
 package org.rutebanken.tiamat.repository;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.internal.util.collections.Sets;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.AddressablePlaceRefStructure;

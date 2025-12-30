@@ -16,7 +16,7 @@
 package org.rutebanken.tiamat.repository;
 
 import org.springframework.stereotype.Repository;
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.util.*;
 
 @Repository

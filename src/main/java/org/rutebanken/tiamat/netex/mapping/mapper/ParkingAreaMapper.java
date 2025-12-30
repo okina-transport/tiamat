@@ -22,7 +22,7 @@ import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.ParkingArea;
 import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;

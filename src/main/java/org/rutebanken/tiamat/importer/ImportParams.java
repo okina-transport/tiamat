@@ -15,10 +15,11 @@
 
 package org.rutebanken.tiamat.importer;
 
-import io.swagger.annotations.ApiParam;
+
+import io.swagger.v3.oas.annotations.Parameter;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 
-import javax.ws.rs.QueryParam;
+import jakarta.ws.rs.QueryParam;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -68,11 +69,11 @@ public class ImportParams {
     @QueryParam(value = "allowOnlyStopTypes")
     public Set<StopTypeEnumeration> allowOnlyStopTypes;
 
-    @ApiParam(value = "Force stop place type for all stop place in file. Useful if no modality defined in the netex file.")
+    @Parameter(description = "Force stop place type for all stop place in file. Useful if no modality defined in the netex file.")
     @QueryParam(value = "forceStopType")
     public StopTypeEnumeration forceStopType;
 
-    @ApiParam("Specify this to erase existing topographic places with matching id and topographic place type. Example: 'OSM;PLACE_OF_INTEREST'")
+    @Parameter(description = "Specify this to erase existing topographic places with matching id and topographic place type. Example: 'OSM;PLACE_OF_INTEREST'")
     @QueryParam(value = "eraseTopographicPlaceWithIdPrefixAndType")
     public String eraseTopographicPlaceWithIdPrefixAndType;
 

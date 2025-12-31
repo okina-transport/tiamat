@@ -18,7 +18,6 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
 import org.rutebanken.netex.model.*;
-import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.model.AlternativeName;
 import org.rutebanken.tiamat.netex.NetexUtils;
 
@@ -119,7 +118,7 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
             quay2.setName(name);
         }
 
-        if(quay.getZipCode() != null){
+        if(quay.getInseeCode() != null){
             feedPostalAddress(quay,quay2);
         }
 
@@ -129,7 +128,7 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
     private void feedPostalAddress(org.rutebanken.tiamat.model.Quay tiamatQuay, Quay netexQuay){
 
         PostalAddress postalAddress = new PostalAddress();
-        postalAddress.setPostalRegion(tiamatQuay.getZipCode());
+        postalAddress.setPostalRegion(tiamatQuay.getInseeCode());
         String postalAddressId = tiamatQuay.getNetexId().replace("Quay", "PostalAddress");
         postalAddress.setId(postalAddressId);
         postalAddress.setVersion(getPostalAdressVersion(postalAddressId));

@@ -427,7 +427,7 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
                     """
                     SELECT q.*  
                     FROM quay q
-                    WHERE q.netex_id in :netexIdentifiers and q.zip_code is null
+                    WHERE q.netex_id in :netexIdentifiers and q.insee_code is null
                     """, Quay.class );
 
             query.setParameter("netexIdentifiers", subNetexIdentifierPartition);

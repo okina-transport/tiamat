@@ -12,7 +12,6 @@ import javax.xml.bind.JAXBElement;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,8 +33,8 @@ public class PointOfInterestMapper extends CustomMapper<PointOfInterest, org.rut
 
         PostalAddress pa = new PostalAddress();
         Boolean mustAddPostalAddress = false;
-        if (pointOfInterest.getZipCode() != null) {
-            pa.setPostCode(pointOfInterest.getZipCode());
+        if (pointOfInterest.getInseeCode() != null) {
+            pa.setPostCode(pointOfInterest.getInseeCode());
             mustAddPostalAddress = true;
         }
 

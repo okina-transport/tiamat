@@ -197,7 +197,7 @@ public class QuayMerger {
         boolean changedByMerge;
         boolean centroidUpdated;
         boolean stopCodeUpdated;
-        boolean zipCodeUpdated;
+        boolean inseeCodeUpdated;
         boolean urlUpdated;
         boolean descUpdated;
         boolean nameUpdated = false;
@@ -209,7 +209,7 @@ public class QuayMerger {
         idUpdated = alreadyAdded.getOriginalIds().addAll(incomingQuay.getOriginalIds());
         changedByMerge = mergeFields(incomingQuay, alreadyAdded);
         stopCodeUpdated = updateCodes(alreadyAdded, incomingQuay, quayAlone);
-        zipCodeUpdated = updateZipCode(alreadyAdded, incomingQuay);
+        inseeCodeUpdated = updateInseeCode(alreadyAdded, incomingQuay);
         urlUpdated = updateUrl(alreadyAdded, incomingQuay);
         descUpdated = updateDesc(alreadyAdded, incomingQuay);
         centroidUpdated = false;
@@ -232,8 +232,8 @@ public class QuayMerger {
 
         boolean updateAlternativeName = alternativeNameMerger.updateSiteElementAlternativeName(incomingQuay, alreadyAdded);
 
-        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || zipCodeUpdated || urlUpdated || descUpdated || nameUpdated || keyValueExternalRefUpdated || accessibilityUpdated || keyValueFareZoneUpdated || updateAlternativeName) {
-            logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, zipCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, nameUpdated:{}, keyValueExternalRefUpdated:{}, accessibilityUpdated:{}, keyValueFareZoneUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, zipCodeUpdated, urlUpdated, descUpdated, nameUpdated, keyValueExternalRefUpdated, accessibilityUpdated, keyValueFareZoneUpdated);
+        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || inseeCodeUpdated || urlUpdated || descUpdated || nameUpdated || keyValueExternalRefUpdated || accessibilityUpdated || keyValueFareZoneUpdated || updateAlternativeName) {
+            logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, inseeCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, nameUpdated:{}, keyValueExternalRefUpdated:{}, accessibilityUpdated:{}, keyValueFareZoneUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, inseeCodeUpdated, urlUpdated, descUpdated, nameUpdated, keyValueExternalRefUpdated, accessibilityUpdated, keyValueFareZoneUpdated);
 
             alreadyAdded.setChanged(Instant.now());
             updatedQuaysCounter.incrementAndGet();
@@ -271,9 +271,9 @@ public class QuayMerger {
         return false;
     }
 
-    private boolean updateZipCode(Quay alreadyAdded, Quay incomingQuay) {
-        if (!StringUtils.equals(alreadyAdded.getZipCode(), incomingQuay.getZipCode()) && incomingQuay.getZipCode() != null) {
-            alreadyAdded.setZipCode(incomingQuay.getZipCode());
+    private boolean updateInseeCode(Quay alreadyAdded, Quay incomingQuay) {
+        if (!StringUtils.equals(alreadyAdded.getInseeCode(), incomingQuay.getInseeCode()) && incomingQuay.getInseeCode() != null) {
+            alreadyAdded.setInseeCode(incomingQuay.getInseeCode());
             return true;
         }
         return false;

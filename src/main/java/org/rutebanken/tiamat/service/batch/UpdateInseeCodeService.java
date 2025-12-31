@@ -25,9 +25,9 @@ import java.util.stream.Collectors;
 
 
 @Service
-@Transactional
-public class UpdatePostCodeService {
-    private static final Logger logger = LoggerFactory.getLogger(UpdatePostCodeService.class);
+@Transactional(propagation = Propagation.REQUIRES_NEW)
+public class UpdateInseeCodeService {
+    private static final Logger logger = LoggerFactory.getLogger(UpdateInseeCodeService.class);
 
     private final StopPlaceRepository stopPlaceRepository;
     private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
@@ -36,7 +36,7 @@ public class UpdatePostCodeService {
     private final PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService;
     private final ParkingRepository parkingRepository;
 
-    public UpdatePostCodeService(StopPlaceRepository stopPlaceRepository, StopPlaceVersionedSaverService stopPlaceVersionedSaverService, VersionCreator versionCreator, EntityManager entityManager, PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService, ParkingRepository parkingRepository) {
+    public UpdateInseeCodeService(StopPlaceRepository stopPlaceRepository, StopPlaceVersionedSaverService stopPlaceVersionedSaverService, VersionCreator versionCreator, EntityManager entityManager, PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService, ParkingRepository parkingRepository) {
         this.stopPlaceRepository = stopPlaceRepository;
         this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
         this.versionCreator = versionCreator;
@@ -45,28 +45,27 @@ public class UpdatePostCodeService {
         this.parkingRepository = parkingRepository;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateParentStopPlaces(List<String> parentStopPlacesRef) {
         int processed = 0;
         for (String oldParentStopPlaceRef : parentStopPlacesRef) {
             StopPlace existingParentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(oldParentStopPlaceRef);
             if (existingParentStopPlace != null) {
                 StopPlace newParentStopPlace = versionCreator.createCopy(existingParentStopPlace, StopPlace.class);
-                boolean postCodeUpdated = false;
+                boolean inseeCodeUpdated = false;
 
                 for (StopPlace oldStopPlace : existingParentStopPlace.getChildren()) {
                     StopPlace newStopPlace = versionCreator.createCopy(oldStopPlace, StopPlace.class);
-                    if (updatePostCodeQuay(newStopPlace)) {
-                        postCodeUpdated = true;
+                    if (updateInseeCodeQuay(newStopPlace)) {
+                        inseeCodeUpdated = true;
                         updateChildStopPlace(newParentStopPlace, newStopPlace);
                     }
                 }
-                if (postCodeUpdated) {
+                if (inseeCodeUpdated) {
                     stopPlaceVersionedSaverService.saveNewVersion(existingParentStopPlace, newParentStopPlace);
+                    stopPlaceRepository.saveAndFlush(existingParentStopPlace);
                     processed++;
 
                     if (processed % 10 == 0) {
-                        entityManager.flush();
                         entityManager.clear();
                     }
                 }
@@ -77,17 +76,16 @@ public class UpdatePostCodeService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateStopPlaces(List<StopPlace> stopPlaces) {
         int processed = 0;
         for (StopPlace oldStopPlace : stopPlaces) {
             StopPlace newStopPlace = versionCreator.createCopy(oldStopPlace, StopPlace.class);
-            if (updatePostCodeQuay(newStopPlace)) {
+            if (updateInseeCodeQuay(newStopPlace)) {
                 stopPlaceVersionedSaverService.saveNewVersion(oldStopPlace, newStopPlace);
+                stopPlaceRepository.saveAndFlush(oldStopPlace);
                 processed++;
 
                 if (processed % 50 == 0) {
-                    entityManager.flush();
                     entityManager.clear();
                 }
             }
@@ -97,11 +95,10 @@ public class UpdatePostCodeService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void updatePOIPostCodes(List<PointOfInterest> pointOfInterests) {
+    public void updatePOIInseeCode(List<PointOfInterest> pointOfInterests) {
         int processed = 0;
         for (PointOfInterest pointOfInterest : pointOfInterests) {
-            updatePostCodePOI(pointOfInterest);
+            updateInseeCodePOI(pointOfInterest);
             processed++;
 
             if (processed % 100 == 0) {
@@ -114,8 +111,7 @@ public class UpdatePostCodeService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void updateParkings(List<Parking> parkings) {
+    public void updateInseeCodeParkings(List<Parking> parkings) {
         int processed = 0;
         for (Parking parking : parkings) {
             Optional<String> insee = ImporterUtils.getInseeFromLatLng(parking.getCentroid().getX(), parking.getCentroid().getY());
@@ -132,34 +128,34 @@ public class UpdatePostCodeService {
         }
     }
 
-    public void updatePostCodePOI(PointOfInterest pointOfInterest) {
+    public void updateInseeCodePOI(PointOfInterest pointOfInterest) {
         DtoGeocode geocodeData = ImporterUtils.getGeocodeDataByReverseGeocoding(pointOfInterest.getCentroid().getX(), pointOfInterest.getCentroid().getY());
-        if (StringUtils.isNotEmpty(geocodeData.getPostCode())) {
-            pointOfInterest.setPostalCode(geocodeData.getPostCode());
+        if (StringUtils.isNotEmpty(geocodeData.getCityCode())) {
+            pointOfInterest.setInseeCode(geocodeData.getCityCode());
             pointOfInterestVersionedSaverService.saveNewVersionForPostalCodeProcess(pointOfInterest);
         }
         else{
-            logger.info("Code postal non trouvé pour le point d'intérêt : {} - {}", pointOfInterest.getNetexId(), pointOfInterest.getName().getValue());
+            logger.info("Code INSEE non trouvé pour le point d'intérêt : {} - {}", pointOfInterest.getNetexId(), pointOfInterest.getName().getValue());
         }
     }
 
 
 
-    public boolean updatePostCodeQuay(StopPlace newStopPlace) {
-        boolean postCodeUpdated = false;
+    public boolean updateInseeCodeQuay(StopPlace newStopPlace) {
+        boolean inseeCodeUpdated = false;
         for (Quay quay : newStopPlace.getQuays()) {
-            if (StringUtils.isEmpty(quay.getZipCode())) {
+            if (StringUtils.isEmpty(quay.getInseeCode())) {
                 DtoGeocode geocodeData = ImporterUtils.getGeocodeDataByReverseGeocoding(quay.getCentroid().getX(), quay.getCentroid().getY());
-                if (StringUtils.isNotEmpty(geocodeData.getPostCode())) {
-                    quay.setZipCode(geocodeData.getPostCode());
-                    postCodeUpdated = true;
+                if (StringUtils.isNotEmpty(geocodeData.getCityCode())) {
+                    quay.setInseeCode(geocodeData.getCityCode());
+                    inseeCodeUpdated = true;
                 }
                 else{
-                    logger.info("Code postal non trouvé pour l'arrêt : {} - {}", quay.getNetexId(), newStopPlace.getName().getValue());
+                    logger.info("Code INSEE non trouvé pour l'arrêt : {} - {}", quay.getNetexId(), newStopPlace.getName().getValue());
                 }
             }
         }
-        return postCodeUpdated;
+        return inseeCodeUpdated;
     }
 
     public List<String> getParentStopPlacesRef(List<StopPlace> stopPlaces) {

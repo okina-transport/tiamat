@@ -93,8 +93,8 @@ public class QuayMapper {
         } catch (Exception e) {
             logger.error("Erreur lors de la récupération du code postal du quay = " + quay.getId(), e);
         }
-        if (dtoGeocode != null && StringUtils.isNotEmpty(dtoGeocode.getCityCode()) && !StringUtils.equals(quay.getZipCode(), dtoGeocode.getCityCode())) {
-            quay.setZipCode(dtoGeocode.getCityCode());
+        if (dtoGeocode != null && StringUtils.isNotEmpty(dtoGeocode.getCityCode()) && !StringUtils.equals(quay.getInseeCode(), dtoGeocode.getCityCode())) {
+            quay.setInseeCode(dtoGeocode.getCityCode());
             isQuayUpdated = true;
         }
 

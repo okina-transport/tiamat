@@ -1407,6 +1407,22 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     }
 
     @Override
+    public StopPlace findByNetexIdByVersionAndInitialize(String netexId, Long version){
+        String sql = "SELECT sp.* FROM stop_place sp WHERE sp.netex_id = :netexId AND sp.version = :version";
+
+        Query stopPlaceTypedQuery = entityManager.createNativeQuery(sql, StopPlace.class);
+
+        stopPlaceTypedQuery.setParameter("netexId",netexId);
+        stopPlaceTypedQuery.setParameter("version",version);
+
+        List<StopPlace> results = stopPlaceTypedQuery.getResultList();
+
+        results.forEach(this::initializeStopPlace);
+
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    @Override
     public StopPlace initializeStopPlace(StopPlace stopPlace){
         Hibernate.initialize(stopPlace.getKeyValues());
         stopPlace.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
@@ -1474,7 +1490,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
     @Override
     @Transactional(readOnly = true)
-    public Set<Long> getStopPlaceWithQuaysWithoutPostCode(){
+    public Set<Long> getStopPlaceWithQuaysWithoutInseeCode(){
         final String queryString = "SELECT DISTINCT sp.id " +
                 "FROM stop_place sp " +
                 "INNER JOIN ( " +
@@ -1484,7 +1500,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                 ") sp2 ON sp.netex_id = sp2.netex_id AND sp.version = sp2.latest_version " +
                 "JOIN stop_place_quays spq ON sp.id = spq.stop_place_id " +
                 "JOIN quay q ON spq.quays_id = q.id " +
-                "WHERE q.zip_code IS NULL " +
+                "WHERE q.insee_code IS NULL " +
                 "AND (sp.to_date >= :pointInTime OR sp.to_date IS NULL) ";
 
         Query query = entityManager.createNativeQuery(queryString);

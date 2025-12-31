@@ -274,7 +274,7 @@ public class StopPlaceVersionedSaverService {
 
     private void validateAdjacentSites(StopPlace newVersion) {
         if (newVersion.getAdjacentSites() != null) {
-            logger.info("Validating adjacent sites for {} {}", newVersion.getNetexId(), newVersion.getName());
+                logger.info("Validating adjacent sites for {} {}", newVersion.getNetexId(), newVersion.getName());
             for (SiteRefStructure siteRefStructure : newVersion.getAdjacentSites()) {
 
                 if (newVersion.getNetexId() != null && (newVersion.getNetexId().equals(siteRefStructure.getRef()))) {

@@ -146,7 +146,7 @@ class PointOfInterestUpdater implements DataFetcher {
                 }
 
                 if (StringUtils.isNotEmpty(dtoGeocode.getCityCode())){
-                    updatedPointOfInterest.setZipCode(dtoGeocode.getCityCode());
+                    updatedPointOfInterest.setInseeCode(dtoGeocode.getCityCode());
                 }
             } catch (Exception e) {
                 logger.error("Unable to get zip code for poi:" + updatedPointOfInterest.getNetexId());

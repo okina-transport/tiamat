@@ -227,7 +227,7 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
             quay.setName(new EmbeddableMultilingualString("Quay_" + i));
             quay.setPublicCode("quay" + i);
             quay.setCentroid(geometryFactory.createPoint(new Coordinate(48, 2)));
-            quay.setZipCode("75000");
+            quay.setInseeCode("75000");
 
             Value qValue = new Value();
             qValue.getItems().add("TEST:Quay:"+i);

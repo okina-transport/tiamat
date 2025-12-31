@@ -122,7 +122,7 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     void deleteStopPlaceChildrenByParent(List<StopPlace> stopPlaces);
 
-    Set<Long> getStopPlaceWithQuaysWithoutPostCode();
+    Set<Long> getStopPlaceWithQuaysWithoutInseeCode();
 
     StopPlace findFirstStopPlaceByNetexQuayOrderByVersionDesc(String quayNetexId);
 
@@ -131,4 +131,7 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
     List<DTOClusterMarker> findClusterMarkers(List<String> providerList);
 
     List<StopPlace> findAllNetexVersions(List<String> netexVersionsList);
+
+    StopPlace findByNetexIdByVersionAndInitialize(String netexId, Long version);
+
 }

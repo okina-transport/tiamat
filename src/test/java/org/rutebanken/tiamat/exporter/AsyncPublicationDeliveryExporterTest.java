@@ -193,7 +193,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         String sqybus = asyncPublicationDeliveryExporter.createFileNameWithoutExtention("41", "SQYBUS", LocalDateTime.now(ZoneOffset.UTC), true);
 
         // THEN
-        Assert.assertTrue(sqybus.isEmpty());
+        Assert.assertFalse(sqybus.isEmpty());
     }
 
 

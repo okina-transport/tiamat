@@ -19,31 +19,31 @@ import java.util.Set;
 
 
 @Service
-public class MissingPostCodeService {
-    private static final Logger logger = LoggerFactory.getLogger(MissingPostCodeService.class);
+public class MissingInseeCodeService {
+    private static final Logger logger = LoggerFactory.getLogger(MissingInseeCodeService.class);
 
     private final PointOfInterestRepository pointOfInterestRepository;
     private final StopPlaceRepository stopPlaceRepository;
     private final ParkingRepository parkingRepository;
-    private final UpdatePostCodeService updatePostCodeService;
+    private final UpdateInseeCodeService updateInseeCodeService;
 
-    public MissingPostCodeService(PointOfInterestRepository pointOfInterestRepository, StopPlaceRepository stopPlaceRepository, ParkingRepository parkingRepository, UpdatePostCodeService updatePostCodeService) {
+    public MissingInseeCodeService(PointOfInterestRepository pointOfInterestRepository, StopPlaceRepository stopPlaceRepository, ParkingRepository parkingRepository, UpdateInseeCodeService updateInseeCodeService) {
         this.pointOfInterestRepository = pointOfInterestRepository;
         this.stopPlaceRepository = stopPlaceRepository;
         this.parkingRepository = parkingRepository;
-        this.updatePostCodeService = updatePostCodeService;
+        this.updateInseeCodeService = updateInseeCodeService;
     }
 
-    public void getMissingPostCode() {
-        getMissingPostCodeQuays();
-        getMissingPostCodePoi();
-        getMissingInseeParking();
+    public void getMissingInseeCode() {
+        getMissingInseeCodeQuays();
+        getMissingInseeCodePoi();
+        getMissingInseeCodeParking();
     }
 
-    private void getMissingPostCodeQuays() {
-        logger.info("Démarrage de la récupération des codes postaux manquants des quais.");
+    private void getMissingInseeCodeQuays() {
+        logger.info("Démarrage de la récupération des codes INSEE manquants des quais.");
 
-        Set<Long> stopPlacesIds = stopPlaceRepository.getStopPlaceWithQuaysWithoutPostCode();
+        Set<Long> stopPlacesIds = stopPlaceRepository.getStopPlaceWithQuaysWithoutInseeCode();
         logger.info("Nombre total de StopPlaces à traiter : {}", stopPlacesIds.size());
 
         if (stopPlacesIds.isEmpty()) {
@@ -54,7 +54,7 @@ public class MissingPostCodeService {
         List<Long> stopPlacesIdsList = new ArrayList<>(stopPlacesIds);
         int batchSize = 1000;
         int totalBatches = (stopPlacesIdsList.size() + batchSize - 1) / batchSize;
-        long totalMissingPostCodeQuays = 0;
+        long totalMissingInseeCodeQuays = 0;
         int totalParentsProcessed = 0;
         int totalChildrenProcessed = 0;
 
@@ -67,62 +67,62 @@ public class MissingPostCodeService {
 
             List<StopPlace> batchStopPlaces = stopPlaceRepository.getStopPlaceInitializedForExport(new HashSet<>(batchIds));
 
-            long batchMissingPostCodeQuays = batchStopPlaces.stream()
+            long batchMissingInseeCodeQuays = batchStopPlaces.stream()
                     .flatMap(stopPlace -> stopPlace.getQuays().stream())
-                    .filter(quay -> StringUtils.isEmpty(quay.getZipCode()))
+                    .filter(quay -> StringUtils.isEmpty(quay.getInseeCode()))
 
                     .count();
-            totalMissingPostCodeQuays += batchMissingPostCodeQuays;
+            totalMissingInseeCodeQuays += batchMissingInseeCodeQuays;
 
-            logger.info("Batch {}/{} - Codes postaux de quais à récupérer : {}",
-                    currentBatch, totalBatches, batchMissingPostCodeQuays);
+            logger.info("Batch {}/{} - Codes INSEE de quais à récupérer : {}",
+                    currentBatch, totalBatches, batchMissingInseeCodeQuays);
 
-            List<String> parentStopPlacesRef = updatePostCodeService.getParentStopPlacesRef(batchStopPlaces);
-            List<StopPlace> childStopPlaces = updatePostCodeService.removeStopPlacesWithParentRef(batchStopPlaces);
+            List<String> parentStopPlacesRef = updateInseeCodeService.getParentStopPlacesRef(batchStopPlaces);
+            List<StopPlace> childStopPlaces = updateInseeCodeService.removeStopPlacesWithParentRef(batchStopPlaces);
 
             if (!parentStopPlacesRef.isEmpty()) {
                 logger.info("Batch {}/{} - Traitement de {} StopPlaces parents",
                         currentBatch, totalBatches, parentStopPlacesRef.size());
-                updatePostCodeService.updateParentStopPlaces(parentStopPlacesRef);
+                updateInseeCodeService.updateParentStopPlaces(parentStopPlacesRef);
                 totalParentsProcessed += parentStopPlacesRef.size();
             }
 
             if (!childStopPlaces.isEmpty()) {
                 logger.info("Batch {}/{} - Traitement de {} StopPlaces enfants",
                         currentBatch, totalBatches, childStopPlaces.size());
-                updatePostCodeService.updateStopPlaces(childStopPlaces);
+                updateInseeCodeService.updateStopPlaces(childStopPlaces);
                 totalChildrenProcessed += childStopPlaces.size();
             }
 
             logger.info("Batch {}/{} terminé", currentBatch, totalBatches);
         }
 
-        logger.info("Récupération des codes postaux manquants des quais terminée. " +
+        logger.info("Récupération des codes INSEE manquants des quais terminée. " +
                         "Total quais manquants: {}, Parents traités: {}, Enfants traités: {}",
-                totalMissingPostCodeQuays, totalParentsProcessed, totalChildrenProcessed);
+                totalMissingInseeCodeQuays, totalParentsProcessed, totalChildrenProcessed);
     }
 
-    private void getMissingPostCodePoi() {
-        logger.info("Démarrage de la récupération des codes postaux manquants des POI.");
+    private void getMissingInseeCodePoi() {
+        logger.info("Démarrage de la récupération des codes INSEE manquants des POI.");
 
-        List<PointOfInterest> pointOfInterests = pointOfInterestRepository.getAllPOIWithoutPostcode();
-        logger.info("Nombre de codes postaux de POI à récupérer : {}", pointOfInterests.size());
+        List<PointOfInterest> pointOfInterests = pointOfInterestRepository.getAllPOIWithoutInseeCode();
+        logger.info("Nombre de codes INSEE de POI à récupérer : {}", pointOfInterests.size());
 
         if (!pointOfInterests.isEmpty()) {
-            updatePostCodeService.updatePOIPostCodes(pointOfInterests);
+            updateInseeCodeService.updatePOIInseeCode(pointOfInterests);
         }
 
-        logger.info("Récupération des codes postaux manquants des POI terminée.");
+        logger.info("Récupération des codes INSEE manquants des POI terminée.");
     }
 
-    private void getMissingInseeParking() {
+    private void getMissingInseeCodeParking() {
         logger.info("Démarrage de la récupération des codes INSEE manquants des parkings.");
 
         List<Parking> parkings = parkingRepository.getAllParkingsWithoutInsee();
         logger.info("Nombre de codes INSEE de parkings à récupérer : {}", parkings.size());
 
         if (CollectionUtils.isNotEmpty(parkings)) {
-            updatePostCodeService.updateParkings(parkings);
+            updateInseeCodeService.updateInseeCodeParkings(parkings);
         }
 
         logger.info("Récupération des codes INSEE manquants des parkings terminée.");

@@ -247,8 +247,8 @@ public class PointOfInterestCSVHelper {
             updated = true;
         }
 
-        if (newPOI.getZipCode() != null) {
-            existingPOI.setZipCode(newPOI.getZipCode());
+        if (newPOI.getInseeCode() != null) {
+            existingPOI.setInseeCode(newPOI.getInseeCode());
             updated = true;
         }
 
@@ -281,7 +281,7 @@ public class PointOfInterestCSVHelper {
         try {
             logger.info("Geocode data recovering for POI : " + dtoPoiCSV.getId());
             DtoGeocode geocodeData = ImporterUtils.getGeocodeDataByReverseGeocoding(Double.parseDouble(dtoPoiCSV.getLongitude()), Double.parseDouble(dtoPoiCSV.getLatitude()));
-            newPointOfInterest.setZipCode(geocodeData.getCityCode());
+            newPointOfInterest.setInseeCode(geocodeData.getCityCode());
             newPointOfInterest.setPostalCode(StringUtils.isEmpty(dtoPoiCSV.getPostCode()) ? geocodeData.getPostCode() : dtoPoiCSV.getPostCode());
             newPointOfInterest.setCity(dtoPoiCSV.getCity().isEmpty() ? geocodeData.getCity() : dtoPoiCSV.getCity());
             if(StringUtils.isNotEmpty(dtoPoiCSV.getStreet())){

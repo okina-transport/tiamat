@@ -438,9 +438,9 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
         }
     }
 
-    public List<PointOfInterest> getAllPOIWithoutPostcode() {
+    public List<PointOfInterest> getAllPOIWithoutInseeCode() {
         String sql = "SELECT poi.* FROM point_of_interest poi " +
-                     "WHERE poi.postal_code IS NULL " +
+                     "WHERE poi.insee_code IS NULL " +
                      "AND poi.version = (SELECT MAX(pi.version) FROM point_of_interest pi WHERE pi.netex_id = poi.netex_id) ";
 
         Query pointOfInterestTypedQuery = entityManager.createNativeQuery(sql, PointOfInterest.class);

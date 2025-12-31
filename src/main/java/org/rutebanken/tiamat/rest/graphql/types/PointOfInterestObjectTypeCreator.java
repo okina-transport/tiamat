@@ -36,7 +36,7 @@ public class PointOfInterestObjectTypeCreator {
                 .fields(pointOfInterestInterfaceFields)
                 .fields(commonFieldsList)
                 .field(newFieldDefinition()
-                        .name(ZIP_CODE)
+                        .name(INSEE_CODE)
                         .type(GraphQLString))
                 .field(newFieldDefinition()
                         .name(ADDRESS)

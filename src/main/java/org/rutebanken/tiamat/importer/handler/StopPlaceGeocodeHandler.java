@@ -30,14 +30,14 @@ public class StopPlaceGeocodeHandler {
         quays.forEach(quay -> {
             DtoGeocode dtoGeocode = null;
             try {
-                if (StringUtils.isBlank(quay.getZipCode())) {
+                if (StringUtils.isBlank(quay.getInseeCode())) {
                     dtoGeocode = ImporterUtils.getGeocodeDataByReverseGeocoding(quay.getCentroid().getCoordinate().x, quay.getCentroid().getCoordinate().y);
                 }
             } catch (Exception e) {
                 logger.error("Erreur lors de la récupération du code postal du quay : {}", quay.getId(), e);
             }
             if (dtoGeocode != null && StringUtils.isNotBlank(dtoGeocode.getCityCode())) {
-                quay.setZipCode(dtoGeocode.getCityCode());
+                quay.setInseeCode(dtoGeocode.getCityCode());
             } else {
                 logger.error("Code postal non trouvé pour le quay {} ", quay.getId());
             }

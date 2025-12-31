@@ -1,4 +1,4 @@
-package org.rutebanken.tiamat.rest.postcode;
+package org.rutebanken.tiamat.rest.inseecode;
 
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -26,8 +26,8 @@ import java.util.concurrent.Executors;
 
 @Component
 @Transactional
-@Path("/get_missing_postcode")
-public class PostcodeResource {
+@Path("/get_missing_inseecode")
+public class InseeCodeResource {
 
     private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("import-%d").build());
@@ -35,7 +35,7 @@ public class PostcodeResource {
     private final JobRepository jobRepository;
     private final ImportJobWorkerBuilder importJobWorkerBuilder;
 
-    public PostcodeResource(JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder) {
+    public InseeCodeResource(JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder) {
         this.jobRepository = jobRepository;
         this.importJobWorkerBuilder = importJobWorkerBuilder;
     }
@@ -43,9 +43,9 @@ public class PostcodeResource {
     @POST
     @PreAuthorize("@rolesChecker.hasRoleEdit()")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getMissingPostcode() throws IllegalArgumentException {
+    public Response getMissingInseecode() throws IllegalArgumentException {
         Job job = new Job();
-        job.setType(JobType.MISSING_POSTAL_CODE);
+        job.setType(JobType.MISSING_INSEE_CODE);
         job.setAction(JobAction.IMPORT);
         job.setStatus(JobStatus.PROCESSING);
         job.setStarted(Instant.now());

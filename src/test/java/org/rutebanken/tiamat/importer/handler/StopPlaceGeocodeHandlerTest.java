@@ -14,7 +14,6 @@ import org.rutebanken.tiamat.repository.QuayRepository;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -34,7 +33,7 @@ public class StopPlaceGeocodeHandlerTest {
     public void setPostalCodeTest() {
         Quay quay1 = new Quay();
         quay1.setNetexId("MOBIITI:Quay:7");
-        quay1.setZipCode("72455");
+        quay1.setInseeCode("72455");
         Quay quay2 = new Quay();
         quay2.setNetexId("MOBIITI:Quay:255");
         GeometryFactory geometryFactory = new GeometryFactory();

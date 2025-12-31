@@ -19,12 +19,12 @@ package org.rutebanken.tiamat.versioning.save;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.model.DataManagedObjectStructure;
+import org.rutebanken.tiamat.model.EquipmentPlace;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingArea;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
-import org.rutebanken.tiamat.service.Preconditions;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
 import org.rutebanken.tiamat.versioning.VersionIncrementor;
 import org.slf4j.Logger;
@@ -95,6 +95,12 @@ public class ParkingVersionedSaverService {
         if (newVersion.getParkingAreas() != null) {
             for (ParkingArea pa : newVersion.getParkingAreas()) {
                 versionIncrementor.initiateOrIncrement(pa);
+            }
+        }
+
+        if(newVersion.getEquipmentPlaces() != null) {
+            for (EquipmentPlace ep : newVersion.getEquipmentPlaces()) {
+                versionIncrementor.initiateOrIncrement(ep);
             }
         }
 

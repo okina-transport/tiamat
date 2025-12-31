@@ -1040,7 +1040,7 @@ public class CustomGraphQLTypes {
                         .name(VALID_BETWEEN)
                         .type(validBetweenInputObjectType))
                 .field(newInputObjectField()
-                        .name(ZIP_CODE)
+                        .name(INSEE_CODE)
                         .type(GraphQLString))
                 .field(newInputObjectField()
                         .name(ADDRESS)

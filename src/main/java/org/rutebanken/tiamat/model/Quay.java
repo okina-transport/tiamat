@@ -37,8 +37,8 @@ public class Quay extends StopPlaceSpace_VersionStructure {
     private final List<BoardingPosition> boardingPositions = new ArrayList<>();
     protected String publicCode;
 
-    @Column(name = "zip_code")
-    protected String zipCode;
+    @Column(name = "insee_code")
+    protected String inseeCode;
 
     @Column(name = "url")
     protected String url;
@@ -76,10 +76,10 @@ public class Quay extends StopPlaceSpace_VersionStructure {
         return boardingPositions;
     }
 
-    public String getZipCode() { return zipCode; }
+    public String getInseeCode() { return inseeCode; }
 
-    public void setZipCode(String zipCode) {
-        this.zipCode = zipCode;
+    public void setInseeCode(String inseeCode) {
+        this.inseeCode = inseeCode;
     }
 
     public String getUrl() { return url; }

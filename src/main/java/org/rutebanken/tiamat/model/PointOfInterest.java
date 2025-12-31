@@ -22,7 +22,7 @@ import java.util.Set;
 @Entity
 public class PointOfInterest extends PointOfInterest_VersionStructure {
 
-    private String zipCode;
+    private String inseeCode;
     private String address;
     private String city;
     private String postalCode;
@@ -40,12 +40,12 @@ public class PointOfInterest extends PointOfInterest_VersionStructure {
 
     private String operator;
 
-    public String getZipCode() {
-        return zipCode;
+    public String getInseeCode() {
+        return inseeCode;
     }
 
-    public void setZipCode(String zipCode) {
-        this.zipCode = zipCode;
+    public void setInseeCode(String inseeCode) {
+        this.inseeCode = inseeCode;
     }
 
     public String getAddress() {

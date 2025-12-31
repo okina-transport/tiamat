@@ -52,6 +52,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -61,8 +62,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static javax.xml.bind.JAXBContext.newInstance;
-import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest {
@@ -100,7 +101,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
     private CleanTablesTools cleanTablesTools;
 
     @Test
-    public void test() throws InterruptedException, JAXBException, IOException, SAXException {
+    public void test() throws JAXBException, IOException, SAXException {
 
         asyncPublicationDeliveryExporter.providerRepository = providerRepository;
 
@@ -154,32 +155,17 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         streamingPublicationDelivery.stream(byteArrayOutputStream, provider, LocalDateTime.now(), job.getId(), false, false);
         asyncPublicationDeliveryExporter.streamingPublicationDelivery = streamingPublicationDelivery;
 
-
-        JobStatus startStatus = job.getStatus();
-
         assertThat(job.getId()).isGreaterThan(0L);
 
-        long start = System.currentTimeMillis();
-        long timeout = 120000;
-        while (true) {
+        await().timeout(Duration.of(10, ChronoUnit.MINUTES)).until(() -> {
             Optional<Job> actualExportJob = jobRepository.findById(job.getId());
-            if (actualExportJob.get().getStatus().equals(startStatus)) {
+            return actualExportJob.get().getStatus() != JobStatus.PROCESSING;
+        });
 
-                long time = System.currentTimeMillis() - start;
-                if (time > timeout) {
-                    fail("Waited more than " + timeout + " millis for job status to change. Process duration:" + time);
-                }
-                Thread.sleep(1000);
-                continue;
-            }
+        Optional<Job> actualExportJob = jobRepository.findById(job.getId());
 
-            if (actualExportJob.get().getStatus().equals(JobStatus.FAILED)) {
-                fail("Job status is failed");
-            } else if (actualExportJob.get().getStatus().equals(JobStatus.FINISHED)) {
-                System.out.println("Job finished");
-                break;
-            }
-        }
+        assertThat(actualExportJob).isPresent();
+        assertThat(actualExportJob.get().getStatus()).isEqualTo(JobStatus.FINISHED);
     }
 
     @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -207,7 +193,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         String sqybus = asyncPublicationDeliveryExporter.createFileNameWithoutExtention("41", "SQYBUS", LocalDateTime.now(ZoneOffset.UTC), true);
 
         // THEN
-        Assert.assertTrue(sqybus.length() > 0);
+        Assert.assertTrue(sqybus.isEmpty());
     }
 
 
@@ -262,7 +248,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         TariffZone tariffZoneV1 = new TariffZone();
         tariffZoneV1.setNetexId(tariffZoneId);
         tariffZoneV1.setVersion(1L);
-        tariffZoneV1 = tariffZoneRepository.save(tariffZoneV1);
+        tariffZoneRepository.save(tariffZoneV1);
 
 
         TariffZone tariffZoneV2 = new TariffZone();

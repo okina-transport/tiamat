@@ -77,13 +77,10 @@ public interface MdmFeignClient {
     void updateParkingsImportedIds(@RequestBody List<ParkingIdentifier> identifiers);
 
     @PostMapping(value = "/organisations")
-    List<OkinaIdentifier> generateOrganisationIdentifiers(@RequestBody List<OkinaIdentifier> identifiers);
-
-    @GetMapping(value = "/organisations")
-    List<OkinaIdentifier> getOrganisationIdentifiers(@RequestBody List<Long> organisationIds);
+    OkinaIdentifier generateOrganisationIdentifier(@RequestBody OkinaIdentifier identifier);
 
     @GetMapping(value = "/organisations/byOriginalId")
-    List<OkinaIdentifier> getOrganisationsIdentifiersByOriginalId(@RequestBody List<OkinaIdentifier> quayIdentifiers);
+    OkinaIdentifier getOrganisationsIdentifierByOriginalId(@RequestParam("originalId") String originalId);
 
     @PostMapping(value = "/organisations/updateImportedIds")
     void updateOrganisationsImportedIds(@RequestBody List<OkinaIdentifier> identifiers);

@@ -179,8 +179,8 @@ public class MdmService {
     /**
      * Request MDM to recover existing MDM ids
      *
-     * @param incomingStopPlace
-     * @return
+     * @param incomingStopPlace incoming stop place
+     * @return stop place superId if stop place id is found, null otherwise (wrapped in Optional)
      */
     public Optional<Long> getExistingStopPlaceMdmIds(StopPlace incomingStopPlace) {
         OkinaIdentifier stopIdentifier = buildInputStopIdentifier(incomingStopPlace);
@@ -224,8 +224,8 @@ public class MdmService {
         OkinaIdentifier okinaIdentifier = new OkinaIdentifier();
         okinaIdentifier.setDataset("unused");
         okinaIdentifier.setOriginalId(organisation.getOriginalId());
-        List<OkinaIdentifier> mdmData = mdmFeignClient.generateOrganisationIdentifiers(List.of(okinaIdentifier));
-        Long superId = mdmData.get(0).getSuperId();
+        OkinaIdentifier mdmData = mdmFeignClient.generateOrganisationIdentifier(okinaIdentifier);
+        Long superId = mdmData.getSuperId();
         organisation.setNetexId(validNetexPrefix + ":Organisation:" + superId);
     }
 
@@ -329,11 +329,9 @@ public class MdmService {
     }
 
     public Optional<OkinaIdentifier> getExistingOrganisationMdmIdsFromImportedId(String importedId) {
-        OkinaIdentifier okinaId = new OkinaIdentifier();
-        okinaId.setOriginalId(importedId);
         try {
-            List<OkinaIdentifier> results = mdmFeignClient.getOrganisationsIdentifiersByOriginalId(List.of(okinaId));
-            return Optional.of(results.get(0));
+            OkinaIdentifier result = mdmFeignClient.getOrganisationsIdentifierByOriginalId(importedId);
+            return Optional.of(result);
         } catch (FeignException.NotFound e) {
             return Optional.empty();
         }

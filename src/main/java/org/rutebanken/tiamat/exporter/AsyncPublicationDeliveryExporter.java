@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.exporter;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.Hibernate;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.general.ExportJobWorker;
@@ -36,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
@@ -292,10 +294,12 @@ public class AsyncPublicationDeliveryExporter {
         return "PARKING_" + idSite + "_" + nameSite + "_T_" + localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "T" + localDateTime.format(DateTimeFormatter.ofPattern("HHmmss")) + "Z";
     }
 
+    @Transactional
     public Job getExportJob(long exportJobId) {
 
         Optional<Job> exportJob = jobRepository.findById(exportJobId);
         if (exportJob.isPresent()) {
+            Hibernate.initialize(exportJob.get().getOperators());
             return setJobUrl(exportJob.get());
         }
         return null;

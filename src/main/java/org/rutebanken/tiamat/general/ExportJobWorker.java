@@ -153,13 +153,13 @@ public class ExportJobWorker implements Runnable {
     private void exportPOIToLocalXmlFile(File localExportXmlFile, LocalDateTime localDateTime) throws IOException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.streamPOI(job.getExportParams(), fileOutputStream, localDateTime, job.getId());
+        streamingPublicationDelivery.streamPOI(job, fileOutputStream, localDateTime);
     }
 
     private void exportParkingsToLocalXmlFile(File localExportXmlFile, LocalDateTime localDateTime) throws IOException, SAXException, JAXBException {
         logger.info("Start streaming publication delivery to local file {}", localExportXmlFile);
         FileOutputStream fileOutputStream = new FileOutputStream(localExportXmlFile);
-        streamingPublicationDelivery.streamParkings(fileOutputStream, localDateTime, job.getId());
+        streamingPublicationDelivery.streamParkings(fileOutputStream, localDateTime, job);
     }
 
     private void uploadToGcp(File localExportFile) {

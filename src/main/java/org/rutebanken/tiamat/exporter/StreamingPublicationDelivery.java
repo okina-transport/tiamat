@@ -28,6 +28,7 @@ import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMappi
 import org.rutebanken.tiamat.model.TariffZone;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.VehicleModeEnumeration;
+import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.netex.NetexConstants;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.repository.*;
@@ -295,13 +296,15 @@ public class StreamingPublicationDelivery {
      *
      * @param outputStream
      * @param localDateTime
-     * @param exportJobId
+     * @param job
      * @throws JAXBException
      * @throws IOException
      * @throws SAXException
      */
-    public void streamParkings(OutputStream outputStream, LocalDateTime localDateTime, Long exportJobId) throws JAXBException, IOException, SAXException {
+    public void streamParkings(OutputStream outputStream, LocalDateTime localDateTime, Job job) throws JAXBException, IOException, SAXException {
         org.rutebanken.tiamat.model.GeneralFrame generalFrame = tiamatGeneralFrameExporter.createTiamatGeneralFrame("MOBI-ITI", localDateTime, TypeEnumeration.PARKING);
+
+        Long exportJobId = job.getId();
 
         AtomicInteger mappedParkingCount = new AtomicInteger();
 
@@ -314,7 +317,7 @@ public class StreamingPublicationDelivery {
         parkingRepository.initExportJobTable(exportJobId);
         logger.info("Initialization completed for table job_id_list. jobId : {}", exportJobId);
 
-        prepareParkings(mappedParkingCount, listMembers, exportJobId);
+        prepareParkings(mappedParkingCount, listMembers, job);
         logger.info("Parking preparation completed");
 
         List<JAXBElement<? extends EntityStructure>> filteredListMembers = filterDuplicates(listMembers);
@@ -403,7 +406,10 @@ public class StreamingPublicationDelivery {
         return filteredList;
     }
 
-    public void streamPOI(ExportParams exportParams, OutputStream outputStream, LocalDateTime localDateTime, Long exportJobId) throws JAXBException, IOException, SAXException {
+    public void streamPOI(Job job, OutputStream outputStream, LocalDateTime localDateTime) throws JAXBException, IOException, SAXException {
+
+        ExportParams exportParams = job.getExportParams();
+        Long exportJobId = job.getId();
         org.rutebanken.tiamat.model.SiteFrame siteFrame = tiamatSiteFrameExporter.createTiamatSiteFrame("Site frame " + exportParams);
 
         AtomicInteger mappedPointOfInterestCount = new AtomicInteger();
@@ -457,6 +463,8 @@ public class StreamingPublicationDelivery {
                 logger.info("total poi classification processed:" + totalPoiClassificationProcessed);
             }
         }
+
+        recordOperators(job, initializedPoi);
 
         logger.info("Preparing scrollable iterators for poi");
         List<PointOfInterest> netexPoiList = initializedPoi.stream()
@@ -517,6 +525,15 @@ public class StreamingPublicationDelivery {
         doLastModifications(outputStream, byteArrayOutputStream);
 
         logger.info("Mapped {} points of interest to netexPoiList", mappedPointOfInterestCount);
+    }
+
+    private void recordOperators(Job job, List<org.rutebanken.tiamat.model.PointOfInterest> initializedPoi) {
+
+        Set<String> operators = initializedPoi.stream()
+                .map(org.rutebanken.tiamat.model.PointOfInterest::getOperator)
+                .collect(Collectors.toSet());
+
+        job.setOperators(operators);
     }
 
     @NotNull
@@ -673,8 +690,9 @@ public class StreamingPublicationDelivery {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void prepareParkings(AtomicInteger mappedParkingCount, List<JAXBElement<? extends EntityStructure>> listMembers, Long exportJobId) {
+    public void prepareParkings(AtomicInteger mappedParkingCount, List<JAXBElement<? extends EntityStructure>> listMembers, Job job) {
         Iterator<org.rutebanken.tiamat.model.Parking> parkingResultsIterator;
+        Long exportJobId = job.getId();
 
         if (exportJobId == null) {
             List<org.rutebanken.tiamat.model.Parking> parkingList = parkingRepository.getParkingsInitializedForExport(parkingRepository.scrollParkings());
@@ -705,9 +723,13 @@ public class StreamingPublicationDelivery {
             // Only set parkings if they will exist during marshalling.
             logger.info("Parking count is {}, will create parking in publication delivery", parkingsCount);
             mappedParkingCount.set(parkingsCount);
+            Set<String> operators = new HashSet<>();
 
             while (parkingResultsIterator.hasNext()) {
                 org.rutebanken.tiamat.model.Parking tp = parkingResultsIterator.next();
+                if (StringUtils.isNotBlank(tp.getOperator())){
+                    operators.add(tp.getOperator());
+                }
                 Parking np = netexMapper.getFacade().map(tp, Parking.class);
                 if (tp.getSiret() != null && !tp.getSiret().isEmpty()) {
                     String organisationId = "MOBIITI:Organisation:" + UUID.randomUUID();
@@ -811,6 +833,7 @@ public class StreamingPublicationDelivery {
                 listMembers.add(netexObjectFactory.createParking(np));
             }
 
+            job.setOperators(operators);
             TypeOfParking typeOfParkingSecureBikeParking = new TypeOfParking();
             typeOfParkingSecureBikeParking.withVersion("any");
             typeOfParkingSecureBikeParking.withId("SecureBikeParking");

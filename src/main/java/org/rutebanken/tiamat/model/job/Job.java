@@ -26,9 +26,7 @@ import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Entity
@@ -77,6 +75,17 @@ public class Job {
     private String userName;
 
     private Boolean isLugCompleted;
+
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "job_operators",
+            joinColumns = @JoinColumn(name = "job_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"job_id", "operator"})
+    )
+    @Column(name = "operator", nullable = false, length = 100)
+    private Set<String> operators = new HashSet<>();
+
 
     public Job() {
     }
@@ -227,5 +236,13 @@ public class Job {
         public static List<STATUS> getCompletedStatuses() {
             return Arrays.stream(STATUS.values()).filter(status -> status.ordinal() > PROCESSING.ordinal()).collect(Collectors.toList());
         }
+    }
+
+    public Set<String> getOperators() {
+        return operators;
+    }
+
+    public void setOperators(Set<String> operators) {
+        this.operators = operators;
     }
 }

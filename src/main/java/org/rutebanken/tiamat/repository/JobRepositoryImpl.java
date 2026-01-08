@@ -1,5 +1,7 @@
 package org.rutebanken.tiamat.repository;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.hibernate.Hibernate;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobStatus;
@@ -11,6 +13,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import javax.transaction.Transactional;
 import java.util.List;
 
 public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
@@ -39,6 +42,7 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
         return em.createQuery(cq).getResultList();
     }
 
+    @Transactional
     public List<Job> findByTypesAndAction(List<JobType> types, JobAction jobAction) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Job> cq = cb.createQuery(Job.class);
@@ -53,7 +57,14 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
         cq.where(finalPredicate);
         cq.orderBy(cb.desc(jobRoot.get("id")));
 
-        return em.createQuery(cq).setMaxResults(10).getResultList();
+        List<Job> results = em.createQuery(cq).setMaxResults(10).getResultList();
+
+        if (CollectionUtils.isNotEmpty(results)){
+            for (Job result : results) {
+                Hibernate.initialize(result.getOperators());
+            }
+        }
+        return results;
 
     }
 

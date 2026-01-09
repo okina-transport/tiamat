@@ -1151,6 +1151,20 @@ public class StopPlaceRegisterGraphQLSchema {
 
     public GraphQLCodeRegistry buildCodeRegistry(TypeResolver stopPlaceTypeResolver) {
         GraphQLCodeRegistry.Builder codeRegistryBuilder = GraphQLCodeRegistry.newCodeRegistry();
+        registerDataFetcher(codeRegistryBuilder,"StopPlaceRegister",FIND_STOPPLACES_CLUSTER_MARKERS, stopPlaceClusterMarkersFetcher);
+        registerDataFetcher(codeRegistryBuilder,"StopPlaceRegister",FIND_POI_CLUSTER_MARKERS, poiClusterMarkersFetcher);
+        registerDataFetcher(codeRegistryBuilder,"StopPlaceRegister",FIND_PARKING_CLUSTER_MARKERS, parkingClusterMarkersFetcher);
+
+        registerDataFetcher(codeRegistryBuilder,"StopPlaceRegister",FIND_ALL_STOPPLACES, allStopPlacesFetcher);
+        registerDataFetcher(codeRegistryBuilder,"StopPlaceRegister",FIND_ALL_PARKINGS, allParkingsFetcher);
+        registerDataFetcher(codeRegistryBuilder,"StopPlaceRegister",FIND_ALL_POI, allPointsOfInterestFetcher);
+
+
+        registerDataFetcher(codeRegistryBuilder,"StopPlaceRegister",CHECK_AUTHORIZED, authorizationCheckDataFetcher);
+        registerDataFetcher(codeRegistryBuilder,"StopPlaceRegister",FIND_POI, pointOfInterestFetcher);
+        registerDataFetcher(codeRegistryBuilder,"StopPlaceRegister",NAME_WITH_RECOMMENDATIONS, nameRecommendationsFetcher);
+
+
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_STOPPLACE, IMPORTED_ID, getOriginalIdsFetcher());
 
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_PARENT_STOPPLACE, IMPORTED_ID, getOriginalIdsFetcher());

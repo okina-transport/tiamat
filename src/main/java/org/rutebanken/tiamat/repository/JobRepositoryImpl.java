@@ -1,5 +1,8 @@
 package org.rutebanken.tiamat.repository;
 
+import jakarta.transaction.Transactional;
+import org.apache.commons.collections4.CollectionUtils;
+import org.hibernate.Hibernate;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobStatus;

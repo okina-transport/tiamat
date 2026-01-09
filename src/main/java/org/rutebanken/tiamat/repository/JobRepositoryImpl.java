@@ -39,6 +39,7 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
         return em.createQuery(cq).getResultList();
     }
 
+    @Transactional
     public List<Job> findByTypesAndAction(List<JobType> types, JobAction jobAction) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Job> cq = cb.createQuery(Job.class);
@@ -53,7 +54,14 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
         cq.where(finalPredicate);
         cq.orderBy(cb.desc(jobRoot.get("id")));
 
-        return em.createQuery(cq).setMaxResults(10).getResultList();
+        List<Job> results = em.createQuery(cq).setMaxResults(10).getResultList();
+
+        if (CollectionUtils.isNotEmpty(results)){
+            for (Job result : results) {
+                Hibernate.initialize(result.getOperators());
+            }
+        }
+        return results;
 
     }
 

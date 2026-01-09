@@ -1,7 +1,6 @@
 package org.rutebanken.tiamat.service.batch;
 
 import org.jetbrains.annotations.NotNull;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;

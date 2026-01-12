@@ -51,8 +51,6 @@ class ParkingFetcher implements DataFetcher {
 
     @Autowired
     private ParkingRepository parkingRepository;
-    @Autowired
-    private VersionCreator versionCreator;
 
     @Autowired
     private StopPlaceAuthorizationService stopPlaceAuthorizationService;

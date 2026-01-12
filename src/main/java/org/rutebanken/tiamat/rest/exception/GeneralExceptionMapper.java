@@ -15,8 +15,6 @@
 
 package org.rutebanken.tiamat.rest.exception;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.collect.Sets;
 import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
@@ -52,8 +50,7 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
         mapping = new HashMap<>();
         mapping.put(Response.Status.BAD_REQUEST,
                 Sets.newHashSet(ValidationException.class, OptimisticLockException.class,
-                        EntityNotFoundException.class, DataIntegrityViolationException.class, BindException.class,
-                        JsonMappingException.class, JsonParseException.class));
+                        EntityNotFoundException.class, DataIntegrityViolationException.class, BindException.class));
         mapping.put(Response.Status.CONFLICT, Sets.newHashSet(EntityExistsException.class));
         mapping.put(Response.Status.FORBIDDEN, Sets.newHashSet(AccessDeniedException.class));
         mapping.put(Response.Status.UNAUTHORIZED, Sets.newHashSet(NotAuthorizedException.class, NotAuthenticatedException.class));
@@ -63,7 +60,7 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
     public Response toResponse(Exception ex) {
         Throwable rootCause = getRootCause(ex);
         int status = toStatus(rootCause);
-        var entity = toErrorResponseEntity(rootCause);
+        var entity = toErrorResponseEntity(rootCause, status);
 
         return Response.status(status)
                 .entity(entity)
@@ -82,25 +79,20 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
         return Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
     }
 
-    private ErrorResponseEntity toErrorResponseEntity(Throwable rootCause) {
-        if (rootCause instanceof BindException bindException) {
-            if (CollectionUtils.isNotEmpty(bindException.getAllErrors())) {
-                var errors = bindException.getAllErrors().stream()
-                        .map(e -> new ErrorResponseEntity.Error(messages.get(e.getCode(), e.getArguments())))
-                        .toList();
-                return new ErrorResponseEntity(errors);
-            }
+    private ErrorResponseEntity toErrorResponseEntity(Throwable rootCause, int status) {
+        if (rootCause instanceof BindException bindException && CollectionUtils.isNotEmpty(bindException.getAllErrors())) {
+            var errors = bindException.getAllErrors().stream()
+                    .map(e -> new ErrorResponseEntity.Error(messages.get(e.getCode(), e.getArguments())))
+                    .toList();
+            return new ErrorResponseEntity(errors);
         }
-        return new ErrorResponseEntity(rootCause.getMessage());
+        return new ErrorResponseEntity(Response.Status.fromStatusCode(status).getReasonPhrase());
     }
 
     private Throwable getRootCause(Throwable e) {
         Throwable rootCause = e;
-
-        if (e instanceof NestedRuntimeException nestedRuntimeException) {
-            if (nestedRuntimeException.getRootCause() != null) {
-                rootCause = nestedRuntimeException.getRootCause();
-            }
+        if (e instanceof NestedRuntimeException nestedRuntimeException && nestedRuntimeException.getRootCause() != null) {
+            rootCause = nestedRuntimeException.getRootCause();
         }
         return rootCause;
     }

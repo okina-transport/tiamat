@@ -25,11 +25,10 @@ import org.rutebanken.tiamat.rest.delete.DeleteRessource;
 import org.rutebanken.tiamat.rest.dto.DtoJbvCodeMappingResource;
 import org.rutebanken.tiamat.rest.dto.DtoQuayResource;
 import org.rutebanken.tiamat.rest.dto.DtoStopPlaceResource;
-import org.rutebanken.tiamat.rest.exception.ErrorResponseEntityMessageBodyWriter;
-import org.rutebanken.tiamat.rest.exception.GeneralExceptionMapper;
-import org.rutebanken.tiamat.rest.exception.TiamatBusinessExceptionMapper;
+import org.rutebanken.tiamat.rest.exception.*;
 import org.rutebanken.tiamat.rest.graphql.GraphQLResource;
 import org.rutebanken.tiamat.rest.health.HealthResource;
+import org.rutebanken.tiamat.rest.inseecode.InseeCodeResource;
 import org.rutebanken.tiamat.rest.jobs.JobsResources;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.ExportResource;
@@ -37,11 +36,10 @@ import org.rutebanken.tiamat.rest.netex.publicationdelivery.ImportResource;
 import org.rutebanken.tiamat.rest.parkings.GbfsImportResource;
 import org.rutebanken.tiamat.rest.parkings.ImportBikeParkingsResource;
 import org.rutebanken.tiamat.rest.parkings.ImportParkingsResource;
+import org.rutebanken.tiamat.rest.parkings.ImportRentalBikeResource;
 import org.rutebanken.tiamat.rest.parkingsNetex.ImportParkingsNetexResource;
 import org.rutebanken.tiamat.rest.poi.ImportPOIResource;
-import org.rutebanken.tiamat.rest.parkings.ImportRentalBikeResource;
 import org.rutebanken.tiamat.rest.poiNetex.ImportPointOfInterestsNetexResource;
-import org.rutebanken.tiamat.rest.inseecode.InseeCodeResource;
 import org.rutebanken.tiamat.rest.stopPlacesNetex.ImportStopPlacesNetexResource;
 import org.rutebanken.tiamat.rest.tad.ImportTADRessource;
 import org.rutebanken.tiamat.rest.tariffzone.TariffZoneRessource;
@@ -77,15 +75,23 @@ public class JerseyConfig {
     public static final String SERVICES_STOP_PLACE_PATH = SERVICES_PATH + "/stop_places";
 
     public static final String SERVICES_HEALTH_PATH = "/health";
-
+    public static final String SWAGGER_SCANNER_ID = "swagger.scanner.id";
+    public static final String SWAGGER_CONFIG_ID = "swagger.config.id";
     private static final String PUBLIC_SWAGGER_SCANNER_ID = "public-scanner";
     private static final String PUBLIC_SWAGGER_CONFIG_ID = "public-swagger-doc";
-
     private static final String ADMIN_SWAGGER_SCANNER_ID = "admin-scanner";
     private static final String ADMIN_SWAGGER_CONFIG_ID = "admin-swagger-doc";
-
     private static final String HEALTH_SWAGGER_SCANNER_ID = "health-scanner";
     private static final String HEALTH_SWAGGER_CONFIG_ID = "health-swagger-doc";
+
+    private static void registerExceptionMappers(ResourceConfig resourceConfig) {
+        resourceConfig.register(JsonMappingExceptionMapper.class);
+        resourceConfig.register(JsonParseExceptionMapper.class);
+        resourceConfig.register(JAXBExceptionMapper.class);
+        resourceConfig.register(TiamatBusinessExceptionMapper.class);
+        resourceConfig.register(GeneralExceptionMapper.class);
+        resourceConfig.register(ErrorResponseEntityMessageBodyWriter.class);
+    }
 
     @Bean
     public ServletRegistrationBean publicJersey() {
@@ -111,25 +117,21 @@ public class JerseyConfig {
         publicResources.add(ImportPointOfInterestsNetexResource.class);
         publicResources.add(ImportStopPlacesNetexResource.class);
         publicResources.add(GbfsImportResource.class);
-
-        publicResources.add(GeneralExceptionMapper.class);
-        publicResources.add(TiamatBusinessExceptionMapper.class);
-        publicResources.add(ErrorResponseEntityMessageBodyWriter.class);
         publicResources.add(OpenApiResource.class);
-
-
 
         ResourceConfig resourceConfig = new ResourceConfig(publicResources);
         resourceConfig.register(JerseyJava8TimeConverterProvider.class);
         resourceConfig.register(MultiPartFeature.class);
+        registerExceptionMappers(resourceConfig);
+
         ServletRegistrationBean publicServicesJersey = new ServletRegistrationBean(new ServletContainer(resourceConfig));
 
         publicServicesJersey.addUrlMappings(SERVICES_STOP_PLACE_PATH + "/*");
         publicServicesJersey.setName("PublicJersey");
 
         publicServicesJersey.setLoadOnStartup(0);
-        publicServicesJersey.getInitParameters().put("swagger.scanner.id", PUBLIC_SWAGGER_SCANNER_ID);
-        publicServicesJersey.getInitParameters().put("swagger.config.id", PUBLIC_SWAGGER_CONFIG_ID);
+        publicServicesJersey.getInitParameters().put(SWAGGER_SCANNER_ID, PUBLIC_SWAGGER_SCANNER_ID);
+        publicServicesJersey.getInitParameters().put(SWAGGER_CONFIG_ID, PUBLIC_SWAGGER_CONFIG_ID);
 
         return publicServicesJersey;
     }
@@ -142,21 +144,16 @@ public class JerseyConfig {
         resources.add(HealthResource.class);
         resources.add(OpenApiResource.class);
 
-
-        resources.add(GeneralExceptionMapper.class);
-        resources.add(TiamatBusinessExceptionMapper.class);
-
-        resources.add(ErrorResponseEntityMessageBodyWriter.class);
-
         ResourceConfig resourceConfig = new ResourceConfig(resources);
         ServletRegistrationBean healthServicesJersey = new ServletRegistrationBean(new ServletContainer(resourceConfig));
         resourceConfig.register(MultiPartFeature.class);
+        registerExceptionMappers(resourceConfig);
 
         healthServicesJersey.addUrlMappings(SERVICES_HEALTH_PATH + "/*");
         healthServicesJersey.setName("HealthJersey");
 
-        healthServicesJersey.getInitParameters().put("swagger.scanner.id", HEALTH_SWAGGER_SCANNER_ID);
-        healthServicesJersey.getInitParameters().put("swagger.config.id", HEALTH_SWAGGER_CONFIG_ID);
+        healthServicesJersey.getInitParameters().put(SWAGGER_SCANNER_ID, HEALTH_SWAGGER_SCANNER_ID);
+        healthServicesJersey.getInitParameters().put(SWAGGER_CONFIG_ID, HEALTH_SWAGGER_CONFIG_ID);
         healthServicesJersey.setLoadOnStartup(0);
         return healthServicesJersey;
     }
@@ -166,15 +163,11 @@ public class JerseyConfig {
 
         Set<Class<?>> adminResources = new HashSet<>();
         adminResources.add(DtoJbvCodeMappingResource.class);
-        adminResources.add(GeneralExceptionMapper.class);
-        adminResources.add(TiamatBusinessExceptionMapper.class);
-
         adminResources.add(OpenApiResource.class);
-
-        adminResources.add(ErrorResponseEntityMessageBodyWriter.class);
 
         ResourceConfig resourceConfig = new ResourceConfig(adminResources);
         resourceConfig.register(MultiPartFeature.class);
+        registerExceptionMappers(resourceConfig);
 
         ServletRegistrationBean adminServicesJersey = new ServletRegistrationBean(new ServletContainer(resourceConfig));
 
@@ -183,8 +176,8 @@ public class JerseyConfig {
         adminServicesJersey.setName("AdminJersey");
 
         adminServicesJersey.setLoadOnStartup(0);
-        adminServicesJersey.getInitParameters().put("swagger.scanner.id", ADMIN_SWAGGER_SCANNER_ID);
-        adminServicesJersey.getInitParameters().put("swagger.config.id", ADMIN_SWAGGER_CONFIG_ID);
+        adminServicesJersey.getInitParameters().put(SWAGGER_SCANNER_ID, ADMIN_SWAGGER_SCANNER_ID);
+        adminServicesJersey.getInitParameters().put(SWAGGER_CONFIG_ID, ADMIN_SWAGGER_CONFIG_ID);
         return adminServicesJersey;
     }
 

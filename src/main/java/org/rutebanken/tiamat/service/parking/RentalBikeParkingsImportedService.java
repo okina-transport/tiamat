@@ -60,6 +60,10 @@ public class RentalBikeParkingsImportedService {
                     parkingToSave.setName(new EmbeddableMultilingualString(parkingToSave.getName().getValue()));
                 }
                 parkingVersionedSaverService.saveNewVersion(parkingToSave);
+            }else{
+                Value idLocValue = parkingToSave.getKeyValues().get(ID_LOCAL);
+                logger.warn("Un parking avec id_local '{}' existe déjà. Le parking est esquivé et ne sera ni importé, ni modifié.",
+                        idLocValue.getItems().iterator().next());
             }
         }
     }

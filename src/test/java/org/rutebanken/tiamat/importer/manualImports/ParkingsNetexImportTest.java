@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
+import org.rutebanken.tiamat.feign.mdm.ParkingIdentifier;
 import org.rutebanken.tiamat.importer.NetexImporter;
-import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.rutebanken.tiamat.rest.parkingsNetex.ImportParkingsNetexResource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +19,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @Transactional
 //Dirties context is used to clear H2 database before each test
@@ -35,7 +39,12 @@ public class ParkingsNetexImportTest extends TiamatIntegrationTest {
     private NetexImporter netexImporter;
 
     @Test
-    public void testParkingsNetex() throws IOException, JAXBException, SAXException, TiamatBusinessException, BindException {
+    public void testParkingsNetex() throws IOException, JAXBException, SAXException, BindException {
+
+        ParkingIdentifier pid = new ParkingIdentifier();
+        pid.setOriginalId("63000-PRelais1");
+
+        when(mdmFeignClient.getParkingIdentifiers(any())).thenReturn(List.of(pid));
         launchImportForFile("parkings_relai_vls_velo.xml");
     }
 
@@ -45,7 +54,7 @@ public class ParkingsNetexImportTest extends TiamatIntegrationTest {
      * @param fileName the file to import
      * @throws IOException
      */
-    private void launchImportForFile(String fileName) throws IOException, JAXBException, SAXException, TiamatBusinessException, BindException {
+    private void launchImportForFile(String fileName) throws IOException, JAXBException, SAXException, BindException {
         File file = new File("src/test/resources/manualImports/parkingsNetex/" + fileName);
 
         try (InputStream testInputStream = new FileInputStream(file)) {

@@ -22,10 +22,13 @@ import org.entur.gbfs.validation.GbfsValidator;
 import org.entur.gbfs.validation.GbfsValidatorFactory;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cloud.commons.httpclient.HttpClientConfiguration;
 import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.cloud.openfeign.FeignAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
@@ -40,6 +43,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableScheduling
 @EnableAsync
 @EnableFeignClients
+@ImportAutoConfiguration({FeignAutoConfiguration.class, HttpClientConfiguration.class})
 @EntityScan(basePackageClasses = {StopPlace.class, Jsr310JpaConverters.class})
 public class TiamatApplication {
 

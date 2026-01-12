@@ -1,14 +1,12 @@
 package org.rutebanken.tiamat.rest.stopPlacesNetex;
 
-import io.restassured.http.ContentType;
-
 import org.entur.gbfs.http.GBFSHttpClient;
 import org.entur.gbfs.mapper.GBFSMapper;
 import org.entur.gbfs.validation.GbfsValidator;
 import org.junit.jupiter.api.Test;
 
-import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.TiamatTestApplication;
+import org.rutebanken.tiamat.feign.mdm.MdmFeignClient;
 import org.rutebanken.tiamat.security.RolesChecker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -57,6 +55,9 @@ public class EndpointTest {
 
     @MockBean
     public GBFSHttpClient gbfsHttpClient;
+
+    @MockBean
+    public MdmFeignClient mdmFeignClient;
 
 
 

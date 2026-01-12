@@ -274,14 +274,24 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
             queryString = queryString + " INNER JOIN parking_key_values pkv on p.id=pkv.parking_id ";
         }
 
+        if (StringUtils.isNotEmpty(idLoc)) {
+            queryString = queryString + " INNER JOIN parking_key_values pkv2 on p.id=pkv2.parking_id ";
+        }
+
+
+
         queryString = queryString + " WHERE p.parent_site_ref IS NULL " +
-                " AND p.version = (SELECT MAX(pv.version) FROM parking pv WHERE pv.netex_id = p.netex_id) " +
-                (idLoc != null ? "AND LOWER(p.name_value) LIKE concat('%', LOWER(:name), '%')" : "");
+                " AND p.version = (SELECT MAX(pv.version) FROM parking pv WHERE pv.netex_id = p.netex_id) " ;
 
 
         if (StringUtils.isNotEmpty(idOsm)) {
             queryString = queryString + " AND pkv.key_values_key = 'id_osm'";
         }
+
+        if (StringUtils.isNotEmpty(idLoc)) {
+            queryString = queryString + " AND pkv2.key_values_key = 'id_local'";
+        }
+
 
 
         if (StringUtils.isNotEmpty(idOsm)) {
@@ -290,12 +300,18 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
             queryString = queryString + " AND NOT EXISTS ( SELECT 1 FROM parking_key_values pkv WHERE pkv.key_values_key = 'id_osm' AND pkv.parking_id = p.id)";
         }
 
+        if (StringUtils.isNotEmpty(idLoc)) {
+            queryString = queryString + " AND EXISTS ( SELECT 1 FROM value_items vi2 WHERE vi2.items = :idLoc AND pkv2.key_values_id = vi2.value_id)";
+        } else {
+            queryString = queryString + " AND NOT EXISTS ( SELECT 1 FROM parking_key_values pkv2 WHERE pkv2.key_values_key = 'id_local' AND pkv2.parking_id = p.id)";
+        }
+
         logger.debug("Finding parking by idloc and idosm: {}", queryString);
 
         final Query query = entityManager.createNativeQuery(queryString, Parking.class);
 
         if (query != null) {
-            query.setParameter("name", idLoc);
+            query.setParameter("idLoc", idLoc);
         }
 
         if (StringUtils.isNotEmpty(idOsm)) {

@@ -8,6 +8,8 @@ import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +25,8 @@ import java.util.Set;
 @Service
 @Transactional
 public class BikeParkingsImportedService {
+
+    private static final Logger logger = LoggerFactory.getLogger(BikeParkingsImportedService.class);
 
     private static final String ID_LOCAL = "id_local";
     private static final String ID_OSM = "id_osm";
@@ -54,6 +58,10 @@ public class BikeParkingsImportedService {
                     bikeParkingToSave.setName(new EmbeddableMultilingualString(bikeParkingToSave.getName().getValue()));
                 }
                 parkingVersionedSaverService.saveNewVersion(bikeParkingToSave);
+            }else{
+                Value idLocValue = bikeParkingToSave.getKeyValues().get(ID_LOCAL);
+                logger.warn("Un parking avec id_local '{}' existe déjà. Le parking est esquivé et ne sera ni importé, ni modifié.",
+                        idLocValue.getItems().iterator().next());
             }
         }
     }

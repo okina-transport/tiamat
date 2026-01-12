@@ -6,6 +6,7 @@ import org.entur.gbfs.validation.GbfsValidator;
 import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.PostgresTestContainer;
 import org.rutebanken.tiamat.TiamatTestApplication;
+import org.rutebanken.tiamat.feign.mdm.MdmFeignClient;
 import org.rutebanken.tiamat.security.RolesChecker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -41,7 +42,6 @@ public class EndpointTest {
     @MockitoBean
     private JwtDecoder jwtDecoder;
 
-
     @MockitoBean
     private RolesChecker rolesChecker;
 
@@ -54,6 +54,8 @@ public class EndpointTest {
     @MockitoBean
     public GBFSHttpClient gbfsHttpClient;
 
+    @MockitoBean
+    public MdmFeignClient mdmFeignClient;
 
 
     @Test

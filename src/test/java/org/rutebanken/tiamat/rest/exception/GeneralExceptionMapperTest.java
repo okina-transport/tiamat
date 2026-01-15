@@ -16,6 +16,9 @@
 package org.rutebanken.tiamat.rest.exception;
 
 
+import jakarta.validation.ValidationException;
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.rutebanken.tiamat.config.Messages;
@@ -23,53 +26,50 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.TransactionSystemException;
 
-import jakarta.validation.ValidationException;
-import jakarta.ws.rs.NotAuthorizedException;
-import jakarta.ws.rs.core.Response;
 import java.io.FileNotFoundException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-public class GeneralExceptionMapperTest {
+class GeneralExceptionMapperTest {
 
     @Mock
     Messages messages;
 
     @Test
-    public void rawAccessDeniedExceptionYieldsForbidden() {
+    void rawAccessDeniedExceptionYieldsForbidden() {
         Response rsp = new GeneralExceptionMapper(messages).toResponse(new AccessDeniedException("Nope"));
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), rsp.getStatus());
     }
 
     @Test
-    public void nestedAccessDeniedExceptionYieldsForbidden() {
+    void nestedAccessDeniedExceptionYieldsForbidden() {
         Response rsp = new GeneralExceptionMapper(messages).toResponse(new TransactionSystemException("", new AccessDeniedException("Nope")));
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), rsp.getStatus());
-        assertEquals("Nope", ((ErrorResponseEntity) rsp.getEntity()).errors.get(0).message);
+        assertEquals("Forbidden", ((ErrorResponseEntity) rsp.getEntity()).errors.get(0).message);
     }
 
 
     @Test
-    public void nestedValidationExceptionYieldsBadRequest() {
+    void nestedValidationExceptionYieldsBadRequest() {
         Response rsp = new GeneralExceptionMapper(messages).toResponse(new TransactionSystemException("", new ValidationException()));
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), rsp.getStatus());
     }
 
     @Test
-    public void nestedUnknownExceptionYieldsInternalServerError() {
+    void nestedUnknownExceptionYieldsInternalServerError() {
         Response rsp = new GeneralExceptionMapper(messages).toResponse(new TransactionSystemException("", new RuntimeException()));
         assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), rsp.getStatus());
     }
 
     @Test
-    public void nestedNotAuthorizedExceptionYieldsUnauthorized() {
+    void nestedNotAuthorizedExceptionYieldsUnauthorized() {
         Response rsp = new GeneralExceptionMapper(messages).toResponse(new TransactionSystemException("", new NotAuthorizedException("Njet")));
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), rsp.getStatus());
     }
 
     @Test
-    public void rawUnknownExceptionYieldsInternalServerError() {
+    void rawUnknownExceptionYieldsInternalServerError() {
         Response rsp = new GeneralExceptionMapper(messages).toResponse(new FileNotFoundException());
         assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), rsp.getStatus());
     }

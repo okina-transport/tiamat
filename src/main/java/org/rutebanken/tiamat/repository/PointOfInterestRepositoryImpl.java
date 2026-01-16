@@ -466,7 +466,7 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
     }
 
     public List<PointOfInterest> findAllPOILastVersionAndValid(){
-        String sql = "( SELECT p.* FROM point_of_interest p WHERE " +
+        String sql = "SELECT p.* FROM point_of_interest p WHERE " +
                 SQL_MAX_VERSION_OF_POI +
                 "ORDER BY p.netex_id, p.version";
         return entityManager.createNativeQuery(sql, PointOfInterest.class).getResultList();

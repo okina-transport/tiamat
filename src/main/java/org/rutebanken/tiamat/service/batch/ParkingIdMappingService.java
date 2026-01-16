@@ -89,16 +89,18 @@ public class ParkingIdMappingService {
 
         try (var printer = CSVFormat.RFC4180.print(f, StandardCharsets.UTF_8)) {
 
-            printer.printRecord("originalId", "netexId");
+                printer.printRecord("operator", "originalId", "netexId");
 
-            for (var netexParking : netexParkings) {
+            for (int i = 0; i < netexParkings.size(); i++) {
+                var netexParking = netexParkings.get(i);
+                var dbParking = parkingsForExport.get(i);
                 String originalId = netexParking.getKeyList().getKeyValue()
                         .stream()
                         .filter(kvs -> "imported-id".equals(kvs.getKey()))
                         .findFirst()
                         .orElseThrow(() -> new RuntimeException("Parking with netexId" + netexParking.getId() + " has no imported-id"))
                         .getValue();
-                printer.printRecord(originalId, netexParking.getId());
+                printer.printRecord(dbParking.getOperator(), originalId, netexParking.getId());
             }
 
             printer.flush();

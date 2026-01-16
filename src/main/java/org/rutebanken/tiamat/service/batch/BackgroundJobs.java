@@ -31,7 +31,7 @@ public class BackgroundJobs {
     private static final AtomicLong threadNumber = new AtomicLong();
 
     private final ScheduledExecutorService backgroundJobExecutor =
-            Executors.newScheduledThreadPool(3, (runnable) -> new Thread(runnable, "background-job-" + threadNumber.incrementAndGet()));
+            Executors.newScheduledThreadPool(6, (runnable) -> new Thread(runnable, "background-job-" + threadNumber.incrementAndGet()));
 
     private final GaplessIdGeneratorService gaplessIdGeneratorService;
 
@@ -42,6 +42,9 @@ public class BackgroundJobs {
     private final StopPlaceIdMappingService stopPlaceIdMappingService;
 
     private final ParkingIdMappingService parkingIdMappingService;
+
+    private final PoiIdMappingService poiIdMappingService;
+
     @Value("${id.synchronization.enabled:true}")
     boolean shoundSyncIds;
     @Autowired
@@ -52,12 +55,13 @@ public class BackgroundJobs {
 
     @Autowired
     public BackgroundJobs(GaplessIdGeneratorService gaplessIdGeneratorService, StopPlaceRefUpdaterService stopPlaceRefUpdaterService, QuayIdMappingService quayIdMappingService,
-                          StopPlaceIdMappingService stopPlaceIdMappingService, ParkingIdMappingService parkingIdMappingService) {
+                          StopPlaceIdMappingService stopPlaceIdMappingService, ParkingIdMappingService parkingIdMappingService, PoiIdMappingService poiIdMappingService) {
         this.gaplessIdGeneratorService = gaplessIdGeneratorService;
         this.stopPlaceRefUpdaterService = stopPlaceRefUpdaterService;
         this.quayIdMappingService = quayIdMappingService;
         this.stopPlaceIdMappingService = stopPlaceIdMappingService;
         this.parkingIdMappingService = parkingIdMappingService;
+        this.poiIdMappingService = poiIdMappingService;
     }
 
     @PostConstruct
@@ -77,6 +81,9 @@ public class BackgroundJobs {
 
         logger.info("Scheduling background job for parking id mapping file creation");
         backgroundJobExecutor.scheduleAtFixedRate(parkingIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
+
+        logger.info("Scheduling background job for POI id mapping file creation");
+        backgroundJobExecutor.scheduleAtFixedRate(poiIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
 
         if (shoundSyncIds) {
             syncIdGenerator();

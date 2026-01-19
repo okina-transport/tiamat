@@ -93,6 +93,7 @@ public class VersionCreator {
                 .exclude(CHANGED_BY_FIELD)
                 .exclude(VALID_BETWEEN)
                 .exclude(MODIFICATION_ENUMERATION)
+                .exclude(POLYGON_FIELD)
                 .byDefault()
                 .register();
 
@@ -102,6 +103,16 @@ public class VersionCreator {
                 .register();
 
         mapperFactory.classMap(PointOfInterest.class, PointOfInterest.class)
+                .exclude(POLYGON_FIELD)
+                .byDefault()
+                .register();
+
+        mapperFactory.classMap(Quay.class, Quay.class)
+                .exclude(POLYGON_FIELD)
+                .byDefault()
+                .register();
+
+        mapperFactory.classMap(Parking.class, Parking.class)
                 .exclude(POLYGON_FIELD)
                 .byDefault()
                 .register();

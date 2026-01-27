@@ -27,13 +27,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class GbfsParkingImporter {
@@ -73,18 +73,15 @@ public class GbfsParkingImporter {
      *                                 </ul>
      */
     public GbfsParkingImportData getGBFSParkingImportData(URI gbfsJsonUri) throws TiamatBusinessException {
-        // Request GBFS feed
         InputStream rawGbfsJsonFile;
         try {
             rawGbfsJsonFile = gbfsHttpClient.getData(gbfsJsonUri);
-        } catch (
-                IOException ex) {
+        } catch (IOException ex) {
             String msg = "Error requesting gbfs.json file from " + gbfsJsonUri;
             logger.error(msg, ex);
             throw new TiamatBusinessException(TiamatBusinessException.GBFS_HTTP_RETRIEVAL_FAILED, msg);
         }
 
-        // Validate gbfs.json file
         ValidationResult gbfsValidation;
         try {
             gbfsValidation = gbfsValidator.validate(Map.of("gbfs", rawGbfsJsonFile));
@@ -94,7 +91,7 @@ public class GbfsParkingImporter {
             throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
         }
         FileValidationResult gbfsFileValidation = gbfsValidation.files().get("gbfs");
-        if (!gbfsFileValidation.exists()) {
+        if (gbfsFileValidation == null || !gbfsFileValidation.exists()) {
             String msg = "Target url " + gbfsJsonUri + " is not a gbfs.json file";
             logger.error(msg);
             throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
@@ -106,107 +103,139 @@ public class GbfsParkingImporter {
             throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
         }
 
-        // if gbfs.json file is in v2.3 deserialize it to v2.3 gbfs.json entity then map it to v3.0 entity
-        // if gbfs.json file is in v3.0 deserialize it to v3.0 gbfs.json entity
-        // otherwise throw exception for invalid version
         GBFSGbfs gbfsV3;
+        String version = gbfsFileValidation.version();
         try {
-            gbfsV3 = switch (gbfsFileValidation.version()) {
-                case "2.0", "2.1", "2.2", "2.3" -> {
-                    GBFS gbfsV2 =
-                            MAPPER.readValue(gbfsFileValidation.fileContents(), GBFS.class);
-                    yield gbfsMapper.map(gbfsV2, gbfsV2.getFeedsData().containsKey("fr") ? "fr" : gbfsV2.getFeedsData().keySet().iterator().next());
-                }
-                case "3.0" -> MAPPER.readValue(gbfsFileValidation.fileContents(), GBFSGbfs.class);
-                default ->
-                        throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, "Unsupported GBFS version: " + gbfsFileValidation.version());
-            };
+            if (version != null && version.startsWith("2.")) {
+                GBFS gbfsV2 = MAPPER.readValue(gbfsFileValidation.fileContents(), GBFS.class);
+                String locale = gbfsV2.getFeedsData().containsKey("fr") ? "fr" : gbfsV2.getFeedsData().keySet().iterator().next();
+                gbfsV3 = gbfsMapper.map(gbfsV2, locale);
+            } else if ("3.0".equals(version)) {
+                gbfsV3 = MAPPER.readValue(gbfsFileValidation.fileContents(), GBFSGbfs.class);
+            } else {
+                throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, "Unsupported GBFS version: " + version);
+            }
         } catch (IOException ex) {
-            String msg = "Could not parse gbfs.json file content: " + gbfsFileValidation.fileContents();
+            String msg = "Could not parse gbfs.json file (version: " + version + ")";
             logger.error(msg, ex);
             throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
         }
 
-        // retrieve station_information.json, system_information.json and vehicle_types.json files
-        GBFSStationInformation stationInformation = null;
-        GBFSSystemInformation systemInformation = null;
-        GBFSVehicleTypes vehicleTypes = null;
-        for (
-                GBFSFeed.Name feedName : List.of(GBFSFeed.Name.STATION_INFORMATION, GBFSFeed.Name.SYSTEM_INFORMATION,
-                GBFSFeed.Name.VEHICLE_TYPES)) {
-            Optional<GBFSFeed> feed =
-                    gbfsV3.getData().getFeeds().stream().filter(f -> f.getName() == feedName).findFirst();
-            if (feed.isEmpty()) {
-                String msg = "Could not find feed " + feedName + " in gbfs.json file";
-                logger.error(msg);
-                throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+        List<GBFSFeed.Name> requiredFeeds = List.of(
+                GBFSFeed.Name.STATION_INFORMATION,
+                GBFSFeed.Name.SYSTEM_INFORMATION,
+                GBFSFeed.Name.VEHICLE_TYPES
+        );
+
+        List<GBFSFeed.Name> optionalFeedsIfPresentForValidation = new ArrayList<>();
+
+        boolean hasPricingPlans = gbfsV3.getData().getFeeds().stream()
+                .anyMatch(f -> f.getName() == GBFSFeed.Name.SYSTEM_PRICING_PLANS);
+        if (hasPricingPlans) {
+            optionalFeedsIfPresentForValidation.add(GBFSFeed.Name.SYSTEM_PRICING_PLANS);
+        }
+
+        Map<String, byte[]> feedBytes = new HashMap<>();
+
+        for (GBFSFeed.Name feedName : Stream.concat(requiredFeeds.stream(), optionalFeedsIfPresentForValidation.stream()).toList()) {
+            GBFSFeed feed = gbfsV3.getData().getFeeds().stream()
+                    .filter(f -> f.getName() == feedName)
+                    .findFirst()
+                    .orElse(null);
+
+            if (feed == null) {
+                if (requiredFeeds.contains(feedName)) {
+                    String msg = "Could not find feed " + feedName + " in gbfs.json";
+                    logger.error(msg);
+                    throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+                } else {
+                    continue;
+                }
             }
-            try {
-                rawGbfsJsonFile = gbfsHttpClient.getData(feed.get().getUrl());
+
+            try (InputStream is = gbfsHttpClient.getData(URI.create(feed.getUrl()))) {
+                feedBytes.put(feedName.toString().toLowerCase(), is.readAllBytes());
             } catch (IOException ex) {
-                String msg = "Errors requesting GBFS " + feedName + ".json from " + feed.get().getUrl();
+                String msg = "Error requesting GBFS " + feedName + ".json from " + feed.getUrl();
                 logger.error(msg, ex);
                 throw new TiamatBusinessException(TiamatBusinessException.GBFS_HTTP_RETRIEVAL_FAILED, msg);
             }
-            ValidationResult feedValidation;
-            try {
-                feedValidation = gbfsValidator.validate(Map.of(feedName.toString().toLowerCase(), rawGbfsJsonFile));
-            } catch (Exception ex) {
-                String msg = "Error validating " + feedName + ".json file from " + feed.get().getUrl();
-                logger.error(msg, ex);
-                throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
-            }
-            FileValidationResult feedFileValidation = feedValidation.files().get(feedName.toString().toLowerCase());
-            if (!feedFileValidation.exists()) {
-                String msg = "Url " + feed.get().getUrl() + " is not a " + feedName + ".json file";
-                logger.error(msg);
-                throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
-            }
-            if (CollectionUtils.isNotEmpty(feedFileValidation.errors())) {
-                String msg =
-                        feedName + ".json contains error(s):\n" + feedFileValidation.errors().stream()
-                                .map(FileValidationError::toString)
-                                .collect(Collectors.joining("\n"));
-                logger.error(msg);
-                throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
-            }
-            try {
-                if (List.of("2.0", "2.1", "2.2", "2.3").contains(gbfsFileValidation.version())) {
-                    switch (feedName) {
-                        case STATION_INFORMATION -> {
-                            var stationInformationV2 = MAPPER.readValue(feedFileValidation.fileContents()
-                                    , org.mobilitydata.gbfs.v2_3.station_information.GBFSStationInformation.class);
-                            stationInformation = gbfsMapper.map(stationInformationV2, "fr");
+        }
 
-                        }
-                        case SYSTEM_INFORMATION -> {
-                            var systemInformationV2 = MAPPER.readValue(feedFileValidation.fileContents(),
-                                    org.mobilitydata.gbfs.v2_3.system_information.GBFSSystemInformation.class);
-                            systemInformation = gbfsMapper.map(systemInformationV2, "fr");
-                        }
-                        case VEHICLE_TYPES -> {
-                            var vehicleTypesV2 = MAPPER.readValue(feedFileValidation.fileContents(), org.mobilitydata.gbfs.v2_3.vehicle_types.GBFSVehicleTypes.class);
-                            vehicleTypes = gbfsMapper.map(vehicleTypesV2, "fr");
-                        }
-                    }
-                } else {
-                    switch (feedName) {
-                        case STATION_INFORMATION ->
-                                stationInformation = MAPPER.readValue(feedFileValidation.fileContents()
-                                        , GBFSStationInformation.class);
-                        case SYSTEM_INFORMATION ->
-                                systemInformation = MAPPER.readValue(feedFileValidation.fileContents(),
-                                        GBFSSystemInformation.class);
-                        case VEHICLE_TYPES -> vehicleTypes = MAPPER.readValue(feedFileValidation.fileContents(),
-                                GBFSVehicleTypes.class);
-                    }
-                }
-            } catch (IOException ex) {
-                String msg = "Could not parse " + feedName + ".json file content: " + gbfsFileValidation.fileContents();
-                logger.error(msg, ex);
+        ValidationResult compositeValidation;
+        try {
+            Map<String, InputStream> asStreams = feedBytes.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new ByteArrayInputStream(e.getValue())));
+            compositeValidation = gbfsValidator.validate(asStreams);
+        } catch (Exception ex) {
+            String msg = "Error validating GBFS feeds (composite validation)";
+            logger.error(msg, ex);
+            throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+        }
+
+        for (GBFSFeed.Name feedName : requiredFeeds) {
+            String key = feedName.toString().toLowerCase();
+            FileValidationResult res = compositeValidation.files().get(key);
+            if (res == null || !res.exists()) {
+                String msg = "Url for " + key + ".json is not valid";
+                logger.error(msg);
+                throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+            }
+            if (CollectionUtils.isNotEmpty(res.errors())) {
+                String msg = key + ".json contains error(s):\n" +
+                        res.errors().stream().map(FileValidationError::toString).collect(Collectors.joining("\n"));
+                logger.error(msg);
                 throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
             }
         }
+        for (GBFSFeed.Name feedName : optionalFeedsIfPresentForValidation) {
+            String key = feedName.toString().toLowerCase();
+            FileValidationResult res = compositeValidation.files().get(key);
+            if (res != null && res.exists() && CollectionUtils.isNotEmpty(res.errors())) {
+                String msg = key + ".json contains error(s):\n" +
+                        res.errors().stream().map(FileValidationError::toString).collect(Collectors.joining("\n"));
+                logger.error(msg);
+                throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+            }
+        }
+
+        GBFSStationInformation stationInformation = null;
+        GBFSSystemInformation systemInformation = null;
+        GBFSVehicleTypes vehicleTypes = null;
+
+        try {
+            if (version != null && version.startsWith("2.")) {
+                var stationInfoV2 = MAPPER.readValue(
+                        feedBytes.get(GBFSFeed.Name.STATION_INFORMATION.toString().toLowerCase()),
+                        org.mobilitydata.gbfs.v2_3.station_information.GBFSStationInformation.class);
+                stationInformation = gbfsMapper.map(stationInfoV2, "fr");
+
+                var systemInfoV2 = MAPPER.readValue(
+                        feedBytes.get(GBFSFeed.Name.SYSTEM_INFORMATION.toString().toLowerCase()),
+                        org.mobilitydata.gbfs.v2_3.system_information.GBFSSystemInformation.class);
+                systemInformation = gbfsMapper.map(systemInfoV2, "fr");
+
+                var vehicleTypesV2 = MAPPER.readValue(
+                        feedBytes.get(GBFSFeed.Name.VEHICLE_TYPES.toString().toLowerCase()),
+                        org.mobilitydata.gbfs.v2_3.vehicle_types.GBFSVehicleTypes.class);
+                vehicleTypes = gbfsMapper.map(vehicleTypesV2, "fr");
+            } else {
+                stationInformation = MAPPER.readValue(
+                        feedBytes.get(GBFSFeed.Name.STATION_INFORMATION.toString().toLowerCase()),
+                        GBFSStationInformation.class);
+                systemInformation = MAPPER.readValue(
+                        feedBytes.get(GBFSFeed.Name.SYSTEM_INFORMATION.toString().toLowerCase()),
+                        GBFSSystemInformation.class);
+                vehicleTypes = MAPPER.readValue(
+                        feedBytes.get(GBFSFeed.Name.VEHICLE_TYPES.toString().toLowerCase()),
+                        GBFSVehicleTypes.class);
+            }
+        } catch (IOException ex) {
+            String msg = "Could not parse one of the GBFS feed files (version: " + version + ")";
+            logger.error(msg, ex);
+            throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+        }
+
         return new GbfsParkingImportData(stationInformation, systemInformation, vehicleTypes);
     }
 
@@ -227,6 +256,4 @@ public class GbfsParkingImporter {
                 .toList();
         parkingsImportedService.createOrUpdateParkings(parkings);
     }
-
-
 }

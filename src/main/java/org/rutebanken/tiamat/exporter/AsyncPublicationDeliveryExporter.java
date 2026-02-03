@@ -117,10 +117,10 @@ public class AsyncPublicationDeliveryExporter {
      * @return export job with information about the started process
      */
     public Job startExportJob(String username, ExportParams exportParams) {
-        return startExportJob(username, false, exportParams, false, false);
+        return startExportJob(username, false, exportParams, false, false, null);
     }
 
-    public Job startExportJob(String username, Boolean exportGeneratedMissingQuayser, ExportParams exportParams, Boolean exportExternalIds, Boolean hasPostProcess) {
+    public Job startExportJob(String username, Boolean exportGeneratedMissingQuayser, ExportParams exportParams, Boolean exportExternalIds, Boolean hasPostProcess, String fileName) {
 
         Iterable<Provider> providers;
 
@@ -147,7 +147,7 @@ public class AsyncPublicationDeliveryExporter {
                     nameSite = provider.getChouetteInfo().getNameNetexStop();
                 }
 
-                String fileNameWithoutExtention = createFileNameWithoutExtention(idSite, nameSite, localDateTime,isPrefix);
+                String fileNameWithoutExtention = (fileName != null && !fileName.isEmpty()) ? fileName : createFileNameWithoutExtention(idSite, nameSite, localDateTime,isPrefix);
 
                 String nameFileZip = null;
                 try {

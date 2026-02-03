@@ -18,6 +18,10 @@ package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.rutebanken.tiamat.exporter.AsyncPublicationDeliveryExporter;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.job.Job;
@@ -40,11 +44,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-
-import jakarta.transaction.Transactional;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Collection;
@@ -119,8 +118,8 @@ public class AsyncExportResource {
     @GET
     @Path("initiate")
     public Response asyncExport(@HeaderParam("RutebankenUser") String username, @HeaderParam("exportGeneratedMissingQuays") String exportGeneratedMissingQuayser, @BeanParam ExportParams exportParams,
-                                @HeaderParam("exportExternalIds") String exportExternalIds,  @HeaderParam("hasPostProcess") Boolean hasPostProcess) {
-        Job job = asyncPublicationDeliveryExporter.startExportJob(username, Boolean.valueOf(exportGeneratedMissingQuayser), exportParams, Boolean.valueOf(exportExternalIds), hasPostProcess);
+                                @HeaderParam("exportExternalIds") String exportExternalIds,  @HeaderParam("hasPostProcess") Boolean hasPostProcess,  @HeaderParam("EXPORT_FILE_NAME") String fileName) {
+        Job job = asyncPublicationDeliveryExporter.startExportJob(username, Boolean.valueOf(exportGeneratedMissingQuayser), exportParams, Boolean.valueOf(exportExternalIds), hasPostProcess, fileName);
         return Response.ok(job).build();
     }
 

@@ -19,6 +19,9 @@ package org.rutebanken.tiamat.repository;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -29,5 +32,7 @@ public interface JobRepository extends PagingAndSortingRepository<Job, Long>, Jo
         JpaSpecificationExecutor<Job> {
 
     List<Job> findByTypesAndAction(List<JobType> types, JobAction jobAction);
+
+    Page<Job> findAllWithOperators(Specification<Job> combinedFilter, Pageable pageable);
 
 }

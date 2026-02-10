@@ -183,7 +183,7 @@ public class AsyncExportResource {
             Specification<Job> combinedFilter = Specification.where(jobActionFilter).and(jobTypeFilter).and(providerFilter).and(postProcessFilter);
 
             Pageable pageable = PageRequest.of(0, maxNbResults, Sort.Direction.DESC, "started");
-            Page<Job> foundJobs = jobRepository.findAll(combinedFilter, pageable);
+            Page<Job> foundJobs = jobRepository.findAllWithOperators(combinedFilter, pageable);
             return Response.ok(netexExportSummaryMapper.mapJobToExportSummary(foundJobs.toList())).build();
         } catch (Exception e) {
             logger.error("Error getting netex stop exports for provider {}", providerName, e);

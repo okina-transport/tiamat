@@ -5,9 +5,7 @@ import org.rutebanken.tiamat.rest.netex.publicationdelivery.DtoNetexExportSummar
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Component
 public class NetexExportSummaryMapper {
@@ -24,13 +22,36 @@ public class NetexExportSummaryMapper {
     }
 
     protected DtoNetexExportSummary mapJobToExportSummary(Job job) {
-        DtoNetexExportSummary dtoNetexExportSummary = null;
-        if (job != null) {
-            dtoNetexExportSummary = new DtoNetexExportSummary();
-            dtoNetexExportSummary.setFileName(job.getFileName());
-            dtoNetexExportSummary.setUserName(job.getUserName());
-            dtoNetexExportSummary.setCreationDate(job.getStarted());
+        if (job == null) {
+            return null;
         }
-        return dtoNetexExportSummary;
+
+        DtoNetexExportSummary dto = new DtoNetexExportSummary();
+
+        dto.setId(job.getId());
+        dto.setJobUrl(job.getJobUrl());
+        dto.setFileName(job.getFileName());
+        dto.setSubFolder(job.getSubFolder());
+        dto.setMessage(job.getMessage());
+        dto.setStarted(job.getStarted());
+        dto.setFinished(job.getFinished());
+        dto.setStatus(job.getStatus());
+        dto.setType(job.getType());
+        dto.setAction(job.getAction());
+        dto.setUserName(job.getUserName());
+        dto.setLugCompleted(job.getLugCompleted());
+
+        dto.setExportParams(job.getExportParams());
+        dto.setImportParams(job.getImportParams());
+
+        if (job.getLinks() != null) {
+            dto.setLinks(new ArrayList<>(job.getLinks()));
+        }
+
+        if (job.getOperators() != null) {
+            dto.setOperators(new HashSet<>(job.getOperators()));
+        }
+
+        return dto;
     }
 }

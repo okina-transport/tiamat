@@ -52,7 +52,7 @@ class NetexExportSummaryMapperTest {
         DtoNetexExportSummary exportSummary = mapper.mapJobToExportSummary(input);
 
         assertThat(exportSummary).isNotNull();
-        assertThat(exportSummary.getCreationDate()).isEqualTo(input.getStarted());
+        assertThat(exportSummary.getStarted()).isEqualTo(input.getStarted());
     }
 
     private Job buildJob() {

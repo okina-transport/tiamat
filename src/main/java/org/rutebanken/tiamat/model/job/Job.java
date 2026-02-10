@@ -16,15 +16,14 @@
 package org.rutebanken.tiamat.model.job;
 
 import com.google.common.base.MoreObjects;
-
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.rutebanken.tiamat.exporter.params.ExportParams;
-import org.rutebanken.tiamat.importer.ImportParams;
-
 import jakarta.persistence.*;
 import jakarta.xml.bind.annotation.XmlEnum;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
+import org.rutebanken.tiamat.exporter.params.ExportParams;
+import org.rutebanken.tiamat.importer.ImportParams;
+
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -75,7 +74,6 @@ public class Job {
     private String userName;
 
     private Boolean isLugCompleted;
-
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(

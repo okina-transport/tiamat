@@ -105,7 +105,14 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
 
         cq.where(finalPredicate).orderBy(cb.desc(jobRoot.get("id")));
 
-        return em.createQuery(cq).getResultList();
+        List<Job> results = em.createQuery(cq).getResultList();
+        if (CollectionUtils.isNotEmpty(results)){
+            for (Job result : results) {
+                Hibernate.initialize(result.getOperators());
+            }
+        }
+
+        return results;
     }
 
 
@@ -123,7 +130,14 @@ public class JobRepositoryImpl implements JobRepositoryCustom<Job> {
 
         cq.where(finalPredicate).orderBy(cb.desc(jobRoot.get("id")));
 
-        return em.createQuery(cq).setMaxResults(maxSize).getResultList();
+        List<Job> results = em.createQuery(cq).setMaxResults(maxSize).getResultList();
+        if (CollectionUtils.isNotEmpty(results)){
+            for (Job result : results) {
+                Hibernate.initialize(result.getOperators());
+            }
+        }
+
+        return results;
     }
 
     public Job findBySubFolderLikeReferentialAndId(String subFolder, Long id) {

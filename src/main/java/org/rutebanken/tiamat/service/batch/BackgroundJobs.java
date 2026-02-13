@@ -45,6 +45,8 @@ public class BackgroundJobs {
 
     private final PoiIdMappingService poiIdMappingService;
 
+    private final StopPlaceQuayAssociationService stopPlaceQuayAssociationService;
+
     @Value("${id.synchronization.enabled:true}")
     boolean shoundSyncIds;
     @Autowired
@@ -55,13 +57,15 @@ public class BackgroundJobs {
 
     @Autowired
     public BackgroundJobs(GaplessIdGeneratorService gaplessIdGeneratorService, StopPlaceRefUpdaterService stopPlaceRefUpdaterService, QuayIdMappingService quayIdMappingService,
-                          StopPlaceIdMappingService stopPlaceIdMappingService, ParkingIdMappingService parkingIdMappingService, PoiIdMappingService poiIdMappingService) {
+                          StopPlaceIdMappingService stopPlaceIdMappingService, ParkingIdMappingService parkingIdMappingService, PoiIdMappingService poiIdMappingService,
+                          StopPlaceQuayAssociationService stopPlaceQuayAssociationService) {
         this.gaplessIdGeneratorService = gaplessIdGeneratorService;
         this.stopPlaceRefUpdaterService = stopPlaceRefUpdaterService;
         this.quayIdMappingService = quayIdMappingService;
         this.stopPlaceIdMappingService = stopPlaceIdMappingService;
         this.parkingIdMappingService = parkingIdMappingService;
         this.poiIdMappingService = poiIdMappingService;
+        this.stopPlaceQuayAssociationService = stopPlaceQuayAssociationService;
     }
 
     @PostConstruct
@@ -84,6 +88,10 @@ public class BackgroundJobs {
 
         logger.info("Scheduling background job for POI id mapping file creation");
         backgroundJobExecutor.scheduleAtFixedRate(poiIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
+
+
+        logger.info("Scheduling background job for POI id mapping file creation");
+        backgroundJobExecutor.scheduleAtFixedRate(stopPlaceQuayAssociationService::createSpQuayFile, 0, 3, TimeUnit.HOURS);
 
         if (shoundSyncIds) {
             syncIdGenerator();

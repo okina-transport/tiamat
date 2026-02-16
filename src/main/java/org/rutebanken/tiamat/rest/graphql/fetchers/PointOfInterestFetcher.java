@@ -20,8 +20,10 @@ import graphql.schema.DataFetchingEnvironment;
 import org.locationtech.jts.geom.Envelope;
 import org.rutebanken.tiamat.auth.StopPlaceAuthorizationService;
 import org.rutebanken.tiamat.dtoassembling.dto.BoundingBoxDto;
-import org.rutebanken.tiamat.model.*;
-import org.rutebanken.tiamat.repository.ParkingRepository;
+import org.rutebanken.tiamat.model.PointOfInterest;
+import org.rutebanken.tiamat.model.PointOfInterestClassification;
+import org.rutebanken.tiamat.model.TicketingFacilityEnumeration;
+import org.rutebanken.tiamat.model.TicketingServiceFacilityEnumeration;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.rest.graphql.GraphQLNames;
 import org.slf4j.Logger;
@@ -38,6 +40,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
@@ -85,7 +88,10 @@ class PointOfInterestFetcher implements DataFetcher {
                 pointOfInterestPage = new PageImpl<>(pointOfInterestList, pageable, 1L);
             } else {
                 logger.info("Finding first poi by netexid {} and highest version", pointOfInterestId);
-                pointOfInterestList.add(pointOfInterestRepository.findFirstByNetexIdOrderByVersionDesc(pointOfInterestId));
+                Optional<PointOfInterest> poi = pointOfInterestRepository.findById(Long.valueOf(pointOfInterestId));
+                if (poi.isPresent()) {
+                    pointOfInterestList.add(poi.get());
+                }
                 pointOfInterestPage = new PageImpl<>(pointOfInterestList, pageable, 1L);
             }
         } else if (environment.getArgument(LONGITUDE_MIN) != null) {
@@ -108,8 +114,13 @@ class PointOfInterestFetcher implements DataFetcher {
             }
 
             Envelope envelope = new Envelope(boundingBox.xMin, boundingBox.xMax, boundingBox.yMin, boundingBox.yMax);
+
+            if (environment.getArgument(POI_CLASSIFICATIONS) != null) {
+                List<String> classifications = environment.getArgument(POI_CLASSIFICATIONS);
+                return pointOfInterestRepository.findNearbyPOI(envelope, ignorePointOfInterestId, pageable, classifications);
+            }
            // pointOfInterestPage = filterOnlyPDV(pointOfInterestRepository.findNearbyPOI(envelope, null, ignorePointOfInterestId, pageable));
-            return pointOfInterestRepository.findNearbyPOI(envelope, null, ignorePointOfInterestId, pageable);
+            return pointOfInterestRepository.findNearbyPOI(envelope, ignorePointOfInterestId, pageable);
 
         } else if (environment.getArgument(QUERY) != null){
             String query = environment.getArgument(QUERY);

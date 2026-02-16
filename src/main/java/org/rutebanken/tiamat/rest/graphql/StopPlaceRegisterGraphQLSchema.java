@@ -16,12 +16,12 @@
 package org.rutebanken.tiamat.rest.graphql;
 
 import graphql.schema.*;
+import jakarta.annotation.PostConstruct;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.rutebanken.netex.model.FareZone;
-
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
@@ -41,16 +41,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
-
-import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-
-import static graphql.Scalars.GraphQLBoolean;
-import static graphql.Scalars.GraphQLInt;
-import static graphql.Scalars.GraphQLString;
+import static graphql.Scalars.*;
 import static graphql.scalars.ExtendedScalars.GraphQLBigDecimal;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
@@ -431,7 +426,12 @@ public class StopPlaceRegisterGraphQLSchema {
                 .field(newFieldDefinition()
                         .type(new GraphQLList(clusterMarkerInterface))
                         .name(FIND_POI_CLUSTER_MARKERS)
-                        .description("Find Poi cluster markers"))
+                        .description("Find Poi cluster markers")
+                        .argument(GraphQLArgument.newArgument()
+                            .name(POI_CLASSIFICATIONS)
+                            .description("Classification of POI.")
+                            .type(new GraphQLList(GraphQLString)))
+                        .build())
                 .field(newFieldDefinition()
                         .type(new GraphQLList(clusterMarkerInterface))
                         .name(FIND_PARKING_CLUSTER_MARKERS)
@@ -955,6 +955,11 @@ public class StopPlaceRegisterGraphQLSchema {
                 .description("ID of POI to excluded from result.")
                 .build());
         arguments.add(GraphQLArgument.newArgument()
+                .name(POI_CLASSIFICATIONS)
+                .type(new GraphQLList(GraphQLString))
+                .description("Classification of POI.")
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
                 .name(INCLUDE_EXPIRED)
                 .type(GraphQLBoolean)
                 .defaultValue(Boolean.FALSE)
@@ -1155,6 +1160,9 @@ public class StopPlaceRegisterGraphQLSchema {
         registerDataFetcher(codeRegistryBuilder,"StopPlaceRegister",FIND_POI_CLUSTER_MARKERS, poiClusterMarkersFetcher);
         registerDataFetcher(codeRegistryBuilder,"StopPlaceRegister",FIND_PARKING_CLUSTER_MARKERS, parkingClusterMarkersFetcher);
 
+        registerDataFetcher(codeRegistryBuilder, STOPPLACES_REGISTER, FIND_PARKING_BY_BBOX, parkingFetcher);
+        registerDataFetcher(codeRegistryBuilder, STOPPLACES_REGISTER, FIND_POI_BY_BBOX, pointOfInterestFetcher);
+
         registerDataFetcher(codeRegistryBuilder,"StopPlaceRegister",FIND_ALL_STOPPLACES, allStopPlacesFetcher);
         registerDataFetcher(codeRegistryBuilder,"StopPlaceRegister",FIND_ALL_PARKINGS, allParkingsFetcher);
         registerDataFetcher(codeRegistryBuilder,"StopPlaceRegister",FIND_ALL_POI, allPointsOfInterestFetcher);
@@ -1198,6 +1206,7 @@ public class StopPlaceRegisterGraphQLSchema {
         dataFetcherGeometry(codeRegistryBuilder, OUTPUT_TYPE_QUAY);
         dataFetcherGeometry(codeRegistryBuilder, OUTPUT_TYPE_PARKING);
         dataFetcherGeometry(codeRegistryBuilder, OUTPUT_TYPE_TARIFF_ZONE);
+        dataFetcherGeometry(codeRegistryBuilder, OUTPUT_TYPE_POINT_OF_INTEREST);
 
 
         dataFetcherPlaceEquipments(codeRegistryBuilder, OUTPUT_TYPE_STOPPLACE);
@@ -1221,6 +1230,8 @@ public class StopPlaceRegisterGraphQLSchema {
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_PARENT_STOPPLACE, KEY_VALUES, keyValuesDataFetcher);
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_TARIFF_ZONE, KEY_VALUES, keyValuesDataFetcher);
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_QUAY, KEY_VALUES, keyValuesDataFetcher);
+        registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_POINT_OF_INTEREST, KEY_VALUES, keyValuesDataFetcher);
+        registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_PARKING, KEY_VALUES, keyValuesDataFetcher);
 
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_STOPPLACE, POLYGON, polygonFetcher);
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_PARENT_STOPPLACE, POLYGON, polygonFetcher);
@@ -1394,12 +1405,18 @@ public class StopPlaceRegisterGraphQLSchema {
 
     private void dataFetcherGeometry(GraphQLCodeRegistry.Builder codeRegistryBuilder, String parentType) {
         registerDataFetcher(codeRegistryBuilder, parentType, GEOMETRY, env -> {
-            if (env.getSource() instanceof Zone_VersionStructure source) {
-                if (source.getCentroid()!=null) {
-                    return source.getCentroid();
+            Object source = env.getSource();
+
+            if (source instanceof Zone_VersionStructure zoneSource) {
+                if (zoneSource.getCentroid() != null) {
+                    return zoneSource.getCentroid();
                 }
-                return source.getPolygon();
-            } else if (env.getSource() instanceof Link link) {
+                return zoneSource.getPolygon();
+            }
+            else if (source instanceof PointOfInterest poiSource) {
+                return poiSource.getCentroid();
+            }
+            else if (source instanceof Link link) {
                 return link.getLineString();
             }
             return null;

@@ -1,4 +1,4 @@
-package org.rutebanken.tiamat.feign.mdm;
+package org.rutebanken.tiamat.client.mdm;
 
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;

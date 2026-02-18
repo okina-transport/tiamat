@@ -1,88 +1,88 @@
-package org.rutebanken.tiamat.feign.mdm;
+package org.rutebanken.tiamat.client.mdm;
 
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.service.annotation.GetExchange;
+import org.springframework.web.service.annotation.HttpExchange;
+import org.springframework.web.service.annotation.PostExchange;
 
 import java.util.List;
 import java.util.Set;
 
-@FeignClient(value = "mdmClient", url = "${spring.cloud.openfeign.client.config.mdmClient.url}")
-public interface MdmFeignClient {
+@HttpExchange
+public interface MdmClient {
 
-    @PostMapping(value = "/stops")
+    @PostExchange("/stops")
     List<OkinaIdentifier> generateStopIdentifiers(@RequestBody List<OkinaIdentifier> identifiers);
 
-    @GetMapping(value = "/stops")
+    @GetExchange("/stops")
     List<OkinaIdentifier> getStopPlaceIdentifiers(@RequestBody List<Long> spIds);
 
-    @GetMapping(value = "/stops/byOriginalId")
+    @GetExchange("/stops/byOriginalId")
     OkinaIdentifier getStopPlaceIdentifiersByOriginalId(@RequestBody OkinaIdentifier stopPlaceIdentifier);
 
-    @GetMapping(value = "/stops/byDataset")
+    @GetExchange("/stops/byDataset")
     Set<Long> getStopPlaceIdentifiersByDataset(@RequestBody String dataset);
 
-    @PostMapping(value = "/stops/createOrUpdate")
+    @PostExchange("/stops/createOrUpdate")
     void createOrUpdateStopIdentifiers(@RequestBody List<OkinaIdentifier> identifiers);
 
-    @PostMapping(value = "/stops/updateImportedIds")
+    @PostExchange("/stops/updateImportedIds")
     void updateStopImportedIds(@RequestBody List<OkinaIdentifier> identifiers);
 
-    @PostMapping(value = "/stops/merge")
+    @PostExchange("/stops/merge")
     void mergeStopIdentifiers(@RequestBody MergeIdentifier mergeIdentifier);
 
-    @PostMapping(value = "/quays")
+    @PostExchange("/quays")
     List<OkinaIdentifier> generateQuayIdentifiers(@RequestBody List<OkinaIdentifier> identifiers);
 
-    @GetMapping(value = "/quays")
+    @GetExchange("/quays")
     List<OkinaIdentifier> getQuayIdentifiers(@RequestBody List<Long> quayIds);
 
-    @GetMapping(value = "/quays/byOriginalId")
+    @GetExchange("/quays/byOriginalId")
     List<OkinaIdentifier> getQuayIdentifiersByOriginalId(@RequestBody List<OkinaIdentifier> quayIdentifiers);
 
-    @PostMapping(value = "/quays/createOrUpdate")
+    @PostExchange("/quays/createOrUpdate")
     void createOrUpdateQuayIdentifiers(@RequestBody List<OkinaIdentifier> identifiers);
 
-    @PostMapping(value = "/quays/updateImportedIds")
+    @PostExchange("/quays/updateImportedIds")
     void updateQuaysImportedIds(@RequestBody List<OkinaIdentifier> identifiers);
 
-    @PostMapping(value = "/pois")
+    @PostExchange("/pois")
     List<OkinaIdentifier> generatePoiIdentifiers(@RequestBody List<OkinaIdentifier> identifiers);
 
-    @GetMapping(value = "/pois")
+    @GetExchange("/pois")
     List<OkinaIdentifier> getPoisIdentifiers(@RequestBody List<Long> poiIds);
 
-    @GetMapping(value = "/pois/byOriginalId")
+    @GetExchange("/pois/byOriginalId")
     List<OkinaIdentifier> getPoiIdentifiersByOriginalId(@RequestBody List<OkinaIdentifier> quayIdentifiers);
 
-    @PostMapping(value = "/pois/createOrUpdate")
+    @PostExchange("/pois/createOrUpdate")
     void createOrUpdatePoiIdentifiers(@RequestBody List<OkinaIdentifier> identifiers);
 
-    @PostMapping(value = "/pois/updateImportedIds")
+    @PostExchange("/pois/updateImportedIds")
     void updatePoiImportedIds(@RequestBody List<OkinaIdentifier> identifiers);
 
-    @PostMapping(value = "/parkings")
+    @PostExchange("/parkings")
     List<ParkingIdentifier> generateParkingIdentifiers(@RequestBody List<ParkingIdentifier> identifiers);
 
-    @GetMapping(value = "/parkings")
+    @GetExchange("/parkings")
     List<ParkingIdentifier> getParkingIdentifiers(@RequestBody List<String> parkingIds);
 
-    @GetMapping(value = "/parkings/byOperatorAndOriginalId")
+    @GetExchange("/parkings/byOperatorAndOriginalId")
     ParkingIdentifier getParkingIdentifierbyOperatorAndOriginalId(@RequestParam("operator") String operator,
                                                                   @RequestParam("originalId") String originalId);
 
-    @PostMapping(value = "/parkings/updateImportedIds")
+    @PostExchange("/parkings/updateImportedIds")
     void updateParkingsImportedIds(@RequestBody List<ParkingIdentifier> identifiers);
 
-    @PostMapping(value = "/organisations")
+    @PostExchange("/organisations")
     OkinaIdentifier generateOrganisationIdentifier(@RequestBody OkinaIdentifier identifier);
 
-    @GetMapping(value = "/organisations/byOriginalId")
+    @GetExchange("/organisations/byOriginalId")
     OkinaIdentifier getOrganisationsIdentifierByOriginalId(@RequestParam("originalId") String originalId);
 
-    @PostMapping(value = "/organisations/updateImportedIds")
+    @PostExchange("/organisations/updateImportedIds")
     void updateOrganisationsImportedIds(@RequestBody List<OkinaIdentifier> identifiers);
 
 }

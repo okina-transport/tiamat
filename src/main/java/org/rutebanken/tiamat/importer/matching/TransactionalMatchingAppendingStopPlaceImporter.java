@@ -18,7 +18,7 @@ package org.rutebanken.tiamat.importer.matching;
 import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.tiamat.config.TiamatProperties;
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
-import org.rutebanken.tiamat.feign.mdm.OkinaIdentifier;
+import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
 import org.rutebanken.tiamat.importer.AlternativeStopTypes;
 import org.rutebanken.tiamat.importer.ImportParams;

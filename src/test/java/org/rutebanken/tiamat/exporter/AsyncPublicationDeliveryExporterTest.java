@@ -142,7 +142,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
         }
         stopPlaceRepository.flush();
 
-        when(mdmFeignClient.getStopPlaceIdentifiersByDataset("test")).thenReturn(mdmIds);
+        when(mdmClient.getStopPlaceIdentifiersByDataset("test")).thenReturn(mdmIds);
 
         Provider provider = providerRepository.getProviders().iterator().next();
         ExportParams exportParams = ExportParams.newExportParamsBuilder()
@@ -336,7 +336,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
                 .build();
 
 
-        when(mdmFeignClient.getStopPlaceIdentifiersByDataset("test")).thenReturn(Set.of(1L, 2L));
+        when(mdmClient.getStopPlaceIdentifiersByDataset("test")).thenReturn(Set.of(1L, 2L));
 
         Job job = asyncPublicationDeliveryExporter.startExportJob("", exportParams);
 

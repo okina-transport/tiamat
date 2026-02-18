@@ -6,7 +6,7 @@ import org.entur.gbfs.validation.GbfsValidator;
 import org.junit.jupiter.api.Test;
 
 import org.rutebanken.tiamat.TiamatTestApplication;
-import org.rutebanken.tiamat.feign.mdm.MdmFeignClient;
+import org.rutebanken.tiamat.client.mdm.MdmClient;
 import org.rutebanken.tiamat.security.RolesChecker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -57,7 +57,7 @@ public class EndpointTest {
     public GBFSHttpClient gbfsHttpClient;
 
     @MockBean
-    public MdmFeignClient mdmFeignClient;
+    public MdmClient mdmClient;
 
 
 

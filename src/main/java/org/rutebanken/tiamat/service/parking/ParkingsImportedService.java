@@ -1,7 +1,7 @@
 package org.rutebanken.tiamat.service.parking;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.rutebanken.tiamat.feign.mdm.ParkingIdentifier;
+import org.rutebanken.tiamat.client.mdm.ParkingIdentifier;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;

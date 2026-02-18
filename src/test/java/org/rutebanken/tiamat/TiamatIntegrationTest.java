@@ -16,7 +16,6 @@
 package org.rutebanken.tiamat;
 
 import com.hazelcast.core.HazelcastInstance;
-import org.aspectj.lang.annotation.Before;
 import org.entur.gbfs.http.GBFSHttpClient;
 import org.entur.gbfs.mapper.GBFSMapper;
 import org.entur.gbfs.validation.GbfsValidator;
@@ -28,7 +27,7 @@ import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.domain.ChouetteInfo;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.feign.mdm.MdmFeignClient;
+import org.rutebanken.tiamat.client.mdm.MdmClient;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.GeneratedIdState;
 import org.rutebanken.tiamat.repository.*;
@@ -48,7 +47,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -148,7 +146,7 @@ public abstract class TiamatIntegrationTest {
     protected ReflectionAuthorizationService reflectionAuthorizationService;
 
     @MockBean
-    protected MdmFeignClient mdmFeignClient;
+    protected MdmClient mdmClient;
 
     @MockBean
     public GBFSMapper gbfsMapper;

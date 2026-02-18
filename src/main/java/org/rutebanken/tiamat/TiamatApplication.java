@@ -20,21 +20,23 @@ import org.entur.gbfs.mapper.GBFSMapper;
 import org.entur.gbfs.mapper.GBFSMapperImpl;
 import org.entur.gbfs.validation.GbfsValidator;
 import org.entur.gbfs.validation.GbfsValidatorFactory;
+import org.rutebanken.tiamat.client.mdm.MdmClient;
+import org.rutebanken.tiamat.client.mdm.TokenRelayInterceptor;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cloud.commons.httpclient.HttpClientConfiguration;
-import org.springframework.cloud.openfeign.EnableFeignClients;
-import org.springframework.cloud.openfeign.FeignAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.support.RestClientAdapter;
+import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
 @SpringBootApplication
 @Configuration
@@ -42,8 +44,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableCaching
 @EnableScheduling
 @EnableAsync
-@EnableFeignClients
-@ImportAutoConfiguration({FeignAutoConfiguration.class, HttpClientConfiguration.class})
 @EntityScan(basePackageClasses = {StopPlace.class, Jsr310JpaConverters.class})
 public class TiamatApplication {
 
@@ -64,6 +64,19 @@ public class TiamatApplication {
     @Bean
     public GBFSHttpClient gbfsHttpClient() {
         return new GBFSHttpClient();
+    }
+
+    @Bean
+    public MdmClient mdmClient(@Value("${mdmApi.url}") String mdmApiUrl,
+                               TokenRelayInterceptor interceptor
+    ) {
+        RestClient restClient = RestClient.builder()
+                .baseUrl(mdmApiUrl)
+                .requestInterceptor(interceptor)
+                .build();
+        RestClientAdapter adapter = RestClientAdapter.create(restClient);
+        HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(adapter).build();
+        return factory.createClient(MdmClient.class);
     }
 
 }

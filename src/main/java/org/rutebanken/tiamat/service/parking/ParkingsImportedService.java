@@ -2,7 +2,7 @@ package org.rutebanken.tiamat.service.parking;
 
 import jakarta.transaction.Transactional;
 import org.apache.commons.collections4.CollectionUtils;
-import org.rutebanken.tiamat.feign.mdm.OkinaIdentifier;
+import org.rutebanken.tiamat.client.mdm.ParkingIdentifier;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.AccessibilityAssessment;
 import org.rutebanken.tiamat.model.AccessibilityLimitation;

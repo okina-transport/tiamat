@@ -246,7 +246,7 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
             stopPlaceRepository.save(stopPlace);
             mdmIds.add((long) i);
         }
-        when(mdmFeignClient.getStopPlaceIdentifiersByDataset("test")).thenReturn(mdmIds);
+        when(mdmClient.getStopPlaceIdentifiersByDataset("test")).thenReturn(mdmIds);
         stopPlaceRepository.flush();
     }
 

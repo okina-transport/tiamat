@@ -159,4 +159,8 @@ public class Organisation extends DataManagedObjectStructure {
     public void setOriginalId(String originalId) {
         this.originalId = originalId;
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 }

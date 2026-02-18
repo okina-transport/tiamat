@@ -17,13 +17,12 @@ package org.rutebanken.tiamat.importer.finder;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import org.rutebanken.tiamat.feign.mdm.OkinaIdentifier;
+import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 

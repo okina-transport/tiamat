@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Test;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.feign.mdm.ParkingIdentifier;
 import org.rutebanken.tiamat.importer.ImporterUtils;
+import org.rutebanken.tiamat.client.mdm.ParkingIdentifier;
 import org.rutebanken.tiamat.importer.NetexImporter;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Parking;
@@ -60,7 +60,7 @@ public class ParkingsNetexImportTest extends TiamatIntegrationTest {
         ParkingIdentifier pid = new ParkingIdentifier();
         pid.setOriginalId("63000-PRelais1");
 
-        when(mdmFeignClient.getParkingIdentifiers(any())).thenReturn(List.of(pid));
+        when(mdmClient.getParkingIdentifiers(any())).thenReturn(List.of(pid));
         launchImportForFile("parkings_relai_vls_velo.xml");
     }
 

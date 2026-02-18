@@ -1,5 +1,7 @@
 package org.rutebanken.tiamat.repository;
 
+import jakarta.persistence.*;
+import org.apache.commons.collections4.CollectionUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
@@ -9,7 +11,8 @@ import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.geo.GeometryTransformer;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.PointOfInterest;
+import org.rutebanken.tiamat.model.PointOfInterestClassification;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
 import org.rutebanken.tiamat.rest.dto.DTOClusterMarker;
@@ -24,12 +27,6 @@ import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
-import jakarta.persistence.TypedQuery;
 
 import java.time.Instant;
 import java.util.*;
@@ -367,42 +364,72 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
     }
 
     @Override
-    public Page<PointOfInterest> findNearbyPOI(Envelope envelope, String name, String ignorePointOfInterestId, Pageable pageable) {
+    public Page<PointOfInterest> findNearbyPOI(Envelope envelope, String ignorePointOfInterestId, Pageable pageable, List<String> classifications) {
         Geometry geometryFilter = geometryFactory.toGeometry(envelope);
 
-        String queryString = "SELECT * FROM point_of_interest p " +
-                "WHERE ST_within(p.centroid, :filter) = true " +
-                "AND p.parent_site_ref IS NULL " +
-                "AND p.version = (SELECT MAX(pv.version) FROM point_of_interest pv WHERE pv.netex_id = p.netex_id) " +
-                (name != null ? "AND p.name_value = :name":"") +
-                (ignorePointOfInterestId != null ? " AND (p.netex_id != :ignorePointOfInterestId)":"");
+        StringBuilder sb = new StringBuilder("SELECT p.* FROM point_of_interest p ");
+        boolean isNotEmptyClassifications = CollectionUtils.isNotEmpty(classifications);
 
+        if (isNotEmptyClassifications) {
+            sb.append("INNER JOIN point_of_interest_classifications poic_rel ON p.id = poic_rel.point_of_interest_id ");
+            sb.append("INNER JOIN point_of_interest_classification poic ON poic_rel.classifications_id = poic.id ");
+        }
 
+        sb.append("WHERE ST_within(p.centroid, :filter) = true ")
+                .append("AND p.parent_site_ref IS NULL ")
+                .append("AND p.version = (SELECT MAX(pv.version) FROM point_of_interest pv WHERE pv.netex_id = p.netex_id) ");
+
+        if (ignorePointOfInterestId != null) {
+            sb.append("AND p.netex_id != :ignorePointOfInterestId ");
+        }
+
+        if (isNotEmptyClassifications) {
+            sb.append("AND (");
+            for (int i = 0; i < classifications.size(); i++) {
+                if (i > 0) {
+                    sb.append(" OR ");
+                }
+                sb.append("LOWER(poic.name_value) LIKE LOWER(:classif").append(i).append(") ");
+            }
+            sb.append(") ");
+        }
+
+        String queryString = sb.toString();
         logger.debug("Finding point of interest within bounding box with query: {}", queryString);
 
         final Query query = entityManager.createNativeQuery(queryString, PointOfInterest.class);
         query.setParameter("filter", geometryFilter);
 
-        if(name != null){
-            query.setParameter("name", name);
+        if (ignorePointOfInterestId != null) {
+            query.setParameter("ignorePointOfInterestId", ignorePointOfInterestId);
         }
 
-        if(ignorePointOfInterestId != null) {
-            query.setParameter("ignorePointOfInterestId", ignorePointOfInterestId);
+        if (classifications != null && !classifications.isEmpty()) {
+            for (int i = 0; i < classifications.size(); i++) {
+                query.setParameter("classif" + i, "%" + classifications.get(i) + "%");
+            }
         }
 
         query.setFirstResult(Math.toIntExact(pageable.getOffset()));
         query.setMaxResults(pageable.getPageSize());
-        List<PointOfInterest> pointsOfInterest = query.getResultList();
-        for (PointOfInterest pointOfInterest : pointsOfInterest) {
-            if (pointOfInterest.getClassifications() != null){
+
+        List<PointOfInterest> pointsOfInterests = query.getResultList();
+
+        for (PointOfInterest pointOfInterest : pointsOfInterests) {
+            if (pointOfInterest.getClassifications() != null) {
                 Hibernate.initialize(pointOfInterest.getClassifications());
                 for (PointOfInterestClassification classification : pointOfInterest.getClassifications()) {
                     initializeClassification(classification);
                 }
             }
         }
-        return new PageImpl<>(pointsOfInterest, pageable, pointsOfInterest.size());
+
+        return new PageImpl<>(pointsOfInterests, pageable, pointsOfInterests.size());
+    }
+
+    @Override
+    public Page<PointOfInterest> findNearbyPOI(Envelope envelope, String ignorePointOfInterestId, Pageable pageable) {
+        return findNearbyPOI(envelope, ignorePointOfInterestId, pageable, new ArrayList<>());
     }
 
     private void initializeClassification(PointOfInterestClassification classification){
@@ -473,7 +500,14 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
     }
 
     @Override
-    public List<DTOClusterMarker> findClusterMarkers() {
+    public List<DTOClusterMarker> findClusterMarkers(Map<String, Object> variables) {
+
+        Object classificationsObj = variables.get("classifications");
+        if (!(classificationsObj instanceof List) || ((List<?>) classificationsObj).isEmpty()) {
+            logger.debug("No classifications provided, returning empty cluster list.");
+            return Collections.emptyList();
+        }
+
         String completeQuery = """
                     SELECT cluster_id,
                            ST_X(ST_Centroid(ST_Collect(centroid))) AS center_lon,
@@ -482,7 +516,9 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
                     FROM (SELECT ST_ClusterDBSCAN(centroid,:maxDistanceDegrees , 1) OVER () AS cluster_id, *
                           FROM (SELECT p.*
                                 FROM point_of_interest p
-                                WHERE p.version = (select max(pv.version) from point_of_interest pv where pv.netex_id = p.netex_id)
+                                    JOIN point_of_interest_classifications poic ON p.id = poic.point_of_interest_id
+                                	JOIN point_of_interest_classification poic2 ON poic.classifications_id = poic2.id
+                                WHERE poic2.name_value IN (:classifications) AND p.version = (select max(pv.version) from point_of_interest pv where pv.netex_id = p.netex_id)
                                 ORDER BY p.netex_id, p.version) single_poi) pois_with_clusters
                     group by cluster_id
                     """;
@@ -490,6 +526,7 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
 
         Query query = entityManager.createNativeQuery(completeQuery);
         query.setParameter("maxDistanceDegrees", GeometryTransformer.convertMetersToLatitudeDegrees(maximumDistance));
+        query.setParameter("classifications", classificationsObj);
 
         List<Object[]> result = query.getResultList();
 

@@ -7,8 +7,8 @@ import org.rutebanken.tiamat.rest.dto.DTOClusterMarker;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface PointOfInterestRepositoryCustom extends DataManagedObjectStructureRepository<PointOfInterest> {
@@ -36,7 +36,9 @@ public interface PointOfInterestRepositoryCustom extends DataManagedObjectStruct
 
     PointOfInterest findFirstByNetexIdOrderByVersionDescAndInitialize(String netexId);
 
-    Page<PointOfInterest> findNearbyPOI(Envelope boundingBox, String name, String ignorePointOfInterestId, Pageable pageable);
+    Page<PointOfInterest> findNearbyPOI(Envelope boundingBox, String ignorePointOfInterestId, Pageable pageable, List<String> classifications);
+
+    Page<PointOfInterest> findNearbyPOI(Envelope boundingBox, String ignorePointOfInterestId, Pageable pageable);
 
     String findNearbyPOI(Envelope envelope, String name);
 
@@ -48,6 +50,6 @@ public interface PointOfInterestRepositoryCustom extends DataManagedObjectStruct
 
     List<PointOfInterest> findAllPOILastVersionAndValid();
 
-    List<DTOClusterMarker> findClusterMarkers();
+    List<DTOClusterMarker> findClusterMarkers(Map<String, Object> variables);
 
 }

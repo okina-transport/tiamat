@@ -17,21 +17,17 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import org.rutebanken.helper.organisation.RoleAssignment;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.rest.dto.DTOClusterMarker;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.IGNORE_STOPS;
 
@@ -67,7 +63,7 @@ class PointOfInterestClusterMarkersFetcher implements DataFetcher {
         logger.info("Searching for Poi clusters with arguments {}", environment.getArguments());
 
 
-        List<DTOClusterMarker> clusters = pointOfInterestRepository.findClusterMarkers();
+        List<DTOClusterMarker> clusters = pointOfInterestRepository.findClusterMarkers(environment.getVariables());
         long duration = System.currentTimeMillis() - startTime;
         logger.info("Found {} poi clusters. duration : {} ms", clusters.size(), duration);
 

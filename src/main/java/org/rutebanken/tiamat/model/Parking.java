@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.model;
 
 import com.google.common.base.MoreObjects;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
 
@@ -123,6 +124,15 @@ public class Parking
             @AttributeOverride(name = "version", column = @Column(name = "version"))
     })
     protected Set<SiteRefStructure> adjacentSites = new HashSet<>();
+
+
+    @OneToMany(cascade = CascadeType.ALL)
+    Set<AvailabilityCondition> availabilityConditions = new HashSet<>();
+
+    @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    protected PostalAddress postalAddress;
+
 
     public List<TypeOfPaymentMethod> getTypeOfPaymentMethods() {
         return typeOfPaymentMethods;
@@ -458,6 +468,22 @@ public class Parking
 
     public void setAdjacentSites(Set<SiteRefStructure> adjacentSites) {
         this.adjacentSites = adjacentSites;
+    }
+
+    public Set<AvailabilityCondition> getAvailabilityConditions() {
+        return availabilityConditions;
+    }
+
+    public void setAvailabilityConditions(Set<AvailabilityCondition> availabilityConditions) {
+        this.availabilityConditions = availabilityConditions;
+    }
+
+    public PostalAddress getPostalAddress() {
+        return postalAddress;
+    }
+
+    public void setPostalAddress(PostalAddress postalAddress) {
+        this.postalAddress = postalAddress;
     }
 
     @Override

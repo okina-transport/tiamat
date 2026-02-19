@@ -18,11 +18,7 @@ package org.rutebanken.tiamat.versioning.save;
 
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
-import org.rutebanken.tiamat.model.DataManagedObjectStructure;
-import org.rutebanken.tiamat.model.EquipmentPlace;
-import org.rutebanken.tiamat.model.Parking;
-import org.rutebanken.tiamat.model.ParkingArea;
-import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
@@ -105,6 +101,9 @@ public class ParkingVersionedSaverService {
         }
 
         newVersion.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
+        if (newVersion.getPostalAddress() != null){
+            newVersion.getPostalAddress().setId(null);
+        }
         result = parkingRepository.save(newVersion);
 
         logger.info("Saved parking {}, version {}, name {}", result.getNetexId(), result.getVersion(), result.getName());

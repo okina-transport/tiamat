@@ -27,10 +27,11 @@ public class ParkingPropertyMapper extends CustomMapper<org.rutebanken.netex.mod
     @Override
     public void mapAtoB(org.rutebanken.netex.model.ParkingProperties netexParkingProperties, ParkingProperties tiamatParkingProperties, MappingContext context) {
         super.mapAtoB(netexParkingProperties, tiamatParkingProperties, context);
-        if (CollectionUtils.isEmpty(netexParkingProperties.getParkingVehicleTypes())) {
-            return;
+        if (CollectionUtils.isNotEmpty(netexParkingProperties.getParkingVehicleTypes())) {
+            tiamatParkingProperties.getParkingVehicleTypes().addAll(netexParkingProperties.getParkingVehicleTypes().stream().map(ppt -> ParkingVehicleEnumeration.fromValue(ppt.value())).toList());
+        }else{
+            tiamatParkingProperties.getParkingVehicleTypes().add(ParkingVehicleEnumeration.UNDEFINED);
         }
-        tiamatParkingProperties.getParkingVehicleTypes().addAll(netexParkingProperties.getParkingVehicleTypes().stream().map(ppt -> ParkingVehicleEnumeration.fromValue(ppt.value())).toList());
     }
 
     @Override

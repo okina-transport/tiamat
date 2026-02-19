@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.importer;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.importer.handler.ParkingsImportHandler;
@@ -210,9 +211,47 @@ public class NetexImporter {
 
     private void parkingsImport(ImportParams importParams, AtomicInteger atomicInteger, List<JAXBElement<? extends EntityStructure>> members, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {
         List<Parking> tiamatParking = NetexUtils.getMembers(Parking.class, members);
+        tiamatParking = filterIncorrectParkingLayout(tiamatParking);
+        tiamatParking = filterDuplicateParkings(tiamatParking);
         var transportTypes = NetexUtils.getMembers(TransportType.class, members);
         var topms = NetexUtils.getMembers(TypeOfPaymentMethod.class, members);
         parkingsImportHandler.handleParkingsGeneralFrame(tiamatParking, importParams, members, atomicInteger, generalOrganisations, responsibilitySets, transportTypes, topms);
+    }
+
+    private List<Parking> filterDuplicateParkings(List<Parking> tiamatParking) {
+        List<Parking> results = new ArrayList<>();
+        if (CollectionUtils.isEmpty(tiamatParking)){
+            return results;
+        }
+
+        Set<String> alreadyProcessedParkings = new HashSet<>();
+
+        for (Parking parking : tiamatParking) {
+
+           if (alreadyProcessedParkings.contains(parking.getId())){
+               logger.warn("Duplicate parking id detected. will not process the 2nd occurence : {}", parking.getId());
+           }else{
+               results.add(parking);
+               alreadyProcessedParkings.add(parking.getId());
+           }
+        }
+        return results;
+    }
+
+    private List<Parking> filterIncorrectParkingLayout(List<Parking> tiamatParking) {
+        List<Parking> results = new ArrayList<>();
+        if (CollectionUtils.isEmpty(tiamatParking)){
+            return results;
+        }
+
+        for (Parking parking : tiamatParking) {
+            if (parking.getParkingLayout() == null){
+                logger.warn("Incorrect parking layout. Only single value accepted. parking : {}", parking.getId());
+            }else{
+                results.add(parking);
+            }
+        }
+        return results;
     }
 
     public Provider getCurrentProvider(String providerId) {

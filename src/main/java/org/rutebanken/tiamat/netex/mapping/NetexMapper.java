@@ -225,6 +225,13 @@ public class NetexMapper {
                 .byDefault()
                 .register();
 
+        mapperFactory.classMap(PostalAddress.class, org.rutebanken.tiamat.model.PostalAddress.class)
+                .exclude("id")
+                .customize(new PostalAddressMapper())
+                .byDefault()
+                .register();
+
+
         mapperFactory.classMap(CycleStorageEquipment.class, org.rutebanken.tiamat.model.CycleStorageEquipment.class)
                 .fieldBToA("netexId", "id")
                 .byDefault()
@@ -530,6 +537,16 @@ public class NetexMapper {
 
                 org.rutebanken.tiamat.model.ParkingProperties prop = mapToTiamatModel(parkingPropertiesElement);
                 prop.setSpaces(parkingCapacities);
+                parkingPropertiesList.add(prop);
+            }else{
+                // Creating empty space to be compliant to netex
+                org.rutebanken.tiamat.model.ParkingProperties prop = mapToTiamatModel(parkingPropertiesElement);
+                List<org.rutebanken.tiamat.model.ParkingCapacity> spaceList = new ArrayList<>();
+                org.rutebanken.tiamat.model.ParkingCapacity emptySpace = new org.rutebanken.tiamat.model.ParkingCapacity();
+
+                spaceList.add(emptySpace);
+                prop.setSpaces(spaceList);
+
                 parkingPropertiesList.add(prop);
             }
 

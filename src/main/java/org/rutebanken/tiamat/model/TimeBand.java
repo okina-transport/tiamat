@@ -1,28 +1,40 @@
 package org.rutebanken.tiamat.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import java.time.Instant;
+import java.time.LocalTime;
 
 @Entity
 public class TimeBand extends EntityInVersionStructure{
 
-    private Instant startTime;
+    private LocalTime startTime;
 
-    private Instant endTime;
+    private LocalTime endTime;
 
-    public Instant getStartTime() {
+    @Column(name = "day_offset")
+    private Integer dayOffset;
+
+    public LocalTime getStartTime() {
         return this.startTime;
     }
 
-    public void setStartTime(Instant value) {
+    public void setStartTime(LocalTime value) {
         this.startTime = value;
     }
 
-    public Instant getEndTime() {
+    public LocalTime getEndTime() {
         return this.endTime;
     }
 
-    public void setEndTime(Instant value) {
+    public void setEndTime(LocalTime value) {
         this.endTime = value;
+    }
+
+    public Integer getDayOffset() {
+        return dayOffset;
+    }
+
+    public void setDayOffset(Integer dayOffset) {
+        this.dayOffset = dayOffset;
     }
 }

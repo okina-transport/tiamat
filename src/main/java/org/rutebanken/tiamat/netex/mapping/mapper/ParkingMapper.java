@@ -15,17 +15,19 @@
 
 package org.rutebanken.tiamat.netex.mapping.mapper;
 
+import jakarta.xml.bind.JAXBElement;
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
+import org.rutebanken.tiamat.model.TimeBand;
 import org.rutebanken.tiamat.netex.NetexUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.math.BigInteger;
+import java.time.*;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,24 +54,39 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
 
     private static void mapAddress(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking) {
         if (tiamatParking.getInsee() != null || tiamatParking.getAddress() != null) {
-            PostalAddress postalAddress = new PostalAddress();
-            postalAddress.setId("MOBIITI:PostalAddress:" + UUID.randomUUID());
-            postalAddress.setVersion("any");
+            PostalAddress netexPostalAddress = new PostalAddress();
+            netexPostalAddress.setId("MOBIITI:PostalAddress:" + UUID.randomUUID());
+            netexPostalAddress.setVersion("any");
             if (tiamatParking.getAddress() != null) {
                 // Expression régulière pour capturer les premiers chiffres au début de l'adresse
                 Matcher matcher = patternStreetNumber.matcher(tiamatParking.getAddress());
 
                 if (matcher.matches()) {
-                    postalAddress.setHouseNumber(matcher.group(1));
-                    postalAddress.setStreet(new MultilingualString().withValue(matcher.group(2)));
+                    netexPostalAddress.setHouseNumber(matcher.group(1));
+                    netexPostalAddress.setStreet(new MultilingualString().withValue(matcher.group(2)));
                 } else {
-                    postalAddress.setStreet(new MultilingualString().withValue(tiamatParking.getAddress()));
+                    netexPostalAddress.setStreet(new MultilingualString().withValue(tiamatParking.getAddress()));
                 }
             }
             if (tiamatParking.getInsee() != null) {
-                postalAddress.setPostalRegion(tiamatParking.getInsee());
+                netexPostalAddress.setPostalRegion(tiamatParking.getInsee());
             }
-            netexParking.setPostalAddress(postalAddress);
+
+            if (tiamatParking.getPostalAddress() != null){
+                org.rutebanken.tiamat.model.PostalAddress tiamatPostalAddress = tiamatParking.getPostalAddress();
+                if (StringUtils.isNotBlank(tiamatPostalAddress.getTown())){
+                    MultilingualString townMultiling = new MultilingualString();
+                    townMultiling.setValue(tiamatPostalAddress.getTown());
+                    netexPostalAddress.setTown(townMultiling);
+                }
+
+                if (StringUtils.isNotEmpty(tiamatPostalAddress.getStreet())){
+                    MultilingualString streetMultiLing = new MultilingualString();
+                    streetMultiLing.setValue(tiamatPostalAddress.getStreet());
+                    netexPostalAddress.setStreet(streetMultiLing);
+                }
+            }
+            netexParking.setPostalAddress(netexPostalAddress);
         }
     }
 
@@ -114,6 +131,85 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
             tiamatParking.setInsee(netexParking.getPostalAddress().getPostalRegion());
         }
 
+        Set<org.rutebanken.tiamat.model.AvailabilityCondition> tiamatAvailabilityConditions = new HashSet<>();
+        if (netexParking.getValidityConditions() != null && CollectionUtils.isNotEmpty(netexParking.getValidityConditions().getValidityConditionRefOrValidBetweenOrValidityCondition_())) {
+
+            for (Object validityCondEltObj : netexParking.getValidityConditions().getValidityConditionRefOrValidBetweenOrValidityCondition_()) {
+
+                if (validityCondEltObj instanceof JAXBElement<?> jaxb && jaxb.getValue() instanceof AvailabilityCondition netexAvailCond) {
+                        org.rutebanken.tiamat.model.AvailabilityCondition tiamatAvailCondition = new org.rutebanken.tiamat.model.AvailabilityCondition();
+                        tiamatAvailCondition.setAvailable(netexAvailCond.isIsAvailable());
+                        mapDayTypes(tiamatAvailCondition, netexAvailCond);
+                        tiamatAvailabilityConditions.add(tiamatAvailCondition);
+                }
+            }
+        }
+
+        if (CollectionUtils.isNotEmpty(tiamatAvailabilityConditions)) {
+            tiamatParking.setAvailabilityConditions(tiamatAvailabilityConditions);
+        }
+
+    }
+
+    private void mapDayTypes(org.rutebanken.tiamat.model.AvailabilityCondition tiamatAvailCondition, AvailabilityCondition netexAvailCond) {
+
+        if (netexAvailCond.getDayTypes() == null || CollectionUtils.isEmpty(netexAvailCond.getDayTypes().getDayTypeRefOrDayType_())) {
+            return;
+        }
+        Set<org.rutebanken.tiamat.model.DayType> tiamatDayTypes = new HashSet<>();
+
+        for (JAXBElement<?> jaxbElement : netexAvailCond.getDayTypes().getDayTypeRefOrDayType_()) {
+            if (jaxbElement.getValue() instanceof DayType netexDayType) {
+                org.rutebanken.tiamat.model.DayType tiamatDayType = new org.rutebanken.tiamat.model.DayType();
+                //tiamatDayType.setNetexId(netexDayType.getId());
+
+                if (netexDayType.getProperties() != null && CollectionUtils.isNotEmpty(netexDayType.getProperties().getPropertyOfDay())) {
+                    PropertyOfDay firstDay = netexDayType.getProperties().getPropertyOfDay().getFirst();
+                    if (firstDay.getDaysOfWeek() != null && CollectionUtils.isNotEmpty(firstDay.getDaysOfWeek())) {
+                        String dayOfWeekValue = firstDay.getDaysOfWeek().getFirst().value();
+                        org.rutebanken.tiamat.model.DayOfWeekEnumeration tiamatDayOfWeek = org.rutebanken.tiamat.model.DayOfWeekEnumeration.fromValue(dayOfWeekValue);
+                        tiamatDayType.setDays(tiamatDayOfWeek);
+                    }
+                }
+
+                if (netexDayType.getTimebands() != null && CollectionUtils.isNotEmpty(netexDayType.getTimebands().getTimebandRefOrTimeband())) {
+                    Set<TimeBand> tiamatTimeBands = new HashSet<>();
+
+                    for (Object timeBandJaxb : netexDayType.getTimebands().getTimebandRefOrTimeband()) {
+                        if (timeBandJaxb instanceof Timeband_VersionedChildStructure netexTimeband) {
+                            TimeBand tiamatTimeBand = new TimeBand();
+
+                            if (netexTimeband.getStartTime() != null) {
+                                tiamatTimeBand.setStartTime(netexTimeband.getStartTime());
+                            }
+
+                            if (netexTimeband.getEndTime() != null) {
+                                tiamatTimeBand.setEndTime(netexTimeband.getEndTime());
+                            }
+
+                            if (netexTimeband.getDayOffset() != null) {
+                                tiamatTimeBand.setDayOffset(netexTimeband.getDayOffset().intValue());
+                            } else if (netexTimeband.getEndTime().equals(LocalTime.of(0, 0, 0)) && netexTimeband.getDayOffset() == null) {
+                                tiamatTimeBand.setDayOffset(1);
+                            }
+
+
+                            tiamatTimeBands.add(tiamatTimeBand);
+                        }
+                    }
+
+                    if (CollectionUtils.isNotEmpty(tiamatTimeBands)) {
+                        tiamatDayType.setTimeBand(tiamatTimeBands);
+                    }
+                }
+
+                tiamatDayTypes.add(tiamatDayType);
+            }
+        }
+
+        if (CollectionUtils.isNotEmpty(tiamatDayTypes)) {
+            tiamatAvailCondition.setDayTypes(tiamatDayTypes);
+        }
     }
 
     @Override
@@ -144,6 +240,7 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
         mapAddress(tiamatParking, netexParking);
 
         mapAppDownloadUrl(tiamatParking, netexParking);
+        mapValidityConditions(tiamatParking, netexParking);
 
         if (tiamatParking.getUrl() != null) {
             InfoLinkStructure infoLink = new InfoLinkStructure();
@@ -192,5 +289,85 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
                 netexParking.setParkingAreas(parkingAreasRelStructure);
             }
         }
+    }
+
+    private void mapValidityConditions(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking) {
+
+        if ( CollectionUtils.isEmpty(tiamatParking.getAvailabilityConditions())) {
+            return;
+        }
+
+
+        List<AvailabilityCondition> netexAvailabilityConditions = new ArrayList<>();
+        for (org.rutebanken.tiamat.model.AvailabilityCondition availabilityCondition : tiamatParking.getAvailabilityConditions()) {
+            AvailabilityCondition netexAvailabilityCondition = new AvailabilityCondition();
+            netexAvailabilityCondition.setId(availabilityCondition.getNetexId());
+            netexAvailabilityCondition.setVersion("any");
+            netexAvailabilityCondition.setIsAvailable(availabilityCondition.isAvailable());
+
+            if (CollectionUtils.isNotEmpty(availabilityCondition.getDayTypes())) {
+                List<DayType> netexDayTypes = new ArrayList<>();
+                for (org.rutebanken.tiamat.model.DayType dayType : availabilityCondition.getDayTypes()) {
+                    DayType netexDayType = new DayType();
+                    netexDayType.setId(dayType.getNetexId());
+                    netexDayType.setVersion("any");
+
+                    if (dayType.getDays() != null) {
+                        PropertiesOfDay_RelStructure propOfDayStruct = new PropertiesOfDay_RelStructure();
+                        PropertyOfDay propOfDay = new PropertyOfDay();
+                        String dayOfWeekStr = dayType.getDays().value();
+                        propOfDay.getDaysOfWeek().add(DayOfWeekEnumeration.fromValue(dayOfWeekStr));
+                        propOfDayStruct.getPropertyOfDay().add(propOfDay);
+                        netexDayType.setProperties(propOfDayStruct);
+                    }
+
+                    if (CollectionUtils.isNotEmpty(dayType.getTimeBand())) {
+                        List<Timeband_VersionedChildStructure> netexTimeBands = new ArrayList<>();
+                        for (TimeBand timeBand : dayType.getTimeBand()) {
+                            Timeband_VersionedChildStructure netexTimeBand = new Timeband_VersionedChildStructure();
+                            netexTimeBand.setId(timeBand.getNetexId());
+                            netexTimeBand.setVersion("any");
+                            netexTimeBand.setStartTime(timeBand.getStartTime());
+                            netexTimeBand.setEndTime(timeBand.getEndTime());
+                            netexTimeBand.setDayOffset(BigInteger.valueOf(timeBand.getDayOffset()));
+                            netexTimeBands.add(netexTimeBand);
+                        }
+
+                        if (CollectionUtils.isNotEmpty(netexTimeBands)) {
+                            Timebands_RelStructure timebandStruct = new Timebands_RelStructure();
+                            for (Timeband_VersionedChildStructure netexTimeBand : netexTimeBands) {
+                                timebandStruct.getTimebandRefOrTimeband().add(netexTimeBand);
+                                netexDayType.setTimebands(timebandStruct);
+                            }
+                        }
+                    }
+                    netexDayTypes.add(netexDayType);
+                }
+
+                if (CollectionUtils.isNotEmpty(netexDayTypes)) {
+                    DayTypes_RelStructure dayTypeStruct = new DayTypes_RelStructure();
+                    for (DayType netexDayType : netexDayTypes) {
+                        dayTypeStruct.getDayTypeRefOrDayType_().add(netexObjectFactory.createDayType(netexDayType));
+                    }
+                    netexAvailabilityCondition.setDayTypes(dayTypeStruct);
+                }
+
+
+            }
+
+            netexAvailabilityConditions.add(netexAvailabilityCondition);
+        }
+
+
+        if (CollectionUtils.isNotEmpty(netexAvailabilityConditions)) {
+            ValidityConditions_RelStructure validityConditionStruct = new ValidityConditions_RelStructure();
+            for (AvailabilityCondition netexAvailabilityCondition : netexAvailabilityConditions) {
+                JAXBElement<AvailabilityCondition> jaxbAvailabilityCond = netexObjectFactory.createAvailabilityCondition(netexAvailabilityCondition);
+                validityConditionStruct.getValidityConditionRefOrValidBetweenOrValidityCondition_().add(jaxbAvailabilityCond);
+            }
+            netexParking.setValidityConditions(validityConditionStruct);
+        }
+
+
     }
 }

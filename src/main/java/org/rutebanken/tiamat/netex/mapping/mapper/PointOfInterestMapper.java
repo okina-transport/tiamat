@@ -110,15 +110,9 @@ public class PointOfInterestMapper extends CustomMapper<PointOfInterest, org.rut
                             timebandVersionedChildStructure.setId(timeBand.getNetexId());
                             timebandVersionedChildStructure.setVersion("any");
 
-                            LocalDateTime startTime = LocalDateTime.ofInstant(timeBand.getStartTime(), ZoneId.of("Europe/Paris"));
-                            int hours = startTime.getHour();
-                            int minutes = startTime.getMinute();
-                            timebandVersionedChildStructure.setStartTime(LocalTime.of(hours, minutes));
 
-                            LocalDateTime endTime = LocalDateTime.ofInstant(timeBand.getEndTime(), ZoneId.of("Europe/Paris"));
-                            int hoursEnd = endTime.getHour();
-                            int minutesEnd = endTime.getMinute();
-                            timebandVersionedChildStructure.setEndTime(LocalTime.of(hoursEnd, minutesEnd));
+                            timebandVersionedChildStructure.setStartTime(timeBand.getStartTime());
+                            timebandVersionedChildStructure.setEndTime(timeBand.getEndTime());
                             timebands_relStructure.withTimebandRefOrTimeband(timebandVersionedChildStructure);
                         });
                 dayType2.withTimebands(timebands_relStructure);

@@ -24,6 +24,7 @@ import org.rutebanken.netex.model.Common_VersionFrameStructure;
 import org.rutebanken.netex.model.EntityStructure;
 import org.rutebanken.netex.model.GeneralFrame;
 import org.rutebanken.netex.model.MultilingualString;
+import org.rutebanken.netex.model.PostalAddress;
 import org.rutebanken.netex.model.TypeOfPlaceRefs_RelStructure;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;

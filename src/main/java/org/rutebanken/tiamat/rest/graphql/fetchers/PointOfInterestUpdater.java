@@ -36,7 +36,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -223,25 +224,23 @@ class PointOfInterestUpdater implements DataFetcher {
                     Map<?,?> value = (Map<?, ?>) entry.getValue();
                     if(value.get("facility").equals("Journée")){
                         TimeBand timeBand = new TimeBand();
-                        timeBand.setEndTime(Instant.parse((CharSequence) value.get("endTime")));
-                        timeBand.setStartTime(Instant.parse((CharSequence) value.get("startTime")));
+                        timeBand.setEndTime(LocalTime.parse((CharSequence) value.get("endTime")));
+                        timeBand.setStartTime(LocalTime.parse((CharSequence) value.get("startTime")));
                         timeBand.setNetexId(createTimeBandId(day, "", poiNetexId));
                         timeBands.add(timeBand);
                     } else if(value.get("facility").equals("Demi journée")){
                         TimeBand timeBand = new TimeBand();
-                        timeBand.setEndTime(Instant.parse((CharSequence) value.get("endTimeAm")));
-                        timeBand.setStartTime(Instant.parse((CharSequence) value.get("startTimeAm")));
+                        timeBand.setEndTime(LocalTime.parse((CharSequence) value.get("endTimeAm")));
+                        timeBand.setStartTime(LocalTime.parse((CharSequence) value.get("startTimeAm")));
                         timeBand.setNetexId(createTimeBandId(day, "_am", poiNetexId));
                         timeBands.add(timeBand);
 
                         TimeBand timeBand2 = new TimeBand();
-                        timeBand2.setEndTime(Instant.parse((CharSequence) value.get("endTimePm")));
-                        timeBand2.setStartTime(Instant.parse((CharSequence) value.get("startTimePm")));
+                        timeBand2.setEndTime(LocalTime.parse((CharSequence) value.get("endTimePm")));
+                        timeBand2.setStartTime(LocalTime.parse((CharSequence) value.get("startTimePm")));
                         timeBand2.setNetexId(createTimeBandId(day, "_pm", poiNetexId));
                         timeBands.add(timeBand2);
                     }
-
-                    dayType.setTimeBand(timeBands);
                     return dayType;
                 }).collect(Collectors.toSet());
 

@@ -26,9 +26,7 @@ import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.geo.GeometryTransformer;
-import org.rutebanken.tiamat.model.Parking;
-import org.rutebanken.tiamat.model.ParkingArea;
-import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
 import org.rutebanken.tiamat.rest.dto.DTOClusterMarker;
@@ -413,6 +411,20 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
             Hibernate.initialize(parking.getPolygon());
             Hibernate.initialize(parking.getTransportTypes());
             Hibernate.initialize(parking.getTypeOfPaymentMethods());
+            Hibernate.initialize(parking.getPostalAddress());
+            Hibernate.initialize(parking.getAvailabilityConditions());
+
+            if (parking.getAvailabilityConditions() != null){
+                for (AvailabilityCondition availabilityCondition : parking.getAvailabilityConditions()) {
+                    Hibernate.initialize(availabilityCondition.getDayTypes());
+
+                    if (availabilityCondition.getDayTypes() != null){
+                        for (DayType dayType : availabilityCondition.getDayTypes()) {
+                            Hibernate.initialize(dayType.getTimeBand());
+                        }
+                    }
+                }
+            }
 
             if (parking.getParkingProperties() != null) {
                 parking.getParkingProperties().forEach(parkProp -> {

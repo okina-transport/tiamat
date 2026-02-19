@@ -15,8 +15,8 @@
 
 package org.rutebanken.tiamat.model;
 
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 
 @MappedSuperclass
@@ -25,7 +25,12 @@ public class ParkingComponent_VersionStructure
 
     @Transient
     protected String parkingPaymentCode;
-    @Transient
+
+    @AttributeOverrides({
+            @AttributeOverride(name = "value", column = @Column(name = "label_value")),
+            @AttributeOverride(name = "lang", column = @Column(name = "label_lang"))
+    })
+    @Embedded
     protected EmbeddableMultilingualString label;
     @Transient
     protected BigDecimal maximumLength;

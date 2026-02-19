@@ -35,6 +35,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 @Component
 @Qualifier("mergingParkingImporter")
@@ -189,6 +190,7 @@ public class MergingParkingImporter {
         boolean allAreasWheelchairAccessibleChanged = mergingUtils.updateProperty(copyParking.isAllAreasWheelchairAccessible(), incomingParking.isAllAreasWheelchairAccessible(), copyParking::setAllAreasWheelchairAccessible, "all areas weelchair accessible", netexId);
         boolean typeChanged = mergingUtils.updateProperty(copyParking.getParkingType(), incomingParking.getParkingType(), copyParking::setParkingType, "type", netexId);
         boolean operatorChanged = mergingUtils.updateProperty(copyParking.getOperator(), incomingParking.getOperator(), copyParking::setOperator, "operator", netexId);
+        boolean hasPostalAddressChanged = updatePostalAddress(copyParking, incomingParking);
 
         boolean vehicleType = false;
         if (!copyParking.getParkingVehicleTypes().containsAll(incomingParking.getParkingVehicleTypes()) ||
@@ -271,7 +273,7 @@ public class MergingParkingImporter {
 
         if (keyValuesChanged || nameChanged || allAreasWheelchairAccessibleChanged || typeChanged || centroidChanged ||
                 operatorChanged ||vehicleType || totalCapacityChanged || paymentProcessChanged || rechargingAvailableChanged ||
-                bookingUrlChanged || propertiesChanged || areasChanged || equipmentChanged || accessibilityChanged) {
+                bookingUrlChanged || propertiesChanged || areasChanged || equipmentChanged || accessibilityChanged || hasPostalAddressChanged) {
             logger.info("Updated existing parking {}. ", copyParking);
             copyParking = parkingVersionedSaverService.saveNewVersion(copyParking);
             return updateCache(copyParking);
@@ -280,6 +282,28 @@ public class MergingParkingImporter {
         logger.debug("No changes. Returning existing parking {}", existingParking);
         return existingParking;
 
+    }
+
+    private boolean updatePostalAddress(Parking copyParking, Parking incomingParking) {
+        if (copyParking.getPostalAddress() == null && incomingParking.getPostalAddress() == null){
+            return false;
+        }
+
+        if (copyParking.getPostalAddress() == null){
+            copyParking.setPostalAddress(incomingParking.getPostalAddress());
+            return true;
+        }
+
+        if (!Objects.equals(copyParking.getPostalAddress().getPostalRegion() , incomingParking.getPostalAddress().getPostalRegion()) ||
+                !Objects.equals(copyParking.getPostalAddress().getStreet() , incomingParking.getPostalAddress().getStreet()) ||
+                !Objects.equals(copyParking.getPostalAddress().getTown() , incomingParking.getPostalAddress().getTown())
+        ){
+            copyParking.getPostalAddress().setPostalRegion(incomingParking.getPostalAddress().getPostalRegion());
+            copyParking.getPostalAddress().setTown(incomingParking.getPostalAddress().getTown());
+            copyParking.getPostalAddress().setStreet(incomingParking.getPostalAddress().getStreet());
+            return true;
+        }
+        return false;
     }
 
     private Parking updateCache(Parking parking) {

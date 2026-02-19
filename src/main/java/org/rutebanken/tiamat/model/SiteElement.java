@@ -41,7 +41,8 @@ public abstract class SiteElement extends AddressablePlace {
     @Transient
     protected MultilingualStringEntity landmark;
 
-    @Transient
+    @Column(name = "public_use")
+    @Enumerated(EnumType.STRING)
     protected PublicUseEnumeration publicUse;
 
     protected CoveredEnumeration covered;

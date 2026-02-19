@@ -78,7 +78,7 @@ public class StopPlaceQuayAssociationService {
         Instant validFrom = Instant.now();
         Instant validTo =  null;
         Map<String, Set<String>> stopPlaces = stopPlaceRepository.listStopPlaceIdsAndQuayIds(validFrom, validTo);
-        System.out.println("a");
+
 
         String absolutePath = localExportPath + "/" + administrationSpaceName + "/" + stopPlaceAndQuayAssociationFilename;
 

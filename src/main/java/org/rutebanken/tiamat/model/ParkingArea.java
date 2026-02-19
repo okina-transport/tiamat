@@ -27,6 +27,9 @@ public class ParkingArea
 
     protected BigInteger totalCapacity;
 
+    @Column(name = "nb_bays_with_recharging")
+    protected BigInteger numberOfBaysWithRecharging;
+
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     protected ParkingProperties parkingProperties;
 
@@ -76,5 +79,13 @@ public class ParkingArea
 
     public void setBays(List<ParkingBay> bays) {
         this.bays = bays;
+    }
+
+    public BigInteger getNumberOfBaysWithRecharging() {
+        return numberOfBaysWithRecharging;
+    }
+
+    public void setNumberOfBaysWithRecharging(BigInteger numberOfBaysWithRecharging) {
+        this.numberOfBaysWithRecharging = numberOfBaysWithRecharging;
     }
 }

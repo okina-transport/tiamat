@@ -37,7 +37,11 @@ public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.P
 
         for (JAXBElement rest : netexParkingArea.getRest()) {
             if (rest.getName().getLocalPart().equals("TotalCapacity")) {
-                tiamatParkingArea.setTotalCapacity((BigInteger) netexParkingArea.getRest().get(0).getValue());
+                tiamatParkingArea.setTotalCapacity((BigInteger) rest.getValue());
+            }
+
+            if (rest.getName().getLocalPart().equals("NumberOfBaysWithRecharging")) {
+                tiamatParkingArea.setNumberOfBaysWithRecharging((BigInteger) rest.getValue());
             }
 
             if (rest.getName().getLocalPart().equals("bays")) {
@@ -56,6 +60,7 @@ public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.P
                     tiamatParkingArea.setBays(tiamatBays);
                 }
             }
+
         }
     }
 
@@ -98,6 +103,11 @@ public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.P
             typeOfPlaceRefRel.withTypeOfPlaceRef(typeOfPlaceRef);
             netexParkingArea.setPlaceTypes(typeOfPlaceRefRel);
         }
+
+        if (tiamatParkingArea.getNumberOfBaysWithRecharging() != null){
+            netexParkingArea.withRest(netexObjectFactory.createParkingArea_VersionStructureNumberOfBaysWithRecharging(tiamatParkingArea.getNumberOfBaysWithRecharging()));
+        }
+
 
     }
 }

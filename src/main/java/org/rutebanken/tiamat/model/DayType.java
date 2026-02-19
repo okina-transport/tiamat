@@ -1,14 +1,17 @@
 package org.rutebanken.tiamat.model;
 
 import jakarta.persistence.*;
+
 import java.util.HashSet;
 import java.util.Set;
+
 
 @Entity
 public class DayType extends EntityInVersionStructure{
 
     @Enumerated(EnumType.STRING)
     private DayOfWeekEnumeration dayOfWeek;
+
 
     @OneToMany(cascade = CascadeType.ALL)
     private Set<TimeBand> timeBand = new HashSet<>();

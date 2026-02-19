@@ -77,7 +77,7 @@ class NetexExportSummaryMapperTest {
         assertThat(result).isNotNull().isNotEmpty().hasSize(2);
         assertThat(result).extracting("userName").containsExactlyInAnyOrder(input.getUserName(), input2.getUserName());
         assertThat(result).extracting("fileName").containsExactlyInAnyOrder(input.getFileName(), input2.getFileName());
-        assertThat(result).extracting("creationDate").containsExactlyInAnyOrder(input.getStarted(), input2.getStarted());
+        assertThat(result).extracting("started").containsExactlyInAnyOrder(input.getStarted(), input2.getStarted());
     }
 
 

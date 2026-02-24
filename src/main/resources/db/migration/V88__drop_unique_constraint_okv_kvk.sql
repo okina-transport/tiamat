@@ -1,0 +1,1 @@
+ALTER TABLE organisation_key_values DROP CONSTRAINT IF EXISTS organisation_key_values_key_values_key_key;

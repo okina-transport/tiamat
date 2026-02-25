@@ -128,7 +128,7 @@ public class StationInformationMapper {
         } else if (CollectionUtils.isNotEmpty(gbfsStation.getVehicleDocksCapacity())) {
             return BigInteger.valueOf(gbfsStation.getVehicleDocksCapacity().stream().mapToInt(GBFSVehicleDocksCapacity::getCount).sum());
         }
-        return null;
+        return BigInteger.ZERO;
     }
 
     private static @Nullable EmbeddableMultilingualString toShortName(GBFSStation gbfsStation) {

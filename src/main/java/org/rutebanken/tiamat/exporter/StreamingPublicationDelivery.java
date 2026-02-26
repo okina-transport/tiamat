@@ -809,9 +809,7 @@ public class StreamingPublicationDelivery {
                     }
                     completeParkingUrl(np, organisation);
                     np.setBookingUrl(organisation.getPurchaseUrl());
-                    if (tp.getInsee() != null) {
-                        np.setId("FR:" + tp.getInsee() + ":Parking:" + tp.getNetexId().replace("MOBIITI:PARKING:", "") + ":LOC");
-                    }
+                    np.setId(tp.getNetexId());
                 }
                 if (CollectionUtils.isNotEmpty(tp.getTransportTypes())) {
                     TransportTypeRefs_RelStructure transportTypeRefs = netexObjectFactory.createTransportTypeRefs_RelStructure();

@@ -5,6 +5,7 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
+import org.apache.commons.collections4.CollectionUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
@@ -434,7 +435,7 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
                 }
             }
         }
-        List<PointOfInterest> copiedItems = createCopyAndFillImportedIdsFromMDM(pointsOfInterest);
+        List<PointOfInterest> copiedItems = createCopyAndFillImportedIdsFromMDM(pointsOfInterests);
         return new PageImpl<>(copiedItems, pageable, copiedItems.size());
     }
 

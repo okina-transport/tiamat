@@ -20,6 +20,8 @@ package org.rutebanken.tiamat.rest.exception;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static jakarta.ws.rs.core.Response.Status.*;
 
@@ -29,11 +31,15 @@ import static org.rutebanken.tiamat.rest.exception.TiamatBusinessException.TRANS
 public class TiamatBusinessExceptionMapper implements ExceptionMapper<TiamatBusinessException> {
 
 
+    private static final Logger log = LoggerFactory.getLogger(TiamatBusinessExceptionMapper.class);
+
     public TiamatBusinessExceptionMapper() {
     }
 
 
     public Response toResponse(TiamatBusinessException ex) {
+        log.error("Exception caught", ex);
+
         int errorCode = ex.getCode();
         Response.Status status = mapBusinessCodeToHttpCode(errorCode);
         return Response.status(status)

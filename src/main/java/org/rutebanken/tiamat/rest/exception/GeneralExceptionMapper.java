@@ -19,6 +19,8 @@ import com.google.common.collect.Sets;
 import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.tiamat.config.Messages;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.NestedRuntimeException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
@@ -42,6 +44,7 @@ import java.util.Set;
 @Component
 public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
 
+    private static final Logger log = LoggerFactory.getLogger(GeneralExceptionMapper.class);
     private final Messages messages;
     private final Map<Response.Status, Set<Class<?>>> mapping;
 
@@ -58,6 +61,8 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
 
     @Override
     public Response toResponse(Exception ex) {
+        log.error("Exception caught", ex);
+
         Throwable rootCause = getRootCause(ex);
         int status = toStatus(rootCause);
         var entity = toErrorResponseEntity(rootCause, status);

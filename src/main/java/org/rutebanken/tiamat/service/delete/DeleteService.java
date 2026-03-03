@@ -1,15 +1,12 @@
 package org.rutebanken.tiamat.service.delete;
 
-import org.rutebanken.tiamat.repository.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import java.math.BigInteger;
 
 @Service
 public class DeleteService {
@@ -23,19 +20,19 @@ public class DeleteService {
     public void deleteAllPoi() {
         try {
             // Deleting value_items from point_of_interest_key_values if exists...
-            BigInteger countKeyValuesPoi = (BigInteger) entityManager.createNativeQuery("SELECT COUNT(*) FROM point_of_interest_key_values")
-                    .getSingleResult();
+            Long countKeyValuesPoi = ((Long) entityManager.createNativeQuery("SELECT COUNT(*) FROM point_of_interest_key_values")
+                    .getSingleResult());
 
-            if (countKeyValuesPoi.compareTo(BigInteger.ZERO) > 0) {
+            if (countKeyValuesPoi > 0) {
                 entityManager.createNativeQuery("DELETE FROM value_items WHERE value_id IN (SELECT key_values_id FROM point_of_interest_key_values)")
                         .executeUpdate();
             }
 
             // Deleting value_items from point_of_interest_classification_key_values if exists...
-            BigInteger countKeyValuesClassification = (BigInteger) entityManager.createNativeQuery("SELECT COUNT(*) FROM point_of_interest_classification_key_values")
-                    .getSingleResult();
+            Long countKeyValuesClassification = ((Long) entityManager.createNativeQuery("SELECT COUNT(*) FROM point_of_interest_classification_key_values")
+                    .getSingleResult());
 
-            if (countKeyValuesClassification.compareTo(BigInteger.ZERO) > 0) {
+            if (countKeyValuesClassification > 0) {
                 entityManager.createNativeQuery("DELETE FROM value_items WHERE value_id IN (SELECT key_values_id FROM point_of_interest_classification_key_values)")
                         .executeUpdate();
             }

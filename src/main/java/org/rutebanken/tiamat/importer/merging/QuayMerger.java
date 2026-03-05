@@ -226,7 +226,7 @@ public class QuayMerger {
             accessibilityUpdated = updateAccessibility(alreadyAdded, incomingQuay);
         }
 
-        keyValueExternalRefUpdated = keyValueListAppender.appendKeyValue(NetexIdMapper.EXTERNAL_REF, incomingQuay, alreadyAdded);
+        keyValueExternalRefUpdated = keyValueListAppender.appendKeyValueExternalRef(NetexIdMapper.EXTERNAL_REF, incomingQuay, alreadyAdded);
 
         keyValueFareZoneUpdated = keyValueListAppender.appendKeyValue(NetexIdMapper.FARE_ZONE, incomingQuay, alreadyAdded);
 

@@ -227,6 +227,7 @@ public class NetexMapper {
 
         mapperFactory.classMap(PostalAddress.class, org.rutebanken.tiamat.model.PostalAddress.class)
                 .exclude("id")
+                .exclude("version")
                 .customize(new PostalAddressMapper())
                 .byDefault()
                 .register();

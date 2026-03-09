@@ -1309,6 +1309,7 @@ public class StopPlaceRegisterGraphQLSchema {
 
         registerDataFetcher(codeRegistryBuilder,STOPPLACES_MUTATION,MUTATE_PARKING,parkingUpdater);
         registerDataFetcher(codeRegistryBuilder,STOPPLACES_MUTATION,MUTATE_STOPPLACE,stopPlaceUpdater);
+        registerDataFetcher(codeRegistryBuilder,STOPPLACES_MUTATION,MUTATE_POINT_OF_INTEREST,pointOfInterestUpdater);
         registerDataFetcher(codeRegistryBuilder,STOPPLACES_MUTATION,MUTATE_PARENT_STOPPLACE,stopPlaceUpdater);
         registerDataFetcher(codeRegistryBuilder,STOPPLACES_MUTATION,MUTATE_GROUP_OF_STOP_PLACES,groupOfStopPlacesUpdater);
         registerDataFetcher(codeRegistryBuilder,STOPPLACES_MUTATION,MUTATE_PATH_LINK,pathLinkUpdater);

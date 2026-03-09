@@ -15,7 +15,6 @@
 
 package org.rutebanken.tiamat.rest.graphql.fetchers;
 
-import com.google.common.base.Preconditions;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import io.micrometer.core.instrument.util.StringUtils;
@@ -24,7 +23,9 @@ import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
-import org.rutebanken.tiamat.repository.*;
+import org.rutebanken.tiamat.repository.PointOfInterestClassificationRepository;
+import org.rutebanken.tiamat.repository.PointOfInterestFacilitySetRepository;
+import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.rest.graphql.mappers.GeometryMapper;
 import org.rutebanken.tiamat.rest.graphql.mappers.GroupOfEntitiesMapper;
 import org.rutebanken.tiamat.rest.graphql.mappers.ValidBetweenMapper;
@@ -35,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 import java.time.LocalTime;
 import java.util.*;
@@ -94,13 +94,18 @@ class PointOfInterestUpdater implements DataFetcher {
     private PointOfInterest createOrUpdatePointOfInterest(Map input){
         PointOfInterest updatedPointOfInterest;
         PointOfInterest existingVersion = null;
-        String netexId = (String) input.get(ID);
-        if (netexId != null) {
-            logger.info("Updating Point Of Interest {}", netexId);
-            existingVersion = pointOfInterestRepository.findFirstByNetexIdOrderByVersionDesc(netexId);
-            Preconditions.checkArgument(existingVersion != null, "Attempting to update Point of Interest [id = %s], but Point of Interest does not exist.", netexId);
-            updatedPointOfInterest = versionCreator.createCopy(existingVersion, PointOfInterest.class);
+        String id = (String) input.get(ID);
+        if (id != null) {
+            Optional<PointOfInterest> optionalPointOfInterest = pointOfInterestRepository.findById(Long.valueOf(id));
 
+            if (optionalPointOfInterest.isPresent()) {
+                existingVersion = optionalPointOfInterest.get();
+                updatedPointOfInterest = versionCreator.createCopy(existingVersion, PointOfInterest.class);
+            } else {
+                throw new IllegalArgumentException(
+                        String.format("Attempting to update Point of Interest [id = %s], but Point of Interest does not exist.", id)
+                );
+            }
         } else {
             logger.info("Creating new PointOfInterest");
             updatedPointOfInterest = new PointOfInterest();
@@ -115,7 +120,7 @@ class PointOfInterestUpdater implements DataFetcher {
 
             return updatedPointOfInterest;
         } else {
-            logger.info("No changes - Point Of Interest {} NOT updated", netexId);
+            logger.info("No changes - Point Of Interest [id = {}] NOT updated", id);
         }
         return existingVersion;
     }

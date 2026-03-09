@@ -17,7 +17,7 @@ package org.rutebanken.tiamat.repository;
 
 
 import com.google.common.collect.Sets;
-
+import jakarta.persistence.*;
 import org.hibernate.Hibernate;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
@@ -52,12 +52,6 @@ import org.springframework.data.util.Pair;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.EntityGraph;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
-import jakarta.persistence.TypedQuery;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -973,7 +967,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         queryWithParams.getSecond().forEach(nativeQuery::setParameter);
         long firstResult = exportParams.getStopPlaceSearch().getPageable().getOffset();
         nativeQuery.setFirstResult(Math.toIntExact(firstResult));
-        List<StopPlace> stopPlaces = nativeQuery.getResultList();
+        List<StopPlace> stopPlaces = nativeQuery.setMaxResults(100).getResultList();
         stopPlaces = keepLastVersions(stopPlaces, 10);
         return new PageImpl<>(stopPlaces, exportParams.getStopPlaceSearch().getPageable(), stopPlaces.size());
 

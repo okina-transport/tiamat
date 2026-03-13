@@ -2,26 +2,33 @@ package org.rutebanken.tiamat.service.parking;
 
 import jakarta.transaction.Transactional;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.rutebanken.tiamat.client.mdm.ParkingIdentifier;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.AccessibilityAssessment;
 import org.rutebanken.tiamat.model.AccessibilityLimitation;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.Organisation;
 import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.ParkingArea;
+import org.rutebanken.tiamat.model.ParkingCapacity;
 import org.rutebanken.tiamat.model.ParkingPaymentProcessEnumeration;
 import org.rutebanken.tiamat.model.ParkingProperties;
 import org.rutebanken.tiamat.model.ParkingVehicleEnumeration;
+import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.ParkingRepository;
-import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -30,61 +37,62 @@ import java.util.function.Supplier;
 @Transactional
 public class ParkingsImportedService {
 
+    private static final Logger log = LoggerFactory.getLogger(ParkingsImportedService.class);
     private final ParkingRepository parkingRepository;
     private final NetexIdMapper netexIdMapper;
     private final ParkingVersionedSaverService parkingVersionedSaverService;
-    private final VersionCreator versionCreator;
     private final OrganisationsImportedService organisationsImportedService;
-    private MdmService mdmService;
+    private final MdmService mdmService;
 
     @org.springframework.beans.factory.annotation.Value("${netex.validPrefix:MOBIITI}")
     String validNetexPrefix;
 
-    @Autowired
-    ParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, VersionCreator versionCreator, MdmService mdmService, OrganisationsImportedService organisationsImportedService) {
+    ParkingsImportedService(ParkingRepository parkingRepository,
+                            NetexIdMapper netexIdMapper,
+                            ParkingVersionedSaverService parkingVersionedSaverService,
+                            MdmService mdmService,
+                            OrganisationsImportedService organisationsImportedService) {
         this.parkingRepository = parkingRepository;
         this.netexIdMapper = netexIdMapper;
         this.parkingVersionedSaverService = parkingVersionedSaverService;
-        this.versionCreator = versionCreator;
         this.mdmService = mdmService;
         this.organisationsImportedService = organisationsImportedService;
     }
 
     public void createOrUpdateParkings(List<Parking> parkingsToSave) {
 
-        Parking updatedParking;
 
-        for (Parking parkingToSave : parkingsToSave) {
-            boolean founded = false;
+        for (Parking inputParking : parkingsToSave) {
+            boolean found = false;
+            Parking databaseParking = retrieveDatabaseParking(inputParking);
 
-            Parking parkingInBDD = retrieveParkingInBDD(parkingToSave);
-
-            if (parkingInBDD != null && parkingInBDD.getNetexId() != null) {
-                founded = true;
-                updatedParking = versionCreator.createCopy(parkingInBDD, Parking.class);
-
-                boolean isParkingUpdated = populateParking(parkingToSave, updatedParking);
+            if (databaseParking != null && databaseParking.getNetexId() != null) {
+                found = true;
+                boolean isParkingUpdated = populateParking(inputParking, databaseParking);
 
                 if (isParkingUpdated) {
-                    parkingVersionedSaverService.saveNewVersion(updatedParking);
+                    databaseParking.setVersion(databaseParking.getVersion()+1);
+                    parkingVersionedSaverService.saveNewVersion(databaseParking);
+                } else {
+                    log.warn("Skip parking {} update - no changes", databaseParking.getNetexId());
                 }
             }
 
-            if (!founded) {
-                netexIdMapper.moveOriginalIdToKeyValueList(parkingToSave, parkingToSave.getOriginalId());
-                netexIdMapper.moveOriginalNameToKeyValueList(parkingToSave, parkingToSave.getName().getValue());
+            if (!found) {
+                netexIdMapper.moveOriginalIdToKeyValueList(inputParking, inputParking.getOriginalId());
+                netexIdMapper.moveOriginalNameToKeyValueList(inputParking, inputParking.getName().getValue());
 
-                if (parkingToSave.getOrganisation() != null) {
-                    organisationsImportedService.createOrUpdateOrganisation(parkingToSave.getOrganisation());
+                if (inputParking.getOrganisation() != null) {
+                    organisationsImportedService.createOrUpdateOrganisation(inputParking.getOrganisation());
                 }
 
-                parkingToSave.setName(new EmbeddableMultilingualString(parkingToSave.getName().getValue()));
-                parkingVersionedSaverService.saveNewVersion(parkingToSave);
+                inputParking.setName(new EmbeddableMultilingualString(inputParking.getName().getValue()));
+                parkingVersionedSaverService.saveNewVersion(inputParking);
             }
         }
     }
 
-    private Parking retrieveParkingInBDD(Parking parking) {
+    private Parking retrieveDatabaseParking(Parking parking) {
         String importedId = CollectionUtils.isNotEmpty(parking.getOriginalIds()) ?
                 parking.getOriginalIds().iterator().next() : parking.getOriginalId();
         Optional<ParkingIdentifier> existingMdmId =
@@ -116,204 +124,291 @@ public class ParkingsImportedService {
         return Math.round(inputValue * 10000.0) / 10000.0;
     }
 
-    private boolean populateParking(Parking existingParking, Parking updatedParking) {
+    private boolean populateParking(Parking inputParking, Parking databaseParking) {
         boolean isUpdated = false;
-        if (existingParking.getName() != null) {
-            updatedParking.setName(existingParking.getName());
+        if (inputParking.getName() != null &&
+                !StringUtils.equals(inputParking.getName().getValue(), databaseParking.getName().getValue())) {
+            databaseParking.setName(inputParking.getName());
             isUpdated = true;
         }
 
-        if (existingParking.getValidBetween() != null) {
-            updatedParking.setValidBetween(existingParking.getValidBetween());
+        if (inputParking.getValidBetween() != null &&
+                !Objects.equals(inputParking.getValidBetween().getToDate(), databaseParking.getValidBetween().getToDate()) &&
+                !Objects.equals(inputParking.getValidBetween().getFromDate(), databaseParking.getValidBetween().getFromDate())) {
+            databaseParking.setValidBetween(inputParking.getValidBetween());
             isUpdated = true;
         }
 
-        if (existingParking.getCentroid() != null) {
-            updatedParking.setCentroid(existingParking.getCentroid());
+        if (inputParking.getCentroid() != null &&
+                inputParking.getCentroid().getX() != databaseParking.getCentroid().getX() &&
+                inputParking.getCentroid().getY() != databaseParking.getCentroid().getY()) {
+            databaseParking.setCentroid(inputParking.getCentroid());
             isUpdated = true;
         }
 
-        if (existingParking.getParentSiteRef() != null) {
-            updatedParking.setParentSiteRef(existingParking.getParentSiteRef());
+        if (inputParking.getParentSiteRef() != null &&
+                !StringUtils.equals(inputParking.getParentSiteRef().getRef(), databaseParking.getParentSiteRef().getRef())) {
+            databaseParking.setParentSiteRef(inputParking.getParentSiteRef());
             isUpdated = true;
         }
 
-        if (existingParking.getTotalCapacity() != null) {
-            updatedParking.setTotalCapacity(existingParking.getTotalCapacity());
+        if (inputParking.getTotalCapacity() != null &&
+                !inputParking.getTotalCapacity().equals(databaseParking.getTotalCapacity())) {
+            databaseParking.setTotalCapacity(inputParking.getTotalCapacity());
             isUpdated = true;
         }
 
-        if (existingParking.getPrincipalCapacity() != null) {
-            updatedParking.setPrincipalCapacity(existingParking.getPrincipalCapacity());
+        if (inputParking.getPrincipalCapacity() != null &&
+                !inputParking.getPrincipalCapacity().equals(databaseParking.getPrincipalCapacity())) {
+            databaseParking.setPrincipalCapacity(inputParking.getPrincipalCapacity());
             isUpdated = true;
         }
 
-        if (existingParking.getParkingType() != null) {
-            updatedParking.setParkingType(existingParking.getParkingType());
+        if (inputParking.getParkingType() != null &&
+                inputParking.getParkingType() != databaseParking.getParkingType()) {
+            databaseParking.setParkingType(inputParking.getParkingType());
         }
-        if (existingParking.getParkingVehicleTypes() != null) {
-            List<ParkingVehicleEnumeration> vehicleTypes = existingParking.getParkingVehicleTypes();
+        if (CollectionUtils.isNotEmpty(inputParking.getParkingVehicleTypes())
+                && CollectionUtils.isNotEmpty(databaseParking.getParkingVehicleTypes())
+                && !CollectionUtils.isEqualCollection(inputParking.getParkingVehicleTypes(), databaseParking.getParkingVehicleTypes())) {
+            List<ParkingVehicleEnumeration> vehicleTypes = inputParking.getParkingVehicleTypes();
 
-            updatedParking.getParkingVehicleTypes().clear();
-            updatedParking.getParkingVehicleTypes().addAll(vehicleTypes);
-
-            isUpdated = true;
-        }
-
-        if (existingParking.getParkingLayout() != null) {
-            updatedParking.setParkingLayout(existingParking.getParkingLayout());
-            isUpdated = true;
-        }
-
-        if (!Objects.equals(updatedParking.isOvernightParkingPermitted(), existingParking.isOvernightParkingPermitted())) {
-            updatedParking.setOvernightParkingPermitted(existingParking.isOvernightParkingPermitted());
-            isUpdated = true;
-        }
-
-        if (!Objects.equals(updatedParking.isRechargingAvailable(), existingParking.isRechargingAvailable())) {
-            updatedParking.setRechargingAvailable(existingParking.isRechargingAvailable());
-            isUpdated = true;
-        }
-
-        if (!Objects.equals(updatedParking.isCarpoolingAvailable(), existingParking.isCarpoolingAvailable())) {
-            updatedParking.setCarpoolingAvailable(existingParking.isRechargingAvailable());
-            isUpdated = true;
-        }
-
-        if (!Objects.equals(updatedParking.isCarsharingAvailable(), existingParking.isCarsharingAvailable())) {
-            updatedParking.setCarsharingAvailable(existingParking.isCarsharingAvailable());
-        }
-
-        if (!Objects.equals(updatedParking.isSecure(), existingParking.isSecure())) {
-            updatedParking.setSecure(existingParking.isSecure());
-        }
-
-        if (!Objects.equals(updatedParking.isRealTimeOccupancyAvailable(), existingParking.isRealTimeOccupancyAvailable())) {
-            updatedParking.setRealTimeOccupancyAvailable(existingParking.isRealTimeOccupancyAvailable());
-            isUpdated = true;
-        }
-
-        if (!Objects.equals(updatedParking.isFreeParkingOutOfHours(), existingParking.isFreeParkingOutOfHours())) {
-            updatedParking.setFreeParkingOutOfHours(existingParking.isFreeParkingOutOfHours());
-        }
-
-        if (existingParking.getParkingPaymentProcess() != null) {
-
-            List<ParkingPaymentProcessEnumeration> parkingPaymentProcessTypes = existingParking.getParkingPaymentProcess();
-
-            updatedParking.getParkingPaymentProcess().clear();
-            updatedParking.getParkingPaymentProcess().addAll(parkingPaymentProcessTypes);
+            databaseParking.getParkingVehicleTypes().clear();
+            databaseParking.getParkingVehicleTypes().addAll(vehicleTypes);
 
             isUpdated = true;
         }
 
-        if (existingParking.getParkingReservation() != null) {
-            updatedParking.setParkingReservation(existingParking.getParkingReservation());
+        if (inputParking.getParkingLayout() != null &&
+                inputParking.getParkingLayout() != databaseParking.getParkingLayout()) {
+            databaseParking.setParkingLayout(inputParking.getParkingLayout());
+            isUpdated = true;
         }
 
-        if (existingParking.getBookingUrl() != null) {
-            updatedParking.setBookingUrl(existingParking.getBookingUrl());
+        if (!Objects.equals(inputParking.isOvernightParkingPermitted(), databaseParking.isOvernightParkingPermitted())) {
+            databaseParking.setOvernightParkingPermitted(inputParking.isOvernightParkingPermitted());
+            isUpdated = true;
         }
 
-        if (existingParking.getParkingProperties() != null) {
-            List<ParkingProperties> parkingPropertiesList = existingParking.getParkingProperties();
-            int total_capacity = parkingPropertiesList.stream()
+        if (!Objects.equals(inputParking.isRechargingAvailable(), databaseParking.isRechargingAvailable())) {
+            databaseParking.setRechargingAvailable(inputParking.isRechargingAvailable());
+            isUpdated = true;
+        }
+
+        if (!Objects.equals(inputParking.isCarpoolingAvailable(), databaseParking.isCarpoolingAvailable())) {
+            databaseParking.setCarpoolingAvailable(inputParking.isCarpoolingAvailable());
+            isUpdated = true;
+        }
+
+        if (!Objects.equals(inputParking.isCarsharingAvailable(), databaseParking.isCarsharingAvailable())) {
+            databaseParking.setCarsharingAvailable(inputParking.isCarsharingAvailable());
+            isUpdated = true;
+        }
+
+        if (!Objects.equals(inputParking.isSecure(), databaseParking.isSecure())) {
+            databaseParking.setSecure(inputParking.isSecure());
+            isUpdated = true;
+        }
+
+        if (!Objects.equals(inputParking.isFreeParkingOutOfHours(), databaseParking.isFreeParkingOutOfHours())) {
+            databaseParking.setFreeParkingOutOfHours(inputParking.isFreeParkingOutOfHours());
+        }
+
+
+        if (!Objects.equals(inputParking.isRealTimeOccupancyAvailable(), databaseParking.isRealTimeOccupancyAvailable())) {
+            databaseParking.setRealTimeOccupancyAvailable(inputParking.isRealTimeOccupancyAvailable());
+            isUpdated = true;
+        }
+
+        if (!Objects.equals(inputParking.isFreeParkingOutOfHours(), databaseParking.isFreeParkingOutOfHours())) {
+            databaseParking.setFreeParkingOutOfHours(inputParking.isFreeParkingOutOfHours());
+            isUpdated = true;
+        }
+
+        if (CollectionUtils.isNotEmpty(inputParking.getParkingPaymentProcess())
+                && CollectionUtils.isNotEmpty(databaseParking.getParkingPaymentProcess())
+                && !CollectionUtils.isEqualCollection(inputParking.getParkingPaymentProcess(), databaseParking.getParkingPaymentProcess())) {
+            List<ParkingPaymentProcessEnumeration> parkingPaymentProcessTypes = inputParking.getParkingPaymentProcess();
+            databaseParking.getParkingPaymentProcess().clear();
+            databaseParking.getParkingPaymentProcess().addAll(parkingPaymentProcessTypes);
+            isUpdated = true;
+        }
+
+        if (inputParking.getParkingReservation() != null &&
+                inputParking.getParkingReservation() != databaseParking.getParkingReservation()) {
+            databaseParking.setParkingReservation(inputParking.getParkingReservation());
+            isUpdated = true;
+        }
+
+        if (inputParking.getBookingUrl() != null &&
+                !StringUtils.equals(inputParking.getBookingUrl(), databaseParking.getBookingUrl())) {
+            databaseParking.setBookingUrl(inputParking.getBookingUrl());
+            isUpdated = true;
+        }
+
+        if (isAnyParkingAreaChangeFromCsv(inputParking.getParkingAreas(), databaseParking.getParkingAreas())) {
+            databaseParking.getParkingAreas().clear();
+            databaseParking.getParkingAreas().addAll(inputParking.getParkingAreas());
+            isUpdated = true;
+        }
+
+        if (inputParking.getAccessibilityAssessment() != null &&
+               !inputParking.getAccessibilityAssessment().equals(databaseParking.getAccessibilityAssessment())) {
+
+            List<AccessibilityLimitation> limitations = inputParking.getAccessibilityAssessment().getLimitations();
+
+            AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
+            accessibilityAssessment.setMobilityImpairedAccess(inputParking.getAccessibilityAssessment().getMobilityImpairedAccess());
+
+            AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
+
+            Optional<AccessibilityLimitation> limitationFromCsv = limitations.stream().findFirst();
+            if (limitationFromCsv.isPresent()) {
+                accessibilityLimitation.setWheelchairAccess(limitationFromCsv.get().getWheelchairAccess());
+                accessibilityLimitation.setAudibleSignalsAvailable(limitationFromCsv.get().getAudibleSignalsAvailable());
+                accessibilityLimitation.setEscalatorFreeAccess(limitationFromCsv.get().getEscalatorFreeAccess());
+                accessibilityLimitation.setLiftFreeAccess(limitationFromCsv.get().getLiftFreeAccess());
+                accessibilityLimitation.setStepFreeAccess(limitationFromCsv.get().getStepFreeAccess());
+                accessibilityLimitation.setVisualSignsAvailable(limitationFromCsv.get().getVisualSignsAvailable());
+            }
+
+            accessibilityAssessment.setLimitations(List.of(accessibilityLimitation));
+
+            databaseParking.setAccessibilityAssessment(accessibilityAssessment);
+            isUpdated = true;
+        }
+
+        if (inputParking.getOperator() != null &&
+                !StringUtils.equals(inputParking.getOperator(), databaseParking.getOperator())) {
+            databaseParking.setOperator(inputParking.getOperator());
+            isUpdated = true;
+        }
+
+        if (inputParking.getDescription() != null &&
+                !StringUtils.equals(inputParking.getDescription().getValue(), databaseParking.getDescription().getValue())) {
+            databaseParking.setDescription(inputParking.getDescription());
+            isUpdated = true;
+        }
+
+        if (inputParking.getParkingLayout() != null &&
+                inputParking.getParkingLayout() != databaseParking.getParkingLayout()) {
+            databaseParking.setParkingLayout(inputParking.getParkingLayout());
+            isUpdated = true;
+        }
+
+        if (inputParking.getAddress() != null &&
+                !StringUtils.equals(inputParking.getAddress(), databaseParking.getAddress())) {
+            databaseParking.setAddress(inputParking.getAddress());
+            isUpdated = true;
+        }
+
+        if (anyParkingPropertyChangeFromCsv(inputParking.getParkingProperties(), databaseParking.getParkingProperties())) {
+            databaseParking.getParkingProperties().clear();
+            databaseParking.getParkingProperties().addAll(inputParking.getParkingProperties());
+            isUpdated = true;
+            int totalCapacity = inputParking.getParkingProperties().stream()
                     .map(ParkingProperties::getSpaces)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream)
                     .filter(space -> space.getNumberOfSpaces() != null)
                     .mapToInt(space -> space.getNumberOfSpaces().intValue())
                     .sum();
-            isUpdated = true;
-            updatedParking.getParkingProperties().clear();
-            updatedParking.getParkingProperties().addAll(parkingPropertiesList);
-            if (total_capacity > 0) {
-                updatedParking.setTotalCapacity(BigInteger.valueOf(total_capacity));
-            }
+            databaseParking.setTotalCapacity(BigInteger.valueOf(totalCapacity));
         }
 
-        if (existingParking.getParkingAreas() != null) {
-            updatedParking.getParkingAreas().clear();
-            updatedParking.getParkingAreas().addAll(existingParking.getParkingAreas());
-            isUpdated = true;
-        }
-
-        if (existingParking.getAccessibilityAssessment() != null) {
-
-            List<AccessibilityLimitation> limitations = existingParking.getAccessibilityAssessment().getLimitations();
-
-            AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
-            accessibilityAssessment.setMobilityImpairedAccess(existingParking.getAccessibilityAssessment().getMobilityImpairedAccess());
-
-            AccessibilityLimitation accessibilityLimitation = new AccessibilityLimitation();
-
-            accessibilityLimitation.setWheelchairAccess(limitations.stream().findFirst().get().getWheelchairAccess());
-            accessibilityLimitation.setAudibleSignalsAvailable(limitations.stream().findFirst().get().getAudibleSignalsAvailable());
-            accessibilityLimitation.setEscalatorFreeAccess(limitations.stream().findFirst().get().getEscalatorFreeAccess());
-            accessibilityLimitation.setLiftFreeAccess(limitations.stream().findFirst().get().getLiftFreeAccess());
-            accessibilityLimitation.setStepFreeAccess(limitations.stream().findFirst().get().getStepFreeAccess());
-            accessibilityLimitation.setVisualSignsAvailable(limitations.stream().findFirst().get().getVisualSignsAvailable());
-
-            accessibilityAssessment.setLimitations(List.of(accessibilityLimitation));
-
-            updatedParking.setAccessibilityAssessment(accessibilityAssessment);
-            isUpdated = true;
-
-        }
-
-        if (existingParking.getOperator() != null) {
-            updatedParking.setOperator(existingParking.getOperator());
-            isUpdated = true;
-        }
-
-        if (existingParking.getDescription() != null) {
-            updatedParking.setDescription(existingParking.getDescription());
-            isUpdated = true;
-        }
-
-        if (existingParking.getParkingLayout() != null) {
-            updatedParking.setParkingLayout(existingParking.getParkingLayout());
-            isUpdated = true;
-        }
-
-        if (existingParking.getAddress() != null) {
-            updatedParking.setAddress(existingParking.getAddress());
-            isUpdated = true;
-        }
-
-        if (existingParking.getParkingProperties() != null) {
-            for (int i = 0; i < existingParking.getParkingProperties().size(); i++) {
-                for (int j = 0; j < existingParking.getParkingProperties().get(i).getSpaces().size(); j++) {
-
-                    // Récupération des espaces des parkings pour existing et updated
-                    var existingSpace = existingParking.getParkingProperties().get(i).getSpaces().get(j);
-                    var updatedSpace = updatedParking.getParkingProperties().get(i).getSpaces().get(j);
-
-                    // Mise à jour des propriétés si nécessaire
-                    isUpdated |= updateIfDifferent(existingSpace::getNumberOfElectricBikesWithRechargePoint, updatedSpace::getNumberOfElectricBikesWithRechargePoint, existingSpace::setNumberOfElectricBikesWithRechargePoint);
-                    isUpdated |= updateIfDifferent(existingSpace::getNumberOfBikeSpaces, updatedSpace::getNumberOfBikeSpaces, existingSpace::setNumberOfBikeSpaces);
-                    isUpdated |= updateIfDifferent(existingSpace::getNumberOfTwoWheeledVehicle, updatedSpace::getNumberOfTwoWheeledVehicle, existingSpace::setNumberOfTwoWheeledVehicle);
-                }
-            }
-        }
-
-        if (existingParking.getOrganisation() != null) {
-            Organisation organisation = organisationsImportedService.createOrUpdateOrganisation(existingParking.getOrganisation());
-            updatedParking.setOrganisation(organisation);
+        if (inputParking.getOrganisation() != null &&
+                !inputParking.getOrganisation().equals(databaseParking.getOrganisation())) {
+            Organisation organisation = organisationsImportedService.createOrUpdateOrganisation(inputParking.getOrganisation());
+            databaseParking.setOrganisation(organisation);
             isUpdated = true;
         }
 
         return isUpdated;
     }
 
-    // Méthode générique pour comparer et mettre à jour une propriété si nécessaire
-    private boolean updateIfDifferent(Supplier<BigInteger> existingGetter, Supplier<BigInteger> updatedGetter, Consumer<BigInteger> setter) {
-        BigInteger existingValue = existingGetter.get();
-        BigInteger updatedValue = updatedGetter.get();
-        if (updatedValue != null && !updatedValue.equals(existingValue)) {
-            setter.accept(updatedValue);  // Met à jour existing avec la valeur de updated
+    private boolean anyParkingPropertyChangeFromCsv(List<ParkingProperties> input, List<ParkingProperties> database) {
+        if (CollectionUtils.isEmpty(input) && CollectionUtils.isEmpty(database)) {
+            return false;
+        }
+        if (input.size() != database.size()) {
             return true;
+        }
+
+        input.sort(Comparator.comparing(IdentifiedEntity::getNetexId));
+        database.sort(Comparator.comparing(IdentifiedEntity::getNetexId));
+        for (int i = 0; i < input.size(); i++) {
+            ParkingProperties parkingProperty = input.get(i);
+            ParkingProperties databaseParkingProperty = database.get(i);
+            if (!CollectionUtils.isEqualCollection(parkingProperty.getParkingUserTypes(), databaseParkingProperty.getParkingUserTypes())) {
+                return true;
+            }
+            if (!CollectionUtils.isEqualCollection(parkingProperty.getParkingVehicleTypes(), databaseParkingProperty.getParkingVehicleTypes())) {
+                return true;
+            }
+            if (isAnyParkingCapacityChangeFromCsv(parkingProperty.getSpaces(), databaseParkingProperty.getSpaces())) {
+                return true;
+            }
         }
         return false;
     }
+
+    private boolean isAnyParkingAreaChangeFromCsv(List<ParkingArea> input, List<ParkingArea> database) {
+        if (CollectionUtils.isEmpty(input) && CollectionUtils.isEmpty(database)) {
+            return false;
+        }
+        if (input.size() != database.size()) {
+            return true;
+        }
+
+        for (int i = 0; i < input.size(); i++) {
+            ParkingArea parkingArea = input.get(i);
+            ParkingArea databaseParkingArea = database.get(i);
+            if (!parkingArea.getMaximumHeight().equals(databaseParkingArea.getMaximumHeight())) {
+                return true;
+            }
+            if (parkingArea.getSpecificParkingAreaUsage() != databaseParkingArea.getSpecificParkingAreaUsage()) {
+                return true;
+            }
+            if (parkingArea.getName() != null && databaseParkingArea.getName() != null &&
+                    !parkingArea.getName().getValue().equals(databaseParkingArea.getName().getValue())) {
+                return true;
+            }
+            if (!parkingArea.getTotalCapacity().equals(databaseParkingArea.getTotalCapacity())) {
+                return true;
+            }
+            if (parkingArea.getPublicUse() != databaseParkingArea.getPublicUse()) {
+                return true;
+            }
+            if (isAnyParkingPropertyFromCsv(parkingArea.getParkingProperties(), databaseParkingArea.getParkingProperties())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isAnyParkingPropertyFromCsv(ParkingProperties inputParkingProperties, ParkingProperties databaseParkingProperties) {
+        if (inputParkingProperties == databaseParkingProperties) {
+            return false;
+        }
+        if (databaseParkingProperties == null) {
+            return true;
+        }
+        return isAnyParkingCapacityChangeFromCsv(inputParkingProperties.getSpaces(), databaseParkingProperties.getSpaces());
+    }
+
+    private boolean isAnyParkingCapacityChangeFromCsv(List<ParkingCapacity> input, List<ParkingCapacity> database) {
+        if (CollectionUtils.isEmpty(input) && CollectionUtils.isEmpty(database)) {
+            return false;
+        }
+        if (input.size() != database.size()) {
+            return true;
+        }
+        ParkingCapacity inputCapacity = input.getFirst();
+        ParkingCapacity databaseCapacity = database.getFirst();
+        return inputCapacity.getParkingUserType() != databaseCapacity.getParkingUserType()
+                || inputCapacity.getParkingVehicleType() != databaseCapacity.getParkingVehicleType()
+                || (inputCapacity.getNumberOfSpaces() != null && databaseCapacity.getNumberOfSpaces() != null
+                    && !inputCapacity.getNumberOfSpaces().equals(databaseCapacity.getNumberOfSpaces()));
+    }
+
 }

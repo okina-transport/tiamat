@@ -1,7 +1,7 @@
 package org.rutebanken.tiamat.service.parking;
 
-import io.micrometer.core.instrument.util.StringUtils;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.client.mdm.ParkingIdentifier;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
@@ -84,8 +84,8 @@ public class BikeParkingsImportedService {
             String idOsm;
             if (osmKeyVals != null) {
                 List<String> idOsms = new ArrayList<>(osmKeyVals.getItems());
-                idOsm = idOsms.get(0);
-            return parkingRepository.findByIdLocAndOsm(idLocs.get(0), idOsm);
+                idOsm = idOsms.getFirst();
+            return parkingRepository.findByIdLocAndOsm(idLocs.getFirst(), idOsm);
             }
 
             return Optional.empty();
@@ -95,10 +95,10 @@ public class BikeParkingsImportedService {
             String idOsm = null;
             if (osmKeyVals != null) {
                 List<String> idOsms = new ArrayList<>(osmKeyVals.getItems());
-                idOsm = idOsms.get(0);
+                idOsm = idOsms.getFirst();
             }
 
-            return parkingRepository.findByIdLocAndOsm(idLocs.get(0), idOsm);
+            return parkingRepository.findByIdLocAndOsm(idLocs.getFirst(), idOsm);
         }
     }
 }

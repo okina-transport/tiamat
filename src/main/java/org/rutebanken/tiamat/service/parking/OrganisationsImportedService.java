@@ -47,7 +47,7 @@ public class OrganisationsImportedService {
         }
     }
 
-    private Optional<Organisation> findExistingOrganisation(Organisation organisation) {
+    public Optional<Organisation> findExistingOrganisation(Organisation organisation) {
         String importedId = CollectionUtils.isNotEmpty(organisation.getOriginalIds()) ? organisation.getOriginalIds().iterator().next() : organisation.getOriginalId();
         Optional<OkinaIdentifier> existingMdmId = mdmService.getExistingOrganisationMdmIdsFromImportedId(importedId);
         return existingMdmId.map(okinaIdentifier -> organisationRepository.findFirstByNetexIdOrderByVersionDesc(validNetexPrefix + ":Organisation:" + okinaIdentifier.getSuperId()));

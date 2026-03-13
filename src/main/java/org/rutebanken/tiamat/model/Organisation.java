@@ -1,6 +1,9 @@
 package org.rutebanken.tiamat.model;
 
 import jakarta.persistence.*;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
@@ -163,4 +166,50 @@ public class Organisation extends DataManagedObjectStructure {
     public void setId(Long id) {
         this.id = id;
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name,
+                shortName,
+                type,
+                operator,
+                organisationUrl,
+                purchaseUrl,
+                phoneNumber,
+                email,
+                androidStoreUri,
+                androidDiscoveryUri,
+                iosStoreUri,
+                iosDiscoveryUri,
+                language,
+                timezone);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        Organisation other = (Organisation) obj;
+        return new EqualsBuilder()
+                .append(name, other.name)
+                .append(shortName, other.shortName)
+                .append(operator, other.operator)
+                .append(organisationUrl, other.organisationUrl)
+                .append(purchaseUrl, other.purchaseUrl)
+                .append(phoneNumber, other.phoneNumber)
+                .append(email, other.email)
+                .append(androidStoreUri, other.androidStoreUri)
+                .append(androidStoreUri, other.androidStoreUri)
+                .append(androidDiscoveryUri, other.androidDiscoveryUri)
+                .append(iosStoreUri, other.iosStoreUri)
+                .append(iosDiscoveryUri, other.iosDiscoveryUri)
+                .append(language, other.language)
+                .append(timezone, other.timezone)
+                .isEquals();
+    }
+
 }

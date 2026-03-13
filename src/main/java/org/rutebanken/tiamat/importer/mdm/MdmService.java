@@ -201,7 +201,7 @@ public class MdmService {
         OkinaIdentifier okinaIdentifier = new OkinaIdentifier();
         okinaIdentifier.setOriginalId(incomingPointOfInterest.getOriginalIds().iterator().next());
         List<OkinaIdentifier> mdmData = mdmClient.generatePoiIdentifiers(List.of(okinaIdentifier));
-        Long superId = mdmData.get(0).getSuperId();
+        Long superId = mdmData.getFirst().getSuperId();
         incomingPointOfInterest.setNetexId(validNetexPrefix + ":PointOfInterest:" + superId);
         incomingPointOfInterest.getOriginalIds().clear();
     }
@@ -213,7 +213,7 @@ public class MdmService {
 
         ParkingIdentifier parkingIdentifier = buildParkingIdentifier(parking);
         List<ParkingIdentifier> mdmData = mdmClient.generateParkingIdentifiers(List.of(parkingIdentifier));
-        String superId = mdmData.get(0).getSuperId();
+        String superId = mdmData.getFirst().getSuperId();
         parking.setNetexId(superId);
     }
 
@@ -317,7 +317,7 @@ public class MdmService {
         OkinaIdentifier okinaId = new OkinaIdentifier();
         okinaId.setOriginalId(importedId);
         List<OkinaIdentifier> results = mdmClient.getPoiIdentifiersByOriginalId(List.of(okinaId));
-        return results != null && !results.isEmpty() ? results.get(0) : null;
+        return results != null && !results.isEmpty() ? results.getFirst() : null;
     }
 
     public Optional<ParkingIdentifier> getExistingParkingMdmIdsFromImportedId(String operator, String importedId) {
@@ -429,12 +429,12 @@ public class MdmService {
      */
     public void fillOriginalId(Parking parking) {
         List<ParkingIdentifier> mdmData = mdmClient.getParkingIdentifiers(List.of(parking.getNetexId()));
-        parking.getOriginalIds().add(mdmData.get(0).getOriginalId());
+        parking.getOriginalIds().add(mdmData.getFirst().getOriginalId());
     }
 
     public void fillPoiImportedIds(List<PointOfInterest> initializedPoi) {
         if (CollectionUtils.isNotEmpty(initializedPoi)) {
-            Map<Long, PointOfInterest> databasePoi = new HashMap<>(initializedPoi.size());
+            Map<Long, PointOfInterest> databasePoi = HashMap.newHashMap(initializedPoi.size());
             List<Long> identifiers = new ArrayList<>(initializedPoi.size());
             for (PointOfInterest poi : initializedPoi) {
                 Long identifierFromNetexId = getIdentifierFromNetexId(poi.getNetexId());
@@ -457,7 +457,7 @@ public class MdmService {
 
     public void fillParkingImportedIds(List<Parking> initializedParking) {
         if (CollectionUtils.isNotEmpty(initializedParking)) {
-            Map<String, Parking> databaseParking = new HashMap<>(initializedParking.size());
+            Map<String, Parking> databaseParking = HashMap.newHashMap(initializedParking.size());
             List<String> identifiers = new ArrayList<>(initializedParking.size());
             for (Parking parking : initializedParking) {
                 identifiers.add(parking.getNetexId());

@@ -29,7 +29,7 @@ public class ParkingsCSVHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(ParkingsCSVHelper.class);
     private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
-    private static final Pattern patternXlongYlat = Pattern.compile("^-?(\\d*)\\.\\d{1,20}");
+    private static final Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
     private static final List<String> EXPECTED_HEADERS = ParkingCsvHeader.headerNames();
 
     private ParkingsCSVHelper() {
@@ -42,8 +42,7 @@ public class ParkingsCSVHelper {
         List<AnalyzeImportError> rowErrors = new ArrayList<>();
 
         CSVParser parser = CSVHelper.getRecords(csvFile);
-        List<String> actualHeaders = parser.getHeaderNames();
-        CSVHelper.validateHeaders(EXPECTED_HEADERS, actualHeaders, "parking");
+        CSVHelper.validateHeaders(EXPECTED_HEADERS, parser.getHeaderNames(), "parking");
 
         for (CSVRecord csvRecord : parser) {
             if (csvRecord.size() != EXPECTED_HEADERS.size()) {

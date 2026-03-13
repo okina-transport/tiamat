@@ -25,7 +25,7 @@ public class ImportTADRessource {
     private static final Logger logger = LoggerFactory.getLogger(ImportTADRessource.class);
 
     @Autowired
-    TadCSVHelper tadHelper;
+    private TadCSVHelper tadHelper;
 
     @POST
     @Path("/tad_import_csv")
@@ -33,16 +33,16 @@ public class ImportTADRessource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response importTADFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
 
-        logger.info("Import TAD par " + user + " du fichier " + fileName);
+        logger.info("Import TAD par {} du fichier {}", user, fileName);
 
         List<DtoTadStop> dtoTads = tadHelper.parseDocument(inputStream);
         tadHelper.checkDuplicatedTads(dtoTads);
 
         try {
             tadHelper.persistTad(dtoTads);
-        }catch(Exception e){
+        } catch (Exception e){
             logger.error(e.getMessage(),e);
-            throw e;
+            return Response.status(500).build();
         }
 
         return Response.status(200).build();

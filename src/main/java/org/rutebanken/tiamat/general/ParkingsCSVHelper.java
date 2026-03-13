@@ -11,6 +11,9 @@ import org.rutebanken.tiamat.model.csv.ParkingCsvHeader;
 import org.rutebanken.tiamat.model.job.AnalyzeImportError;
 import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
 import org.rutebanken.tiamat.rest.dto.DtoParking;
+import org.rutebanken.tiamat.service.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,9 +28,13 @@ import java.util.stream.Collectors;
 
 public class ParkingsCSVHelper {
 
-    private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
-    private final static Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
+    private ParkingsCSVHelper() {
+        throw new IllegalStateException();
+    }
 
+    private static final Logger logger = LoggerFactory.getLogger(ParkingsCSVHelper.class);
+    private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
+    private static final Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
     private static final List<String> EXPECTED_HEADERS = ParkingCsvHeader.headerNames();
 
     public static List<DtoParking> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
@@ -364,6 +371,12 @@ public class ParkingsCSVHelper {
                 parking.getParkingProperties().stream()
                         .filter(pp -> CollectionUtils.isEmpty(pp.getParkingVehicleTypes()))
                         .forEach(pp -> pp.getParkingVehicleTypes().add(ParkingVehicleEnumeration.UNDEFINED));
+            }
+
+            if (StringUtils.isBlank(parking.getOperator())) {
+                parking.setOperator("technique");
+            } else {
+                logger.warn("Undefind parking operator for parking {}", parking.getOriginalId());
             }
 
             return parking;

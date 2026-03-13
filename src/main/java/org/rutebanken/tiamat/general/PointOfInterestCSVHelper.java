@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.general;
 
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -40,18 +41,18 @@ import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_
 public class PointOfInterestCSVHelper {
 
     public static final Logger logger = LoggerFactory.getLogger(PointOfInterestCSVHelper.class);
-    public final static String SHOP_CLASSIFICATION_NAME = "shop";
-    public final static String AMENITY_CLASSIFICATION_NAME = "amenity";
-    public final static String BUILDING_CLASSIFICATION_NAME = "building";
-    public final static String HISTORIC_CLASSIFICATION_NAME = "historic";
-    public final static String LANDUSE_CLASSIFICATION_NAME = "landuse";
-    public final static String LEISURE_CLASSIFICATION_NAME = "leisure";
-    public final static String TOURISM_CLASSIFICATION_NAME = "tourism";
-    public final static String OFFICE_CLASSIFICATION_NAME = "office";
+    public static final String SHOP_CLASSIFICATION_NAME = "shop";
+    public static final String AMENITY_CLASSIFICATION_NAME = "amenity";
+    public static final String BUILDING_CLASSIFICATION_NAME = "building";
+    public static final String HISTORIC_CLASSIFICATION_NAME = "historic";
+    public static final String LANDUSE_CLASSIFICATION_NAME = "landuse";
+    public static final String LEISURE_CLASSIFICATION_NAME = "leisure";
+    public static final String TOURISM_CLASSIFICATION_NAME = "tourism";
+    public static final String OFFICE_CLASSIFICATION_NAME = "office";
 
-    private final static Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
+    private static final Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
 
-    private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
+    private static final GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
 
     @Autowired
     private PointOfInterestClassificationRepository poiClassificationRepo;
@@ -81,10 +82,10 @@ public class PointOfInterestCSVHelper {
     private MdmService mdmService;
 
     //Cache to store parent classifications
-    private Map<String, PointOfInterestClassification> parentClassificationCache = new HashMap<>();
+    private final Map<String, PointOfInterestClassification> parentClassificationCache = new HashMap<>();
 
     //Cache to store child classifications
-    private Map<String, Map<String, PointOfInterestClassification>> childClassificationCache = new HashMap<>();
+    private final Map<String, Map<String, PointOfInterestClassification>> childClassificationCache = new HashMap<>();
 
 
     /**
@@ -176,7 +177,7 @@ public class PointOfInterestCSVHelper {
                 .map(poi -> poi.getId() + poi.getName())
                 .collect(Collectors.toList());
 
-        Set listWithoutDuplicatedValues = new HashSet(compositeKey);
+        Set<String> listWithoutDuplicatedValues = new HashSet<>(compositeKey);
 
         if (compositeKey.size() > listWithoutDuplicatedValues.size())
             throw new IllegalArgumentException("There are duplicated POI in your CSV File (With the same ID & Name)");
@@ -300,7 +301,7 @@ public class PointOfInterestCSVHelper {
         newPointOfInterest.setName(new EmbeddableMultilingualString(dtoPoiCSV.getName(), "FR"));
         newPointOfInterest.setCentroid(ImporterUtils.createPoint(Double.parseDouble(dtoPoiCSV.getLongitude()), Double.parseDouble(dtoPoiCSV.getLatitude())));
         try {
-            logger.info("Geocode data recovering for POI : " + dtoPoiCSV.getId());
+            logger.info("Geocode data recovering for POI : {}", dtoPoiCSV.getId());
             DtoGeocode geocodeData = ImporterUtils.getGeocodeDataByReverseGeocoding(Double.parseDouble(dtoPoiCSV.getLongitude()), Double.parseDouble(dtoPoiCSV.getLatitude()));
             newPointOfInterest.setInseeCode(geocodeData.getCityCode());
             newPointOfInterest.setPostalCode(StringUtils.isEmpty(dtoPoiCSV.getPostCode()) ? geocodeData.getPostCode() : dtoPoiCSV.getPostCode());
@@ -316,7 +317,7 @@ public class PointOfInterestCSVHelper {
                 newPointOfInterest.setAddress(geocodeData.getAddress());
             }
         } catch (Exception e) {
-            logger.error("Unable to get zip code for poi:" + dtoPoiCSV.getId());
+            logger.error("Unable to get zip code for poi: {}", dtoPoiCSV.getId());
         }
 
         PointOfInterestClassification classification = getChildClassification(dtoPoiCSV);
@@ -328,7 +329,7 @@ public class PointOfInterestCSVHelper {
             newPointOfInterest.setPointOfInterestFacilitySet(facilitySet);
         }
 
-        if (dtoPoiCSV.getTags().size() > 0) {
+        if (MapUtils.isNotEmpty(dtoPoiCSV.getTags())) {
             for (Map.Entry<String, String> tagEntry : dtoPoiCSV.getTags().entrySet()) {
                 newPointOfInterest.getOrCreateValues(tagEntry.getKey()).add(tagEntry.getValue());
             }

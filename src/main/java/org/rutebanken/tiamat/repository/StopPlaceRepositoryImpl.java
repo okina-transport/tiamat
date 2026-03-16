@@ -729,7 +729,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
     public List<StopPlace> getStopPlaceInitializedForExport(Set<Long> stopPlacePrimaryIds) {
 
-        Set<String> stopPlacePrimaryIdStrings = stopPlacePrimaryIds.stream().map(lvalue -> String.valueOf(lvalue)).collect(Collectors.toSet());
+        Set<String> stopPlacePrimaryIdStrings = stopPlacePrimaryIds.stream().map(String::valueOf).collect(Collectors.toSet());
         String joinedStopPlaceDbIds = String.join(",", stopPlacePrimaryIdStrings);
         StringBuilder sql = new StringBuilder("SELECT s FROM StopPlace s WHERE s.id IN(");
         sql.append(joinedStopPlaceDbIds);
@@ -1498,6 +1498,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
             Hibernate.initialize(stopPlace.getPlaceEquipments().getInstalledEquipment());
         }
 
+        stopPlace.getChildren().forEach(item -> Hibernate.initialize(item.getKeyValues()));
 
         stopPlace.getQuays().forEach(quay->{
             Hibernate.initialize(quay.getKeyValues());

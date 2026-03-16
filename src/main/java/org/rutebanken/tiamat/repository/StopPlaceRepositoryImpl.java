@@ -1511,6 +1511,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
             Hibernate.initialize(stopPlace.getPlaceEquipments().getInstalledEquipment());
         }
 
+        stopPlace.getChildren().forEach(item -> Hibernate.initialize(item.getKeyValues()));
 
         stopPlace.getQuays().forEach(quay->{
             Hibernate.initialize(quay.getKeyValues());

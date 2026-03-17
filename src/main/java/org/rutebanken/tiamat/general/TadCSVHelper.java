@@ -4,6 +4,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
+import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.rest.dto.DtoTadStop;
@@ -227,7 +228,7 @@ public class TadCSVHelper {
         StopPlace newStopPlace = new StopPlace();
 
         newStopPlace.setName(new EmbeddableMultilingualString(dtoTadCsv.getStopName(), "FR"));
-        newStopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(dtoTadCsv.getStopLon()), Double.parseDouble(dtoTadCsv.getStopLat()))));
+        newStopPlace.setCentroid(ImporterUtils.createPoint(Double.parseDouble(dtoTadCsv.getStopLon()), Double.parseDouble(dtoTadCsv.getStopLat())));
         newStopPlace.getKeyValues().put("zonalStopPlace", new Value("yes"));
         newStopPlace.getKeyValues().put(ORIGINAL_ID_KEY, new Value(createStopPlaceImportedId(dtoTadCsv.getStopId())));
         if(StringUtils.hasLength(dtoTadCsv.getZoneId()))
@@ -248,7 +249,7 @@ public class TadCSVHelper {
         Quay newQuay = new Quay();
         newQuay.getOrCreateValues(ORIGINAL_ID_KEY).add(dtoTadCsv.getStopId());
         newQuay.setName(new EmbeddableMultilingualString(dtoTadCsv.getStopName(), "FR"));
-        newQuay.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(dtoTadCsv.getStopLon()), Double.parseDouble(dtoTadCsv.getStopLat()))));
+        newQuay.setCentroid(ImporterUtils.createPoint(new Coordinate(Double.parseDouble(dtoTadCsv.getStopLon()), Double.parseDouble(dtoTadCsv.getStopLat()))));
         newQuay.getKeyValues().put("zonalStopPlace", new Value("yes"));
         newQuay.getKeyValues().put(ORIGINAL_ID_KEY, new Value(createQuayImportedId(dtoTadCsv.getStopId())));
         if(StringUtils.hasLength(dtoTadCsv.getZoneId()))

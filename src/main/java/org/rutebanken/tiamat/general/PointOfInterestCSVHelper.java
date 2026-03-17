@@ -277,7 +277,7 @@ public class PointOfInterestCSVHelper {
         PointOfInterest newPointOfInterest = new PointOfInterest();
         newPointOfInterest.getOrCreateValues(ORIGINAL_ID_KEY).add(dtoPoiCSV.getId());
         newPointOfInterest.setName(new EmbeddableMultilingualString(dtoPoiCSV.getName(), "FR"));
-        newPointOfInterest.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(dtoPoiCSV.getLongitude()), Double.parseDouble(dtoPoiCSV.getLatitude()))));
+        newPointOfInterest.setCentroid(ImporterUtils.createPoint(Double.parseDouble(dtoPoiCSV.getLongitude()), Double.parseDouble(dtoPoiCSV.getLatitude())));
         try {
             logger.info("Geocode data recovering for POI : " + dtoPoiCSV.getId());
             DtoGeocode geocodeData = ImporterUtils.getGeocodeDataByReverseGeocoding(Double.parseDouble(dtoPoiCSV.getLongitude()), Double.parseDouble(dtoPoiCSV.getLatitude()));

@@ -19,6 +19,7 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
+import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -52,12 +53,12 @@ public class GeometryMapper {
             if ("Point".equals(map.get(TYPE))) {
                 if(map.get(COORDINATES) != null) {
                     final Coordinate coordinate = ((Coordinate[]) map.get(COORDINATES))[0];
-                    return geometryFactory.createPoint(coordinate);
+                    return ImporterUtils.createPoint(coordinate);
                 }
                 //todo: remove this block after all clients are updated
                 if (map.get(LEGACY_COORDINATES) != null) {
                     Coordinate[] coordinates = (Coordinate[]) map.get(LEGACY_COORDINATES);
-                    return geometryFactory.createPoint(coordinates[0]);
+                    return ImporterUtils.createPoint(coordinates[0]);
                 }
             }
         }

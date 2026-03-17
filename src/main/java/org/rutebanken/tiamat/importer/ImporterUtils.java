@@ -6,6 +6,9 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.rutebanken.tiamat.model.*;
 import org.slf4j.Logger;
@@ -28,6 +31,8 @@ public class ImporterUtils {
     private final static String OKINA_ENDPOINT = "https://api.adresse.okina.fr/reverse?lon=%s&lat=%s";
     private final static String DATA_GOUV_ENDPOINT = "https://api-adresse.data.gouv.fr/reverse/?lat=%s&lon=%s";
     private final static String GEO_API_GOUV_ENDPOINT = "https://geo.api.gouv.fr/communes?lat=%s&lon=%s&fields=nom,code,codesPostaux&format=json";
+
+    private static final GeometryFactory geometryFactory = new GeometryFactory();
 
     public static Optional<String> getInseeFromLatLng(double x, double y) {
         Optional<String> inseeOpt = getInseeFromOkinaAPI(x, y);
@@ -268,6 +273,16 @@ public class ImporterUtils {
 
         }
         return dtoGeocode;
+    }
+
+    public static org.locationtech.jts.geom.Point createPoint(double lon, double lat){
+        return createPoint(new Coordinate(lon, lat));
+    }
+
+    public static org.locationtech.jts.geom.Point createPoint(Coordinate coordinates){
+        Point point = geometryFactory.createPoint(coordinates);
+        point.setSRID(4326);
+        return point;
     }
 
 

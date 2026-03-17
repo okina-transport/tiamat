@@ -293,7 +293,7 @@ public class ParkingsCSVHelper {
             parkingProperties.getSpaces().add(totalCapacity);
 
             //Emplacement du parking
-            parking.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(parkingDto.getXlong()), Double.parseDouble(parkingDto.getYlat()))));
+            parking.setCentroid(ImporterUtils.createPoint(Double.parseDouble(parkingDto.getXlong()), Double.parseDouble(parkingDto.getYlat())));
 
 
             Optional<String> inseeOpt = ImporterUtils.getInseeFromLatLng(parking.getCentroid().getX(), parking.getCentroid().getY());

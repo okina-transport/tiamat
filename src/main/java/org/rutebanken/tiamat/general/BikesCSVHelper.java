@@ -137,7 +137,7 @@ public class BikesCSVHelper {
             }
 
             //Emplacement du parking
-            parking.setCentroid(geometryFactory.createPoint(new Coordinate(Double.parseDouble(bikeParkingDto.getXlong()), Double.parseDouble(bikeParkingDto.getYlat()))));
+            parking.setCentroid(ImporterUtils.createPoint(Double.parseDouble(bikeParkingDto.getXlong()), Double.parseDouble(bikeParkingDto.getYlat())));
 
 
             if (Boolean.parseBoolean(bikeParkingDto.getCouverture())) {

@@ -31,6 +31,7 @@ import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 import org.rutebanken.netex.model.LocationStructure;
 import org.rutebanken.netex.model.SimplePoint_VersionStructure;
+import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -126,10 +127,10 @@ public class SimplePointVersionStructureConverter extends BidirectionalConverter
             if(transformed == null) {
                 return null;
             } else {
-                return geometryFactory.createPoint(transformed);
+                return ImporterUtils.createPoint(transformed);
             }
         }
-        return geometryFactory.createPoint(coordinate);
+        return ImporterUtils.createPoint(coordinate);
     }
 
     private Coordinate transform(Coordinate source, String srsName) {

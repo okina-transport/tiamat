@@ -25,6 +25,7 @@ import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
+import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobStatus;
@@ -127,7 +128,7 @@ public class AsyncPublicationDeliveryExporterTest extends TiamatIntegrationTest 
             quay.setNetexId("NSR:Quay:" + i);
             quay.setName(new EmbeddableMultilingualString("Quay_" + i));
             quay.setPublicCode("quay" + i);
-            quay.setCentroid(geometryFactory.createPoint(new Coordinate(48, 2)));
+            quay.setCentroid(ImporterUtils.createPoint(48, 2));
             quay.setInseeCode("75000");
             Value qValue = new Value();
             qValue.getItems().add("TEST:Quay:"+i);

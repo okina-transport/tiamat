@@ -1090,6 +1090,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         List<Object[]> result = query.getResultList();
 
         List<DTOClusterMarker> clusterList = result.stream()
+                .filter(tab -> tab[0] != null && tab[1]!= null && tab[3] != null)
                 .map(DTOClusterMarker::new)
                 .collect(Collectors.toList());
 

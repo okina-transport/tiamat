@@ -1,0 +1,1 @@
+UPDATE parking SET centroid = ST_SetSRID(centroid, 4326) WHERE ST_SRID(centroid) = 0;

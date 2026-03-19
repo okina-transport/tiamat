@@ -147,7 +147,7 @@ public class AsyncPublicationDeliveryExporter {
                     nameSite = provider.getChouetteInfo().getNameNetexStop();
                 }
 
-                String fileNameWithoutExtention = (fileName != null && !fileName.isEmpty()) ? fileName : createFileNameWithoutExtention(idSite, nameSite, localDateTime,isPrefix);
+                String fileNameWithoutExtention = StringUtils.isNotBlank(fileName) ? fileName.replace(".zip", "") : createFileNameWithoutExtention(idSite, nameSite, localDateTime,isPrefix);
 
                 String nameFileZip = null;
                 try {

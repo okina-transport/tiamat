@@ -118,7 +118,7 @@ public class AsyncExportResource {
     @GET
     @Path("initiate")
     public Response asyncExport(@HeaderParam("RutebankenUser") String username, @HeaderParam("exportGeneratedMissingQuays") String exportGeneratedMissingQuayser, @BeanParam ExportParams exportParams,
-                                @HeaderParam("exportExternalIds") String exportExternalIds,  @HeaderParam("hasPostProcess") Boolean hasPostProcess,  @HeaderParam("EXPORT_FILE_NAME") String fileName) {
+                                @HeaderParam("exportExternalIds") String exportExternalIds,  @HeaderParam("hasPostProcess") Boolean hasPostProcess,  @HeaderParam("ExportFileName") String fileName) {
         Job job = asyncPublicationDeliveryExporter.startExportJob(username, Boolean.valueOf(exportGeneratedMissingQuayser), exportParams, Boolean.valueOf(exportExternalIds), hasPostProcess, fileName);
         return Response.ok(job).build();
     }

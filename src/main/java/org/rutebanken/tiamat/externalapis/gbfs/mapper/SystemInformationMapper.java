@@ -15,10 +15,10 @@ public class SystemInformationMapper {
             return organisation;
         }
         GBFSData data = si.getData();
-        String language = data.getLanguages().get(0);
+        String language = data.getLanguages().getFirst();
         organisation.setOriginalId(data.getSystemId());
         organisation.setLanguage(language);
-        organisation.setName(data.getName().get(0).getText());
+        organisation.setName(data.getName().getFirst().getText());
         if (CollectionUtils.isNotEmpty(data.getShortName())) {
             data.getShortName().stream()
                     .filter(sn -> language.equals(sn.getLanguage()))

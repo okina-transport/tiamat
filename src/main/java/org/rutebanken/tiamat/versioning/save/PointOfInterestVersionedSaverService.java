@@ -62,10 +62,6 @@ public class PointOfInterestVersionedSaverService {
             newVersion.setCreated(existing.getCreated());
             newVersion.setChanged(Instant.now());
             newVersion.setVersion(existing.getVersion());
-            poiRepository.delete(existing);
-            if (existing.getAccessibilityAssessment() != null) {
-                newVersion.setAccessibilityAssessment(existing.getAccessibilityAssessment());
-            }
         } else {
             newVersion.setCreated(Instant.now());
             mdmService.generateIdentifier(newVersion);

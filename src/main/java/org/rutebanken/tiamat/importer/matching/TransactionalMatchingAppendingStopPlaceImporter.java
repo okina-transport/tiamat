@@ -164,12 +164,8 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                     incomingStopPlace.importedIdAndNameToString(),
                     incomingStopPlace);
 
-            StopPlace newStopPlace = null;
-            try {
-                newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace, false, importParams.recomputeStopPlacesLocation, importParams.isNetex);
-            } catch (InterruptedException | ExecutionException e) {
-                logger.error("Problem while adding new stop place", e);
-            }
+            StopPlace newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace, false, importParams.recomputeStopPlacesLocation, importParams.isNetex);
+
             matchedStopPlaces.add(newStopPlace);
             stopPlacesCreatedOrUpdated.incrementAndGet();
 

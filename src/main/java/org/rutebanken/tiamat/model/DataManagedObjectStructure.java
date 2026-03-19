@@ -67,10 +67,7 @@ public abstract class DataManagedObjectStructure
     }
 
     public Set<String> getOrCreateValues(String key) {
-        if (keyValues.get(key) == null) {
-            keyValues.put(key, new Value());
-        }
-
+        keyValues.computeIfAbsent(key, k -> new Value());
         return keyValues.get(key).getItems();
     }
 

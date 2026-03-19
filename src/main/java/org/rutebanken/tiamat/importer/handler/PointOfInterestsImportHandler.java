@@ -15,20 +15,19 @@
 
 package org.rutebanken.tiamat.importer.handler;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.lock.FencedLock;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
+import org.rutebanken.tiamat.hazelcast.ExtendedHazelcastService;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImportType;
 import org.rutebanken.tiamat.importer.filter.ZoneTopographicPlaceFilter;
 import org.rutebanken.tiamat.importer.finder.PointOfInterestFromOriginalIdFinder;
 import org.rutebanken.tiamat.importer.initial.ParallelInitialPointOfInterestImporter;
-import org.rutebanken.tiamat.importer.merging.TransactionalMergingPointOfInterestssImporter;
+import org.rutebanken.tiamat.importer.merging.TransactionalMergingPointOfInterestsImporter;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
-import org.rutebanken.tiamat.repository.JobRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -48,25 +47,31 @@ public class PointOfInterestsImportHandler {
      */
     private static final String POI_IMPORT_LOCK_KEY = "STOP_PLACE_MERGING_IMPORT_LOCK_KEY";
 
-    @Autowired
-    private NetexMapper netexMapper;
+    private final NetexMapper netexMapper;
 
-    @Autowired
-    private ZoneTopographicPlaceFilter zoneTopographicPlaceFilter;
+    private final ZoneTopographicPlaceFilter zoneTopographicPlaceFilter;
 
-    @Autowired
-    private TransactionalMergingPointOfInterestssImporter transactionalMergingPointOfInterestssImporter;
+    private final TransactionalMergingPointOfInterestsImporter transactionalMergingPointOfInterestsImporter;
 
-    @Autowired
-    private ParallelInitialPointOfInterestImporter parallelInitialPointOfInterestImporter;
+    private final ParallelInitialPointOfInterestImporter parallelInitialPointOfInterestImporter;
 
-    @Autowired
-    private HazelcastInstance hazelcastInstance;
+    private final ExtendedHazelcastService hazelcastService;
 
-    @Autowired
-    private JobRepository jobRepository;
-    @Autowired
-    private PointOfInterestFromOriginalIdFinder pointOfInterestRepository;
+    private final PointOfInterestFromOriginalIdFinder pointOfInterestRepository;
+
+    public PointOfInterestsImportHandler(NetexMapper netexMapper,
+                                         ZoneTopographicPlaceFilter zoneTopographicPlaceFilter,
+                                         TransactionalMergingPointOfInterestsImporter transactionalMergingPointOfInterestsImporter,
+                                         ParallelInitialPointOfInterestImporter parallelInitialPointOfInterestImporter,
+                                         ExtendedHazelcastService hazelcastService,
+                                         PointOfInterestFromOriginalIdFinder pointOfInterestRepository) {
+        this.netexMapper = netexMapper;
+        this.zoneTopographicPlaceFilter = zoneTopographicPlaceFilter;
+        this.transactionalMergingPointOfInterestsImporter = transactionalMergingPointOfInterestsImporter;
+        this.parallelInitialPointOfInterestImporter = parallelInitialPointOfInterestImporter;
+        this.hazelcastService = hazelcastService;
+        this.pointOfInterestRepository = pointOfInterestRepository;
+    }
 
     public void handlePointOfInterests(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger poisCreatedOrUpdated, SiteFrame responseSiteframe, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {
         List<org.rutebanken.tiamat.model.PointOfInterest> tiamatPointOfInterests = netexMapper.mapPointsOfInterestToTiamatModel(netexSiteFrame.getPointsOfInterest().getPointOfInterest());
@@ -90,17 +95,19 @@ public class PointOfInterestsImportHandler {
         Collection<PointOfInterest> importedPointOfInterests;
 
         if (importParams.importType == null || importParams.importType.equals(ImportType.MERGE)) {
-            final FencedLock lock = hazelcastInstance.getCPSubsystem().getLock(POI_IMPORT_LOCK_KEY);
+            final FencedLock lock = hazelcastService.getHazelcastInstance().getCPSubsystem().getLock(POI_IMPORT_LOCK_KEY);
             lock.lock();
             try {
-                importedPointOfInterests = transactionalMergingPointOfInterestssImporter.importPointOfInterests(tiamatPointOfInterests, poisCreatedOrUpdated);
+                importedPointOfInterests = transactionalMergingPointOfInterestsImporter.importPointOfInterests(tiamatPointOfInterests, poisCreatedOrUpdated);
+            } catch (Exception e) {
+                throw new RuntimeException("Could not import point of interest", e);
             } finally {
                 lock.unlock();
             }
         } else if (importParams.importType.equals(ImportType.INITIAL)) {
             importedPointOfInterests = parallelInitialPointOfInterestImporter.importPointOfInterests(tiamatPointOfInterests, poisCreatedOrUpdated);
         } else {
-            logger.warn("Import type " + importParams.importType + " not implemented. Will not match point of interest.");
+            logger.warn("Import type {} not implemented. Will not match point of interest.", importParams.importType );
             importedPointOfInterests = new ArrayList<>(0);
         }
 
@@ -109,7 +116,7 @@ public class PointOfInterestsImportHandler {
                     new PointsOfInterestInFrame_RelStructure()
                             .withPointOfInterest(importedPointOfInterests));
         }
-        logger.info("Mapped {} point of interests!!", tiamatPointOfInterests.size());
+        logger.info("{} point of interests mapped", tiamatPointOfInterests.size());
     }
 
     private void setOperatorPoiForGeneralFrame(List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets, List<org.rutebanken.tiamat.model.PointOfInterest> tiamatPointOfInterests) {
@@ -120,16 +127,14 @@ public class PointOfInterestsImportHandler {
                 .collect(Collectors.toMap(GeneralOrganisation::getId, go -> go));
 
         tiamatPointOfInterests.forEach(poi -> {
-            // Ajouter la logique pour mapper l'opérateur
             String responsibilitySetRef = poi.getResponsibilitySetRef();
             if (responsibilitySetRef != null) {
                 ResponsibilitySet responsibilitySet = responsibilitySetMap.get(responsibilitySetRef);
                 if (responsibilitySet != null) {
-                    ResponsibilityRoleAssignment_VersionedChildStructure responsibilityRoleAssignment = responsibilitySet.getRoles().getResponsibilityRoleAssignment().get(0);
+                    ResponsibilityRoleAssignment_VersionedChildStructure responsibilityRoleAssignment = responsibilitySet.getRoles().getResponsibilityRoleAssignment().getFirst();
                     String organisationRef = responsibilityRoleAssignment.getResponsibleOrganisationRef().getRef();
                     GeneralOrganisation generalOrganisation = generalOrganisationMap.get(organisationRef);
                     if (generalOrganisation != null && generalOrganisation.getName() != null) {
-                        // Mettre à jour l'opérateur pour le point of interest
                         poi.setOperator(generalOrganisation.getName().getValue());
                     }
                 }
@@ -138,19 +143,18 @@ public class PointOfInterestsImportHandler {
     }
 
     private void parseToSynchronizeKeyValues(SiteFrame netexSiteFrame, List<org.rutebanken.tiamat.model.PointOfInterest> tiamatPointOfInterests) {
-        // Map Netex POIs by ID for quick access
         Map<String, PointOfInterest> netexPoiMap = netexSiteFrame.getPointsOfInterest().getPointOfInterest().stream()
                 .collect(Collectors.toMap(PointOfInterest::getId, Function.identity()));
 
-        // Process each Tiamat POI
         tiamatPointOfInterests.forEach(tiamatPoi -> {
             org.rutebanken.tiamat.model.PointOfInterest tiamat = pointOfInterestRepository.find(tiamatPoi);
 
-            // Check if there's a corresponding Netex POI
             if (tiamat != null && netexPoiMap.containsKey(tiamat.getNetexId())) {
                 PointOfInterest correspondingNetexPoi = netexPoiMap.get(tiamat.getNetexId());
                 correspondingNetexPoi.getKeyList().getKeyValue().forEach(entry -> {
-                    tiamatPoi.getOrCreateValues(entry.getKey()).add(entry.getValue());
+                    if (StringUtils.isNotBlank(entry.getValue())) {
+                        tiamatPoi.getOrCreateValues(entry.getKey()).add(entry.getValue());
+                    }
                 });
             }
         });

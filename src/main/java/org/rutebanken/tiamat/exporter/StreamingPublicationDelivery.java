@@ -871,7 +871,7 @@ public class StreamingPublicationDelivery {
                 listMembers.addAll(refToTypeOfPaymentMethod.values());
             }
 
-            logger.info("Adding {} typesOfParking in generalFrame");
+            logger.info("Adding typesOfParking in generalFrame");
         } else {
             logger.info("No parkings to export");
         }

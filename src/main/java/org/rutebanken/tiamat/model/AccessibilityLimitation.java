@@ -16,6 +16,8 @@
 package org.rutebanken.tiamat.model;
 
 import com.google.common.base.MoreObjects;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -41,6 +43,40 @@ public class AccessibilityLimitation
                 .add("audibleSignalsAvailable", audibleSignalsAvailable)
                 .add("visualSignsAvailable", visualSignsAvailable)
                 .toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+
+        AccessibilityLimitation accessibilityLimitation = (AccessibilityLimitation) obj;
+        return new EqualsBuilder()
+                .append(netexId, accessibilityLimitation.netexId)
+                .append(wheelchairAccess, accessibilityLimitation.wheelchairAccess)
+                .append(stepFreeAccess, accessibilityLimitation.stepFreeAccess)
+                .append(escalatorFreeAccess, accessibilityLimitation.escalatorFreeAccess)
+                .append(liftFreeAccess, accessibilityLimitation.liftFreeAccess)
+                .append(audibleSignalsAvailable, accessibilityLimitation.audibleSignalsAvailable)
+                .append(visualSignsAvailable, accessibilityLimitation.visualSignsAvailable)
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+                .append(netexId)
+                .append(wheelchairAccess)
+                .append(stepFreeAccess)
+                .append(escalatorFreeAccess)
+                .append(liftFreeAccess)
+                .append(audibleSignalsAvailable)
+                .append(visualSignsAvailable)
+                .toHashCode();
     }
 
 }

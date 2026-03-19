@@ -15,26 +15,28 @@
 
 package org.rutebanken.tiamat.importer.merging;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.collections4.SetUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.importer.finder.NearbyPointOfInterestFinder;
 import org.rutebanken.tiamat.importer.finder.PointOfInterestFromOriginalIdFinder;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
-import org.rutebanken.tiamat.versioning.VersionCreator;
-import org.rutebanken.tiamat.versioning.save.*;
+import org.rutebanken.tiamat.versioning.save.PointOfInterestVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Component
-@Qualifier("mergingPoiImporter")
 @Transactional
 public class MergingPointOfInterestImporter {
 
@@ -46,36 +48,24 @@ public class MergingPointOfInterestImporter {
 
     private final PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService;
 
-    private final PointOfInterestClassificationVersionedSaverService pointOfInterestClassificationVersionedSaverService;
-
     private final PointOfInterestFromOriginalIdFinder poiFromOriginalIdFinder;
 
     private final ReferenceResolver referenceResolver;
-
-    private final VersionCreator versionCreator;
-
-    private final MergingUtils mergingUtils;
 
     @Autowired
     public MergingPointOfInterestImporter(PointOfInterestFromOriginalIdFinder poiFromOriginalIdFinder,
                                           NearbyPointOfInterestFinder nearbyParkingFinder,
                                           ReferenceResolver referenceResolver,
                                           NetexMapper netexMapper,
-                                          PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService,
-                                          PointOfInterestClassificationVersionedSaverService pointOfInterestClassificationVersionedSaverService,
-                                          VersionCreator versionCreator,
-                                          MergingUtils mergingUtils) {
+                                          PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService) {
         this.poiFromOriginalIdFinder = poiFromOriginalIdFinder;
         this.nearbyPointOfInterestFinder = nearbyParkingFinder;
         this.referenceResolver = referenceResolver;
         this.netexMapper = netexMapper;
         this.pointOfInterestVersionedSaverService = pointOfInterestVersionedSaverService;
-        this.pointOfInterestClassificationVersionedSaverService = pointOfInterestClassificationVersionedSaverService;
-        this.versionCreator = versionCreator;
-        this.mergingUtils = mergingUtils;
     }
 
-    public org.rutebanken.netex.model.PointOfInterest importPointOfInterest(PointOfInterest pointOfInterest) throws InterruptedException, ExecutionException {
+    public org.rutebanken.netex.model.PointOfInterest importPointOfInterest(PointOfInterest pointOfInterest) {
 
         logger.debug("Transaction active: {}. Isolation level: {}", TransactionSynchronizationManager.isActualTransactionActive(), TransactionSynchronizationManager.getCurrentTransactionIsolationLevel());
 
@@ -87,14 +77,14 @@ public class MergingPointOfInterestImporter {
         return netexMapper.mapToNetexModel(importPOIWithoutNetexMapping(pointOfInterest));
     }
 
-    public PointOfInterest importPOIWithoutNetexMapping(PointOfInterest newPointOfInerest) throws InterruptedException, ExecutionException {
-        final PointOfInterest foundPointOfInterest = findNearbyOrExistingPointOfInterest(newPointOfInerest);
+    public PointOfInterest importPOIWithoutNetexMapping(PointOfInterest inputPointOfInterest) {
+        final PointOfInterest databasePointOfInterest = findNearbyOrExistingPointOfInterest(inputPointOfInterest);
 
         final PointOfInterest pointOfInterest;
-        if (foundPointOfInterest != null) {
-            pointOfInterest = handleAlreadyExistingPointOfInterest(foundPointOfInterest, newPointOfInerest);
+        if (databasePointOfInterest != null) {
+            pointOfInterest = handleAlreadyExistingPointOfInterest(databasePointOfInterest, inputPointOfInterest);
         } else {
-            pointOfInterest = handleCompletelyNewPointOfInterest(newPointOfInerest);
+            pointOfInterest = handleCompletelyNewPointOfInterest(inputPointOfInterest);
         }
 
         resolveAndFixParentSiteRef(pointOfInterest);
@@ -110,7 +100,7 @@ public class MergingPointOfInterestImporter {
     }
 
 
-    public PointOfInterest handleCompletelyNewPointOfInterest(PointOfInterest incomingPointOfInterest) throws ExecutionException {
+    public PointOfInterest handleCompletelyNewPointOfInterest(PointOfInterest incomingPointOfInterest) {
         logger.debug("New point of interest : {}. Setting version to \"1\"", incomingPointOfInterest.getName());
         incomingPointOfInterest = pointOfInterestVersionedSaverService.saveNewVersion(incomingPointOfInterest);
         return updateCache(incomingPointOfInterest);
@@ -119,42 +109,149 @@ public class MergingPointOfInterestImporter {
     public PointOfInterest handleAlreadyExistingPointOfInterest(PointOfInterest existingPointOfInterest, PointOfInterest incomingPointOfInterest) {
         logger.debug("Found existing poi {} from incoming {}", existingPointOfInterest, incomingPointOfInterest);
 
-        PointOfInterest copyPointOfInterest = versionCreator.createCopy(existingPointOfInterest, PointOfInterest.class);
-        String netexId = copyPointOfInterest.getNetexId();
+        boolean keyValuesChanged = isKeyValuesUpdated(existingPointOfInterest, incomingPointOfInterest);
 
-        boolean keyValuesChanged = mergingUtils.updateKeyValues(copyPointOfInterest, incomingPointOfInterest, netexId);
+        String oldName = existingPointOfInterest.getName() != null ? existingPointOfInterest.getName().getValue() : null;
+        String newName = incomingPointOfInterest.getName() != null ? incomingPointOfInterest.getName().getValue() : null;
+        boolean nameChanged = !Objects.equals(oldName, newName);
+        if (nameChanged) {
+            existingPointOfInterest.setName(incomingPointOfInterest.getName());
+        }
 
-        boolean nameChanged = mergingUtils.updateProperty(copyPointOfInterest.getName(), incomingPointOfInterest.getName(), copyPointOfInterest::setName, "name", netexId);
-        boolean centroidChanged = mergingUtils.updateProperty(copyPointOfInterest.getCentroid(), incomingPointOfInterest.getCentroid(), copyPointOfInterest::setCentroid, "centroid", netexId);
-        boolean allAreasWheelchairAccessibleChanged = mergingUtils.updateProperty(copyPointOfInterest.isAllAreasWheelchairAccessible(), incomingPointOfInterest.isAllAreasWheelchairAccessible(), copyPointOfInterest::setAllAreasWheelchairAccessible, "all areas wheelchair accessible", netexId);
-        boolean operatorChanged = mergingUtils.updateProperty(copyPointOfInterest.getOperator(), incomingPointOfInterest.getOperator(), copyPointOfInterest::setOperator, "operator", netexId);
+        boolean centroidChanged = !Objects.equals(
+                existingPointOfInterest.getCentroid(),
+                incomingPointOfInterest.getCentroid()
+        );
+        if (centroidChanged) {
+            existingPointOfInterest.setCentroid(incomingPointOfInterest.getCentroid());
+        }
 
-        boolean accessibilityAssessmentChanged = mergingUtils.updateAccessibilityAccessment(copyPointOfInterest, incomingPointOfInterest, netexId);
+        boolean allAreasWheelchairAccessibleChanged = !Objects.equals(existingPointOfInterest.isAllAreasWheelchairAccessible(), incomingPointOfInterest.isAllAreasWheelchairAccessible());
+        if (allAreasWheelchairAccessibleChanged) {
+            existingPointOfInterest.setAllAreasWheelchairAccessible(incomingPointOfInterest.isAllAreasWheelchairAccessible());
+        }
 
-        boolean classificationsChanged = false;
-        List<PointOfInterestClassification> pointOfInterestClassifications = new ArrayList<>();
-        if (incomingPointOfInterest.getClassifications() != null && (!new HashSet<>(copyPointOfInterest.getClassifications()).containsAll(incomingPointOfInterest.getClassifications()) ||
-                !new HashSet<>(incomingPointOfInterest.getClassifications()).containsAll(copyPointOfInterest.getClassifications()))) {
+        boolean operatorChanged = !StringUtils.equals(existingPointOfInterest.getOperator(), incomingPointOfInterest.getOperator());
+        if (operatorChanged) {
+            existingPointOfInterest.setOperator(incomingPointOfInterest.getOperator());
+        }
 
-            copyPointOfInterest.getClassifications().clear();
-            for (PointOfInterestClassification classification : incomingPointOfInterest.getClassifications()) {
-                pointOfInterestClassifications.add(pointOfInterestClassificationVersionedSaverService.saveNewVersion(classification));
-            }
-            copyPointOfInterest.getClassifications().addAll(pointOfInterestClassifications);
-            logger.info("Updated classification to {} for point of interest {}", copyPointOfInterest.getClassifications(), copyPointOfInterest);
-            classificationsChanged = true;
+        boolean accessibilityAssessmentChanged = isAccessibilityAssessmentUpdated(existingPointOfInterest, incomingPointOfInterest);
+
+        boolean classificationsChanged = !CollectionUtils.isEqualCollection(incomingPointOfInterest.getClassifications(),existingPointOfInterest.getClassifications());
+        if (classificationsChanged) {
+            existingPointOfInterest.setClassifications(incomingPointOfInterest.getClassifications());
+            logger.info("Updated classification to {} for point of interest {}", existingPointOfInterest.getClassifications(), existingPointOfInterest);
         }
 
         if (keyValuesChanged || nameChanged || centroidChanged || allAreasWheelchairAccessibleChanged || operatorChanged ||
                 accessibilityAssessmentChanged || classificationsChanged) {
-            logger.info("Updated existing point of interest {}. ", copyPointOfInterest);
-            copyPointOfInterest = pointOfInterestVersionedSaverService.saveNewVersion(copyPointOfInterest);
-            return updateCache(copyPointOfInterest);
+            logger.info("Updated existing point of interest {}. ", existingPointOfInterest);
+            existingPointOfInterest = pointOfInterestVersionedSaverService.saveNewVersion(existingPointOfInterest);
+            return updateCache(existingPointOfInterest);
         }
 
         logger.debug("No changes. Returning existing point of interest {}", existingPointOfInterest);
         return existingPointOfInterest;
 
+    }
+
+    private static boolean isKeyValuesUpdated(PointOfInterest existingPointOfInterest, PointOfInterest incomingPointOfInterest) {
+        boolean keyValuesChanged;
+        Map<String, Value> existingValueItems = existingPointOfInterest.getKeyValues();
+        Map<String, Value> inputValueItems = incomingPointOfInterest.getKeyValues();
+        boolean isEmptyExistingValueItems = MapUtils.isEmpty(existingValueItems);
+        boolean isEmptyInputValueItems = MapUtils.isEmpty(inputValueItems);
+        if (isEmptyExistingValueItems && isEmptyInputValueItems) {
+            keyValuesChanged = false;
+        } else if (isEmptyExistingValueItems || isEmptyInputValueItems) {
+            keyValuesChanged = true;
+            if (isEmptyExistingValueItems) {
+                existingValueItems.putAll(inputValueItems);
+            } else {
+                inputValueItems.clear();
+            }
+        } else {
+            boolean anyItemChanged = false;
+            for (Map.Entry<String, Value> keyValueItem: inputValueItems.entrySet()) {
+                String key = keyValueItem.getKey();
+                Value newValueItemList = keyValueItem.getValue();
+                if (existingValueItems.containsKey(key)) {
+                    Value existingValueItemList = existingValueItems.get(key);
+                    if (!SetUtils.isEqualSet(existingValueItemList.getItems(), newValueItemList.getItems())) {
+                        anyItemChanged = true;
+                        existingValueItems.put(key, newValueItemList);
+                    }
+                }
+            }
+            keyValuesChanged = anyItemChanged;
+        }
+        return keyValuesChanged;
+    }
+
+    private boolean isAccessibilityAssessmentUpdated(PointOfInterest existingPointOfInterest, PointOfInterest incomingPointOfInterest) {
+        AccessibilityAssessment existingAccessibilityAssessment = existingPointOfInterest.getAccessibilityAssessment();
+        AccessibilityAssessment inputAccessibilityAssessment = incomingPointOfInterest.getAccessibilityAssessment();
+        if (existingAccessibilityAssessment == null && inputAccessibilityAssessment == null) {
+            return false;
+        }
+        if (existingAccessibilityAssessment != null && inputAccessibilityAssessment == null) {
+            existingPointOfInterest.setAccessibilityAssessment(incomingPointOfInterest.getAccessibilityAssessment());
+            return true;
+        }
+        if (existingAccessibilityAssessment == null) {
+            existingPointOfInterest.setAccessibilityAssessment(inputAccessibilityAssessment);
+            return true;
+        }
+        boolean accessibilityAssessmentChanged = !Objects.equals(
+                existingAccessibilityAssessment.getMobilityImpairedAccess(),
+                inputAccessibilityAssessment.getMobilityImpairedAccess()
+        ) && !Objects.equals(existingAccessibilityAssessment.getNetexId(), inputAccessibilityAssessment.getNetexId());
+
+        if (accessibilityAssessmentChanged) {
+            existingPointOfInterest.setAccessibilityAssessment(incomingPointOfInterest.getAccessibilityAssessment());
+            existingAccessibilityAssessment.setVersion(existingPointOfInterest.getVersion() + 1);
+        }
+        if (isLimitationUpdated(existingAccessibilityAssessment.getLimitations(), inputAccessibilityAssessment.getLimitations())) {
+            existingAccessibilityAssessment.setLimitations(inputAccessibilityAssessment.getLimitations());
+            accessibilityAssessmentChanged = true;
+        }
+
+        return accessibilityAssessmentChanged;
+    }
+
+    private boolean isLimitationUpdated(List<AccessibilityLimitation> databaseLimitations, List<AccessibilityLimitation> inputLimitations) {
+        if (CollectionUtils.isEmpty(databaseLimitations) && CollectionUtils.isEmpty(inputLimitations)) {
+            return false;
+        }
+        if (CollectionUtils.isNotEmpty(databaseLimitations) && CollectionUtils.isEmpty(inputLimitations)) {
+            return true;
+        }
+        if (CollectionUtils.isEmpty(databaseLimitations)) {
+            return true;
+        }
+        if (databaseLimitations.size() != inputLimitations.size()) {
+            return true;
+        }
+        for (int i = 0; i < databaseLimitations.size(); i++) {
+            AccessibilityLimitation accessibilityLimitation = databaseLimitations.get(i);
+            AccessibilityLimitation newAcessibilityLimitation = inputLimitations.get(i);
+            if (StringUtils.isBlank(newAcessibilityLimitation.getNetexId())) {
+                newAcessibilityLimitation.setNetexId(accessibilityLimitation.getNetexId());
+            }
+            boolean updatedNetexId = !accessibilityLimitation.getNetexId().equals(newAcessibilityLimitation.getNetexId());
+            boolean updatedWheelchairAccess = accessibilityLimitation.getWheelchairAccess() != newAcessibilityLimitation.getWheelchairAccess();
+            boolean updatedStepFreeAccess = accessibilityLimitation.getStepFreeAccess() != newAcessibilityLimitation.getStepFreeAccess();
+            boolean updatedEscalatorFreeAccess = accessibilityLimitation.getEscalatorFreeAccess() != newAcessibilityLimitation.getEscalatorFreeAccess();
+            boolean updatedAudibleSignalsAvailable = accessibilityLimitation.getAudibleSignalsAvailable() != newAcessibilityLimitation.getAudibleSignalsAvailable();
+            boolean updatedVisualSignsAvailable = accessibilityLimitation.getVisualSignsAvailable() != newAcessibilityLimitation.getVisualSignsAvailable();
+            if (updatedNetexId || updatedWheelchairAccess || updatedStepFreeAccess || updatedEscalatorFreeAccess ||
+                    updatedAudibleSignalsAvailable || updatedVisualSignsAvailable
+            ) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private PointOfInterest updateCache(PointOfInterest pointOfInterest) {
@@ -174,7 +271,7 @@ public class MergingPointOfInterestImporter {
         if (newPointOfInterest.getName() != null) {
             final PointOfInterest nearbyPointOfInterest = nearbyPointOfInterestFinder.find(newPointOfInterest);
             if (nearbyPointOfInterest != null) {
-                logger.debug("Found nearby point of interest with name: {}, id: {}", nearbyPointOfInterest.getName(), nearbyPointOfInterest.getNetexId());
+                logger.debug("Found nearby point of interest with name: {}, id: {}", nearbyPointOfInterest.getName(), nearbyPointOfInterest.getNetexId());
                 return nearbyPointOfInterest;
             }
         }

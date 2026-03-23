@@ -3,7 +3,7 @@
 echo Building docker image
 
 VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g")
-IMAGE_NAME=registry.okina.fr/mobiiti/tiamat:"${VERSION}"
+IMAGE_NAME=registry.okina.fr/mobiiti/tiamat:"${VERSION}"-mdm
 
 echo "version:${VERSION}"
 echo "targetFile:target/tiamat-${VERSION}.jar"

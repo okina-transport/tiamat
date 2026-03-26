@@ -269,10 +269,12 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
             if (copy.getTariffZones() == null) {
                 copy.setTariffZones(new HashSet<>());
             }
+            List<TariffZoneRef> tariffZonesToAdd = new ArrayList<>();
+
             for (TariffZoneRef tariffZoneRef : incomingStopPlace.getTariffZones()) {
                 String netexId = tariffZoneRepository.findFirstByKeyValue(NetexIdMapper.FARE_ZONE, tariffZoneRef.getRef());
                 if (netexId == null) {
-                    copy.getTariffZones().add(tariffZoneRef);
+                    tariffZonesToAdd.add(tariffZoneRef);
                     tariffZoneChanged = true;
                 } else {
                     for (TariffZoneRef tariffZoneRefCopy : copy.getTariffZones()) {
@@ -280,12 +282,16 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                         for (String ref : tariffZone.getKeyValues().get(FARE_ZONE).getItems()) {
                             if (!ref.equals(tariffZoneRef.getRef())) {
                                 tariffZoneRef.setRef(netexId);
-                                copy.getTariffZones().add(tariffZoneRef);
+                                tariffZonesToAdd.add(tariffZoneRef);
                                 tariffZoneChanged = true;
                             }
                         }
                     }
                 }
+            }
+
+            if (!tariffZonesToAdd.isEmpty()) {
+                copy.getTariffZones().addAll(tariffZonesToAdd);
             }
         }
         return tariffZoneChanged;

@@ -119,7 +119,9 @@ public class MergingParkingImporter {
         }
         Parking importedParking = importParkingWithoutNetexMapping(parking);
         Parking copiedParking = versionCreator.createCopy(importedParking, Parking.class);
-        mdmService.fillOriginalId(copiedParking);
+        if (copiedParking != null) {
+            mdmService.fillOriginalId(copiedParking);
+        }
         return netexMapper.mapToNetexModel(copiedParking);
     }
 

@@ -42,7 +42,7 @@ public class NetexExportSummaryService {
                 providerFilter,
                 postProcessFilter);
 
-        Pageable pageable = PageRequest.of(0, size, Sort.by("started"));
+        Pageable pageable = PageRequest.of(0, size, Sort.by("started").descending());
         List<Job> jobs = jobRepository.findAll(combinedFilter, pageable).getContent();
         List<Job> jobsWithOperators = jobRepository.findJobsWithOperatorsFetching(
                 jobs.stream().map(Job::getId).toList()

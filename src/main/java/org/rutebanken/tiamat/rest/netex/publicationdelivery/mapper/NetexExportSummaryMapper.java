@@ -1,9 +1,9 @@
 package org.rutebanken.tiamat.rest.netex.publicationdelivery.mapper;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.DtoNetexExportSummary;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 
@@ -44,11 +44,7 @@ public class NetexExportSummaryMapper {
         dto.setExportParams(job.getExportParams());
         dto.setImportParams(job.getImportParams());
 
-        if (job.getLinks() != null) {
-            dto.setLinks(new ArrayList<>(job.getLinks()));
-        }
-
-        if (job.getOperators() != null) {
+        if (CollectionUtils.isNotEmpty(job.getOperators())) {
             dto.setOperators(new HashSet<>(job.getOperators()));
         }
 

@@ -69,7 +69,7 @@ public class Job {
     private ImportParams importParams;
 
     @Transient
-    private List<Link> links = new ArrayList<Link>();
+    private List<Link> links = new ArrayList<>();
 
     private String userName;
 

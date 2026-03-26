@@ -25,22 +25,14 @@ import jakarta.ws.rs.core.Response;
 import org.rutebanken.tiamat.exporter.AsyncPublicationDeliveryExporter;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.model.job.Job;
-import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobStatus;
-import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.repository.JobRepository;
-import org.rutebanken.tiamat.repository.JobSpecification;
-import org.rutebanken.tiamat.rest.netex.publicationdelivery.mapper.NetexExportSummaryMapper;
+import org.rutebanken.tiamat.service.export.NetexExportSummaryService;
 import org.rutebanken.tiamat.security.RolesChecker;
 import org.rutebanken.tiamat.service.stopplace.ExportFileSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -50,8 +42,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static org.rutebanken.tiamat.repository.JobSpecification.jobActionFilter;
-import static org.rutebanken.tiamat.repository.JobSpecification.jobTypeFilter;
 import static org.rutebanken.tiamat.rest.netex.publicationdelivery.AsyncExportResource.ASYNC_EXPORT_JOB_PATH;
 
 /**
@@ -66,14 +56,17 @@ public class AsyncExportResource {
     private static final Logger logger = LoggerFactory.getLogger(AsyncExportResource.class);
     private final AsyncPublicationDeliveryExporter asyncPublicationDeliveryExporter;
     private final JobRepository jobRepository;
-    private final NetexExportSummaryMapper netexExportSummaryMapper;
+    private final NetexExportSummaryService netexExportSummaryService;
     private final RolesChecker rolesChecker;
 
     @Autowired
-    public AsyncExportResource(AsyncPublicationDeliveryExporter asyncPublicationDeliveryExporter, JobRepository jobRepository, NetexExportSummaryMapper netexExportSummaryMapper, RolesChecker rolesChecker) {
+    public AsyncExportResource(AsyncPublicationDeliveryExporter asyncPublicationDeliveryExporter,
+                               JobRepository jobRepository,
+                               NetexExportSummaryService netexExportSummaryService,
+                               RolesChecker rolesChecker) {
         this.asyncPublicationDeliveryExporter = asyncPublicationDeliveryExporter;
         this.jobRepository = jobRepository;
-        this.netexExportSummaryMapper = netexExportSummaryMapper;
+        this.netexExportSummaryService = netexExportSummaryService;
         this.rolesChecker = rolesChecker;
     }
 
@@ -118,7 +111,7 @@ public class AsyncExportResource {
     @GET
     @Path("initiate")
     public Response asyncExport(@HeaderParam("RutebankenUser") String username, @HeaderParam("exportGeneratedMissingQuays") String exportGeneratedMissingQuayser, @BeanParam ExportParams exportParams,
-                                @HeaderParam("exportExternalIds") String exportExternalIds,  @HeaderParam("hasPostProcess") Boolean hasPostProcess,  @HeaderParam("ExportFileName") String fileName) {
+                                @HeaderParam("exportExternalIds") String exportExternalIds, @HeaderParam("hasPostProcess") Boolean hasPostProcess, @HeaderParam("ExportFileName") String fileName) {
         Job job = asyncPublicationDeliveryExporter.startExportJob(username, Boolean.valueOf(exportGeneratedMissingQuayser), exportParams, Boolean.valueOf(exportExternalIds), hasPostProcess, fileName);
         return Response.ok(job).build();
     }
@@ -128,7 +121,7 @@ public class AsyncExportResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("setPostProcessCompleted/{jobId}")
     @Transactional
-    public Response setPostProcessCompleted(@PathParam(value = "jobId") Long jobId){
+    public Response setPostProcessCompleted(@PathParam(value = "jobId") Long jobId) {
 
         Optional<Job> existingJobOpt = jobRepository.findById(jobId);
 
@@ -175,16 +168,7 @@ public class AsyncExportResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAllStopPlaceExports(@PathParam("providerName") String providerName, @HeaderParam("maxNbResults") Integer maxNbResults) {
         try {
-            Specification<Job> jobActionFilter = jobActionFilter(JobAction.EXPORT);
-            Specification<Job> jobTypeFilter = jobTypeFilter(JobType.NETEX_STOP_PLACE_QUAY);
-            Specification<Job> providerFilter = JobSpecification.providerFilter(providerName);
-            Specification<Job> postProcessFilter = JobSpecification.postProcessFilter();
-
-            Specification<Job> combinedFilter = Specification.where(jobActionFilter).and(jobTypeFilter).and(providerFilter).and(postProcessFilter);
-
-            Pageable pageable = PageRequest.of(0, maxNbResults, Sort.Direction.DESC, "started");
-            Page<Job> foundJobs = jobRepository.findAllWithOperators(combinedFilter, pageable);
-            return Response.ok(netexExportSummaryMapper.mapJobToExportSummary(foundJobs.toList())).build();
+            return Response.ok(netexExportSummaryService.getNetexStopExportSummary(providerName, maxNbResults)).build();
         } catch (Exception e) {
             logger.error("Error getting netex stop exports for provider {}", providerName, e);
         }
@@ -216,7 +200,7 @@ public class AsyncExportResource {
         if (rolesChecker.hasRole("downloadNetexStopPlaceAdmin") || rolesChecker.isInClientGroup(auth, providerName)) {
             File file = asyncPublicationDeliveryExporter.getJobFileContent(providerName, fileName);
             return Response.ok(file, MediaType.APPLICATION_OCTET_STREAM)
-                    .header("filename", file.getName() )
+                    .header("filename", file.getName())
                     .build();
         } else {
             logger.error("Forbidden access. provider: {}, filename:{}, user:{} ", providerName, fileName, auth.getPrincipal());

@@ -258,8 +258,8 @@ public class MergingParkingImporter {
         }
 
         boolean equipmentChanged = false;
-        List<InstalledEquipment_VersionStructure> copyEquipments = new ArrayList<>();
         if (incomingParking.getPlaceEquipments() != null &&
+                copyParking.getPlaceEquipments() != null &&
                 (!new HashSet<>(copyParking.getPlaceEquipments().getInstalledEquipment()).containsAll(incomingParking.getPlaceEquipments().getInstalledEquipment()) ||
                 !new HashSet<>(incomingParking.getPlaceEquipments().getInstalledEquipment()).containsAll(copyParking.getPlaceEquipments().getInstalledEquipment()))) {
 

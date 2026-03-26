@@ -1,12 +1,11 @@
 package org.rutebanken.tiamat.general;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
@@ -21,23 +20,25 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class BikesCSVHelper {
-
+    private static final Logger logger = LoggerFactory.getLogger(BikesCSVHelper.class);
     private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
     private static final Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
 
-    private final static String DATA_GOUV_ENDPOINT = "https://api-adresse.data.gouv.fr/reverse/?lat=%s&lon=%s";
-    private final static String GEO_API_GOUV_ENDPOINT = "https://geo.api.gouv.fr/communes?lat=%s&lon=%s&fields=nom,code,codesPostaux&format=json";
+    private static final String DATA_GOUV_ENDPOINT = "https://api-adresse.data.gouv.fr/reverse/?lat=%s&lon=%s";
+    private static final String GEO_API_GOUV_ENDPOINT = "https://geo.api.gouv.fr/communes?lat=%s&lon=%s&fields=nom,code,codesPostaux&format=json";
+    private static final String BOX_INDIVIDUEL_FERME = "BOX INDIVIDUEL FERME";
+    private static final String CONSIGNE_COLLECTIVE_FERMEE = "CONSIGNE COLLECTIVE FERMEE";
 
-    private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
-
-    private static final Logger logger = LoggerFactory.getLogger(BikesCSVHelper.class);
-
+    private BikesCSVHelper() {
+        throw new IllegalStateException();
+    }
 
     public static List<DtoBikeParking> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
 
@@ -100,7 +101,7 @@ public class BikesCSVHelper {
         List<String> key = bikeParkings.stream().map(DtoBikeParking::getIdLocal).collect(Collectors.toList());
         List<String> duplicates = foundDuplicates(key);
 
-        if (duplicates.size() > 0) {
+        if (CollectionUtils.isNotEmpty(duplicates)) {
             String duplicatesMsg = String.join(",", duplicates);
             throw new IllegalArgumentException("There are duplicated bike parkings in your CSV File 'With the same ID'. Duplicates:" + duplicatesMsg);
         }
@@ -155,15 +156,15 @@ public class BikesCSVHelper {
             parking.getParkingVehicleTypes().add(ParkingVehicleEnumeration.PEDAL_CYCLE);
 
             // Parking type ref
-            if ("CONSIGNE COLLECTIVE FERMEE".equals(bikeParkingDto.getProtection())) {
+            if (CONSIGNE_COLLECTIVE_FERMEE.equals(bikeParkingDto.getProtection())) {
                 parking.setTypeOfParkingRef("SecureBikeParking");
-            } else if ("BOX INDIVIDUEL FERME".equals(bikeParkingDto.getProtection())) {
+            } else if (BOX_INDIVIDUEL_FERME.equals(bikeParkingDto.getProtection())) {
                 parking.setTypeOfParkingRef("IndividualBox");
             } else {
                 parking.setTypeOfParkingRef("BikeParking");
             }
 
-            if (Boolean.parseBoolean(bikeParkingDto.getSurveillance()) || "CONSIGNE COLLECTIVE FERMEE".equals(bikeParkingDto.getProtection())) {
+            if (Boolean.parseBoolean(bikeParkingDto.getSurveillance()) || CONSIGNE_COLLECTIVE_FERMEE.equals(bikeParkingDto.getProtection())) {
                 parking.setSecure(true);
             }
 
@@ -188,23 +189,20 @@ public class BikesCSVHelper {
             cycleStorageEquipment.setNumberOfSpaces(BigInteger.valueOf(Long.parseLong(bikeParkingDto.getCapacite())));
 
             switch (bikeParkingDto.getMobilier()){
-                case "RACK DOUBLE ETAGE":
-                case "RATELIER":
+                case "RACK DOUBLE ETAGE", "RATELIER":
                     cycleStorageEquipment.setCycleStorageType(CycleStorageEnumeration.RACKS);
-                case "CROCHET":
-                case "SUPPORT GUIDON":
-                case "POTELET":
-                case "ARCEAU":
-                case "ARCEAU VELO GRANDE TAILLE":
+                    break;
+                case "CROCHET","SUPPORT GUIDON","POTELET","ARCEAU","ARCEAU VELO GRANDE TAILLE":
                     cycleStorageEquipment.setCycleStorageType(CycleStorageEnumeration.RAILINGS);
                     break;
-                case "AUCUN EQUIPEMENT":
-                case "AUTRE":
+                case "AUCUN EQUIPEMENT","AUTRE":
                     cycleStorageEquipment.setCycleStorageType(CycleStorageEnumeration.OTHER);
+                    break;
+                default:
                     break;
             }
 
-            if ("BOX INDIVIDUEL FERME".equals(bikeParkingDto.getProtection())) {
+            if (BOX_INDIVIDUEL_FERME.equals(bikeParkingDto.getProtection())) {
                 cycleStorageEquipment.setCage(true);
             }
             if (Boolean.parseBoolean(bikeParkingDto.getCouverture())) {
@@ -267,6 +265,12 @@ public class BikesCSVHelper {
             Set<String> importedId = parking.getOrCreateValues("imported-id");
             importedId.add(bikeParkingDto.getIdLocal());
 
+            if (StringUtils.isBlank(parking.getOperator())) {
+                parking.setOperator("technique");
+            } else {
+                logger.warn("Undefind parking operator for parking {}", parking.getOriginalId());
+            }
+
             return parking;
         }).collect(Collectors.toList());
     }
@@ -288,11 +292,11 @@ public class BikesCSVHelper {
 
     private static String buildBikeParkingName(DtoBikeParking bikeParkingDto, Boolean isRentalBike) {
         String type = "";
-        if (isRentalBike) {
+        if (BooleanUtils.isTrue(isRentalBike)) {
             type = "VLS";
-        } else if ("CONSIGNE COLLECTIVE FERMEE".equals(bikeParkingDto.getProtection())) {
+        } else if (CONSIGNE_COLLECTIVE_FERMEE.equals(bikeParkingDto.getProtection())) {
             type = "CONSIGNE VELO";
-        } else if ("BOX INDIVIDUEL FERME".equals(bikeParkingDto.getProtection())) {
+        } else if (BOX_INDIVIDUEL_FERME.equals(bikeParkingDto.getProtection())) {
             type = "BOX VELO";
         } else {
             type = "STATION VELO";
@@ -302,7 +306,7 @@ public class BikesCSVHelper {
         final String geoApiGouvUrl = String.format(GEO_API_GOUV_ENDPOINT, bikeParkingDto.getXlong(), bikeParkingDto.getYlat());
         RestTemplate restTemplate = new RestTemplate();
 
-        ResponseEntity response = null;
+        ResponseEntity<?> response = null;
         String city = "";
         String street = "";
 
@@ -331,21 +335,25 @@ public class BikesCSVHelper {
             }
         } catch (RestClientException | JSONException | IllegalArgumentException e) {
             logger.error("Error on parking name build", e);
-            logger.error("dataGouvUrl : " + dataGouvUrl);
-            logger.error("geoApiGouvUrl : " + geoApiGouvUrl);
+            logger.error("dataGouvUrl : {}", dataGouvUrl);
+            logger.error("geoApiGouvUrl : {}", geoApiGouvUrl);
             if (response != null && response.getBody() != null){
                 logger.error(response.getBody().toString());
             }
 
             StringBuilder sb = new StringBuilder();
-            sb.append("[" + type + "]");
+            sb.append("[");
+            sb.append(type);
+            sb.append("]");
 
             if (StringUtils.isNotEmpty(city)){
-                sb.append(", " + city);
+                sb.append(", ");
+                sb.append(city);
             }
 
             if (StringUtils.isNotEmpty(street)){
-                sb.append(", " + street);
+                sb.append(", ");
+                sb.append(street);
             }
             return sb.toString();
         }

@@ -781,7 +781,7 @@ public class StreamingPublicationDelivery {
                     np.setResponsibilitySetRef(responsibilitySet.getId());
                 }
                 org.rutebanken.tiamat.model.Organisation organisation = tp.getOrganisation();
-                if (organisation != null) {
+                if (organisation != null && organisation.getNetexId() != null) {
                     String organisationId = organisation.getNetexId();
                     GeneralOrganisation generalOrganisation = new GeneralOrganisation();
                     generalOrganisation.setId(organisationId);

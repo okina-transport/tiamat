@@ -71,6 +71,9 @@ public class StreamingPublicationDeliveryConfig {
     @Value("${syncNetexExport.validateAgainstSchema:true}")
     private boolean validateSyncExport;
 
+    @Value("${replace.imported.id.prefix.in.exports:false}")
+    private boolean replaceImportedId;
+
     @Bean("asyncStreamingPublicationDelivery")
     public StreamingPublicationDelivery asyncStreamingPublicationDelivery() throws IOException, SAXException {
         return createStreamingPublicationDelivery(validateAsyncExport);
@@ -84,6 +87,6 @@ public class StreamingPublicationDeliveryConfig {
     private StreamingPublicationDelivery createStreamingPublicationDelivery(boolean validate) throws IOException, SAXException {
         return new StreamingPublicationDelivery(stopPlaceRepository, parkingRepository, pointOfInterestRepository, pointOfInterestClassificationRepository, publicationDeliveryExporter,
                 tiamatSiteFrameExporter, tiamatGeneralFrameExporter, netexMapper, tariffZoneRepository, topographicPlaceRepository,
-                groupOfStopPlacesRepository, validate);
+                groupOfStopPlacesRepository, validate,replaceImportedId);
     }
 }

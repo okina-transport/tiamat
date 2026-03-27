@@ -97,6 +97,8 @@ public class StreamingPublicationDelivery {
      */
     private final boolean validateAgainstSchema;
 
+    private final boolean replaceImportedIdPrefix;
+
     @Autowired
     public StreamingPublicationDelivery(StopPlaceRepository stopPlaceRepository,
                                         ParkingRepository parkingRepository,
@@ -109,7 +111,7 @@ public class StreamingPublicationDelivery {
                                         TariffZoneRepository tariffZoneRepository,
                                         TopographicPlaceRepository topographicPlaceRepository,
                                         GroupOfStopPlacesRepository groupOfStopPlacesRepository,
-                                        @Value("${asyncNetexExport.validateAgainstSchema:false}") boolean validateAgainstSchema) throws IOException, SAXException {
+                                        @Value("${asyncNetexExport.validateAgainstSchema:false}") boolean validateAgainstSchema, @Value("${replace.imported.id.prefix.in.exports:false}")  boolean replaceImportedIdPrefix) throws IOException, SAXException {
         this.stopPlaceRepository = stopPlaceRepository;
         this.parkingRepository = parkingRepository;
         this.pointOfInterestRepository = pointOfInterestRepository;
@@ -122,6 +124,7 @@ public class StreamingPublicationDelivery {
         this.topographicPlaceRepository = topographicPlaceRepository;
         this.groupOfStopPlacesRepository = groupOfStopPlacesRepository;
         this.validateAgainstSchema = validateAgainstSchema;
+        this.replaceImportedIdPrefix = replaceImportedIdPrefix;
     }
 
     private static JAXBContext createContext(Class clazz) {
@@ -362,7 +365,7 @@ public class StreamingPublicationDelivery {
                         KeyValueStructure structure = iterator.next();
                         if (structure != null && ("imported-id".equals(structure.getKey()) || "fare-zone".equals(structure.getKey()) || "external-ref".equals(structure.getKey()))) {
                             structure.setValue(structure.getValue().replace("##3A##", ":"));
-                            if (StringUtils.isNotBlank(prefix) && structure.getValue().contains(":")) {
+                            if (StringUtils.isNotBlank(prefix) && structure.getValue().contains(":") && replaceImportedIdPrefix) {
                                 String oldString = structure.getValue().split(":")[0];
                                 structure.setValue(structure.getValue().replace(oldString, prefix));
                             }

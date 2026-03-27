@@ -71,7 +71,6 @@ public class ParkingsImportedService {
                 boolean isParkingUpdated = populateParking(inputParking, databaseParking);
 
                 if (isParkingUpdated) {
-                    databaseParking.setVersion(databaseParking.getVersion()+1);
                     parkingVersionedSaverService.saveNewVersion(databaseParking);
                 } else {
                     log.warn("Skip parking {} update - no changes", databaseParking.getNetexId());

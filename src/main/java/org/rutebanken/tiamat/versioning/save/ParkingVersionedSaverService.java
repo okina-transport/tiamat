@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.versioning.save;
 
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
@@ -23,6 +24,7 @@ import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
+import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.VersionIncrementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +62,9 @@ public class ParkingVersionedSaverService {
     private MdmService mdmService;
 
     @Autowired
+    private VersionCreator versionCreator;
+
+    @Autowired
     private ReflectionAuthorizationService reflectionAuthorizationService;
 
     public Parking saveNewVersion(Parking newVersion) {
@@ -67,53 +72,67 @@ public class ParkingVersionedSaverService {
 //        Preconditions.checkArgument(newVersion.getParentSiteRef() != null, "Parent site ref cannot be null for parking");
 
         Parking existing = parkingRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
-
-        if(newVersion.getParentSiteRef() != null){
+        Parking newVersionNotEqualsToExisting = versionCreator.createCopy(newVersion, Parking.class);
+        if (newVersion.getParentSiteRef() != null) {
             resolveAndAuthorizeParkingSiteRef(newVersion);
         }
 
         Parking result;
         if (existing != null) {
             logger.trace("existing: {}", existing);
-            logger.trace("new: {}", newVersion);
+            logger.trace("new: {}", newVersionNotEqualsToExisting);
 
             if(existing.getParentSiteRef() != null) {
                 resolveAndAuthorizeParkingSiteRef(existing);
             }
-            newVersion.setCreated(existing.getCreated());
-            newVersion.setChanged(Instant.now());
-            newVersion.setVersion(existing.getVersion());
+            newVersionNotEqualsToExisting.setCreated(existing.getCreated());
+            newVersionNotEqualsToExisting.setChanged(Instant.now());
+            newVersionNotEqualsToExisting.setVersion(existing.getVersion());
 
             parkingRepository.delete(existing);
+
         } else {
-            mdmService.generateIdentifier(newVersion);
-            newVersion.setCreated(Instant.now());
+            mdmService.generateIdentifier(newVersionNotEqualsToExisting);
+            newVersionNotEqualsToExisting.setCreated(Instant.now());
         }
 
 
-        newVersion.setValidBetween(null);
-        versionIncrementor.initiateOrIncrement(newVersion);
-        if (newVersion.getParkingAreas() != null) {
-            for (ParkingArea pa : newVersion.getParkingAreas()) {
+        newVersionNotEqualsToExisting.setValidBetween(null);
+        versionIncrementor.initiateOrIncrement(newVersionNotEqualsToExisting);
+        if (CollectionUtils.isNotEmpty(newVersionNotEqualsToExisting.getParkingAreas())) {
+            for (ParkingArea pa : newVersionNotEqualsToExisting.getParkingAreas()) {
                 versionIncrementor.initiateOrIncrement(pa);
             }
         }
 
-        if(newVersion.getEquipmentPlaces() != null) {
-            for (EquipmentPlace ep : newVersion.getEquipmentPlaces()) {
+        if (CollectionUtils.isNotEmpty(newVersionNotEqualsToExisting.getEquipmentPlaces())) {
+            for (EquipmentPlace ep : newVersionNotEqualsToExisting.getEquipmentPlaces()) {
                 versionIncrementor.initiateOrIncrement(ep);
             }
         }
 
-        newVersion.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
-        if (newVersion.getPostalAddress() != null){
-            newVersion.getPostalAddress().setId(null);
+        if (CollectionUtils.isNotEmpty(newVersionNotEqualsToExisting.getParkingProperties())) {
+            for (ParkingProperties parkingProperties : newVersionNotEqualsToExisting.getParkingProperties()) {
+                if (CollectionUtils.isNotEmpty(parkingProperties.getSpaces())) {
+                    for (ParkingCapacity parkingSpace : parkingProperties.getSpaces()) {
+                        versionIncrementor.initiateOrIncrement(parkingSpace);
+                    }
+                }
+                versionIncrementor.initiateOrIncrement(parkingProperties);
+            }
         }
-        result = parkingRepository.save(newVersion);
+
+
+
+        newVersionNotEqualsToExisting.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
+        if (newVersionNotEqualsToExisting.getPostalAddress() != null){
+            newVersionNotEqualsToExisting.getPostalAddress().setId(null);
+        }
+        result = parkingRepository.save(newVersionNotEqualsToExisting);
 
         logger.info("Saved parking {}, version {}, name {}", result.getNetexId(), result.getVersion(), result.getName());
 
-        metricsService.registerEntitySaved(newVersion.getClass());
+        metricsService.registerEntitySaved(newVersionNotEqualsToExisting.getClass());
         return result;
     }
 

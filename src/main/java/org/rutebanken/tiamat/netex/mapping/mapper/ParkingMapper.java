@@ -21,6 +21,7 @@ import ma.glasnost.orika.MappingContext;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
+import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
 import org.rutebanken.tiamat.model.TimeBand;
@@ -149,6 +150,9 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
             tiamatParking.setAvailabilityConditions(tiamatAvailabilityConditions);
         }
 
+        if (tiamatParking.getCentroid() == null) {
+            mapCentroidFromFirstVehicleEntranceMethodAtoB(netexParking, tiamatParking);
+        }
     }
 
     private void mapDayTypes(org.rutebanken.tiamat.model.AvailabilityCondition tiamatAvailCondition, AvailabilityCondition netexAvailCond) {
@@ -432,5 +436,46 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
         }
 
         netexParking.setVehicleEntrances(entrancesRel);
+    }
+
+    private static void mapCentroidFromFirstVehicleEntranceMethodAtoB(Parking netexParking,
+                                                            org.rutebanken.tiamat.model.Parking tiamatParking) {
+        if (netexParking == null || netexParking.getVehicleEntrances() == null) {
+            return;
+        }
+
+        List<Object> entrances = netexParking.getVehicleEntrances()
+                .getParkingEntranceForVehiclesRefOrParkingEntranceForVehicles();
+        if (entrances == null || entrances.isEmpty()) {
+            return;
+        }
+
+        Object firstObj = entrances.getFirst();
+        ParkingEntranceForVehicles firstEntrance = null;
+
+        if (firstObj instanceof JAXBElement<?>) {
+            firstEntrance = (ParkingEntranceForVehicles) ((JAXBElement<?>) firstObj).getValue();
+        } else if (firstObj instanceof ParkingEntranceForVehicles) {
+            firstEntrance = (ParkingEntranceForVehicles) firstObj;
+        }
+
+        if (firstEntrance != null
+                && firstEntrance.getCentroid() != null
+                && firstEntrance.getCentroid().getLocation() != null) {
+
+            LocationStructure loc = firstEntrance.getCentroid().getLocation();
+            double lon = 0.0;
+            double lat = 0.0;
+
+            if (loc.getLongitude() != null) {
+                lon = Double.parseDouble(String.valueOf(loc.getLongitude()));
+            }
+            if (loc.getLatitude() != null) {
+                lat = Double.parseDouble(String.valueOf(loc.getLatitude()));
+            }
+
+
+            tiamatParking.setCentroid(ImporterUtils.createPoint(lon, lat));
+        }
     }
 }

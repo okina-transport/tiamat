@@ -1,6 +1,7 @@
 package org.rutebanken.tiamat.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 
 @Entity
 public class PostalAddress extends EntityInVersionStructure {
@@ -11,6 +12,9 @@ public class PostalAddress extends EntityInVersionStructure {
 
     @Column(name = "postal_region")
     private String postalRegion;
+
+    @Column(name = "post_code")
+    private String postCode;
 
 
     public Long getId() {
@@ -43,6 +47,14 @@ public class PostalAddress extends EntityInVersionStructure {
 
     public void setPostalRegion(String postalRegion) {
         this.postalRegion = postalRegion;
+    }
+
+    public String getPostCode() {
+        return postCode;
+    }
+
+    public void setPostCode(String postCode) {
+        this.postCode = postCode;
     }
 
 }

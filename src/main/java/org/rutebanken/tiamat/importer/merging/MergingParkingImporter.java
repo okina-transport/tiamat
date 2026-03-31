@@ -323,6 +323,16 @@ public class MergingParkingImporter {
             copyParking.getPostalAddress().setStreet(incomingParking.getPostalAddress().getStreet());
             return true;
         }
+
+        if (!Objects.equals(copyParking.getPostalAddress().getPostCode() , incomingParking.getPostalAddress().getPostCode())) {
+            copyParking.getPostalAddress().setPostCode(incomingParking.getPostalAddress().getPostCode());
+            return true;
+        }
+
+        if (!copyParking.getInsee().equals(incomingParking.getInsee())) {
+            copyParking.setInsee(incomingParking.getInsee());
+            return true;
+        }
         return false;
     }
 

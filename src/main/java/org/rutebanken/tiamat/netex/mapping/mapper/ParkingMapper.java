@@ -87,6 +87,10 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
                     streetMultiLing.setValue(tiamatPostalAddress.getStreet());
                     netexPostalAddress.setStreet(streetMultiLing);
                 }
+
+                if (StringUtils.isNotEmpty(tiamatPostalAddress.getPostCode())) {
+                    netexPostalAddress.setPostCode(tiamatPostalAddress.getPostCode());
+                }
             }
             netexParking.setPostalAddress(netexPostalAddress);
         }
@@ -132,6 +136,9 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
 
         if (netexParking.getPostalAddress() != null) {
             tiamatParking.setInsee(netexParking.getPostalAddress().getPostalRegion());
+            if (StringUtils.isNotEmpty(netexParking.getPostalAddress().getPostCode())) {
+                tiamatParking.getPostalAddress().setPostCode(netexParking.getPostalAddress().getPostCode());
+            }
         }
 
         Set<org.rutebanken.tiamat.model.AvailabilityCondition> tiamatAvailabilityConditions = new HashSet<>();

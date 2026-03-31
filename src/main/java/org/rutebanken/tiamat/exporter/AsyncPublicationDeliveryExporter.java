@@ -425,7 +425,7 @@ public class AsyncPublicationDeliveryExporter {
                     })
                     .collect(Collectors.toList());
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error("Error while reading local FileStore repository", e);
         }
 

@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.netex.mapping;
 
+import jakarta.xml.bind.JAXBElement;
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
@@ -32,7 +33,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import jakarta.xml.bind.JAXBElement;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -146,6 +146,7 @@ public class NetexMapper {
                 .exclude("vehicleTypes")
                 .exclude("typesOfPaymentMethod")
                 .exclude("polygon")
+                .exclude("vehicleEntrances")
 //                .exclude("parkingProperties")
                 .customize(new ParkingMapper())
                 .byDefault()

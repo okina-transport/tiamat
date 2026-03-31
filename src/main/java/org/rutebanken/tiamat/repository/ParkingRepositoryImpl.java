@@ -15,6 +15,8 @@
 
 package org.rutebanken.tiamat.repository;
 
+import jakarta.persistence.*;
+import jakarta.transaction.Transactional;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
@@ -41,8 +43,6 @@ import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 
-import jakarta.persistence.*;
-import jakarta.transaction.Transactional;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -413,6 +413,7 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
             Hibernate.initialize(parking.getTypeOfPaymentMethods());
             Hibernate.initialize(parking.getPostalAddress());
             Hibernate.initialize(parking.getAvailabilityConditions());
+            Hibernate.initialize(parking.getVehicleEntrances());
 
             if (parking.getAvailabilityConditions() != null){
                 for (AvailabilityCondition availabilityCondition : parking.getAvailabilityConditions()) {

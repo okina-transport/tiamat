@@ -16,11 +16,11 @@
 package org.rutebanken.tiamat.model;
 
 import com.google.common.base.MoreObjects;
+import jakarta.persistence.*;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
 
-import jakarta.persistence.*;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -50,7 +50,7 @@ public class Parking
     @Transient
     protected PaymentByMobileStructure paymentByMobile;
     @Transient
-    protected ParkingEntrancesForVehicles_RelStructure vehicleEntrances;
+    protected ParkingEntrancesForVehicles_RelStructure vehicleEntrancesNetex;
 
     @Transient
     protected SitePathLinks_RelStructure pathLinks;
@@ -132,6 +132,10 @@ public class Parking
     @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     protected PostalAddress postalAddress;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "parking_id")
+    protected List<ParkingEntrance> vehicleEntrances = new ArrayList<>();
 
 
     public List<TypeOfPaymentMethod> getTypeOfPaymentMethods() {
@@ -381,12 +385,15 @@ public class Parking
         this.parkingAreas = value;
     }
 
-    public ParkingEntrancesForVehicles_RelStructure getVehicleEntrances() {
+    public List<ParkingEntrance> getVehicleEntrances() {
+        if (vehicleEntrances == null) {
+            vehicleEntrances = new ArrayList<>();
+        }
         return vehicleEntrances;
     }
 
-    public void setVehicleEntrances(ParkingEntrancesForVehicles_RelStructure value) {
-        this.vehicleEntrances = value;
+    public void setVehicleEntrances(List<ParkingEntrance> vehicleEntrances) {
+        this.vehicleEntrances = vehicleEntrances;
     }
 
     public String getInsee() {

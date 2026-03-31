@@ -60,6 +60,8 @@ public class MergingParkingImporter {
 
     private final ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService;
 
+    private final ParkingEntranceVersionedSaverService parkingEntranceVersionedSaverService;
+
     private final ParkingFromOriginalIdFinder parkingFromOriginalIdFinder;
 
     private final ReferenceResolver referenceResolver;
@@ -80,7 +82,7 @@ public class MergingParkingImporter {
                                   AccessibilityVersionedSaverService accessibilityVersionedSaverService,
                                   ParkingAreasVersionedSaverService parkingAreasVersionedSaverService,
                                   ParkingPlaceEquipmentsVersionedSaverService parkingPlaceEquipmentsVersionedSaverService,
-                                  ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService,
+                                  ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService, ParkingEntranceVersionedSaverService parkingEntranceVersionedSaverService,
                                   VersionCreator versionCreator,
                                   MergingUtils mergingUtils, AccessibilityAssessmentRepository accessibilityAssessmentRepository, ParkingBaysVersionedSaverService parkingBaysVersionedSaverService, ParkingRepository parkingRepository) {
         this.parkingFromOriginalIdFinder = parkingFromOriginalIdFinder;
@@ -92,6 +94,7 @@ public class MergingParkingImporter {
         this.parkingAreasVersionedSaverService = parkingAreasVersionedSaverService;
         this.parkingPlaceEquipmentsVersionedSaverService = parkingPlaceEquipmentsVersionedSaverService;
         this.parkingInstalledEquipmentsVersionedSaverService = parkingInstalledEquipmentsVersionedSaverService;
+        this.parkingEntranceVersionedSaverService = parkingEntranceVersionedSaverService;
         this.versionCreator = versionCreator;
         this.mergingUtils = mergingUtils;
         this.parkingBaysVersionedSaverService = parkingBaysVersionedSaverService;
@@ -253,6 +256,22 @@ public class MergingParkingImporter {
             areasChanged = true;
         }
 
+        boolean entrancesChanged = false;
+        List<ParkingEntrance> copyParkingEntrance = new ArrayList<>();
+        if (incomingParking.getVehicleEntrances() != null &&
+                (!new HashSet<>(copyParking.getVehicleEntrances()).containsAll(incomingParking.getVehicleEntrances()) ||
+                        !new HashSet<>(incomingParking.getVehicleEntrances()).containsAll(copyParking.getVehicleEntrances()))) {
+
+            copyParking.getVehicleEntrances().clear();
+
+            for (ParkingEntrance area : incomingParking.getVehicleEntrances()) {
+                copyParkingEntrance.add(parkingEntranceVersionedSaverService.saveNewVersion(area));
+            }
+            copyParking.getVehicleEntrances().addAll(copyParkingEntrance);
+            logger.info("Updated entrances to {} for parking {}", copyParking.getVehicleEntrances(), copyParking);
+            entrancesChanged = true;
+        }
+
         boolean equipmentChanged = false;
         List<InstalledEquipment_VersionStructure> copyEquipments = new ArrayList<>();
         if (incomingParking.getPlaceEquipments() != null &&
@@ -273,7 +292,8 @@ public class MergingParkingImporter {
 
         if (keyValuesChanged || nameChanged || allAreasWheelchairAccessibleChanged || typeChanged || centroidChanged ||
                 operatorChanged ||vehicleType || totalCapacityChanged || paymentProcessChanged || rechargingAvailableChanged ||
-                bookingUrlChanged || propertiesChanged || areasChanged || equipmentChanged || accessibilityChanged || hasPostalAddressChanged) {
+                bookingUrlChanged || propertiesChanged || areasChanged || equipmentChanged || accessibilityChanged ||
+                hasPostalAddressChanged || entrancesChanged) {
             logger.info("Updated existing parking {}. ", copyParking);
             copyParking = parkingVersionedSaverService.saveNewVersion(copyParking);
             return updateCache(copyParking);

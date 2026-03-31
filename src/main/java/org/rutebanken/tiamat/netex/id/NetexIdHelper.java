@@ -158,6 +158,8 @@ public class NetexIdHelper {
             return netexId.split(":ParkingArea:")[0];
         }else if (isNetexIdOfType(netexId, "AccessibilityAssessment")) {
             return netexId.split(":AccessibilityAssessment:")[0];
+        }else if (isNetexIdOfType(netexId, "ParkingEntranceForVehicles")) {
+            return netexId.split(":ParkingEntranceForVehicles:")[0];
         }else if (isNetexIdOfType(netexId, "PointOfInterest")){
             return netexId.split(":PointOfInterest:")[0];
         }

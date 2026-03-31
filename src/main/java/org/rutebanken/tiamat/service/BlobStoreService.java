@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.service;
 
+import com.amazonaws.services.directory.model.ServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -159,10 +160,15 @@ public class BlobStoreService {
     }
 
     public @NotNull ExportFileSummary generateExportFileSummary(String siteId, String key) {
-        Job job = jobService.getJobByFileNameAndSubFolder(key, siteId);
-        return new ExportFileSummary(key, job != null ? job.getUserName() : "unknown", job != null && job.getStarted() != null
-                ? job.getStarted()
-                : null);
+        try{
+            Job job = jobService.getJobByFileNameAndSubFolder(key, siteId);
+            return new ExportFileSummary(key, job != null ? job.getUserName() : "unknown", job != null && job.getStarted() != null
+                    ? job.getStarted()
+                    : null);
+        }catch(ServiceException e){
+            logger.error("Unknown job : {}", key);
+            return new ExportFileSummary(key, "unknown", null);
+        }
     }
 
 }

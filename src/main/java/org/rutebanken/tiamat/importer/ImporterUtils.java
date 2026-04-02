@@ -64,7 +64,7 @@ public class ImporterUtils {
                 city = properties.has("citycode") ? properties.getString("citycode") : "";
                 return Optional.of(city);
             }
-        } catch (RestClientException | JSONException | IllegalArgumentException e) {
+        } catch (RestClientException | JSONException | IllegalArgumentException | NullPointerException e) {
             logger.error("Error on insee recovering", e);
             logger.error("okinaUrl : " + okinaUrl);
             if (response != null && response.getBody() != null){
@@ -93,7 +93,7 @@ public class ImporterUtils {
                 city = properties.has("citycode") ? properties.getString("citycode") : "";
                 return Optional.of(city);
             }
-        } catch (RestClientException | JSONException | IllegalArgumentException e) {
+        } catch (RestClientException | JSONException | IllegalArgumentException | NullPointerException e) {
             logger.error("Error on insee recovering", e);
             logger.error("dataGouvUrl : " + dataGouvUrl);
             logger.error("geoApiGouvUrl : " + geoApiGouvUrl);
@@ -114,7 +114,7 @@ public class ImporterUtils {
                 city = body.getString("nom");
                 return Optional.of(city);
             }
-        } catch (RestClientException | JSONException | IllegalArgumentException e) {
+        } catch (RestClientException | JSONException | IllegalArgumentException | NullPointerException e) {
             logger.error("Error on insee recovering", e);
             logger.error("dataGouvUrl : " + dataGouvUrl);
             logger.error("geoApiGouvUrl : " + geoApiGouvUrl);
@@ -184,7 +184,7 @@ public class ImporterUtils {
                 geocodeResult.setCity(city);
                 return geocodeResult;
             }
-        } catch (RestClientException | JSONException | IllegalArgumentException e) {
+        } catch (RestClientException | JSONException | IllegalArgumentException | NullPointerException e) {
             logger.error("Error on geocode recovering", e);
             logger.error("okinaUrl : " + okinaUrl);
             if (response != null && response.getBody() != null){
@@ -231,7 +231,7 @@ public class ImporterUtils {
 
                 return dtoGeocode;
             }
-        } catch (RestClientException | JSONException | IllegalArgumentException e) {
+        } catch (RestClientException | JSONException | IllegalArgumentException | NullPointerException e) {
             logger.error("Error on geocode recovering", e);
             logger.error("dataGouvUrl : " + dataGouvUrl);
             if (response != null && response.getBody() != null){
@@ -264,7 +264,7 @@ public class ImporterUtils {
 
                 return dtoGeocode;
             }
-        } catch (RestClientException | JSONException | IllegalArgumentException e) {
+        } catch (RestClientException | JSONException | IllegalArgumentException | NullPointerException e) {
             logger.error("Error on geocode recovering", e);
             logger.error("geoApiGouv : " + geoApiGouv);
             if (response != null && response.getBody() != null){

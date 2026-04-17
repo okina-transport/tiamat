@@ -31,6 +31,7 @@ import org.rutebanken.tiamat.repository.ProviderRepository;
 import org.rutebanken.tiamat.service.BlobStoreService;
 import org.rutebanken.tiamat.service.stopplace.ExportFileSummary;
 import org.rutebanken.tiamat.time.ExportTimeZone;
+import org.rutebanken.tiamat.versioning.util.FileNameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,8 +43,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -147,15 +146,15 @@ public class AsyncPublicationDeliveryExporter {
                     nameSite = provider.getChouetteInfo().getNameNetexStop();
                 }
 
-                String fileNameWithoutExtention = StringUtils.isNotBlank(fileName) ? fileName.replace(".zip", "") : createFileNameWithoutExtention(idSite, nameSite, localDateTime,isPrefix);
+                String fileNameWithoutExtention = createFileNameWithoutExtention(idSite, nameSite, localDateTime, isPrefix);
 
                 String nameFileZip = null;
                 try {
-                    nameFileZip = URLEncoder.encode(fileNameWithoutExtention, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
+                    nameFileZip = FileNameUtils.extractBaseNameIfValid(StringUtils.isNotBlank(fileName) ? fileName : fileNameWithoutExtention);
+                } catch (IllegalArgumentException e) {
+                    logger.error("Error with the file name for the stops export", e);
                 }
-                job.setFileName(nameFileZip + ".zip");
+                job.setFileName(nameFileZip != null ? nameFileZip : fileNameWithoutExtention+".zip");
 
                 // export with no post process are automatically tagged has "completed"
                 job.setLugCompleted(!hasPostProcess);
@@ -206,11 +205,11 @@ public class AsyncPublicationDeliveryExporter {
 
                 String nameFileZip = null;
                 try {
-                    nameFileZip = URLEncoder.encode(fileNameWithoutExtention, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
+                    nameFileZip = FileNameUtils.extractBaseNameIfValid(fileNameWithoutExtention);
+                } catch (IllegalArgumentException e) {
+                    logger.error("Error with the file name for the parkings export : ", e);
                 }
-                job.setFileName(nameFileZip + ".zip");
+                job.setFileName(nameFileZip != null ? nameFileZip : fileNameWithoutExtention+".zip");
                 job.setLugCompleted(true);
 
                 ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator,
@@ -260,11 +259,11 @@ public class AsyncPublicationDeliveryExporter {
 
                 String nameFileZip = null;
                 try {
-                    nameFileZip = URLEncoder.encode(fileNameWithoutExtention, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
+                    nameFileZip = FileNameUtils.extractBaseNameIfValid(fileNameWithoutExtention);
+                } catch (IllegalArgumentException e) {
+                    logger.error("Error with the file name for the point of interests export : ", e);
                 }
-                job.setFileName(nameFileZip + ".zip");
+                job.setFileName(nameFileZip != null ? nameFileZip : fileNameWithoutExtention+".zip");
                 job.setLugCompleted(true);
 
                 ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator,

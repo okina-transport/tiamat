@@ -5,6 +5,10 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.regex.Pattern;
 
 public class FileNameUtils {
+
+    private FileNameUtils() {
+        throw new IllegalStateException();
+    }
     private static final Pattern ZIP_NAME_PATTERN = Pattern.compile("^[A-Za-z0-9_.-]+(?:\\.zip)?$", Pattern.CASE_INSENSITIVE);
 
     private static final String INVALID_FILENAME = "Invalid filename";

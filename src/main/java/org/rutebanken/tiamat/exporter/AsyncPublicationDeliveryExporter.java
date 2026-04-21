@@ -148,13 +148,14 @@ public class AsyncPublicationDeliveryExporter {
 
                 String fileNameWithoutExtention = createFileNameWithoutExtention(idSite, nameSite, localDateTime, isPrefix);
 
-                String nameFileZip = null;
+                String nameFileZip;
                 try {
                     nameFileZip = FileNameUtils.extractBaseNameIfValid(StringUtils.isNotBlank(fileName) ? fileName : fileNameWithoutExtention);
                 } catch (IllegalArgumentException e) {
                     logger.error("Error with the file name for the stops export", e);
+                    nameFileZip = "stop_export";
                 }
-                job.setFileName(nameFileZip != null ? nameFileZip : fileNameWithoutExtention+".zip");
+                job.setFileName(StringUtils.appendIfMissing(nameFileZip,".zip"));
 
                 // export with no post process are automatically tagged has "completed"
                 job.setLugCompleted(!hasPostProcess);
@@ -203,13 +204,14 @@ public class AsyncPublicationDeliveryExporter {
 
                 String fileNameWithoutExtention = createParkingsFileNameWithoutExtension(idSite, nameSite, localDateTime);
 
-                String nameFileZip = null;
+                String nameFileZip;
                 try {
                     nameFileZip = FileNameUtils.extractBaseNameIfValid(fileNameWithoutExtention);
                 } catch (IllegalArgumentException e) {
                     logger.error("Error with the file name for the parkings export : ", e);
+                    nameFileZip = "parking_export";
                 }
-                job.setFileName(nameFileZip != null ? nameFileZip : fileNameWithoutExtention+".zip");
+                job.setFileName(StringUtils.appendIfMissing(nameFileZip,".zip"));
                 job.setLugCompleted(true);
 
                 ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator,
@@ -257,13 +259,14 @@ public class AsyncPublicationDeliveryExporter {
 
                 String fileNameWithoutExtention = createPOIFileNameWithoutExtension(idSite, nameSite, localDateTime);
 
-                String nameFileZip = null;
+                String nameFileZip;
                 try {
                     nameFileZip = FileNameUtils.extractBaseNameIfValid(fileNameWithoutExtention);
                 } catch (IllegalArgumentException e) {
                     logger.error("Error with the file name for the point of interests export : ", e);
+                    nameFileZip = "poi_export";
                 }
-                job.setFileName(nameFileZip != null ? nameFileZip : fileNameWithoutExtention+".zip");
+                job.setFileName(StringUtils.appendIfMissing(nameFileZip,".zip"));
                 job.setLugCompleted(true);
 
                 ExportJobWorker exportJobWorker = new ExportJobWorker(job, streamingPublicationDelivery, localExportPath, fileNameWithoutExtention, blobStoreService, jobRepository, netexXmlReferenceValidator,

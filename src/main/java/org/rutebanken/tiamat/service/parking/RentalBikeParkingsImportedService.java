@@ -1,25 +1,19 @@
 package org.rutebanken.tiamat.service.parking;
 
 import io.micrometer.core.instrument.util.StringUtils;
-import org.rutebanken.tiamat.general.ParkingsCSVHelper;
-import org.rutebanken.tiamat.model.AccessibilityAssessment;
-import org.rutebanken.tiamat.model.AccessibilityLimitation;
-import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
-import org.rutebanken.tiamat.model.Parking;
-import org.rutebanken.tiamat.model.ParkingPaymentProcessEnumeration;
-import org.rutebanken.tiamat.model.ParkingProperties;
-import org.rutebanken.tiamat.model.ParkingVehicleEnumeration;
-import org.rutebanken.tiamat.model.Value;
+import jakarta.transaction.Transactional;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.versioning.VersionCreator;
+import org.rutebanken.tiamat.versioning.save.ParkingInstalledEquipmentsVersionedSaverService;
+import org.rutebanken.tiamat.versioning.save.ParkingPlaceEquipmentsVersionedSaverService;
 import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -37,13 +31,17 @@ public class RentalBikeParkingsImportedService {
     private ParkingRepository parkingRepository;
     private NetexIdMapper netexIdMapper;
     private ParkingVersionedSaverService parkingVersionedSaverService;
+    private ParkingPlaceEquipmentsVersionedSaverService parkingPlaceEquipmentsVersionedSaverService;
+    private ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService;
     private VersionCreator versionCreator;
 
     @Autowired
-    RentalBikeParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, VersionCreator versionCreator){
+    RentalBikeParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, ParkingPlaceEquipmentsVersionedSaverService parkingPlaceEquipmentsVersionedSaverService, ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService, VersionCreator versionCreator){
         this.parkingRepository = parkingRepository;
         this.netexIdMapper = netexIdMapper;
         this.parkingVersionedSaverService = parkingVersionedSaverService;
+        this.parkingPlaceEquipmentsVersionedSaverService = parkingPlaceEquipmentsVersionedSaverService;
+        this.parkingInstalledEquipmentsVersionedSaverService = parkingInstalledEquipmentsVersionedSaverService;
         this.versionCreator = versionCreator;
     }
 
@@ -59,6 +57,23 @@ public class RentalBikeParkingsImportedService {
                     netexIdMapper.moveOriginalNameToKeyValueList(parkingToSave, parkingToSave.getName().getValue());
                     parkingToSave.setName(new EmbeddableMultilingualString(parkingToSave.getName().getValue()));
                 }
+
+                if (parkingToSave.getPlaceEquipments() != null) {
+                    List<InstalledEquipment_VersionStructure> savedEquipments = new ArrayList<>();
+                    for (InstalledEquipment_VersionStructure equipment : parkingToSave.getPlaceEquipments().getInstalledEquipment()) {
+                        InstalledEquipment_VersionStructure savedEquipment =
+                                parkingInstalledEquipmentsVersionedSaverService.saveNewVersion(equipment);
+                        savedEquipments.add(savedEquipment);
+                    }
+
+                    parkingToSave.getPlaceEquipments().getInstalledEquipment().clear();
+                    parkingToSave.getPlaceEquipments().getInstalledEquipment().addAll(savedEquipments);
+
+                    PlaceEquipment savedPlaceEquipments = parkingPlaceEquipmentsVersionedSaverService
+                            .saveNewVersion(parkingToSave.getPlaceEquipments());
+                    parkingToSave.setPlaceEquipments(savedPlaceEquipments);
+                }
+
                 parkingVersionedSaverService.saveNewVersion(parkingToSave);
             }else{
                 Value idLocValue = parkingToSave.getKeyValues().get(ID_LOCAL);

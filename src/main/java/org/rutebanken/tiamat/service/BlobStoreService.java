@@ -20,6 +20,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.okina.helper.aws.BlobStoreHelper;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.service.job.JobService;
@@ -35,6 +36,7 @@ import java.io.InputStream;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -160,15 +162,41 @@ public class BlobStoreService {
     }
 
     public @NotNull ExportFileSummary generateExportFileSummary(String siteId, String key) {
-        try{
+        try {
             Job job = jobService.getJobByFileNameAndSubFolder(key, siteId);
-            return new ExportFileSummary(key, job != null ? job.getUserName() : "unknown", job != null && job.getStarted() != null
-                    ? job.getStarted()
-                    : null);
-        }catch(ServiceException e){
+            if (job != null) {
+                String username = StringUtils.defaultIfBlank(job.getUserName(), "Mobi-iti");
+                Instant startDate = job.getStarted();
+                if (startDate == null) {
+                    startDate = extractDateFromKey(key);
+                }
+                return new ExportFileSummary(key, username, startDate);
+            }
+        } catch(ServiceException e) {
             logger.error("Unknown job : {}", key);
-            return new ExportFileSummary(key, "unknown", null);
         }
+        return new ExportFileSummary(key, "Mobi-iti", extractDateFromKey(key));
+    }
+
+    private static Instant extractDateFromKey(String key) {
+        try {
+            Instant startDate;
+            String dateStr = StringUtils.substringBetween(key, "_T_", ".zip");
+
+            String isoDate = new StringBuilder(dateStr)
+                    .insert(4, "-")
+                    .insert(7, "-")
+                    .insert(13, ":")
+                    .insert(16, ":")
+                    .toString();
+
+            startDate = Instant.parse(isoDate);
+            return startDate;
+        } catch (Exception e) {
+            logger.error("Unable to extract date from {}", key);
+            return null;
+        }
+
     }
 
 }

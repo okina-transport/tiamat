@@ -2,7 +2,6 @@ package org.rutebanken.tiamat.general;
 
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
-import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.config.GeometryFactoryConfig;
@@ -22,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -179,6 +179,7 @@ public class PointOfInterestCSVHelper {
      *
      * @param dtoPoiList
      */
+    @Transactional
     public void persistPointsOfInterest(List<DtoPointOfInterest> dtoPoiList) {
 
         List<PointOfInterest> poiToPersist = dtoPoiList.stream()

@@ -65,6 +65,9 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
                         //Only include non-empty alternative names
                         org.rutebanken.tiamat.model.AlternativeName tiamatAltName = new org.rutebanken.tiamat.model.AlternativeName();
                         mapperFacade.map(netexAltName, tiamatAltName);
+                        if (tiamatAltName.getNameType() == null) {
+                            tiamatAltName.setNameType(org.rutebanken.tiamat.model.NameTypeEnumeration.LABEL);
+                        }
                         alternativeNames.add(tiamatAltName);
                     }
                 }
@@ -113,6 +116,9 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
                         AlternativeName netexAltName = new AlternativeName();
                         mapperFacade.map(alternativeName, netexAltName);
                         netexAltName.setId(alternativeName.getNetexId());
+                        if (netexAltName.getNameType() == null) {
+                            netexAltName.setNameType(org.rutebanken.netex.model.NameTypeEnumeration.LABEL);
+                        }
                         netexAlternativeNames.add(netexAltName);
                     }
                 }

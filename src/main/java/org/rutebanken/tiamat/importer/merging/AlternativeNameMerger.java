@@ -15,8 +15,8 @@ public class AlternativeNameMerger {
     private static final String TTS_STOP_NAME_KEY = "Libellé de la synthèse vocale";
 
     public boolean updateSiteElementAlternativeName(org.rutebanken.tiamat.model.SiteElement incomingElement, org.rutebanken.tiamat.model.SiteElement copy) {
-        Optional<String> incomingAltName = getAlternativeName(incomingElement);
-        Optional<String> existingAltName = getAlternativeName(copy);
+        Optional<AlternativeName> incomingAltName = getAlternativeName(incomingElement);
+        Optional<AlternativeName> existingAltName = getAlternativeName(copy);
         boolean existingAltNameSameValue = incomingAltName.isPresent() && existingAltName.isPresent()
                 && Objects.equals(incomingAltName.get(), existingAltName.get());
         boolean noAltName = incomingAltName.isEmpty() && existingAltName.isEmpty();
@@ -28,14 +28,14 @@ public class AlternativeNameMerger {
         return alternativeNameChanged;
     }
 
-    private Optional<String> getAlternativeName(org.rutebanken.tiamat.model.SiteElement incomingElement) {
-        Optional<String> alternativeName = Optional.empty();
+    private Optional<AlternativeName> getAlternativeName(org.rutebanken.tiamat.model.SiteElement incomingElement) {
+        Optional<AlternativeName> alternativeName = Optional.empty();
         if (CollectionUtils.isNotEmpty(incomingElement.getAlternativeNames())) {
             Optional<AlternativeName> matchingElement = incomingElement.getAlternativeNames().stream()
                     .filter(altName -> TTS_STOP_NAME_KEY.equals(altName.getTypeOfName()))
                     .findFirst();
             if (matchingElement.isPresent()) {
-                alternativeName = Optional.of(matchingElement.get().getName().getValue());
+                alternativeName = Optional.of(matchingElement.get());
             }
         }
         return alternativeName;
@@ -59,20 +59,23 @@ public class AlternativeNameMerger {
         AlternativeName altName;
         while (iterator.hasNext()) {
             altName = iterator.next();
-            if (TTS_STOP_NAME_KEY.equals(altName.getTypeOfName())) {
+            if (TTS_STOP_NAME_KEY.equals(altName.getTypeOfName()) || altName.getNameType() == null) {
                 iterator.remove();
             }
         }
     }
 
-    private Optional<AlternativeName> buildAlternativeName(Optional<String> incomingAltName) {
+    private Optional<AlternativeName> buildAlternativeName(Optional<AlternativeName> incomingAltName) {
         Optional<AlternativeName> newAlternativeName = Optional.empty();
         if (incomingAltName.isPresent()) {
             AlternativeName alternativeName = new AlternativeName();
             EmbeddableMultilingualString alternativeNameValue = new EmbeddableMultilingualString();
-            alternativeNameValue.setValue(incomingAltName.get());
+            alternativeNameValue.setValue(incomingAltName.get().getName().getValue());
             alternativeName.setName(alternativeNameValue);
             alternativeName.setTypeOfName(TTS_STOP_NAME_KEY);
+            if (alternativeName.getNameType() == null) {
+                alternativeName.setNameType(org.rutebanken.tiamat.model.NameTypeEnumeration.LABEL);
+            }
             newAlternativeName = Optional.of(alternativeName);
         }
         return newAlternativeName;

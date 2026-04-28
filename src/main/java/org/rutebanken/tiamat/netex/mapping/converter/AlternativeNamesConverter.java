@@ -46,6 +46,9 @@ public class AlternativeNamesConverter extends BidirectionalConverter<List<Alter
                     org.rutebanken.netex.model.AlternativeName netexAlternativeName = new org.rutebanken.netex.model.AlternativeName();
                     mapperFacade.map(alternativeName, netexAlternativeName);
                     netexAlternativeName.setId(alternativeName.getNetexId());
+                    if (netexAlternativeName.getNameType() == null) {
+                        netexAlternativeName.setNameType(org.rutebanken.netex.model.NameTypeEnumeration.LABEL);
+                    }
                     netexAlternativeNames.add(netexAlternativeName);
                 }
             }

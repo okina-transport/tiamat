@@ -54,6 +54,9 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
                     //Only include non-empty alternative names
                     org.rutebanken.tiamat.model.AlternativeName tiamatAltName = new org.rutebanken.tiamat.model.AlternativeName();
                     mapperFacade.map(netexAltName, tiamatAltName);
+                    if (tiamatAltName.getNameType() == null) {
+                        tiamatAltName.setNameType(org.rutebanken.tiamat.model.NameTypeEnumeration.LABEL);
+                    }
                     alternativeNames.add(tiamatAltName);
                 }
             }
@@ -93,6 +96,9 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
                     org.rutebanken.netex.model.AlternativeName netexAltName = new org.rutebanken.netex.model.AlternativeName();
                     mapperFacade.map(alternativeName, netexAltName);
                     netexAltName.setId(alternativeName.getNetexId());
+                    if (netexAltName.getNameType() == null) {
+                        netexAltName.setNameType(org.rutebanken.netex.model.NameTypeEnumeration.LABEL);
+                    }
                     netexAlternativeNames.add(netexAltName);
                 }
             }

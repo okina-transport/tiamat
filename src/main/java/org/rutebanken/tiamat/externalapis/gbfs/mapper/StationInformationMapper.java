@@ -4,9 +4,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
 import org.mobilitydata.gbfs.v3_0.station_information.*;
 import org.mobilitydata.gbfs.v3_0.vehicle_types.GBFSVehicleType;
 import org.mobilitydata.gbfs.v3_0.vehicle_types.GBFSVehicleTypes;
@@ -26,7 +23,6 @@ public class StationInformationMapper {
 
     private static final Logger logger = LoggerFactory.getLogger(StationInformationMapper.class);
     private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
-    private final GeometryFactory geometryFactory = new GeometryFactory();
     private final String superIdPrefix;
 
     public StationInformationMapper(String superIdPrefix) {
@@ -104,7 +100,7 @@ public class StationInformationMapper {
         GBFSName gbfsName = gbfsStation.getName().stream()
                 .filter(s -> "fr".equals(s.getLanguage()))
                 .findFirst()
-                .orElse(gbfsStation.getName().get(0));
+                .orElse(gbfsStation.getName().getFirst());
         return new EmbeddableMultilingualString(gbfsName.getText(),
                 gbfsName.getLanguage());
     }
@@ -147,7 +143,7 @@ public class StationInformationMapper {
             GBFSShortName gbfsShortName = gbfsStation.getShortName().stream()
                     .filter(sn -> "fr".equals(sn.getLanguage()))
                     .findFirst()
-                    .orElse(gbfsStation.getShortName().get(0));
+                    .orElse(gbfsStation.getShortName().getFirst());
             shortName = new EmbeddableMultilingualString(gbfsShortName.getText(), gbfsShortName.getLanguage());
         }
         return shortName;

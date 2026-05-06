@@ -60,7 +60,6 @@ public class ParkingsImportedService {
                 netexIdMapper.moveOriginalIdToKeyValueList(parkingToSave, parkingToSave.getOriginalId());
                 netexIdMapper.moveOriginalNameToKeyValueList(parkingToSave, parkingToSave.getName().getValue());
 
-                parkingToSave.setName(new EmbeddableMultilingualString(parkingToSave.getName().getValue()));
                 parkingVersionedSaverService.saveNewVersion(parkingToSave);
             }
         }

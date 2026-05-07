@@ -4,7 +4,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.mobilitydata.gbfs.v3_0.station_information.*;
 import org.mobilitydata.gbfs.v3_0.vehicle_types.GBFSVehicleType;
 import org.mobilitydata.gbfs.v3_0.vehicle_types.GBFSVehicleTypes;
@@ -24,12 +23,6 @@ public class StationInformationMapper {
 
     private static final Logger logger = LoggerFactory.getLogger(StationInformationMapper.class);
     private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
-    private final GeometryFactory geometryFactory = new GeometryFactory();
-    private final String superIdPrefix;
-
-    public StationInformationMapper(String superIdPrefix) {
-        this.superIdPrefix = superIdPrefix;
-    }
 
     private static List<ParkingProperties> toParkingProperties(GBFSStation gbfsStation, GBFSVehicleTypes gbfsVehicleTypes) {
         if (CollectionUtils.isEmpty(gbfsStation.getVehicleTypesCapacity())) {

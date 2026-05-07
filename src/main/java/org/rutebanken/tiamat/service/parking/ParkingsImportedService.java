@@ -8,7 +8,9 @@ import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.rutebanken.tiamat.repository.ParkingPlaceEquipmentsRepository;
 import org.rutebanken.tiamat.repository.ParkingRepository;
+import org.rutebanken.tiamat.service.merge.PlaceEquipmentMerger;
 import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,18 +29,16 @@ public class ParkingsImportedService {
     private final NetexIdMapper netexIdMapper;
     private final ParkingVersionedSaverService parkingVersionedSaverService;
     private final OrganisationsImportedService organisationsImportedService;
+    private final ParkingPlaceEquipmentsRepository parkingPlaceEquipmentsRepository;
     private final MdmService mdmService;
 
-    ParkingsImportedService(ParkingRepository parkingRepository,
-                            NetexIdMapper netexIdMapper,
-                            ParkingVersionedSaverService parkingVersionedSaverService,
-                            MdmService mdmService,
-                            OrganisationsImportedService organisationsImportedService) {
+    public ParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, OrganisationsImportedService organisationsImportedService, ParkingPlaceEquipmentsRepository parkingPlaceEquipmentsRepository, MdmService mdmService) {
         this.parkingRepository = parkingRepository;
         this.netexIdMapper = netexIdMapper;
         this.parkingVersionedSaverService = parkingVersionedSaverService;
-        this.mdmService = mdmService;
         this.organisationsImportedService = organisationsImportedService;
+        this.parkingPlaceEquipmentsRepository = parkingPlaceEquipmentsRepository;
+        this.mdmService = mdmService;
     }
 
     public void createOrUpdateParkings(List<Parking> parkingsToSave) {
@@ -297,6 +297,14 @@ public class ParkingsImportedService {
                 !inputParking.getOrganisation().equals(databaseParking.getOrganisation())) {
             Organisation organisation = organisationsImportedService.createOrUpdateOrganisation(inputParking.getOrganisation());
             databaseParking.setOrganisation(organisation);
+            isUpdated = true;
+        }
+
+        if (inputParking.getPlaceEquipments() != null) {
+            if (databaseParking.getPlaceEquipments() != null) {
+                parkingPlaceEquipmentsRepository.delete(databaseParking.getPlaceEquipments());
+            }
+            databaseParking.setPlaceEquipments(inputParking.getPlaceEquipments());
             isUpdated = true;
         }
 

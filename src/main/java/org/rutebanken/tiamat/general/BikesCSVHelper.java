@@ -128,13 +128,14 @@ public class BikesCSVHelper {
 
             Parking parking = new Parking();
 
-            parking.setVersion(1L);
+            parking.setOriginalId(bikeParkingDto.getIdLocal());
 
             parking.setDescription(new EmbeddableMultilingualString(bikeParkingDto.getCommentaires()));
             if (bikeParkingDto.getName() != null && !bikeParkingDto.getName().isEmpty()) {
-                parking.setName(new EmbeddableMultilingualString(bikeParkingDto.getName()));
+                parking.setName(new EmbeddableMultilingualString(bikeParkingDto.getName(), "fr"));
             } else {
-                parking.setName(new EmbeddableMultilingualString(buildBikeParkingName(bikeParkingDto, isRentalBike)));
+                parking.setName(new EmbeddableMultilingualString(buildBikeParkingName(bikeParkingDto, isRentalBike),
+                        "fr"));
             }
 
             //Emplacement du parking
@@ -265,10 +266,11 @@ public class BikesCSVHelper {
             Set<String> importedId = parking.getOrCreateValues("imported-id");
             importedId.add(bikeParkingDto.getIdLocal());
 
-            if (StringUtils.isBlank(parking.getOperator())) {
+            if (StringUtils.isBlank(bikeParkingDto.getGestionnaire())) {
+                logger.warn("Undefind parking operator for parking {}, set technique", parking.getOriginalId());
                 parking.setOperator("technique");
             } else {
-                logger.warn("Undefind parking operator for parking {}", parking.getOriginalId());
+                parking.setOperator(bikeParkingDto.getGestionnaire());
             }
 
             return parking;

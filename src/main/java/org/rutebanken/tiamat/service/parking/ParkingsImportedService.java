@@ -17,7 +17,9 @@ import org.rutebanken.tiamat.model.ParkingProperties;
 import org.rutebanken.tiamat.model.ParkingVehicleEnumeration;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.rutebanken.tiamat.repository.ParkingPlaceEquipmentsRepository;
 import org.rutebanken.tiamat.repository.ParkingRepository;
+import org.rutebanken.tiamat.service.merge.PlaceEquipmentMerger;
 import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +44,7 @@ public class ParkingsImportedService {
     private final NetexIdMapper netexIdMapper;
     private final ParkingVersionedSaverService parkingVersionedSaverService;
     private final OrganisationsImportedService organisationsImportedService;
+    private final ParkingPlaceEquipmentsRepository parkingPlaceEquipmentsRepository;
     private final MdmService mdmService;
 
     @org.springframework.beans.factory.annotation.Value("${netex.validPrefix:MOBIITI}")
@@ -50,17 +53,18 @@ public class ParkingsImportedService {
     ParkingsImportedService(ParkingRepository parkingRepository,
                             NetexIdMapper netexIdMapper,
                             ParkingVersionedSaverService parkingVersionedSaverService,
+                            ParkingPlaceEquipmentsRepository parkingPlaceEquipmentsRepository,
                             MdmService mdmService,
                             OrganisationsImportedService organisationsImportedService) {
         this.parkingRepository = parkingRepository;
         this.netexIdMapper = netexIdMapper;
         this.parkingVersionedSaverService = parkingVersionedSaverService;
-        this.mdmService = mdmService;
         this.organisationsImportedService = organisationsImportedService;
+        this.parkingPlaceEquipmentsRepository = parkingPlaceEquipmentsRepository;
+        this.mdmService = mdmService;
     }
 
     public void createOrUpdateParkings(List<Parking> parkingsToSave) {
-
 
         for (Parking inputParking : parkingsToSave) {
             boolean found = false;
@@ -319,6 +323,14 @@ public class ParkingsImportedService {
                 !inputParking.getOrganisation().equals(databaseParking.getOrganisation())) {
             Organisation organisation = organisationsImportedService.createOrUpdateOrganisation(inputParking.getOrganisation());
             databaseParking.setOrganisation(organisation);
+            isUpdated = true;
+        }
+
+        if (inputParking.getPlaceEquipments() != null) {
+            if (databaseParking.getPlaceEquipments() != null) {
+                parkingPlaceEquipmentsRepository.delete(databaseParking.getPlaceEquipments());
+            }
+            databaseParking.setPlaceEquipments(inputParking.getPlaceEquipments());
             isUpdated = true;
         }
 

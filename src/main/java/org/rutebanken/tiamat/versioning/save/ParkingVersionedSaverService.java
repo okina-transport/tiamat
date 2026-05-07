@@ -122,6 +122,10 @@ public class ParkingVersionedSaverService {
             }
         }
 
+        if (newVersionNotEqualsToExisting.getPlaceEquipments() != null) {
+            versionIncrementor.initiateOrIncrementPlaceEquipment(newVersionNotEqualsToExisting.getPlaceEquipments());
+        }
+
         newVersionNotEqualsToExisting.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
         if (newVersionNotEqualsToExisting.getPostalAddress() != null){
             newVersionNotEqualsToExisting.getPostalAddress().setId(null);

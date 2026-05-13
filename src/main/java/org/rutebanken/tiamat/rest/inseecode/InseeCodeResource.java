@@ -26,7 +26,7 @@ import java.util.concurrent.Executors;
 
 @Component
 @Transactional
-@Path("/get_missing_inseecode")
+@Path("get_missing_inseecode")
 public class InseeCodeResource {
 
     private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()

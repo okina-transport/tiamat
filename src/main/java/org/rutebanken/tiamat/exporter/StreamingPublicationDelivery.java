@@ -98,6 +98,7 @@ public class StreamingPublicationDelivery {
     private final boolean validateAgainstSchema;
 
     private final boolean replaceImportedIdPrefix;
+    private final String superIdPrefix;
 
     @Autowired
     public StreamingPublicationDelivery(StopPlaceRepository stopPlaceRepository,
@@ -111,7 +112,7 @@ public class StreamingPublicationDelivery {
                                         TariffZoneRepository tariffZoneRepository,
                                         TopographicPlaceRepository topographicPlaceRepository,
                                         GroupOfStopPlacesRepository groupOfStopPlacesRepository,
-                                        @Value("${asyncNetexExport.validateAgainstSchema:false}") boolean validateAgainstSchema, @Value("${replace.imported.id.prefix.in.exports:false}")  boolean replaceImportedIdPrefix) throws IOException, SAXException {
+                                        @Value("${asyncNetexExport.validateAgainstSchema:false}") boolean validateAgainstSchema, @Value("${replace.imported.id.prefix.in.exports:false}")  boolean replaceImportedIdPrefix, @Value("${netex.validPrefix:MOBIITI}")  String superIdPrefix) throws IOException, SAXException {
         this.stopPlaceRepository = stopPlaceRepository;
         this.parkingRepository = parkingRepository;
         this.pointOfInterestRepository = pointOfInterestRepository;
@@ -125,6 +126,7 @@ public class StreamingPublicationDelivery {
         this.groupOfStopPlacesRepository = groupOfStopPlacesRepository;
         this.validateAgainstSchema = validateAgainstSchema;
         this.replaceImportedIdPrefix = replaceImportedIdPrefix;
+        this.superIdPrefix = superIdPrefix;
     }
 
     private static JAXBContext createContext(Class clazz) {
@@ -648,9 +650,9 @@ public class StreamingPublicationDelivery {
                                 (element.getValue()).getId().equals(np.getId())
                 );
 
-                String organisationId = "MOBIITI:Organisation:" + UUID.randomUUID();
-                String responsabilitySetId = "MOBIITI:ResponsibilitySet:" + UUID.randomUUID();
-                String responsibilityRoleAssignmentId = "MOBIITI:ResponsibilityRoleAssignment:" + UUID.randomUUID();
+                String organisationId = this.superIdPrefix + ":Organisation:" + UUID.randomUUID();
+                String responsabilitySetId = this.superIdPrefix + ":ResponsibilitySet:" + UUID.randomUUID();
+                String responsibilityRoleAssignmentId = this.superIdPrefix + ":ResponsibilityRoleAssignment:" + UUID.randomUUID();
                 GeneralOrganisation generalOrganisation = new GeneralOrganisation();
                 generalOrganisation.setId(organisationId);
                 generalOrganisation.setVersion("any");
@@ -735,9 +737,9 @@ public class StreamingPublicationDelivery {
                 }
                 Parking np = netexMapper.getFacade().map(tp, Parking.class);
                 if (tp.getSiret() != null && !tp.getSiret().isEmpty()) {
-                    String organisationId = "MOBIITI:Organisation:" + UUID.randomUUID();
-                    String responsabilitySetId = "MOBIITI:ResponsibilitySet:" + UUID.randomUUID();
-                    String responsibilityRoleAssignmentId = "MOBIITI:ResponsibilityRoleAssignment:" + UUID.randomUUID();
+                    String organisationId = this.superIdPrefix + ":Organisation:" + UUID.randomUUID();
+                    String responsabilitySetId = this.superIdPrefix + ":ResponsibilitySet:" + UUID.randomUUID();
+                    String responsibilityRoleAssignmentId = this.superIdPrefix + ":ResponsibilityRoleAssignment:" + UUID.randomUUID();
                     GeneralOrganisation generalOrganisation = new GeneralOrganisation();
                     generalOrganisation.setId(organisationId);
                     generalOrganisation.setVersion("any");

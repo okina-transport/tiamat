@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.ParkingEntrance;
 import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
 import org.rutebanken.tiamat.model.TimeBand;
 import org.rutebanken.tiamat.netex.NetexUtils;
@@ -42,6 +43,12 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
 
     private static final Pattern patternStreetNumber = Pattern.compile("^(\\d+)\\s*(.*)$");
 
+    private final String superId;
+
+    public ParkingMapper(String superId) {
+        this.superId = superId;
+    }
+
     private static void mapAppDownloadUrl(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking) {
         if (StringUtils.isNotBlank(tiamatParking.getRentalUriAndroid())) {
             PaymentByMobileStructure paymentByMobileStructure = new PaymentByMobileStructure();
@@ -54,10 +61,10 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
         }
     }
 
-    private static void mapAddress(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking) {
+    private void mapAddress(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking) {
         if (tiamatParking.getInsee() != null || tiamatParking.getAddress() != null) {
             PostalAddress netexPostalAddress = new PostalAddress();
-            netexPostalAddress.setId("MOBIITI:PostalAddress:" + UUID.randomUUID());
+            netexPostalAddress.setId(superId + ":PostalAddress:" + UUID.randomUUID());
             netexPostalAddress.setVersion("any");
             if (tiamatParking.getAddress() != null) {
                 // Expression régulière pour capturer les premiers chiffres au début de l'adresse
@@ -94,6 +101,13 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
             }
             netexParking.setPostalAddress(netexPostalAddress);
         }
+    }
+
+    private static String getParkingSuperId(org.rutebanken.tiamat.model.Parking parking) {
+        if (StringUtils.isNotBlank(parking.getNetexId()) && parking.getNetexId().split(":").length == 3){
+            return parking.getNetexId().split(":")[0];
+        }
+        return "MOBIITI";
     }
 
     private static void mapPaymentMethodBtoA(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking) {
@@ -389,7 +403,7 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
         if (netexParking.getVehicleEntrances() != null &&
                 CollectionUtils.isNotEmpty(netexParking.getVehicleEntrances().getParkingEntranceForVehiclesRefOrParkingEntranceForVehicles())) {
 
-            List<org.rutebanken.tiamat.model.ParkingEntrance> tiamatEntrances = new ArrayList<>();
+            List<ParkingEntrance> tiamatEntrances = new ArrayList<>();
 
             for (Object entranceObj : netexParking.getVehicleEntrances().getParkingEntranceForVehiclesRefOrParkingEntranceForVehicles()) {
                 // Le contenu peut être un JAXBElement ou l'objet directement selon le unmarshaller
@@ -401,7 +415,7 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
                 }
 
                 if (netexEntrance != null) {
-                    org.rutebanken.tiamat.model.ParkingEntrance tiamatEnt = new org.rutebanken.tiamat.model.ParkingEntrance();
+                    ParkingEntrance tiamatEnt = new ParkingEntrance();
                     tiamatEnt.setNetexId(netexEntrance.getId());
 
                     if (netexEntrance.getName() != null) {
@@ -427,7 +441,7 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
 
         ParkingEntrancesForVehicles_RelStructure entrancesRel = new ParkingEntrancesForVehicles_RelStructure();
 
-        for (org.rutebanken.tiamat.model.ParkingEntrance tiamatEnt : tiamatParking.getVehicleEntrances()) {
+        for (ParkingEntrance tiamatEnt : tiamatParking.getVehicleEntrances()) {
             ParkingEntranceForVehicles netexEnt = new ParkingEntranceForVehicles();
             netexEnt.setId(tiamatEnt.getNetexId());
             netexEnt.setVersion(String.valueOf(tiamatEnt.getVersion()));

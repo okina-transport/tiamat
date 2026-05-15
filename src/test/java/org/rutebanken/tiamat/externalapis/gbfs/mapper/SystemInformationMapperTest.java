@@ -82,7 +82,7 @@ public class SystemInformationMapperTest {
               }
             }""";
 
-    private final SystemInformationMapper tested = new SystemInformationMapper();
+    private final SystemInformationMapper tested = new SystemInformationMapper("ALTID");
 
     @Test
     public void test_toOrganisation_whenInputGBFSIsValid_thenShouldConvertProperly() throws JsonProcessingException {
@@ -93,7 +93,7 @@ public class SystemInformationMapperTest {
         Organisation output = tested.toOrganisation(si);
 
         // Assert
-        assertEquals("MOBIITI:ORGANISATION:nantes", output.getNetexId());
+        assertEquals("ALTID:Organisation:nantes", output.getNetexId());
         assertEquals("fr", output.getLanguage());
         assertEquals("NANTES - Naolib", output.getName());
         assertEquals("Naolib", output.getShortName());

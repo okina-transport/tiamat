@@ -9,13 +9,19 @@ import org.rutebanken.tiamat.model.Organisation;
 
 public class SystemInformationMapper {
 
+    private final String superIdPrefix;
+
+    public SystemInformationMapper(String superIdPrefix) {
+        this.superIdPrefix = superIdPrefix;
+    }
+
     public Organisation toOrganisation(GBFSSystemInformation si) {
         Organisation organisation = new Organisation();
         if (si == null) {
             return organisation;
         }
         GBFSData data = si.getData();
-        organisation.setNetexId("MOBIITI:ORGANISATION:" + data.getSystemId());
+        organisation.setNetexId(this.superIdPrefix + ":Organisation:" + data.getSystemId());
         String language = data.getLanguages().get(0);
         organisation.setLanguage(language);
         organisation.setName(data.getName().get(0).getText());

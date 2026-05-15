@@ -116,7 +116,8 @@ public class StreamingPublicationDelivery {
                                         TopographicPlaceRepository topographicPlaceRepository,
                                         GroupOfStopPlacesRepository groupOfStopPlacesRepository,
                                         MdmService mdmService,
-                                        @Value("${asyncNetexExport.validateAgainstSchema:false}") boolean validateAgainstSchema, @Value("${replace.imported.id.prefix.in.exports:false}")  boolean replaceImportedIdPrefix, @Value("${netex.validPrefix:MOBIITI}")  String superIdPrefix) throws IOException, SAXException {
+                                        @Value("${netex.validPrefix:MOBIITI}")  String superIdPrefix,
+                                        @Value("${asyncNetexExport.validateAgainstSchema:false}") boolean validateAgainstSchema, @Value("${replace.imported.id.prefix.in.exports:false}")  boolean replaceImportedIdPrefix) throws IOException, SAXException {
         this.stopPlaceRepository = stopPlaceRepository;
         this.parkingRepository = parkingRepository;
         this.pointOfInterestRepository = pointOfInterestRepository;

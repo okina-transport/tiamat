@@ -78,6 +78,9 @@ public class StreamingPublicationDeliveryConfig {
     @Value("${replace.imported.id.prefix.in.exports:false}")
     private boolean replaceImportedId;
 
+    @Value("${netex.validPrefix:MOBIITI}")
+    private String superIdPrefix;
+
     @Bean("asyncStreamingPublicationDelivery")
     public StreamingPublicationDelivery asyncStreamingPublicationDelivery() throws IOException, SAXException {
         return createStreamingPublicationDelivery(validateAsyncExport);
@@ -91,6 +94,6 @@ public class StreamingPublicationDeliveryConfig {
     private StreamingPublicationDelivery createStreamingPublicationDelivery(boolean validate) throws IOException, SAXException {
         return new StreamingPublicationDelivery(stopPlaceRepository, parkingRepository, pointOfInterestRepository, pointOfInterestClassificationRepository, publicationDeliveryExporter,
                 tiamatSiteFrameExporter, tiamatGeneralFrameExporter, netexMapper, tariffZoneRepository, topographicPlaceRepository,
-                groupOfStopPlacesRepository, mdmService, validate,replaceImportedId);
+                groupOfStopPlacesRepository,mdmService,  validate,replaceImportedId, superIdPrefix);
     }
 }

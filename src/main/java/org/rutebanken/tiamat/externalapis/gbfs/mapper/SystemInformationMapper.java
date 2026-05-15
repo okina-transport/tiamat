@@ -9,16 +9,23 @@ import org.rutebanken.tiamat.model.Organisation;
 
 public class SystemInformationMapper {
 
+    private final String superIdPrefix;
+
+    public SystemInformationMapper(String superIdPrefix) {
+        this.superIdPrefix = superIdPrefix;
+    }
+
     public Organisation toOrganisation(GBFSSystemInformation si) {
         Organisation organisation = new Organisation();
         if (si == null) {
             return organisation;
         }
         GBFSData data = si.getData();
-        String language = data.getLanguages().getFirst();
+        organisation.setNetexId(this.superIdPrefix + ":Organisation:" + data.getSystemId());
         organisation.setOriginalId(data.getSystemId());
+        String language = data.getLanguages().get(0);
         organisation.setLanguage(language);
-        organisation.setName(data.getName().getFirst().getText());
+        organisation.setName(data.getName().get(0).getText());
         if (CollectionUtils.isNotEmpty(data.getShortName())) {
             data.getShortName().stream()
                     .filter(sn -> language.equals(sn.getLanguage()))

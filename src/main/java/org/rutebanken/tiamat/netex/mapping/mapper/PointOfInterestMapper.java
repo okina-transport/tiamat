@@ -2,6 +2,7 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.PointOfInterestFacilitySet;
 import org.rutebanken.tiamat.model.PointOfInterestOpeningHours;
@@ -49,7 +50,8 @@ public class PointOfInterestMapper extends CustomMapper<PointOfInterest, org.rut
         }
 
         if (mustAddPostalAddress) {
-            pa.setId("MOBIITI:PostalAddress:" + pointOfInterest.getId());
+            String superId = getPoiSuperId(pointOfInterest);
+            pa.setId(superId + ":PostalAddress:" + pointOfInterest.getId());
             pa.setVersion("0");
             pointOfInterest2.setPostalAddress(pa);
         }
@@ -127,6 +129,13 @@ public class PointOfInterestMapper extends CustomMapper<PointOfInterest, org.rut
 
             pointOfInterest2.setValidityConditions(validityConditions_relStructure);
         }
+    }
+
+    private static String getPoiSuperId(org.rutebanken.tiamat.model.PointOfInterest pointOfInterest) {
+        if (StringUtils.isNotBlank(pointOfInterest.getNetexId()) && pointOfInterest.getNetexId().split(":").length == 3){
+            return pointOfInterest.getNetexId().split(":")[0];
+        }
+        return "MOBIITI";
     }
 
     private String createDayTypesId(String netexId) {

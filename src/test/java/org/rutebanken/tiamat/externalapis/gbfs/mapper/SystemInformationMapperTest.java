@@ -83,7 +83,7 @@ public class SystemInformationMapperTest {
               }
             }""";
 
-    private final SystemInformationMapper tested = new SystemInformationMapper();
+    private final SystemInformationMapper tested = new SystemInformationMapper("ALTID");
 
     @Test
     public void test_toOrganisation_whenInputGBFSIsValid_thenShouldConvertProperly() throws JsonProcessingException {

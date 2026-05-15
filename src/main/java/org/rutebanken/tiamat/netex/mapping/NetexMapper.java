@@ -62,7 +62,8 @@ public class NetexMapper {
                        DataManagedObjectStructureMapper dataManagedObjectStructureMapper,
                        PublicationDeliveryHelper publicationDeliveryHelper,
                        AccessibilityAssessmentMapper accessibilityAssessmentMapper,
-                       PointOfInterestMapper pointOfInterestMapper) {
+                       PointOfInterestMapper pointOfInterestMapper,  @org.springframework.beans.factory.annotation.Value("${netex.validPrefix:MOBIITI}")String superIdPrefix
+) {
 
         logger.info("Setting up netexMapper with DI");
 
@@ -148,7 +149,7 @@ public class NetexMapper {
                 .exclude("polygon")
                 .exclude("vehicleEntrances")
 //                .exclude("parkingProperties")
-                .customize(new ParkingMapper())
+                .customize(new ParkingMapper(superIdPrefix))
                 .byDefault()
                 .register();
 

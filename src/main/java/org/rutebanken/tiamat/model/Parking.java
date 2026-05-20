@@ -76,6 +76,7 @@ public class Parking
     @LazyCollection(LazyCollectionOption.FALSE)
     @Enumerated(EnumType.STRING)
     protected List<ParkingVehicleEnumeration> parkingVehicleTypes;
+
     protected ParkingLayoutEnumeration parkingLayout;
     protected BigInteger numberOfParkingLevels;
     protected BigInteger principalCapacity;

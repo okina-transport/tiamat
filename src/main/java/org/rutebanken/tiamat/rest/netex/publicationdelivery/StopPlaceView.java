@@ -53,6 +53,52 @@ public class StopPlaceView {
     @XmlElement
     private List<QuayView> quays;
 
+    public StopPlaceView() {}
+
+    public List<QuayView> getQuays() {
+        return quays;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getNetexId() {
+        return netexId;
+    }
+
+    public BigDecimal getLatitude() {
+        return latitude;
+    }
+
+    public BigDecimal getLongitude() {
+        return longitude;
+    }
+
+    public String getImportedId() {
+        return importedId;
+    }
+
+    public long getVersion() {
+        return version;
+    }
+
+    public String getCreated() {
+        return created;
+    }
+
+    public String getFromDate() {
+        return fromDate;
+    }
+
+    public String getToDate() {
+        return toDate;
+    }
+
     public StopPlaceView(StopPlace sp){
 
         id = sp.getId();

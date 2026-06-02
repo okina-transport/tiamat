@@ -94,6 +94,6 @@ public class StreamingPublicationDeliveryConfig {
     private StreamingPublicationDelivery createStreamingPublicationDelivery(boolean validate) throws IOException, SAXException {
         return new StreamingPublicationDelivery(stopPlaceRepository, parkingRepository, pointOfInterestRepository, pointOfInterestClassificationRepository, publicationDeliveryExporter,
                 tiamatSiteFrameExporter, tiamatGeneralFrameExporter, netexMapper, tariffZoneRepository, topographicPlaceRepository,
-                groupOfStopPlacesRepository,mdmService, validate, replaceImportedId, superIdPrefix);
+                groupOfStopPlacesRepository,mdmService, superIdPrefix, validate, replaceImportedId );
     }
 }

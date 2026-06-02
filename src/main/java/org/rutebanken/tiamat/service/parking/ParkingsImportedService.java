@@ -39,9 +39,9 @@ public class ParkingsImportedService {
     public void createOrUpdateParkings(List<Parking> parkingsToSave) {
 
         Parking updatedParking;
-        boolean founded = false;
 
         for (Parking parkingToSave : parkingsToSave) {
+            boolean founded = false;
 
             Parking parkingInBDD = retrieveParkingInBDD(parkingToSave);
 

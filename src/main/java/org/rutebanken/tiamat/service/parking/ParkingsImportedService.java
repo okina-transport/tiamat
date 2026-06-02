@@ -68,6 +68,7 @@ public class ParkingsImportedService {
 
         for (Parking inputParking : parkingsToSave) {
             boolean found = false;
+
             Parking databaseParking = retrieveDatabaseParking(inputParking);
 
             if (databaseParking != null && databaseParking.getNetexId() != null) {
@@ -216,7 +217,6 @@ public class ParkingsImportedService {
         if (!Objects.equals(inputParking.isFreeParkingOutOfHours(), databaseParking.isFreeParkingOutOfHours())) {
             databaseParking.setFreeParkingOutOfHours(inputParking.isFreeParkingOutOfHours());
         }
-
 
         if (!Objects.equals(inputParking.isRealTimeOccupancyAvailable(), databaseParking.isRealTimeOccupancyAvailable())) {
             databaseParking.setRealTimeOccupancyAvailable(inputParking.isRealTimeOccupancyAvailable());

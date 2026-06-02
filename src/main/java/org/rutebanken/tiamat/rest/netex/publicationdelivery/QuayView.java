@@ -31,6 +31,32 @@ public class QuayView {
     @XmlElement
     private String importedId;
 
+    public QuayView() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getNetexId() {
+        return netexId;
+    }
+
+    public BigDecimal getLatitude() {
+        return latitude;
+    }
+
+    public BigDecimal getLongitude() {
+        return longitude;
+    }
+
+    public String getImportedId() {
+        return importedId;
+    }
 
     public QuayView(Quay quay){
         id = quay.getId();

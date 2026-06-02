@@ -43,9 +43,8 @@ public class ParkingsImportedService {
 
     public void createOrUpdateParkings(List<Parking> parkingsToSave) {
 
-        boolean found = false;
-
         for (Parking inputParking : parkingsToSave) {
+            boolean found = false;
 
             Parking databaseParking = retrieveDatabaseParking(inputParking);
 

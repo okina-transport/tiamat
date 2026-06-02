@@ -24,6 +24,11 @@ public class StationInformationMapper {
 
     private static final Logger logger = LoggerFactory.getLogger(StationInformationMapper.class);
     private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
+    private final String superIdPrefix;
+
+    public StationInformationMapper(String superIdPrefix) {
+        this.superIdPrefix = superIdPrefix;
+    }
 
     private static List<ParkingProperties> toParkingProperties(GBFSStation gbfsStation, GBFSVehicleTypes gbfsVehicleTypes) {
         if (CollectionUtils.isEmpty(gbfsStation.getVehicleTypesCapacity())) {
@@ -88,6 +93,9 @@ public class StationInformationMapper {
         };
     }
 
+    private @NotNull String toNetexId(GBFSStation gbfsStation) {
+        return superIdPrefix + ":PARKING:" + gbfsStation.getStationId().replace(":", "##3A##");
+    }
 
     private static @NotNull EmbeddableMultilingualString toParkingName(GBFSStation gbfsStation) {
         GBFSName gbfsName = gbfsStation.getName().stream()
@@ -127,7 +135,7 @@ public class StationInformationMapper {
         } else if (CollectionUtils.isNotEmpty(gbfsStation.getVehicleDocksCapacity())) {
             return BigInteger.valueOf(gbfsStation.getVehicleDocksCapacity().stream().mapToInt(GBFSVehicleDocksCapacity::getCount).sum());
         }
-        return BigInteger.ZERO;
+        return null;
     }
 
     private static @Nullable EmbeddableMultilingualString toShortName(GBFSStation gbfsStation) {
@@ -163,7 +171,7 @@ public class StationInformationMapper {
                     centroid.getCoordinate().y);
             return dtoGeocode.getCityCode();
         } catch (Exception e) {
-            logger.error("Error retrieving INSEE code for parking: {}", station.getStationId(), e);
+            logger.error("Error retrieving INSEE code for parking: {}", toNetexId(station), e);
             return StringUtils.EMPTY;
         }
     }
@@ -172,6 +180,7 @@ public class StationInformationMapper {
                              GBFSVehicleTypes gbfsVehicleTypes, ParkingTypeEnumeration parkingType,
                              SpecificParkingAreaUsageEnumeration parkingAreaType) {
         Parking parking = new Parking();
+        parking.setNetexId(toNetexId(gbfsStation));
         parking.setOriginalId(gbfsStation.getStationId());
         parking.setName(toParkingName(gbfsStation));
         parking.setShortName(toShortName(gbfsStation));
@@ -213,7 +222,6 @@ public class StationInformationMapper {
         // required by Netex Parking FRANCE profile v1.2
         parking.setParkingLayout(toParkingLayout(gbfsStation));
         parking.setOrganisation(organisation);
-        parking.setOperator(organisation.getOriginalId());
         parking.setParkingType(parkingType);
         parking.setParkingProperties(toParkingProperties(gbfsStation, gbfsVehicleTypes));
         parking.setParkingAreas(toParkingAreas(gbfsStation, parkingAreaType));

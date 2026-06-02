@@ -51,13 +51,15 @@ public class GbfsParkingImporter {
     private final GbfsValidator gbfsValidator;
     private final OrganisationRepository organisationRepository;
     private final ParkingsImportedService parkingsImportedService;
+    private final String superIdPrefix;
 
-    public GbfsParkingImporter(GBFSHttpClient gbfsHttpClient, GBFSMapper gbfsMapper, GbfsValidator gbfsValidator, OrganisationRepository organisationRepository, ParkingsImportedService parkingsImportedService) {
+    public GbfsParkingImporter(GBFSHttpClient gbfsHttpClient, GBFSMapper gbfsMapper, GbfsValidator gbfsValidator, OrganisationRepository organisationRepository, ParkingsImportedService parkingsImportedService, @Value("${netex.validPrefix:NSR}") String superIdPrefix) {
         this.gbfsHttpClient = gbfsHttpClient;
         this.gbfsMapper = gbfsMapper;
         this.gbfsValidator = gbfsValidator;
         this.organisationRepository = organisationRepository;
         this.parkingsImportedService = parkingsImportedService;
+        this.superIdPrefix = superIdPrefix;
     }
 
     /**
@@ -261,7 +263,7 @@ public class GbfsParkingImporter {
         Optional<org.rutebanken.tiamat.model.Organisation> optionalOrganisation = organisationRepository.findByName(organisation.getName());
         optionalOrganisation.ifPresent(value -> organisation.setId(value.getId()));
         organisationRepository.save(organisation);
-        StationInformationMapper stationInformationMapper = new StationInformationMapper();
+        StationInformationMapper stationInformationMapper = new StationInformationMapper(this.superIdPrefix);
         List<Parking> parkings = data.stationInformation().getData().getStations().stream()
                 .map(gbfsStation -> stationInformationMapper.toParking(organisation, gbfsStation, data.vehicleTypes(), params.getParkingType(), params.getParkingAreaType()))
                 .toList();

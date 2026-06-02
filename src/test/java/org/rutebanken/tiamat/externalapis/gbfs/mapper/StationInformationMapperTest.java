@@ -107,7 +107,7 @@ public class StationInformationMapperTest {
             }
             """;
 
-    private final StationInformationMapper tested = new StationInformationMapper();
+    private final StationInformationMapper tested = new StationInformationMapper("MOBIITI");
 
     @Test
     public void test_toParking_whenInputIsValid_shouldMapCorrectly() throws JsonProcessingException {

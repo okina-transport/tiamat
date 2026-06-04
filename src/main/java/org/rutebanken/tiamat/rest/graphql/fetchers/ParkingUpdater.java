@@ -16,18 +16,17 @@
 package org.rutebanken.tiamat.rest.graphql.fetchers;
 
 import com.google.common.base.Preconditions;
-import org.locationtech.jts.geom.Point;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.locationtech.jts.geom.Point;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.ParkingRepository;
-import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.rutebanken.tiamat.rest.graphql.mappers.GeometryMapper;
 import org.rutebanken.tiamat.rest.graphql.mappers.GroupOfEntitiesMapper;
 import org.rutebanken.tiamat.rest.graphql.mappers.ValidBetweenMapper;
-import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
 import org.rutebanken.tiamat.versioning.VersionCreator;
+import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +39,6 @@ import java.util.stream.Collectors;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
-import static org.rutebanken.tiamat.rest.graphql.mappers.EmbeddableMultilingualStringMapper.getEmbeddableString;
 
 @Service("parkingUpdater")
 @Transactional
@@ -308,18 +306,36 @@ class ParkingUpdater implements DataFetcher {
         if (input.get(PARKING_AREAS) != null) {
             List<ParkingArea> parkingAreasList = resolveParkingAreasList((List) input.get(PARKING_AREAS), updatedParking.getParkingAreas());
 
-            int totalCapacity = parkingAreasList.stream()
+            int newNoneCapacity = parkingAreasList.stream()
                     .filter(pa -> pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.NONE))
                     .mapToInt(pa -> pa.getTotalCapacity() != null ? pa.getTotalCapacity().intValue() : 0)
                     .sum();
+
+            int totalCapacity = newNoneCapacity != 0 ? newNoneCapacity : (updatedParking.getTotalCapacity() != null ? updatedParking.getTotalCapacity().intValue() : 0);
 
             int newCarpoolingCapacity = parkingAreasList.stream()
                     .filter(pa -> pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL))
                     .mapToInt(pa -> pa.getTotalCapacity() != null ? pa.getTotalCapacity().intValue() : 0)
                     .sum();
 
+            int newCarshareCapacity = parkingAreasList.stream()
+                    .filter(pa -> pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARSHARE))
+                    .mapToInt(pa -> pa.getTotalCapacity() != null ? pa.getTotalCapacity().intValue() : 0)
+                    .sum();
+
+            int newDisabledCapacity = parkingAreasList.stream()
+                    .filter(pa -> pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.DISABLED))
+                    .mapToInt(pa -> pa.getTotalCapacity() != null ? pa.getTotalCapacity().intValue() : 0)
+                    .sum();
+
             if (newCarpoolingCapacity > totalCapacity) {
                 throw  new IllegalArgumentException("La capacité covoiturage ne peut pas être supérieure à la capacité totale");
+            }
+            if (newCarshareCapacity > totalCapacity) {
+                throw  new IllegalArgumentException("La capacité d'autopartage ne peut pas être supérieure à la capacité totale");
+            }
+            if (newDisabledCapacity > totalCapacity) {
+                throw  new IllegalArgumentException("La capacité du nombre de places réservées aux personnes handicapées ne peut pas être supérieure à la capacité totale");
             }
 
             isUpdated = true;

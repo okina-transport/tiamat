@@ -2,6 +2,7 @@ package org.rutebanken.tiamat.service.delete;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -15,6 +16,12 @@ public class DeleteService {
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    private final MdmService mdmService;
+
+    public DeleteService(MdmService mdmService) {
+        this.mdmService = mdmService;
+    }
 
     @Transactional
     public void deleteAllPoi() {
@@ -39,6 +46,7 @@ public class DeleteService {
 
             // Truncating point_of_interest and related tables...
             entityManager.createNativeQuery("TRUNCATE TABLE point_of_interest CASCADE").executeUpdate();
+            mdmService.deleteAllPoiIds();
             logger.info("Point of interests deleted successfully");
         } catch (Exception e) {
             logger.error("Error occurred: ", e);
@@ -173,6 +181,7 @@ public class DeleteService {
         entityManager.createNativeQuery("DROP TABLE IF EXISTS temp_place_equipment_ids").executeUpdate();
         logger.info("Dropped temporary tables.");
 
+        mdmService.deleteAllParkingIds();
         logger.info("All parking data successfully deleted.");
     }
 }

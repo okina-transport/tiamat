@@ -143,6 +143,36 @@ public class MdmService {
         return tiamatProperties.isMdmEnabled();
     }
 
+    public void deleteStopPlaceAndQuayIdsByDataset(String datasetId){
+            mdmClient.deleteStopPlacesByDataset(datasetId);
+            mdmClient.deleteQuaysByDataset(datasetId);
+    }
+
+    public void deleteStopPlaceBySuperId(String superId){
+        mdmClient.deleteStopPlaceBySuperId(superId);
+    }
+
+    public void deleteQuaysBySuperId(String superId){
+        mdmClient.deleteQuaysBySuperId(superId);
+    }
+
+    public void deletePoisBySuperId(String superId){
+        mdmClient.deletePoisBySuperId(superId);
+    }
+
+    public void deleteParkingsBySuperId(String superId){
+        mdmClient.deleteParkingsBySuperId(superId);
+    }
+
+
+    public void deleteAllPoiIds(){
+        mdmClient.deleteAllPoisIds();
+    }
+
+    public void deleteAllParkingIds(){
+        mdmClient.deleteAllParkingIds();
+    }
+
     public void fillImportedIds(List<StopPlace> stopPlaces) {
         if (stopPlaces.isEmpty() || !tiamatProperties.isMdmEnabled()) {
             return;

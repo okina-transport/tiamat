@@ -34,11 +34,13 @@ package org.rutebanken.tiamat.service.poi;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.EntityChangedListener;
-import org.rutebanken.tiamat.changelog.LoggingService;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.DataManagedObjectStructure;
 import org.rutebanken.tiamat.model.EntityInVersionStructure;
+import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
 import org.slf4j.Logger;
@@ -46,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -58,23 +61,28 @@ public class PointOfInterestDeleter {
     private static final Logger logger = LoggerFactory.getLogger(PointOfInterestDeleter.class);
 
     private final EntityChangedListener entityChangedListener;
+
     private final ReflectionAuthorizationService authorizationService;
+
     private final UsernameFetcher usernameFetcher;
-    private final LoggingService loggingService;
-    private final PointOfInterestRepository pointOfInterestRepository;
-    private final ReferenceResolver referenceResolver;
+
+    private PointOfInterestRepository pointOfInterestRepository;
+
+    private ReferenceResolver referenceResolver;
+
+    private final MdmService mdmService;
 
     @Autowired
     public PointOfInterestDeleter(PointOfInterestRepository pointOfInterestRepository,
                                   EntityChangedListener entityChangedListener,
                                   ReflectionAuthorizationService authorizationService,
-                                  UsernameFetcher usernameFetcher, ReferenceResolver referenceResolver, LoggingService loggingService) {
+                                  UsernameFetcher usernameFetcher, ReferenceResolver referenceResolver, MdmService mdmService) {
         this.pointOfInterestRepository = pointOfInterestRepository;
         this.entityChangedListener = entityChangedListener;
         this.authorizationService = authorizationService;
         this.usernameFetcher = usernameFetcher;
         this.referenceResolver = referenceResolver;
-        this.loggingService = loggingService;
+        this.mdmService = mdmService;
     }
 
     public boolean deletePointOfInterest(String pointOfInterestId) {
@@ -84,26 +92,22 @@ public class PointOfInterestDeleter {
 
         List<PointOfInterest> pointsOfInterest = pointOfInterestRepository.findByNetexId(pointOfInterestId);
 
-        if (pointsOfInterest.isEmpty()) {
+        if(pointsOfInterest.isEmpty()) {
             throw new IllegalArgumentException("Cannot find point of interest to delete from ID: " + pointOfInterestId);
         }
 
-        for (PointOfInterest pointOfInterest : pointsOfInterest) {
-            if (pointOfInterest.getParentSiteRef() != null) {
+        for(PointOfInterest pointOfInterest : pointsOfInterest) {
+            if(pointOfInterest.getParentSiteRef() != null) {
                 DataManagedObjectStructure resolved = referenceResolver.resolve(pointOfInterest.getParentSiteRef());
-                if (resolved instanceof StopPlace) {
-                    authorizationService.assertAuthorized(ROLE_EDIT_STOPS, List.of(resolved));
+                if(resolved instanceof StopPlace) {
+                    authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(resolved));
                 }
             }
         }
 
-        for (PointOfInterest pointOfInterest : pointsOfInterest) {
-            loggingService.logPOIDeletion(usernameForAuthenticatedUser, pointOfInterest);
-        }
-
-
         pointOfInterestRepository.deleteAll(pointsOfInterest);
         notifyDeleted(pointsOfInterest);
+        mdmService.deletePoisBySuperId(pointOfInterestId);
 
         logger.warn("All versions ({}) of point of interest {} deleted by user {}", pointsOfInterest.size(), pointOfInterestId, usernameForAuthenticatedUser);
 

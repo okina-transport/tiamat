@@ -15,9 +15,11 @@
 
 package org.rutebanken.tiamat.service.stopplace;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.EntityChangedListener;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
@@ -50,14 +52,17 @@ public class StopPlaceDeleter {
 
     private final StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
 
+    private final MdmService mdmService;
+
     @Autowired
-    public StopPlaceDeleter(StopPlaceRepository stopPlaceRepository, EntityChangedListener entityChangedListener, ReflectionAuthorizationService authorizationService, UsernameFetcher usernameFetcher, MutateLock mutateLock, StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette) {
+    public StopPlaceDeleter(StopPlaceRepository stopPlaceRepository, EntityChangedListener entityChangedListener, ReflectionAuthorizationService authorizationService, UsernameFetcher usernameFetcher, MutateLock mutateLock, StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette, MdmService mdmService) {
         this.stopPlaceRepository = stopPlaceRepository;
         this.entityChangedListener = entityChangedListener;
         this.authorizationService = authorizationService;
         this.usernameFetcher = usernameFetcher;
         this.mutateLock = mutateLock;
         this.stopPlaceQuayDeleterToChouette = stopPlaceQuayDeleterToChouette;
+        this.mdmService = mdmService;
     }
 
     public boolean deleteStopPlace(String stopPlaceNetexId) {
@@ -77,8 +82,11 @@ public class StopPlaceDeleter {
 
             authorizationService.assertAuthorized(ROLE_DELETE_STOPS, stopPlaces);
 
+            deleteIdsInMdm(lastVersionStopPlace);
+
             stopPlaceRepository.deleteStopPlaceChildrenByChildren(stopPlaces);
             stopPlaceRepository.deleteAll(stopPlaces);
+
 
 //            notifyDeleted(stopPlaces);
 
@@ -86,6 +94,17 @@ public class StopPlaceDeleter {
 
             return true;
         });
+    }
+
+    private void deleteIdsInMdm(StopPlace stopPlaceToDelete) {
+        if (stopPlaceToDelete == null){
+            return;
+        }
+
+        mdmService.deleteStopPlaceBySuperId(stopPlaceToDelete.getNetexId());
+        if (CollectionUtils.isNotEmpty(stopPlaceToDelete.getQuays())){
+            stopPlaceToDelete.getQuays().forEach(quay ->  mdmService.deleteQuaysBySuperId(quay.getNetexId()));
+        }
     }
 
     private List<StopPlace> getAllVersionsOfStopPlace(String stopPlaceId) {

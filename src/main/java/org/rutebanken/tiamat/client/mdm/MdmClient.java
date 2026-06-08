@@ -1,7 +1,9 @@
 package org.rutebanken.tiamat.client.mdm;
 
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.service.annotation.DeleteExchange;
 import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.annotation.HttpExchange;
 import org.springframework.web.service.annotation.PostExchange;
@@ -24,6 +26,12 @@ public interface MdmClient {
     @GetExchange("/stops/byDataset")
     Set<Long> getStopPlaceIdentifiersByDataset(@RequestBody String dataset);
 
+    @DeleteExchange("/stops/byDataset/{dataset}")
+    void deleteStopPlacesByDataset(@PathVariable String dataset);
+
+    @DeleteExchange("/stops/bySuperId/{superId}")
+    void deleteStopPlaceBySuperId(@PathVariable String superId);
+
     @PostExchange("/stops/createOrUpdate")
     void createOrUpdateStopIdentifiers(@RequestBody List<OkinaIdentifier> identifiers);
 
@@ -42,6 +50,12 @@ public interface MdmClient {
     @GetExchange("/quays/byOriginalId")
     List<OkinaIdentifier> getQuayIdentifiersByOriginalId(@RequestBody List<OkinaIdentifier> quayIdentifiers);
 
+    @DeleteExchange("/quays/byDataset/{dataset}")
+    void deleteQuaysByDataset(@PathVariable String dataset);
+
+    @DeleteExchange("/quays/bySuperId/{superId}")
+    void deleteQuaysBySuperId(@PathVariable String superId);
+
     @PostExchange("/quays/createOrUpdate")
     void createOrUpdateQuayIdentifiers(@RequestBody List<OkinaIdentifier> identifiers);
 
@@ -53,6 +67,12 @@ public interface MdmClient {
 
     @GetExchange("/pois")
     List<OkinaIdentifier> getPoisIdentifiers(@RequestBody List<Long> poiIds);
+
+    @DeleteExchange("/pois")
+    void deleteAllPoisIds();
+
+    @DeleteExchange("/pois/bySuperId/{superId}")
+    void deletePoisBySuperId(@PathVariable String superId);
 
     @GetExchange("/pois/byOriginalId")
     List<OkinaIdentifier> getPoiIdentifiersByOriginalId(@RequestBody List<OkinaIdentifier> quayIdentifiers);
@@ -68,6 +88,13 @@ public interface MdmClient {
 
     @GetExchange("/parkings")
     List<ParkingIdentifier> getParkingIdentifiers(@RequestBody List<String> parkingIds);
+
+    @DeleteExchange("/parkings")
+    void deleteAllParkingIds();
+
+
+    @DeleteExchange("/parkings/bySuperId/{superId}")
+    void deleteParkingsBySuperId(@PathVariable String superId);
 
     @GetExchange("/parkings/byOperatorAndOriginalId")
     ParkingIdentifier getParkingIdentifierbyOperatorAndOriginalId(@RequestParam("operator") String operator,

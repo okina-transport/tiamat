@@ -15,7 +15,10 @@
 
 package org.rutebanken.tiamat.versioning.util;
 
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.AccessibilityAssessment;
+import org.rutebanken.tiamat.model.AccessibilityLimitation;
+import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
+import org.rutebanken.tiamat.model.StopPlace;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -100,7 +103,7 @@ public class AccessibilityAssessmentOptimizer {
         return quayAssessment;
     }
 
-    private AccessibilityAssessment createDefaultAccessibilityAssessment() {
+    public AccessibilityAssessment createDefaultAccessibilityAssessment() {
         AccessibilityAssessment assessment = new AccessibilityAssessment();
         List<AccessibilityLimitation> limitations = new ArrayList<>();
 

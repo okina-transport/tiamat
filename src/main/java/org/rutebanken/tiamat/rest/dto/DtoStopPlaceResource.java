@@ -17,6 +17,10 @@ package org.rutebanken.tiamat.rest.dto;
 
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
+import jakarta.xml.bind.JAXBElement;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
@@ -36,10 +40,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.StreamingOutput;
-import jakarta.xml.bind.JAXBElement;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -141,11 +141,17 @@ public class DtoStopPlaceResource {
     public JAXBElement<org.rutebanken.netex.model.StopPlace> getTadStopPlaceFromQuayId(@QueryParam("quayId") String netexQuayId) {
 
         Optional<Quay> quayOpt = quayRepository.findTADQuay(netexQuayId);
+        Quay quay = null;
         if (quayOpt.isEmpty()){
-            return null;
+            List<Quay> existingQuay = quayRepository.findAllByImportedId(netexQuayId);
+            if (existingQuay.isEmpty()) {
+                return null;
+            }
+            quay = existingQuay.getFirst();
+        } else {
+            quay = quayOpt.get();
         }
 
-        Quay quay = quayOpt.get();
         StopPlace stopPlace = stopPlaceRepository.findByQuay(quay);
 
         org.rutebanken.netex.model.StopPlace lightNetex = convertToLightNetex(stopPlace);

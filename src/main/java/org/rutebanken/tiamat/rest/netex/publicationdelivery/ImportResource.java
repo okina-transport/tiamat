@@ -19,6 +19,10 @@ package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.xml.bind.JAXBException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
@@ -29,10 +33,10 @@ import org.rutebanken.tiamat.importer.PublicationDeliveryImporter;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
+import org.rutebanken.tiamat.versioning.util.AccessibilityAssessmentOptimizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,17 +46,11 @@ import org.springframework.validation.BindException;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.xml.sax.SAXException;
 
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 
@@ -80,11 +78,15 @@ public class ImportResource {
     
     private final StopPlaceRepository stopPlaceRepository;
 
+    private final AccessibilityAssessmentOptimizer accessibilityAssessmentOptimizer;
+
     @Autowired
     public ImportResource(PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller,
                           PublicationDeliveryStreamingOutput publicationDeliveryStreamingOutput,
                           PublicationDeliveryImporter publicationDeliveryImporter,
-                          @Value("#{'${netex.import.enabled.types:ID_MATCH}'.split(',')}") Set<ImportType> enabledImportTypes, QuayRepository quayRepository, StopPlaceRepository stopPlaceRepository) {
+                          @Value("#{'${netex.import.enabled.types:ID_MATCH}'.split(',')}") Set<ImportType> enabledImportTypes,
+                          QuayRepository quayRepository, StopPlaceRepository stopPlaceRepository,
+                          AccessibilityAssessmentOptimizer accessibilityAssessmentOptimizer) {
 
         this.publicationDeliveryUnmarshaller = publicationDeliveryUnmarshaller;
         this.publicationDeliveryStreamingOutput = publicationDeliveryStreamingOutput;
@@ -92,6 +94,7 @@ public class ImportResource {
         this.enabledImportTypes = enabledImportTypes;
         this.quayRepository = quayRepository;
         this.stopPlaceRepository = stopPlaceRepository;
+        this.accessibilityAssessmentOptimizer = accessibilityAssessmentOptimizer;
     }
 
     @POST
@@ -141,39 +144,79 @@ public class ImportResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("createTADquays")
     @Transactional
-    public Response createTADquays(@HeaderParam("provider") String provider, @RequestBody List<StopPlaceView> stopsToCreate){
-        logger.info("Starting to create TAD quays");
+    public Response createTADquays(@HeaderParam("provider") String provider, @RequestBody List<StopPlaceView> stopsToCreate) {
+        logger.info("Starting to create TAD quays for provider: {}", provider);
 
         for (StopPlaceView stopPlaceView : stopsToCreate) {
-
-            for (QuayView quayToCreate : stopPlaceView.getQuays()) {
-                String importedId = provider + ":Quay:" + quayToCreate.getImportedId();
-                List<Quay> existingQuay = quayRepository.findAllByImportedId(importedId);
-                if (CollectionUtils.isNotEmpty(existingQuay)){
-                    continue;
-                }
-
-                Quay newQuay = new Quay();
-                EmbeddableMultilingualString name = new EmbeddableMultilingualString();
-                name.setValue(quayToCreate.getName());
-                newQuay.setName(name);
-                newQuay.setCentroid(ImporterUtils.createPoint(quayToCreate.getLongitude().doubleValue(), quayToCreate.getLatitude().doubleValue()));
-                org.rutebanken.tiamat.model.Value importedIdVal = new org.rutebanken.tiamat.model.Value();
-                importedIdVal.getItems().add(importedId);
-                newQuay.getKeyValues().put(ORIGINAL_ID_KEY, importedIdVal);
-                newQuay = quayRepository.save(newQuay);
-                
-                String stopPlaceImportedId =  provider + ":StopPlace:" + stopPlaceView.getImportedId();
-                String existingStop = stopPlaceRepository.findFirstByKeyValues(ORIGINAL_ID_KEY, Collections.singleton(stopPlaceImportedId));
+            if (CollectionUtils.isEmpty(stopPlaceView.getQuays())) {
+                continue;
             }
 
+            for (QuayView quayToCreate : stopPlaceView.getQuays()) {
+                processQuay(provider, stopPlaceView, quayToCreate);
+            }
         }
-
-
 
         logger.info("TAD quays created successfully");
         return Response.ok().build();
+    }
 
+    private void processQuay(String provider, StopPlaceView stopPlaceView, QuayView quayToCreate) {
+        String importedQuayId = provider + ":Quay:" + quayToCreate.getImportedId();
+
+        List<Quay> existingQuay = quayRepository.findAllByImportedId(importedQuayId);
+        if (CollectionUtils.isNotEmpty(existingQuay)) {
+            return;
+        }
+
+        Quay newQuay = createNewQuay(quayToCreate, importedQuayId);
+        newQuay = quayRepository.save(newQuay);
+
+        String stopPlaceImportedId = provider + ":StopPlace:" + stopPlaceView.getImportedId();
+        handleStopPlaceLink(stopPlaceImportedId, quayToCreate, newQuay, provider);
+    }
+
+    private Quay createNewQuay(QuayView quayToCreate, String importedQuayId) {
+        Quay quay = new Quay();
+        quay.setName(new EmbeddableMultilingualString(quayToCreate.getName()));
+        quay.setNetexId(quayToCreate.getNetexId());
+        quay.setCentroid(ImporterUtils.createPoint(quayToCreate.getLongitude().doubleValue(), quayToCreate.getLatitude().doubleValue()));
+        quay.setAccessibilityAssessment(accessibilityAssessmentOptimizer.createDefaultAccessibilityAssessment());
+
+        org.rutebanken.tiamat.model.Value importedIdVal = new org.rutebanken.tiamat.model.Value();
+        importedIdVal.getItems().add(importedQuayId);
+
+        quay.getKeyValues().put(ORIGINAL_ID_KEY, importedIdVal);
+        quay.getKeyValues().put("zonalStopPlace", new org.rutebanken.tiamat.model.Value("yes"));
+
+        return quay;
+    }
+
+    private void handleStopPlaceLink(String stopPlaceImportedId, QuayView quayToCreate, Quay newQuay, String provider) {
+        List<StopPlace> existingStops = stopPlaceRepository.findAllFromKeyValue(ORIGINAL_ID_KEY, Collections.singleton(stopPlaceImportedId));
+
+        if (existingStops.isEmpty()) {
+            StopPlace newStopPlace = new StopPlace();
+            newStopPlace.setName(new EmbeddableMultilingualString(quayToCreate.getName(), "FR"));
+            newStopPlace.setCentroid(ImporterUtils.createPoint(quayToCreate.getLongitude().doubleValue(), quayToCreate.getLatitude().doubleValue()));
+            newStopPlace.setAccessibilityAssessment(accessibilityAssessmentOptimizer.createDefaultAccessibilityAssessment());
+
+            org.rutebanken.tiamat.model.Value importedIdVal = new org.rutebanken.tiamat.model.Value();
+            importedIdVal.getItems().add(provider + ":Quay:" + quayToCreate.getImportedId());
+
+            newStopPlace.getKeyValues().put(ORIGINAL_ID_KEY, importedIdVal);
+            newStopPlace.getKeyValues().put("zonalStopPlace", new org.rutebanken.tiamat.model.Value("yes"));
+            newStopPlace.getQuays().add(newQuay);
+
+            stopPlaceRepository.save(newStopPlace);
+        } else {
+            for (StopPlace stop : existingStops) {
+                StopPlace latestVersion = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stop.getNetexId());
+                if (latestVersion != null && !latestVersion.getQuays().contains(newQuay)) {
+                    latestVersion.getQuays().add(newQuay);
+                }
+            }
+        }
     }
 
 

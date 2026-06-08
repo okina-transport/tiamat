@@ -34,6 +34,7 @@ package org.rutebanken.tiamat.service.poi;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.EntityChangedListener;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.DataManagedObjectStructure;
 import org.rutebanken.tiamat.model.EntityInVersionStructure;
 import org.rutebanken.tiamat.model.Parking;
@@ -69,16 +70,19 @@ public class PointOfInterestDeleter {
 
     private ReferenceResolver referenceResolver;
 
+    private final MdmService mdmService;
+
     @Autowired
     public PointOfInterestDeleter(PointOfInterestRepository pointOfInterestRepository,
                                   EntityChangedListener entityChangedListener,
                                   ReflectionAuthorizationService authorizationService,
-                                  UsernameFetcher usernameFetcher, ReferenceResolver referenceResolver) {
+                                  UsernameFetcher usernameFetcher, ReferenceResolver referenceResolver, MdmService mdmService) {
         this.pointOfInterestRepository = pointOfInterestRepository;
         this.entityChangedListener = entityChangedListener;
         this.authorizationService = authorizationService;
         this.usernameFetcher = usernameFetcher;
         this.referenceResolver = referenceResolver;
+        this.mdmService = mdmService;
     }
 
     public boolean deletePointOfInterest(String pointOfInterestId) {
@@ -103,6 +107,7 @@ public class PointOfInterestDeleter {
 
         pointOfInterestRepository.deleteAll(pointsOfInterest);
         notifyDeleted(pointsOfInterest);
+        mdmService.deletePoisBySuperId(pointOfInterestId);
 
         logger.warn("All versions ({}) of point of interest {} deleted by user {}", pointsOfInterest.size(), pointOfInterestId, usernameForAuthenticatedUser);
 

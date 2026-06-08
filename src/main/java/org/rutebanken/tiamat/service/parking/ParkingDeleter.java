@@ -34,6 +34,7 @@ package org.rutebanken.tiamat.service.parking;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.EntityChangedListener;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.DataManagedObjectStructure;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -66,16 +67,19 @@ public class ParkingDeleter {
 
     private ReferenceResolver referenceResolver;
 
+    private final MdmService mdmService;
+
     @Autowired
     public ParkingDeleter(ParkingRepository parkingRepository,
                           EntityChangedListener entityChangedListener,
                           ReflectionAuthorizationService authorizationService,
-                          UsernameFetcher usernameFetcher, ReferenceResolver referenceResolver) {
+                          UsernameFetcher usernameFetcher, ReferenceResolver referenceResolver, MdmService mdmService) {
         this.parkingRepository = parkingRepository;
         this.entityChangedListener = entityChangedListener;
         this.authorizationService = authorizationService;
         this.usernameFetcher = usernameFetcher;
         this.referenceResolver = referenceResolver;
+        this.mdmService = mdmService;
     }
 
     public boolean deleteParking(String parkingId) {
@@ -99,6 +103,7 @@ public class ParkingDeleter {
         }
 
         parkingRepository.deleteAll(parkings);
+        mdmService.deleteParkingsBySuperId(parkingId);
         notifyDeleted(parkings);
 
         logger.warn("All versions ({}) of parking {} deleted by user {}", parkings.size(), parkingId, usernameForAuthenticatedUser);

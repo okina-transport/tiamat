@@ -1,12 +1,12 @@
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 
-import org.rutebanken.tiamat.model.StopPlace;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import org.rutebanken.tiamat.model.StopPlace;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;

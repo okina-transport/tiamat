@@ -1,12 +1,12 @@
 package org.rutebanken.tiamat.rest.netex.publicationdelivery;
 
 
-import org.rutebanken.tiamat.model.StopPlace;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import org.rutebanken.tiamat.model.StopPlace;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -52,6 +52,52 @@ public class StopPlaceView {
 
     @XmlElement
     private List<QuayView> quays;
+
+    public StopPlaceView() {}
+
+    public List<QuayView> getQuays() {
+        return quays;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getNetexId() {
+        return netexId;
+    }
+
+    public BigDecimal getLatitude() {
+        return latitude;
+    }
+
+    public BigDecimal getLongitude() {
+        return longitude;
+    }
+
+    public String getImportedId() {
+        return importedId;
+    }
+
+    public long getVersion() {
+        return version;
+    }
+
+    public String getCreated() {
+        return created;
+    }
+
+    public String getFromDate() {
+        return fromDate;
+    }
+
+    public String getToDate() {
+        return toDate;
+    }
 
     public StopPlaceView(StopPlace sp){
 

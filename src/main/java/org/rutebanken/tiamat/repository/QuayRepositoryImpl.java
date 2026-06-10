@@ -16,14 +16,15 @@
 package org.rutebanken.tiamat.repository;
 
 import com.google.common.collect.Sets;
+import jakarta.persistence.*;
 import org.apache.commons.collections4.ListUtils;
 import org.hibernate.Hibernate;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
-import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -31,7 +32,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -471,7 +471,6 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
 
         return new ArrayList<>(mapNetexIdToQuayMaxVersion.values());
     }
-
 
     @Override
     public Optional<Quay> findActiveQuayForImportedId(String importedId) {

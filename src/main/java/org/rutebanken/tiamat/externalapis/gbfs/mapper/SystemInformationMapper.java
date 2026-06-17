@@ -21,7 +21,6 @@ public class SystemInformationMapper {
             return organisation;
         }
         GBFSData data = si.getData();
-        organisation.setNetexId(this.superIdPrefix + ":Organisation:" + data.getSystemId());
         String language = data.getLanguages().getFirst();
         organisation.setNetexId(this.superIdPrefix + ":Organisation:" + data.getSystemId());
         organisation.setOriginalId(data.getSystemId());

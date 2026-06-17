@@ -222,6 +222,12 @@ public class StationInformationMapper {
         // required by Netex Parking FRANCE profile v1.2
         parking.setParkingLayout(toParkingLayout(gbfsStation));
         parking.setOrganisation(organisation);
+        if (StringUtils.isNotBlank(organisation.getOperator())) {
+            parking.setOperator(organisation.getOperator());
+        } else {
+            parking.setOperator(StringUtils.defaultIfBlank(organisation.getOriginalId(), "technique"));
+        }
+
         parking.setParkingType(parkingType);
         parking.setParkingProperties(toParkingProperties(gbfsStation, gbfsVehicleTypes));
         parking.setParkingAreas(toParkingAreas(gbfsStation, parkingAreaType));

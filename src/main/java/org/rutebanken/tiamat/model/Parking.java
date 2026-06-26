@@ -81,16 +81,16 @@ public class Parking
     protected BigInteger numberOfParkingLevels;
     protected BigInteger principalCapacity;
     protected BigInteger totalCapacity;
-    protected Boolean overnightParkingPermitted;
-    protected Boolean prohibitedForHazardousMaterials;
-    protected Boolean rechargingAvailable;
-    protected Boolean carpoolingAvailable;
-    protected Boolean carsharingAvailable;
-    protected Boolean secure;
-    protected Boolean realTimeOccupancyAvailable;
+    protected boolean overnightParkingPermitted = false;
+    protected boolean prohibitedForHazardousMaterials = false;
+    protected boolean rechargingAvailable = false;
+    protected boolean carpoolingAvailable = false;
+    protected boolean carsharingAvailable = false;
+    protected boolean secure = false;
+    protected boolean realTimeOccupancyAvailable = false;
     protected ParkingReservationEnumeration parkingReservation;
     protected String bookingUrl;
-    protected Boolean freeParkingOutOfHours;
+    protected boolean freeParkingOutOfHours = false;
     protected String insee;
     protected String siret;
     protected String typeOfParkingRef;
@@ -242,59 +242,59 @@ public class Parking
         this.totalCapacity = value;
     }
 
-    public Boolean isOvernightParkingPermitted() {
+    public boolean isOvernightParkingPermitted() {
         return overnightParkingPermitted;
     }
 
-    public void setOvernightParkingPermitted(Boolean value) {
+    public void setOvernightParkingPermitted(boolean value) {
         this.overnightParkingPermitted = value;
     }
 
-    public Boolean isProhibitedForHazardousMaterials() {
+    public boolean isProhibitedForHazardousMaterials() {
         return prohibitedForHazardousMaterials;
     }
 
-    public void setProhibitedForHazardousMaterials(Boolean value) {
+    public void setProhibitedForHazardousMaterials(boolean value) {
         this.prohibitedForHazardousMaterials = value;
     }
 
-    public Boolean isRechargingAvailable() {
+    public boolean isRechargingAvailable() {
         return rechargingAvailable;
     }
 
-    public void setRechargingAvailable(Boolean value) {
+    public void setRechargingAvailable(boolean value) {
         this.rechargingAvailable = value;
     }
 
-    public Boolean isCarpoolingAvailable() {
+    public boolean isCarpoolingAvailable() {
         return carpoolingAvailable;
     }
 
-    public void setCarpoolingAvailable(Boolean value) {
+    public void setCarpoolingAvailable(boolean value) {
         this.carpoolingAvailable = value;
     }
 
-    public Boolean isCarsharingAvailable() {
+    public boolean isCarsharingAvailable() {
         return carsharingAvailable;
     }
 
-    public void setCarsharingAvailable(Boolean value) {
+    public void setCarsharingAvailable(boolean value) {
         this.carsharingAvailable = value;
     }
 
-    public Boolean isSecure() {
+    public boolean isSecure() {
         return secure;
     }
 
-    public void setSecure(Boolean value) {
+    public void setSecure(boolean value) {
         this.secure = value;
     }
 
-    public Boolean isRealTimeOccupancyAvailable() {
+    public boolean isRealTimeOccupancyAvailable() {
         return realTimeOccupancyAvailable;
     }
 
-    public void setRealTimeOccupancyAvailable(Boolean value) {
+    public void setRealTimeOccupancyAvailable(boolean value) {
         this.realTimeOccupancyAvailable = value;
     }
 
@@ -362,11 +362,11 @@ public class Parking
         this.paymentByMobile = value;
     }
 
-    public Boolean isFreeParkingOutOfHours() {
+    public boolean isFreeParkingOutOfHours() {
         return freeParkingOutOfHours;
     }
 
-    public void setFreeParkingOutOfHours(Boolean value) {
+    public void setFreeParkingOutOfHours(boolean value) {
         this.freeParkingOutOfHours = value;
     }
 

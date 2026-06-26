@@ -459,7 +459,9 @@ public class MdmService {
      */
     public void fillOriginalId(Parking parking) {
         List<ParkingIdentifier> mdmData = mdmClient.getParkingIdentifiers(List.of(parking.getNetexId()));
-        parking.getOriginalIds().add(mdmData.getFirst().getOriginalId());
+        if(!mdmData.isEmpty()) {
+            parking.getOriginalIds().add(mdmData.getFirst().getOriginalId());
+        }
     }
 
     public void fillPoiImportedIds(List<PointOfInterest> initializedPoi) {

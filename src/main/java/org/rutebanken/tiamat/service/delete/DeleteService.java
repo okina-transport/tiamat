@@ -51,6 +51,19 @@ public class DeleteService {
     public void deleteAllParkings() {
         logger.info("All parking data deleting.");
 
+        entityManager.createNativeQuery(
+                "CREATE TEMP TABLE IF NOT EXISTS temp_place_equipment_ids AS " +
+                        "SELECT place_equipments_id FROM parking WHERE place_equipments_id IS NOT NULL"
+        ).executeUpdate();
+
+        entityManager.createNativeQuery(
+                "CREATE TEMP TABLE IF NOT EXISTS temp_installed_equipment_ids AS " +
+                        "SELECT installed_equipment_id " +
+                        "FROM installed_equipment_version_structure_installed_equipment " +
+                        "WHERE place_equipment_id IN (SELECT place_equipments_id FROM temp_place_equipment_ids)"
+        ).executeUpdate();
+        logger.info("Captured equipment IDs before deletion.");
+
         entityManager.createNativeQuery("DELETE FROM parking_area_check_constraints").executeUpdate();
         logger.info("Executed DELETE on parking_area_check_constraints.");
 
@@ -59,9 +72,15 @@ public class DeleteService {
 
         entityManager.createNativeQuery(
                 "DELETE FROM installed_equipment_version_structure_installed_equipment " +
-                        "WHERE place_equipment_id IN (SELECT place_equipments_id FROM parking)"
+                        "WHERE place_equipment_id IN (SELECT place_equipments_id FROM temp_place_equipment_ids)"
         ).executeUpdate();
         logger.info("Executed DELETE on installed_equipment_version_structure_installed_equipment.");
+
+        entityManager.createNativeQuery(
+                "DELETE FROM installed_equipment_version_structure " +
+                        "WHERE id IN (SELECT installed_equipment_id FROM temp_installed_equipment_ids)"
+        ).executeUpdate();
+        logger.info("Executed DELETE on installed_equipment_version_structure.");
 
         entityManager.createNativeQuery("DELETE FROM parking_equipment_places").executeUpdate();
         logger.info("Executed DELETE on parking_equipment_places.");
@@ -150,6 +169,9 @@ public class DeleteService {
         entityManager.createNativeQuery("DELETE FROM parking").executeUpdate();
         logger.info("Executed DELETE on parking.");
 
+        entityManager.createNativeQuery("DROP TABLE IF EXISTS temp_installed_equipment_ids").executeUpdate();
+        entityManager.createNativeQuery("DROP TABLE IF EXISTS temp_place_equipment_ids").executeUpdate();
+        logger.info("Dropped temporary tables.");
 
         logger.info("All parking data successfully deleted.");
     }

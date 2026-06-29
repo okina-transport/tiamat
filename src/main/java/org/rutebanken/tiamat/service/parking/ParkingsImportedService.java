@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.service.parking;
 
+import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
@@ -9,7 +10,6 @@ import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import jakarta.transaction.Transactional;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.List;
@@ -143,35 +143,35 @@ public class ParkingsImportedService {
             isUpdated = true;
         }
 
-        if (existingParking.isOvernightParkingPermitted() != null) {
+        if (!Objects.equals(updatedParking.isOvernightParkingPermitted(), existingParking.isOvernightParkingPermitted())) {
             updatedParking.setOvernightParkingPermitted(existingParking.isOvernightParkingPermitted());
             isUpdated = true;
         }
 
-        if (existingParking.isRechargingAvailable() != null) {
+        if (!Objects.equals(updatedParking.isRechargingAvailable(), existingParking.isRechargingAvailable())) {
             updatedParking.setRechargingAvailable(existingParking.isRechargingAvailable());
             isUpdated = true;
         }
 
-        if (existingParking.isCarpoolingAvailable() != null) {
+        if (!Objects.equals(updatedParking.isCarpoolingAvailable(), existingParking.isCarpoolingAvailable())) {
             updatedParking.setCarpoolingAvailable(existingParking.isRechargingAvailable());
             isUpdated = true;
         }
 
-        if (existingParking.isCarsharingAvailable() != null) {
+        if (!Objects.equals(updatedParking.isCarsharingAvailable(), existingParking.isCarsharingAvailable())) {
             updatedParking.setCarsharingAvailable(existingParking.isCarsharingAvailable());
         }
 
-        if (existingParking.isSecure() != null) {
+        if (!Objects.equals(updatedParking.isSecure(), existingParking.isSecure())) {
             updatedParking.setSecure(existingParking.isSecure());
         }
 
-        if (existingParking.isRealTimeOccupancyAvailable() != null) {
+        if (!Objects.equals(updatedParking.isRealTimeOccupancyAvailable(), existingParking.isRealTimeOccupancyAvailable())) {
             updatedParking.setRealTimeOccupancyAvailable(existingParking.isRealTimeOccupancyAvailable());
             isUpdated = true;
         }
 
-        if (existingParking.isFreeParkingOutOfHours() != null) {
+        if (!Objects.equals(updatedParking.isFreeParkingOutOfHours(), existingParking.isFreeParkingOutOfHours())) {
             updatedParking.setFreeParkingOutOfHours(existingParking.isFreeParkingOutOfHours());
         }
 

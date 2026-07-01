@@ -1,6 +1,7 @@
 package org.rutebanken.tiamat.externalapis.gbfs.mapper;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -188,7 +189,7 @@ public class StationInformationMapper {
         parking.setInsee(toInsee(gbfsStation));
         parking.setCrossRoad(new MultilingualStringEntity(gbfsStation.getCrossStreet()));
         parking.setTotalCapacity(toTotalCapacity(gbfsStation));
-        parking.setRechargingAvailable(gbfsStation.getIsChargingStation());
+        parking.setRechargingAvailable(BooleanUtils.isTrue(gbfsStation.getIsChargingStation()));
         if (gbfsStation.getRentalUris() != null) {
             parking.setBookingUrl(gbfsStation.getRentalUris().getWeb());
             parking.setRentalUriIos(gbfsStation.getRentalUris().getIos());
@@ -205,7 +206,10 @@ public class StationInformationMapper {
             // required by Netex Parking FRANCE profile v1.2
             parking.getParkingPaymentProcess().add(ParkingPaymentProcessEnumeration.UNDEFINED);
         }
-        if (CollectionUtils.isEmpty(gbfsStation.getVehicleTypesCapacity())) {
+
+        if (SpecificParkingAreaUsageEnumeration.CARSHARE.equals(parkingAreaType) || SpecificParkingAreaUsageEnumeration.CARPOOL.equals(parkingAreaType)){
+            parking.getParkingVehicleTypes().add(ParkingVehicleEnumeration.CAR);
+        }else if (CollectionUtils.isEmpty(gbfsStation.getVehicleTypesCapacity())) {
             // required by Netex Parking FRANCE profile v1.2
             // cf. https://gbfs.org/fr/documentation/reference/#vehicle_typesjson:
             // REQUIRED of systems that include information about vehicle types in the vehicle_status.json file. If

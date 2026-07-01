@@ -319,18 +319,36 @@ class ParkingUpdater implements DataFetcher {
         if (input.get(PARKING_AREAS) != null) {
             List<ParkingArea> parkingAreasList = resolveParkingAreasList((List) input.get(PARKING_AREAS), updatedParking.getParkingAreas());
 
-            int totalCapacity = parkingAreasList.stream()
+            int newNoneCapacity = parkingAreasList.stream()
                     .filter(pa -> pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.NONE))
                     .mapToInt(pa -> pa.getTotalCapacity() != null ? pa.getTotalCapacity().intValue() : 0)
                     .sum();
+
+            int totalCapacity = newNoneCapacity != 0 ? newNoneCapacity : (updatedParking.getTotalCapacity() != null ? updatedParking.getTotalCapacity().intValue() : 0);
 
             int newCarpoolingCapacity = parkingAreasList.stream()
                     .filter(pa -> pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL))
                     .mapToInt(pa -> pa.getTotalCapacity() != null ? pa.getTotalCapacity().intValue() : 0)
                     .sum();
 
+            int newCarshareCapacity = parkingAreasList.stream()
+                    .filter(pa -> pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARSHARE))
+                    .mapToInt(pa -> pa.getTotalCapacity() != null ? pa.getTotalCapacity().intValue() : 0)
+                    .sum();
+
+            int newDisabledCapacity = parkingAreasList.stream()
+                    .filter(pa -> pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.DISABLED))
+                    .mapToInt(pa -> pa.getTotalCapacity() != null ? pa.getTotalCapacity().intValue() : 0)
+                    .sum();
+
             if (newCarpoolingCapacity > totalCapacity) {
                 throw  new IllegalArgumentException("La capacité covoiturage ne peut pas être supérieure à la capacité totale");
+            }
+            if (newCarshareCapacity > totalCapacity) {
+                throw  new IllegalArgumentException("La capacité d'autopartage ne peut pas être supérieure à la capacité totale");
+            }
+            if (newDisabledCapacity > totalCapacity) {
+                throw  new IllegalArgumentException("La capacité du nombre de places réservées aux personnes handicapées ne peut pas être supérieure à la capacité totale");
             }
 
             isUpdated = true;
@@ -408,14 +426,16 @@ class ParkingUpdater implements DataFetcher {
     private List<ParkingArea> resolveParkingAreasList(List list, List<ParkingArea> existingParkingAreas) {
         List<ParkingArea> result = new ArrayList<>();
         for (Object property : list) {
-            result.add(resolveSingleParkingArea((Map) property, existingParkingAreas));
+            result.add(createParkingAreaFromInputParameters((Map) property));
         }
-
-        if(existingParkingAreas != null) {
-            result.addAll(existingParkingAreas.stream().filter(pa -> !pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)).collect(Collectors.toList()));
-        }
-
         return result;
+    }
+
+    private ParkingArea createParkingAreaFromInputParameters(Map inputParams) {
+        ParkingArea newParkingArea = new ParkingArea();
+        newParkingArea.setSpecificParkingAreaUsage((SpecificParkingAreaUsageEnumeration) inputParams.get("specificParkingAreaUsage"));
+        newParkingArea.setTotalCapacity((BigInteger) inputParams.get(TOTAL_CAPACITY));
+        return newParkingArea;
     }
 
     private ParkingArea resolveSingleParkingArea(Map input, List<ParkingArea> existingParkingArea) {

@@ -157,4 +157,46 @@ class StationInformationMapperTest {
 
     }
 
+    @Test
+    void test_toParking_whenParkingAreaTypeIsCarshare_shouldSetCarVehicleType() throws JsonProcessingException {
+        // Arrange
+        GBFSStationInformation gbfsStationInformation = MAPPER.readValue(RAW_GBFS_STATION_INFORMATION_JSON, GBFSStationInformation.class);
+        GBFSVehicleTypes gbfsVehicleTypes = MAPPER.readValue(RAW_GBFS_V_TYPES, GBFSVehicleTypes.class);
+        Organisation organisation = new Organisation();
+
+        // Act
+        Parking output = tested.toParking(organisation, gbfsStationInformation.getData().getStations().getFirst(), gbfsVehicleTypes, ParkingTypeEnumeration.RENTAL_CAR_PARKING, SpecificParkingAreaUsageEnumeration.CARSHARE);
+
+        // Assert
+        assertEquals(List.of(ParkingVehicleEnumeration.CAR), output.getParkingVehicleTypes());
+    }
+
+    @Test
+    void test_toParking_whenParkingAreaTypeIsCarpool_shouldSetCarVehicleType() throws JsonProcessingException {
+        // Arrange
+        GBFSStationInformation gbfsStationInformation = MAPPER.readValue(RAW_GBFS_STATION_INFORMATION_JSON, GBFSStationInformation.class);
+        GBFSVehicleTypes gbfsVehicleTypes = MAPPER.readValue(RAW_GBFS_V_TYPES, GBFSVehicleTypes.class);
+        Organisation organisation = new Organisation();
+
+        // Act
+        Parking output = tested.toParking(organisation, gbfsStationInformation.getData().getStations().getFirst(), gbfsVehicleTypes, ParkingTypeEnumeration.RENTAL_CAR_PARKING, SpecificParkingAreaUsageEnumeration.CARPOOL);
+
+        // Assert
+        assertEquals(List.of(ParkingVehicleEnumeration.CAR), output.getParkingVehicleTypes());
+    }
+
+    @Test
+    void test_toParking_whenParkingAreaTypeIsNotCarshareOrCarpool_shouldNotSetCarVehicleType() throws JsonProcessingException {
+        // Arrange
+        GBFSStationInformation gbfsStationInformation = MAPPER.readValue(RAW_GBFS_STATION_INFORMATION_JSON, GBFSStationInformation.class);
+        GBFSVehicleTypes gbfsVehicleTypes = MAPPER.readValue(RAW_GBFS_V_TYPES, GBFSVehicleTypes.class);
+        Organisation organisation = new Organisation();
+
+        // Act
+        Parking output = tested.toParking(organisation, gbfsStationInformation.getData().getStations().getFirst(), gbfsVehicleTypes, ParkingTypeEnumeration.CYCLE_RENTAL, SpecificParkingAreaUsageEnumeration.PEDAL_CYCLE);
+
+        // Assert
+        assertFalse(output.getParkingVehicleTypes().contains(ParkingVehicleEnumeration.CAR));
+    }
+
 }

@@ -400,7 +400,7 @@ class ParkingUpdater implements DataFetcher {
     private List<ParkingArea> resolveParkingAreasList(List list, List<ParkingArea> existingParkingAreas) {
         List<ParkingArea> result = new ArrayList<>();
         for (Object property : list) {
-            result.add(resolveSingleParkingArea((Map) property, existingParkingAreas));
+            result.add(createParkingAreaFromInputParameters((Map) property));
         }
 
         if(existingParkingAreas != null) {
@@ -410,24 +410,12 @@ class ParkingUpdater implements DataFetcher {
         return result;
     }
 
-    private ParkingArea resolveSingleParkingArea(Map input, List<ParkingArea> existingParkingArea) {
-        ParkingArea parkingArea = null;
-        if(existingParkingArea != null){
-            for (ParkingArea pa : existingParkingArea) {
-                if (pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)){
-                    parkingArea = pa;
-                    break;
-                }
-            }
-        }
-        if (parkingArea == null) {
-            parkingArea = new ParkingArea();
-            if (input.get("specificParkingAreaUsage") != null){
-                parkingArea.setSpecificParkingAreaUsage((SpecificParkingAreaUsageEnumeration) input.get("specificParkingAreaUsage"));
-            }
-
-        }
-        parkingArea.setTotalCapacity((BigInteger) input.get(TOTAL_CAPACITY));
-        return parkingArea;
+    private ParkingArea createParkingAreaFromInputParameters(Map inputParams) {
+        ParkingArea newParkingArea = new ParkingArea();
+        newParkingArea.setSpecificParkingAreaUsage((SpecificParkingAreaUsageEnumeration) inputParams.get("specificParkingAreaUsage"));
+        newParkingArea.setTotalCapacity((BigInteger) inputParams.get(TOTAL_CAPACITY));
+        return newParkingArea;
     }
+
+
 }

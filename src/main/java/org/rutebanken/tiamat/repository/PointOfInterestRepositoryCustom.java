@@ -8,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public interface PointOfInterestRepositoryCustom extends DataManagedObjectStructureRepository<PointOfInterest> {
@@ -36,20 +35,16 @@ public interface PointOfInterestRepositoryCustom extends DataManagedObjectStruct
 
     PointOfInterest findFirstByNetexIdOrderByVersionDescAndInitialize(String netexId);
 
-    Page<PointOfInterest> findNearbyPOI(Envelope boundingBox, String ignorePointOfInterestId, Pageable pageable, List<String> classifications);
-
     Page<PointOfInterest> findNearbyPOI(Envelope boundingBox, String ignorePointOfInterestId, Pageable pageable);
 
     String findNearbyPOI(Envelope envelope, String name);
 
     Page<PointOfInterest> findByName(String query, Pageable pageable);
 
-    Page<PointOfInterest> findByClassifications(List<String> classifications, Pageable pageable);
-
     List<PointOfInterest> getAllPOIWithoutInseeCode();
 
     List<PointOfInterest> findAllPOILastVersionAndValid();
 
-    List<DTOClusterMarker> findClusterMarkers(Map<String, Object> variables);
+    List<DTOClusterMarker> findClusterMarkers();
 
 }

@@ -63,7 +63,7 @@ class PointOfInterestClusterMarkersFetcher implements DataFetcher {
         logger.info("Searching for Poi clusters with arguments {}", environment.getArguments());
 
 
-        List<DTOClusterMarker> clusters = pointOfInterestRepository.findClusterMarkers(environment.getVariables());
+        List<DTOClusterMarker> clusters = pointOfInterestRepository.findClusterMarkers();
         long duration = System.currentTimeMillis() - startTime;
         logger.info("Found {} poi clusters. duration : {} ms", clusters.size(), duration);
 

@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 
@@ -24,10 +25,12 @@ public class LoggingService {
     private static final Logger log = LogManager.getLogger(LoggingService.class);
     private final JmsTemplate jmsTemplate;
     private final ObjectMapper objectMapper;
+    private final boolean loggingEnabled;
 
-    public LoggingService(JmsTemplate jmsTemplate, ObjectMapper objectMapper) {
+    public LoggingService(JmsTemplate jmsTemplate, ObjectMapper objectMapper, @Value("${user.actions.logging.enabled:false}") boolean loggingEnabled) {
         this.jmsTemplate = jmsTemplate;
         this.objectMapper = objectMapper;
+        this.loggingEnabled = loggingEnabled;
     }
 
     public void logParkingCreation(String user, Parking entity) {
@@ -218,6 +221,9 @@ public class LoggingService {
     }
 
     private void log(String actionType, String user, String objectId, String organization, String metadata, String objectBefore, String objectAfter) throws JsonProcessingException {
+        if (!loggingEnabled) {
+            return;
+        }
         LogEntryDto logEntryDto = new LogEntryDto();
         logEntryDto.setEventTimestamp(Instant.now());
         logEntryDto.setActionType(actionType);

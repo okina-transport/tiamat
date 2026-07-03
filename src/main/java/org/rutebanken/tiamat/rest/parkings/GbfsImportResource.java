@@ -2,6 +2,14 @@ package org.rutebanken.tiamat.rest.parkings;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.general.ImportJobWorker;
 import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
 import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportParams;
@@ -13,13 +21,6 @@ import org.rutebanken.tiamat.repository.JobRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
-
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,10 +34,15 @@ public class GbfsImportResource {
 
     private final JobRepository jobRepository;
     private final ImportJobWorkerBuilder importJobWorkerBuilder;
+    private final LoggingService loggingService;
+    private final UsernameFetcher usernameFetcher;
 
-    public GbfsImportResource(JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder) {
+    public GbfsImportResource(JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder,
+                              LoggingService loggingService, UsernameFetcher usernameFetcher) {
         this.jobRepository = jobRepository;
         this.importJobWorkerBuilder = importJobWorkerBuilder;
+        this.loggingService = loggingService;
+        this.usernameFetcher = usernameFetcher;
     }
 
     @POST
@@ -44,6 +50,8 @@ public class GbfsImportResource {
     @Consumes({MediaType.APPLICATION_JSON + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)
     public Response importParkingGbfs(@Valid GbfsParkingImportParams gbfsParkingImportParams) {
+        loggingService.logGbfsParkingImport(usernameFetcher.getUserNameForAuthenticatedUser(), gbfsParkingImportParams.getGlobalUrl().toString());
+        
         Job job = new Job();
         job.setFileName(gbfsParkingImportParams.getGlobalUrl().toString());
         job.setType(JobType.GBFS_PARKING);

@@ -16,11 +16,11 @@
 package org.rutebanken.tiamat.model;
 
 import com.google.common.base.MoreObjects;
+import jakarta.persistence.*;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 
-import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -39,6 +39,9 @@ public class Quay extends StopPlaceSpace_VersionStructure {
 
     @Column(name = "insee_code")
     protected String inseeCode;
+
+    @Column(name = "town")
+    protected String town;
 
     @Column(name = "url")
     protected String url;
@@ -80,6 +83,12 @@ public class Quay extends StopPlaceSpace_VersionStructure {
 
     public void setInseeCode(String inseeCode) {
         this.inseeCode = inseeCode;
+    }
+
+    public String getTown() { return town; }
+
+    public void setTown(String town) {
+        this.town = town;
     }
 
     public String getUrl() { return url; }

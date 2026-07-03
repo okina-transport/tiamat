@@ -37,7 +37,8 @@ public class GbfsImportResource {
     private final LoggingService loggingService;
     private final UsernameFetcher usernameFetcher;
 
-    public GbfsImportResource(JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder, LoggingService loggingService, UsernameFetcher usernameFetcher) {
+    public GbfsImportResource(JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder,
+                              LoggingService loggingService, UsernameFetcher usernameFetcher) {
         this.jobRepository = jobRepository;
         this.importJobWorkerBuilder = importJobWorkerBuilder;
         this.loggingService = loggingService;
@@ -50,7 +51,7 @@ public class GbfsImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response importParkingGbfs(@Valid GbfsParkingImportParams gbfsParkingImportParams) {
         loggingService.logGbfsParkingImport(usernameFetcher.getUserNameForAuthenticatedUser(), gbfsParkingImportParams.getGlobalUrl().toString());
-
+        
         Job job = new Job();
         job.setFileName(gbfsParkingImportParams.getGlobalUrl().toString());
         job.setType(JobType.GBFS_PARKING);

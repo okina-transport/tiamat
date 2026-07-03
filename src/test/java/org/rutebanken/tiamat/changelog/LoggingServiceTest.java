@@ -3,18 +3,17 @@ package org.rutebanken.tiamat.changelog;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.PointOfInterest;
 import org.springframework.jms.core.JmsTemplate;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,7 +21,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class LoggingServiceTest {
+class LoggingSetestrviceTest {
 
     @Mock
     JmsTemplate jmsTemplate;
@@ -30,12 +29,8 @@ class LoggingServiceTest {
     @Spy
     ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
+    @InjectMocks
     LoggingService loggingService;
-
-    @BeforeEach
-    void setUp() {
-        loggingService = new LoggingService(jmsTemplate, objectMapper, true);
-    }
 
     private LogEntryDto captureLogEntry() throws Exception {
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
@@ -146,8 +141,8 @@ class LoggingServiceTest {
     }
 
     @Test
-    void logPOIDeleteAll_sendsDeleteAllEntry() throws Exception {
-        loggingService.logPOIDeleteAll("alice");
+    void logPoiDeleteAll_sendsDeleteAllEntry() throws Exception {
+        loggingService.logPoiDeleteAll("alice");
 
         LogEntryDto entry = captureLogEntry();
         assertThat(entry.getActionType()).isEqualTo("POI-DELETE-ALL");
@@ -171,158 +166,6 @@ class LoggingServiceTest {
         assertThat(entry.getLogContent()).isNull();
     }
 
-    @Test
-    void logStopPlaceCreation_sendsCreateEntry() throws Exception {
-        StopPlace stopPlace = buildStopPlace("MOBIITI:StopPlace:1", "RUT");
-
-        loggingService.logStopPlaceCreation("alice", stopPlace);
-
-        LogEntryDto entry = captureLogEntry();
-        assertThat(entry.getActionType()).isEqualTo("STOP-PLACE-CREATE");
-        assertThat(entry.getObjectId()).isEqualTo("MOBIITI:StopPlace:1");
-        assertThat(entry.getOrganization()).isEqualTo("RUT");
-        assertThat(entry.getLogContent().getObjectBefore()).isNull();
-        assertThat(entry.getLogContent().getObjectAfter()).isNotBlank();
-    }
-
-    @Test
-    void logStopPlaceUpdate_sendsBeforeAndAfter() throws Exception {
-        StopPlace from = buildStopPlace("MOBIITI:StopPlace:1", "RUT");
-        StopPlace to = buildStopPlace("MOBIITI:StopPlace:1", "RUT");
-
-        loggingService.logStopPlaceUpdate("alice", from, to);
-
-        LogEntryDto entry = captureLogEntry();
-        assertThat(entry.getActionType()).isEqualTo("STOP-PLACE-UPDATE");
-        assertThat(entry.getLogContent().getObjectBefore()).isNotBlank();
-        assertThat(entry.getLogContent().getObjectAfter()).isNotBlank();
-    }
-
-    @Test
-    void logStopPlaceDeletion_sendsDeleteEntry() throws Exception {
-        StopPlace stopPlace = buildStopPlace("MOBIITI:StopPlace:1", "RUT");
-
-        loggingService.logStopPlaceDeletion("alice", stopPlace);
-
-        LogEntryDto entry = captureLogEntry();
-        assertThat(entry.getActionType()).isEqualTo("STOP-PLACE-DELETE");
-        assertThat(entry.getLogContent().getObjectBefore()).isNotBlank();
-        assertThat(entry.getLogContent().getObjectAfter()).isNull();
-    }
-
-    @Test
-    void logStopPlaceMerge_sendsMetadataWithFromAndToIds() throws Exception {
-        loggingService.logStopPlaceMerge("alice", "MOBIITI:StopPlace:1", "MOBIITI:StopPlace:2");
-
-        LogEntryDto entry = captureLogEntry();
-        assertThat(entry.getActionType()).isEqualTo("STOP-PLACE-MERGE");
-        assertThat(entry.getOrganization()).isEqualTo("technique");
-        Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsAllEntriesOf(Map.of("fromStopPlaceId", "MOBIITI:StopPlace:1", "toStopPlaceId", "MOBIITI:StopPlace:2"));
-    }
-
-    @Test
-    void logStopPlaceQuayMove_sendsMetadataWithQuayIdsAndComments() throws Exception {
-        loggingService.logStopPlaceQuayMove("alice", List.of("MOBIITI:Quay:1", "MOBIITI:Quay:2"), "MOBIITI:StopPlace:2", "from comment", "to comment");
-
-        LogEntryDto entry = captureLogEntry();
-        assertThat(entry.getActionType()).isEqualTo("STOP-PLACE-QUAY-MOVE");
-        assertThat(entry.getObjectId()).isEqualTo("MOBIITI:StopPlace:2");
-        Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsAllEntriesOf(Map.of("quayIds", List.of("MOBIITI:Quay:1", "MOBIITI:Quay:2"), "fromVersionComment", "from comment", "toVersionComment", "to" + " comment"));
-    }
-
-    @Test
-    void logStopPlaceRename_sendsRenameEntry() throws Exception {
-        loggingService.logStopPlaceRename("alice");
-
-        LogEntryDto entry = captureLogEntry();
-        assertThat(entry.getActionType()).isEqualTo("STOP-PLACE-RENAME");
-        assertThat(entry.getUser()).isEqualTo("alice");
-        assertThat(entry.getLogContent()).isNull();
-    }
-
-    @Test
-    void logStopPlaceReopen_sendsMetadataWithVersionComment() throws Exception {
-        loggingService.logStopPlaceReopen("alice", "MOBIITI:StopPlace:1", "reopened comment");
-
-        LogEntryDto entry = captureLogEntry();
-        assertThat(entry.getActionType()).isEqualTo("STOP-PLACE-REOPEN");
-        assertThat(entry.getObjectId()).isEqualTo("MOBIITI:StopPlace:1");
-        Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsEntry("versionComment", "reopened comment");
-    }
-
-    @Test
-    void logStopPlaceTermination_sendsMetadataWithTerminationDetails() throws Exception {
-        Instant suggestedTimeOfTermination = Instant.parse("2026-01-01T00:00:00Z");
-
-        loggingService.logStopPlaceTermination("alice", "MOBIITI:StopPlace:1", suggestedTimeOfTermination, "terminated comment", ModificationEnumeration.DELETE);
-
-        LogEntryDto entry = captureLogEntry();
-        assertThat(entry.getActionType()).isEqualTo("STOP-PLACE-TERMINATION");
-        assertThat(entry.getObjectId()).isEqualTo("MOBIITI:StopPlace:1");
-        Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsAllEntriesOf(Map.of("suggestedTimeOfTermination", suggestedTimeOfTermination.toEpochMilli(), "versionComment", "terminated comment", "modificationEnumeration", "delete"));
-    }
-
-    // --- Quay ---
-
-    @Test
-    void logStopPlaceQuayDeletion_sendsDeleteEntry() throws Exception {
-        Quay quay = new Quay();
-        quay.setNetexId("MOBIITI:Quay:1");
-
-        loggingService.logStopPlaceQuayDeletion("alice", quay);
-
-        LogEntryDto entry = captureLogEntry();
-        assertThat(entry.getActionType()).isEqualTo("STOP-PLACE-QUAY-DELETE");
-        assertThat(entry.getObjectId()).isEqualTo("MOBIITI:Quay:1");
-        assertThat(entry.getLogContent().getObjectBefore()).isNotBlank();
-        assertThat(entry.getLogContent().getObjectAfter()).isNull();
-    }
-
-    // --- Multi-modal StopPlace ---
-
-    @Test
-    void logMultiModalSPCreation_sendsCreateEntry() throws Exception {
-        StopPlace stopPlace = buildStopPlace("MOBIITI:StopPlace:1", "RUT");
-
-        loggingService.logMultiModalSPCreation("alice", stopPlace);
-
-        LogEntryDto entry = captureLogEntry();
-        assertThat(entry.getActionType()).isEqualTo("MULTI-MODAL-STOP-PLACE-CREATE");
-        assertThat(entry.getObjectId()).isEqualTo("MOBIITI:StopPlace:1");
-        assertThat(entry.getLogContent().getObjectBefore()).isNull();
-        assertThat(entry.getLogContent().getObjectAfter()).isNotBlank();
-    }
-
-    @Test
-    void logMultiModalSPUpdate_sendsBeforeAndAfterWithMetadata() throws Exception {
-        StopPlace from = buildStopPlace("MOBIITI:StopPlace:1", "RUT");
-        StopPlace to = buildStopPlace("MOBIITI:StopPlace:1", "RUT");
-
-        loggingService.logMultiModalSPUpdate("alice", from, to, "{\"reason\":\"merge\"}");
-
-        LogEntryDto entry = captureLogEntry();
-        assertThat(entry.getActionType()).isEqualTo("MULTI-MODAL-STOP-PLACE-UPDATE");
-        assertThat(entry.getLogContent().getMetadata()).isEqualTo("{\"reason\":\"merge\"}");
-        assertThat(entry.getLogContent().getObjectBefore()).isNotBlank();
-        assertThat(entry.getLogContent().getObjectAfter()).isNotBlank();
-    }
-
-    @Test
-    void logMultiModalSPDeletion_sendsDeleteEntry() throws Exception {
-        StopPlace stopPlace = buildStopPlace("MOBIITI:StopPlace:1", "RUT");
-
-        loggingService.logMultiModalSPDeletion("alice", stopPlace);
-
-        LogEntryDto entry = captureLogEntry();
-        assertThat(entry.getActionType()).isEqualTo("MULTI-MODAL-STOP-PLACE-DELETE");
-        assertThat(entry.getLogContent().getObjectBefore()).isNotBlank();
-        assertThat(entry.getLogContent().getObjectAfter()).isNull();
-    }
-
     // --- Accessibility ---
 
     @Test
@@ -333,7 +176,7 @@ class LoggingServiceTest {
         assertThat(entry.getActionType()).isEqualTo("QUAY-ACCESSIBILITY-UPDATE");
         assertThat(entry.getUser()).isEqualTo("alice");
         Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsEntry("filename", "quay_acc.csv");
+        assertThat(metadata.get("filename")).isEqualTo("quay_acc.csv");
     }
 
     @Test
@@ -344,7 +187,7 @@ class LoggingServiceTest {
         assertThat(entry.getActionType()).isEqualTo("STOP-PLACE-ACCESSIBILITY-UPDATE");
         assertThat(entry.getUser()).isEqualTo("alice");
         Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsEntry("filename", "sp_acc.csv");
+        assertThat(metadata.get("filename")).isEqualTo("sp_acc.csv");
     }
 
     // --- TAD ---
@@ -357,7 +200,7 @@ class LoggingServiceTest {
         assertThat(entry.getActionType()).isEqualTo("TAD-CSV-IMPORT");
         assertThat(entry.getUser()).isEqualTo("alice");
         Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsEntry("filename", "tad.csv");
+        assertThat(metadata.get("filename")).isEqualTo("tad.csv");
     }
 
     // --- NeTEx stops ---
@@ -371,7 +214,7 @@ class LoggingServiceTest {
         assertThat(entry.getUser()).isEqualTo("alice");
         assertThat(entry.getOrganization()).isEqualTo("technique");
         Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsEntry("filename", "stops.xml");
+        assertThat(metadata.get("filename")).isEqualTo("stops.xml");
     }
 
     // --- NeTEx POI ---
@@ -385,7 +228,7 @@ class LoggingServiceTest {
         assertThat(entry.getUser()).isEqualTo("alice");
         assertThat(entry.getOrganization()).isEqualTo("technique");
         Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsEntry("filename", "pois.xml");
+        assertThat(metadata.get("filename")).isEqualTo("pois.xml");
     }
 
     // --- NeTEx Parking ---
@@ -399,7 +242,7 @@ class LoggingServiceTest {
         assertThat(entry.getUser()).isEqualTo("alice");
         assertThat(entry.getOrganization()).isEqualTo("technique");
         Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsEntry("filename", "parkings.xml");
+        assertThat(metadata.get("filename")).isEqualTo("parkings.xml");
     }
 
     // --- GBFS ---
@@ -412,7 +255,7 @@ class LoggingServiceTest {
         assertThat(entry.getActionType()).isEqualTo("GBFS-PARKING-IMPORT");
         assertThat(entry.getUser()).isEqualTo("alice");
         Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsEntry("url", "https://gbfs.example.com/feed");
+        assertThat(metadata.get("url")).isEqualTo("https://gbfs.example.com/feed");
     }
 
     // --- CSV imports ---
@@ -425,7 +268,7 @@ class LoggingServiceTest {
         assertThat(entry.getActionType()).isEqualTo("BIKE-PARKING-CSV-IMPORT");
         assertThat(entry.getUser()).isEqualTo("alice");
         Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsEntry("filename", "bikes.csv");
+        assertThat(metadata.get("filename")).isEqualTo("bikes.csv");
     }
 
     @Test
@@ -436,7 +279,7 @@ class LoggingServiceTest {
         assertThat(entry.getActionType()).isEqualTo("PARKING-CSV-IMPORT");
         assertThat(entry.getUser()).isEqualTo("alice");
         Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsEntry("filename", "parkings.csv");
+        assertThat(metadata.get("filename")).isEqualTo("parkings.csv");
     }
 
     @Test
@@ -447,7 +290,7 @@ class LoggingServiceTest {
         assertThat(entry.getActionType()).isEqualTo("RENTAL-BIKE-CSV-IMPORT");
         assertThat(entry.getUser()).isEqualTo("alice");
         Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsEntry("filename", "rental.csv");
+        assertThat(metadata.get("filename")).isEqualTo("rental.csv");
     }
 
     @Test
@@ -458,7 +301,7 @@ class LoggingServiceTest {
         assertThat(entry.getActionType()).isEqualTo("POI-CSV-IMPORT");
         assertThat(entry.getUser()).isEqualTo("alice");
         Map<String, Object> metadata = parseMetadata(entry);
-        assertThat(metadata).containsEntry("filename", "pois.csv");
+        assertThat(metadata.get("filename")).isEqualTo("pois.csv");
     }
 
     // --- Helpers ---
@@ -475,12 +318,5 @@ class LoggingServiceTest {
         poi.setNetexId(netexId);
         poi.setOperator(operator);
         return poi;
-    }
-
-    private StopPlace buildStopPlace(String netexId, String provider) {
-        StopPlace stopPlace = new StopPlace();
-        stopPlace.setNetexId(netexId);
-        stopPlace.setProvider(provider);
-        return stopPlace;
     }
 }

@@ -187,7 +187,13 @@ class StopPlaceUpdater implements DataFetcher {
                             }
                         }
                     }
-                    mdmService.updateImportedIds(updatedStopPlace);
+
+                    if (existingVersion != null) {
+                        mdmService.updateImportedIds(updatedStopPlace);
+                    } else {
+                        mdmService.generateIdentifier(updatedStopPlace);
+                    }
+
                     updatedStopPlace = stopPlaceVersionedSaverService.saveNewVersion(existingVersion, updatedStopPlace, childStopsUpdated);
 
                     if (existingVersion != null) {

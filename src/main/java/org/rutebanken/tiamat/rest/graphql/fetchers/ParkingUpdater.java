@@ -22,6 +22,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
+import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
@@ -40,10 +42,13 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -64,8 +69,10 @@ class ParkingUpdater implements DataFetcher {
     private final VersionCreator versionCreator;
     private final GroupOfEntitiesMapper groupOfEntitiesMapper;
     private final MdmService mdmService;
+    private final UsernameFetcher usernameFetcher;
+    private final LoggingService loggingService;
 
-    public ParkingUpdater(ParkingRepository parkingRepository, ParkingVersionedSaverService parkingVersionedSaverService, GeometryMapper geometryMapper, ReflectionAuthorizationService authorizationService, ValidBetweenMapper validBetweenMapper, VersionCreator versionCreator, GroupOfEntitiesMapper groupOfEntitiesMapper, MdmService mdmService) {
+    public ParkingUpdater(ParkingRepository parkingRepository, ParkingVersionedSaverService parkingVersionedSaverService, GeometryMapper geometryMapper, ReflectionAuthorizationService authorizationService, ValidBetweenMapper validBetweenMapper, VersionCreator versionCreator, GroupOfEntitiesMapper groupOfEntitiesMapper, MdmService mdmService, UsernameFetcher usernameFetcher, LoggingService loggingService) {
         this.parkingRepository = parkingRepository;
         this.parkingVersionedSaverService = parkingVersionedSaverService;
         this.geometryMapper = geometryMapper;
@@ -74,6 +81,8 @@ class ParkingUpdater implements DataFetcher {
         this.versionCreator = versionCreator;
         this.groupOfEntitiesMapper = groupOfEntitiesMapper;
         this.mdmService = mdmService;
+        this.usernameFetcher = usernameFetcher;
+        this.loggingService = loggingService;
     }
 
     @Override
@@ -83,13 +92,13 @@ class ParkingUpdater implements DataFetcher {
         List<Parking> parkings = null;
         if (input != null) {
             parkings = input.stream()
-             .map(m -> createOrUpdateParking(m))
-            .collect(Collectors.toList());
+                    .map(m -> createOrUpdateParking(m))
+                    .collect(Collectors.toList());
         }
         return parkings;
     }
 
-    private Parking createOrUpdateParking(Map input){
+    private Parking createOrUpdateParking(Map input) {
         Parking updatedParking;
         Parking existingVersion = null;
         String netexId = (String) input.get(ID);
@@ -105,6 +114,9 @@ class ParkingUpdater implements DataFetcher {
         }
 
         boolean isUpdated = populateParking(input, updatedParking);
+
+        String user = usernameFetcher.getUserNameForAuthenticatedUser();
+
         if (isUpdated) {
             authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(existingVersion, updatedParking));
 
@@ -112,11 +124,24 @@ class ParkingUpdater implements DataFetcher {
             mdmService.updateImportedIds(updatedParking);
             updatedParking = parkingVersionedSaverService.saveNewVersion(updatedParking);
 
+            logParking(existingVersion, user, updatedParking);
+
             return updatedParking;
         } else {
             logger.info("No changes - Parking {} NOT updated", netexId);
         }
+
+        logParking(existingVersion, user, updatedParking);
+
         return existingVersion;
+    }
+
+    private void logParking(Parking existingVersion, String user, Parking updatedParking) {
+        if (existingVersion != null) {
+            loggingService.logParkingUpdate(user, existingVersion, updatedParking);
+        } else {
+            loggingService.logParkingCreation(user, updatedParking);
+        }
     }
 
     private boolean populateParking(Map input, Parking updatedParking) {
@@ -133,8 +158,8 @@ class ParkingUpdater implements DataFetcher {
                 updatedParking.setCentroid(geoJsonPoint);
                 // parking INSEE is required and might be updated when centroid is updated
                 Optional<String> insee =
-                ImporterUtils.getInseeFromLatLng(updatedParking.getCentroid().getX(),
-                        updatedParking.getCentroid().getY());
+                        ImporterUtils.getInseeFromLatLng(updatedParking.getCentroid().getX(),
+                                updatedParking.getCentroid().getY());
                 if (insee.isEmpty()) {
                     throw new IllegalArgumentException("La récupération du code INSEE du parking a échoué");
                 } else {

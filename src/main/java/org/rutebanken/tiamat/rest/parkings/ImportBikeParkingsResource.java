@@ -1,7 +1,14 @@
 package org.rutebanken.tiamat.rest.parkings;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.general.BikesCSVHelper;
 import org.rutebanken.tiamat.general.ImportJobWorker;
 import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
@@ -15,15 +22,6 @@ import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
 import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.springframework.stereotype.Controller;
 
 import java.io.IOException;
@@ -44,12 +42,14 @@ public class ImportBikeParkingsResource {
     private final ParkingsImportedService parkingsImportedService;
     private final JobRepository jobRepository;
     private final ImportJobWorkerBuilder importJobWorkerBuilder;
+    private final LoggingService loggingService;
 
     ImportBikeParkingsResource(ParkingsImportedService parkingsImportedService, JobRepository jobRepository,
-                                ImportJobWorkerBuilder importJobWorkerBuilder) {
+                               ImportJobWorkerBuilder importJobWorkerBuilder, LoggingService loggingService) {
         this.parkingsImportedService = parkingsImportedService;
         this.jobRepository = jobRepository;
         this.importJobWorkerBuilder = importJobWorkerBuilder;
+        this.loggingService = loggingService;
     }
 
     @POST
@@ -59,6 +59,7 @@ public class ImportBikeParkingsResource {
     public Response importBikeParkingsCsvFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
         try {
             logger.info("Import Parkings Velo par " + user + " du fichier " + fileName);
+            loggingService.logBikeParkingCsvImport(user, fileName);
             List<DtoBikeParking> dtoBikeParkingsCSV = BikesCSVHelper.parseDocument(inputStream);
             BikesCSVHelper.checkDuplicatedBikeParkings(dtoBikeParkingsCSV);
             List<Parking> bikeParkings = BikesCSVHelper.mapFromDtoToEntityParking(dtoBikeParkingsCSV, false);
@@ -80,6 +81,7 @@ public class ImportBikeParkingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response importAsyncBikeParkingsCsvFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
         logger.info("Import Parkings Velo par " + user + " du fichier " + fileName);
+        loggingService.logBikeParkingCsvImport(user, fileName);
 
         Job job = new Job();
         job.setFileName(fileName);

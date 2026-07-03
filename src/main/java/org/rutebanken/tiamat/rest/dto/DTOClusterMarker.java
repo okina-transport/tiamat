@@ -1,14 +1,11 @@
 package org.rutebanken.tiamat.rest.dto;
 
-
-
-
 public class DTOClusterMarker {
 
-    private int clusterId;
-    private double longitude;
-    private double latitude;
-    private Long size;
+    private final int clusterId;
+    private final double longitude;
+    private final double latitude;
+    private final Long size;
 
 
     public DTOClusterMarker(Object[] clusterMarkerFromDB) {
@@ -16,5 +13,21 @@ public class DTOClusterMarker {
         this.longitude = (double) clusterMarkerFromDB[1];
         this.latitude = (double) clusterMarkerFromDB[2];
         this.size = (Long) clusterMarkerFromDB[3];
+    }
+
+    public int getClusterId() {
+        return clusterId;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public Long getSize() {
+        return size;
     }
 }

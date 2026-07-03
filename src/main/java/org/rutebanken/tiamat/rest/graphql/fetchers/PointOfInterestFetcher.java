@@ -115,10 +115,6 @@ class PointOfInterestFetcher implements DataFetcher {
 
             Envelope envelope = new Envelope(boundingBox.xMin, boundingBox.xMax, boundingBox.yMin, boundingBox.yMax);
 
-            if (environment.getArgument(POI_CLASSIFICATIONS) != null) {
-                List<String> classifications = environment.getArgument(POI_CLASSIFICATIONS);
-                return pointOfInterestRepository.findNearbyPOI(envelope, ignorePointOfInterestId, pageable, classifications);
-            }
            // pointOfInterestPage = filterOnlyPDV(pointOfInterestRepository.findNearbyPOI(envelope, null, ignorePointOfInterestId, pageable));
             return pointOfInterestRepository.findNearbyPOI(envelope, ignorePointOfInterestId, pageable);
 
@@ -126,10 +122,6 @@ class PointOfInterestFetcher implements DataFetcher {
             String query = environment.getArgument(QUERY);
             //pointOfInterestPage = filterOnlyPDV(pointOfInterestRepository.findByName(query, pageable));
             return pointOfInterestRepository.findByName(query, pageable);
-        } else if (environment.getArgument(POI_CLASSIFICATIONS) != null) {
-            List<String> classifications = environment.getArgument(POI_CLASSIFICATIONS);
-            //pointOfInterestPage = filterOnlyPDV(pointOfInterestRepository.findByClassifications(classifications, pageable));
-            return pointOfInterestRepository.findByClassifications(classifications, pageable);
         }
         else {
             logger.info("Finding all poi regardless of version and validity");

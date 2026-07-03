@@ -5,12 +5,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.AccessibilityAssessment;
+import org.rutebanken.tiamat.model.AccessibilityLimitation;
+import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
+import org.rutebanken.tiamat.model.SiteElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
@@ -31,6 +33,7 @@ public class ImporterUtils {
     private final static String OKINA_ENDPOINT = "https://api.adresse.okina.fr/reverse?lon=%s&lat=%s";
     private final static String DATA_GOUV_ENDPOINT = "https://api-adresse.data.gouv.fr/reverse/?lat=%s&lon=%s";
     private final static String GEO_API_GOUV_ENDPOINT = "https://geo.api.gouv.fr/communes?lat=%s&lon=%s&fields=nom,code,codesPostaux&format=json";
+    private final static String GEO_API_GOUV_COMMUNE_BY_CODE_ENDPOINT = "https://geo.api.gouv.fr/communes/%s?fields=nom&format=json";
 
     private static final GeometryFactory geometryFactory = new GeometryFactory();
 
@@ -44,6 +47,32 @@ public class ImporterUtils {
         getGeocodeDataFromDataGouvAPI(x, y, dtoGeocode);
         getGeocodeDataFromGeoGouvAPI(x, y, dtoGeocode);
         return dtoGeocode;
+    }
+
+    public static Optional<String> getCityNameFromInseeCode(String inseeCode) {
+        if (StringUtils.isBlank(inseeCode)) {
+            return Optional.empty();
+        }
+
+        final String url = String.format(GEO_API_GOUV_COMMUNE_BY_CODE_ENDPOINT, inseeCode);
+        RestTemplate restTemplate = new RestTemplate();
+
+        ResponseEntity response = null;
+        try {
+            response = restTemplate.exchange(url, HttpMethod.GET, HttpEntity.EMPTY, String.class);
+            JSONObject body = new JSONObject(Objects.requireNonNull(response.getBody()).toString());
+
+            if (body.has("nom") && StringUtils.isNotBlank(body.getString("nom"))) {
+                return Optional.of(body.getString("nom"));
+            }
+        } catch (RestClientException | JSONException | IllegalArgumentException | NullPointerException e) {
+            logger.error("Error on city name recovering from insee code {}", inseeCode, e);
+            logger.error("url : " + url);
+            if (response != null && response.getBody() != null) {
+                logger.error(response.getBody().toString());
+            }
+        }
+        return Optional.empty();
     }
 
     private static Optional<String> getInseeFromOkinaAPI(double x, double y) {

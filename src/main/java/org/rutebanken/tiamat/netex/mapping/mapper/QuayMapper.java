@@ -17,7 +17,9 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
+import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.AlternativeName;
 import org.rutebanken.tiamat.netex.NetexUtils;
 
@@ -68,6 +70,17 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
 
         if (quay.getPrivateCode() != null && quay.getPrivateCode().getValue() != null) {
             quay2.setPrivateCode(new org.rutebanken.tiamat.model.PrivateCodeStructure(quay.getPrivateCode().getValue(), quay.getPrivateCode().getType()));
+        }
+
+        if(quay.getPostalAddress() != null){
+            String town = null;
+            if (quay.getPostalAddress().getTown() != null) {
+                town = quay.getPostalAddress().getTown().getValue();
+            }
+            if (StringUtils.isBlank(town) && quay.getPostalAddress().getPostCode() != null) {
+                town = ImporterUtils.getCityNameFromInseeCode(quay.getPostalAddress().getPostCode()).orElse(null);
+            }
+            quay2.setTown(town);
         }
     }
 
@@ -138,14 +151,13 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
         String postalAddressId = tiamatQuay.getNetexId().replace("Quay", "PostalAddress");
         postalAddress.setId(postalAddressId);
         postalAddress.setVersion(getPostalAdressVersion(postalAddressId));
-        MultilingualString addressName = new MultilingualString();
 
-        if (tiamatQuay.getName() != null){
-            addressName.setValue(tiamatQuay.getName().getValue());
-            postalAddress.setName(addressName);
-        }else if (netexQuay.getName() != null){
-            addressName.setValue(netexQuay.getName().getValue());
-            postalAddress.setName(addressName);
+        String town = tiamatQuay.getTown();
+        if (StringUtils.isBlank(town)) {
+            town = ImporterUtils.getCityNameFromInseeCode(tiamatQuay.getInseeCode()).orElse(null);
+        }
+        if (StringUtils.isNotBlank(town)) {
+            postalAddress.setTown(new MultilingualString().withValue(town));
         }
         netexQuay.setPostalAddress(postalAddress);
     }

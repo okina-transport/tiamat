@@ -38,6 +38,9 @@ public class StopPlaceGeocodeHandler {
             }
             if (dtoGeocode != null && StringUtils.isNotBlank(dtoGeocode.getCityCode())) {
                 quay.setInseeCode(dtoGeocode.getCityCode());
+                if (StringUtils.isNotBlank(dtoGeocode.getCity())) {
+                    quay.setTown(dtoGeocode.getCity());
+                }
             } else {
                 logger.error("Code postal non trouvé pour le quay {} ", quay.getId());
             }

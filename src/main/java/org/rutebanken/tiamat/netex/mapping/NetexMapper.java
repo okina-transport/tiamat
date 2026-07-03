@@ -21,6 +21,7 @@ import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import org.rutebanken.netex.model.*;
+import org.rutebanken.tiamat.importer.CityNameService;
 import org.rutebanken.tiamat.model.PlaceEquipment;
 import org.rutebanken.tiamat.model.Value;
 import org.rutebanken.tiamat.netex.mapping.converter.QuayListConverter;
@@ -62,7 +63,9 @@ public class NetexMapper {
                        DataManagedObjectStructureMapper dataManagedObjectStructureMapper,
                        PublicationDeliveryHelper publicationDeliveryHelper,
                        AccessibilityAssessmentMapper accessibilityAssessmentMapper,
-                       PointOfInterestMapper pointOfInterestMapper,  @org.springframework.beans.factory.annotation.Value("${netex.validPrefix:MOBIITI}")String superIdPrefix
+                       PointOfInterestMapper pointOfInterestMapper,
+                       CityNameService cityNameService,
+                       @org.springframework.beans.factory.annotation.Value("${netex.validPrefix:MOBIITI}")String superIdPrefix
 ) {
 
         logger.info("Setting up netexMapper with DI");
@@ -118,7 +121,7 @@ public class NetexMapper {
                 .exclude("roadAddress")
                 .exclude("otherTransportModes")
                 .exclude("polygon")
-                .customize(new QuayMapper())
+                .customize(new QuayMapper(cityNameService))
                 .byDefault()
                 .register();
 

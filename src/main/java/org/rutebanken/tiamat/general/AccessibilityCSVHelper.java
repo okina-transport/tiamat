@@ -1,8 +1,12 @@
 package org.rutebanken.tiamat.general;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.AccessibilityAssessment;
+import org.rutebanken.tiamat.model.AccessibilityLimitation;
+import org.rutebanken.tiamat.model.Quay;
+import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.rest.dto.DtoAccessibility;
 import org.rutebanken.tiamat.service.Preconditions;
 
@@ -13,6 +17,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class AccessibilityCSVHelper {
+
+    private AccessibilityCSVHelper() {
+    }
 
     /**
      * Analyse un fichier CSV pour créer une liste d'objets {@link DtoAccessibility}.
@@ -90,7 +97,7 @@ public class AccessibilityCSVHelper {
         List<String> compositeKey = dtoAccessibilityList.stream().map(accessibility -> accessibility.getId() + accessibility.getName()).collect(Collectors.toList());
         List<String> duplicates = AccessibilityCSVUtils.foundDuplicates(compositeKey);
 
-        if (duplicates.size() > 0){
+        if (CollectionUtils.isNotEmpty(duplicates)) {
             String duplicatesMsg = duplicates.stream()
                     .collect(Collectors.joining(","));
 

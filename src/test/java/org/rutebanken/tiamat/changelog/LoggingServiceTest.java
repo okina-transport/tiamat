@@ -21,7 +21,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class LoggingSetestrviceTest {
+class LoggingServiceTest {
 
     @Mock
     JmsTemplate jmsTemplate;

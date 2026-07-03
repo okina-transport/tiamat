@@ -1,10 +1,16 @@
 package org.rutebanken.tiamat.rest.stopPlacesNetex;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.xml.bind.JAXBException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.rutebanken.helper.organisation.NotAuthenticatedException;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
+import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.general.ImportJobWorker;
 import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
 import org.rutebanken.tiamat.importer.ImportParams;
@@ -27,10 +33,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -50,6 +52,8 @@ public class ImportStopPlacesNetexResource {
     private final NetexImporter netexImporter;
     private final StopPlaceGeocodeHandler stopPlaceGeocodeHandler;
     private final ImportJobWorkerBuilder importJobWorkerBuilder;
+    private final LoggingService loggingService;
+    private final UsernameFetcher usernameFetcher;
     @Value("${netex.validPrefix:MOBIITI}")
     String validNetexPrefix;
     @Autowired
@@ -57,11 +61,15 @@ public class ImportStopPlacesNetexResource {
 
     @Autowired
     ImportStopPlacesNetexResource(PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller,
-                                  NetexImporter netexImporter, StopPlaceGeocodeHandler stopPlaceGeocodeHandler, ImportJobWorkerBuilder importJobWorkerBuilder) {
+                                  NetexImporter netexImporter, StopPlaceGeocodeHandler stopPlaceGeocodeHandler,
+                                  ImportJobWorkerBuilder importJobWorkerBuilder, LoggingService loggingService,
+                                  UsernameFetcher usernameFetcher) {
         this.publicationDeliveryUnmarshaller = publicationDeliveryUnmarshaller;
         this.netexImporter = netexImporter;
         this.stopPlaceGeocodeHandler = stopPlaceGeocodeHandler;
         this.importJobWorkerBuilder = importJobWorkerBuilder;
+        this.loggingService = loggingService;
+        this.usernameFetcher = usernameFetcher;
     }
 
     @PreAuthorize("@rolesChecker.hasRoleEdit()")
@@ -77,6 +85,7 @@ public class ImportStopPlacesNetexResource {
             throws IOException, IllegalArgumentException, JAXBException, SAXException, BindException {
 
         logger.info("Received Stop Places Netex publication delivery, starting to parse...");
+        loggingService.logStopPlaceNetexImport(usernameFetcher.getUserNameForAuthenticatedUser(), fileName);
         PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
         try {
             netexImporter.importProcess(incomingPublicationDelivery, new ImportParams(), containsMobiitiIds);
@@ -104,6 +113,7 @@ public class ImportStopPlacesNetexResource {
                                                    @FormDataParam("keepStopNames") Boolean keepStopNames,
                                                    @FormDataParam("keepStopGeolocalisation") Boolean keepStopGeolocalisation,
                                                    @FormDataParam("updateStopAccessibility") Boolean updateStopAccessibility) throws IOException {
+        loggingService.logStopPlaceNetexImport(usernameFetcher.getUserNameForAuthenticatedUser(), fileName);
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Response.ResponseBuilder builder = Response.accepted();

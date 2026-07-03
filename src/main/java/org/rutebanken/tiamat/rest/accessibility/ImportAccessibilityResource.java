@@ -1,6 +1,10 @@
 package org.rutebanken.tiamat.rest.accessibility;
 
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.general.AccessibilityCSVHelper;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -11,9 +15,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.List;
 
@@ -25,10 +26,12 @@ public class ImportAccessibilityResource {
     private static final Logger logger = LoggerFactory.getLogger(ImportAccessibilityResource.class);
 
     private final AccessibilityImportedService accessibilityImportedService;
+    private final LoggingService loggingService;
 
     @Autowired
-    ImportAccessibilityResource(AccessibilityImportedService accessibilityImportedService){
+    ImportAccessibilityResource(AccessibilityImportedService accessibilityImportedService, LoggingService loggingService) {
         this.accessibilityImportedService = accessibilityImportedService;
+        this.loggingService = loggingService;
     }
 
     @POST
@@ -36,9 +39,10 @@ public class ImportAccessibilityResource {
     @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)
     public Response importAccessibilityQuayCsvFile(@FormDataParam("file") InputStream inputStream,
-                                               @FormDataParam("file_name") String fileName,
-                                               @FormDataParam("user") String user) {
+                                                   @FormDataParam("file_name") String fileName,
+                                                   @FormDataParam("user") String user) {
         logger.info("Import Accessibility Quay by : " + user + " of the file : " + fileName);
+        loggingService.logQuayAccessibilityUpdate(user, fileName);
         try {
             List<DtoAccessibility> dtoAccessibility = AccessibilityCSVHelper.parseDocument(inputStream);
             AccessibilityCSVHelper.checkDuplicatedQuays(dtoAccessibility);
@@ -70,6 +74,7 @@ public class ImportAccessibilityResource {
                                                          @FormDataParam("file_name") String fileName,
                                                          @FormDataParam("user") String user) {
         logger.info("Import Accessibility Stop Place by : {} of the file : {}", user, fileName);
+        loggingService.logStopPlaceAccessibilityUpdate(user, fileName);
         try {
             List<DtoAccessibility> dtoAccessibilities = AccessibilityCSVHelper.parseDocument(inputStream);
             AccessibilityCSVHelper.checkDuplicatedQuays(dtoAccessibilities);

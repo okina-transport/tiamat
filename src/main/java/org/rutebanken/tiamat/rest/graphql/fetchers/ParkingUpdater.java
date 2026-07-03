@@ -22,6 +22,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
+import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
@@ -37,14 +39,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
@@ -64,8 +59,10 @@ class ParkingUpdater implements DataFetcher {
     private final VersionCreator versionCreator;
     private final GroupOfEntitiesMapper groupOfEntitiesMapper;
     private final MdmService mdmService;
+    private final UsernameFetcher usernameFetcher;
+    private final LoggingService loggingService;
 
-    public ParkingUpdater(ParkingRepository parkingRepository, ParkingVersionedSaverService parkingVersionedSaverService, GeometryMapper geometryMapper, ReflectionAuthorizationService authorizationService, ValidBetweenMapper validBetweenMapper, VersionCreator versionCreator, GroupOfEntitiesMapper groupOfEntitiesMapper, MdmService mdmService) {
+    public ParkingUpdater(ParkingRepository parkingRepository, ParkingVersionedSaverService parkingVersionedSaverService, GeometryMapper geometryMapper, ReflectionAuthorizationService authorizationService, ValidBetweenMapper validBetweenMapper, VersionCreator versionCreator, GroupOfEntitiesMapper groupOfEntitiesMapper, MdmService mdmService, UsernameFetcher usernameFetcher, LoggingService loggingService) {
         this.parkingRepository = parkingRepository;
         this.parkingVersionedSaverService = parkingVersionedSaverService;
         this.geometryMapper = geometryMapper;
@@ -74,6 +71,8 @@ class ParkingUpdater implements DataFetcher {
         this.versionCreator = versionCreator;
         this.groupOfEntitiesMapper = groupOfEntitiesMapper;
         this.mdmService = mdmService;
+        this.usernameFetcher = usernameFetcher;
+        this.loggingService = loggingService;
     }
 
     @Override
@@ -83,13 +82,13 @@ class ParkingUpdater implements DataFetcher {
         List<Parking> parkings = null;
         if (input != null) {
             parkings = input.stream()
-             .map(m -> createOrUpdateParking(m))
-            .collect(Collectors.toList());
+                    .map(m -> createOrUpdateParking(m))
+                    .collect(Collectors.toList());
         }
         return parkings;
     }
 
-    private Parking createOrUpdateParking(Map input){
+    private Parking createOrUpdateParking(Map input) {
         Parking updatedParking;
         Parking existingVersion = null;
         String netexId = (String) input.get(ID);
@@ -105,6 +104,9 @@ class ParkingUpdater implements DataFetcher {
         }
 
         boolean isUpdated = populateParking(input, updatedParking);
+
+        String user = usernameFetcher.getUserNameForAuthenticatedUser();
+
         if (isUpdated) {
             authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(existingVersion, updatedParking));
 
@@ -112,11 +114,24 @@ class ParkingUpdater implements DataFetcher {
             mdmService.updateImportedIds(updatedParking);
             updatedParking = parkingVersionedSaverService.saveNewVersion(updatedParking);
 
+            logParking(existingVersion, user, updatedParking);
+
             return updatedParking;
         } else {
             logger.info("No changes - Parking {} NOT updated", netexId);
         }
+
+        logParking(existingVersion, user, updatedParking);
+
         return existingVersion;
+    }
+
+    private void logParking(Parking existingVersion, String user, Parking updatedParking) {
+        if (existingVersion != null) {
+            loggingService.logParkingUpdate(user, existingVersion, updatedParking);
+        } else {
+            loggingService.logParkingCreation(user, updatedParking);
+        }
     }
 
     private boolean populateParking(Map input, Parking updatedParking) {
@@ -133,8 +148,8 @@ class ParkingUpdater implements DataFetcher {
                 updatedParking.setCentroid(geoJsonPoint);
                 // parking INSEE is required and might be updated when centroid is updated
                 Optional<String> insee =
-                ImporterUtils.getInseeFromLatLng(updatedParking.getCentroid().getX(),
-                        updatedParking.getCentroid().getY());
+                        ImporterUtils.getInseeFromLatLng(updatedParking.getCentroid().getX(),
+                                updatedParking.getCentroid().getY());
                 if (insee.isEmpty()) {
                     throw new IllegalArgumentException("La récupération du code INSEE du parking a échoué");
                 } else {
@@ -285,7 +300,7 @@ class ParkingUpdater implements DataFetcher {
             }
 
             if (newCarsharingCapacity > total_capacity) {
-                throw  new IllegalArgumentException("La capacité autopartage ne peut pas être supérieure à la capacité totale");
+                throw new IllegalArgumentException("La capacité autopartage ne peut pas être supérieure à la capacité totale");
             }
 
             if (updatedParking.getParkingAreas() != null) {
@@ -349,13 +364,13 @@ class ParkingUpdater implements DataFetcher {
                     .sum();
 
             if (newCarpoolingCapacity > totalCapacity) {
-                throw  new IllegalArgumentException("La capacité covoiturage ne peut pas être supérieure à la capacité totale");
+                throw new IllegalArgumentException("La capacité covoiturage ne peut pas être supérieure à la capacité totale");
             }
             if (newCarshareCapacity > totalCapacity) {
-                throw  new IllegalArgumentException("La capacité d'autopartage ne peut pas être supérieure à la capacité totale");
+                throw new IllegalArgumentException("La capacité d'autopartage ne peut pas être supérieure à la capacité totale");
             }
             if (newDisabledCapacity > totalCapacity) {
-                throw  new IllegalArgumentException("La capacité du nombre de places réservées aux personnes handicapées ne peut pas être supérieure à la capacité totale");
+                throw new IllegalArgumentException("La capacité du nombre de places réservées aux personnes handicapées ne peut pas être supérieure à la capacité totale");
             }
 
             isUpdated = true;
@@ -424,7 +439,7 @@ class ParkingUpdater implements DataFetcher {
         capacity.setNumberOfSpaces((BigInteger) input.get(NUMBER_OF_SPACES));
         capacity.setNumberOfSpacesWithRechargePoint((BigInteger) input.get(NUMBER_OF_SPACES_WITH_RECHARGE_POINT));
         if (capacity.getNumberOfSpacesWithRechargePoint() != null && capacity.getNumberOfSpacesWithRechargePoint().compareTo(capacity.getNumberOfSpaces()) > 0) {
-            throw  new IllegalArgumentException("Le nombre de places équipées de bornes de recharge ne peut pas être supérieur à la capacité totale");
+            throw new IllegalArgumentException("Le nombre de places équipées de bornes de recharge ne peut pas être supérieur à la capacité totale");
         }
         capacity.setNumberOfCarsharingSpaces((BigInteger) input.get(NUMBER_OF_CARSHARING_SPACES));
         return capacity;
@@ -436,7 +451,7 @@ class ParkingUpdater implements DataFetcher {
             result.add(createParkingAreaFromInputParameters((Map) property));
         }
 
-        if(existingParkingAreas != null) {
+        if (existingParkingAreas != null) {
             result.addAll(existingParkingAreas.stream().filter(pa -> !pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)).collect(Collectors.toList()));
         }
 

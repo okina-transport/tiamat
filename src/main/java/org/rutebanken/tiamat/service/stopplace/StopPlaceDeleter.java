@@ -18,7 +18,7 @@ package org.rutebanken.tiamat.service.stopplace;
 import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
-import org.rutebanken.tiamat.changelog.EntityChangedListener;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -30,7 +30,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_DELETE_STOPS;
@@ -41,28 +40,22 @@ public class StopPlaceDeleter {
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceDeleter.class);
 
     private final StopPlaceRepository stopPlaceRepository;
-
-    private final EntityChangedListener entityChangedListener;
-
     private final ReflectionAuthorizationService authorizationService;
-
     private final UsernameFetcher usernameFetcher;
-
     private final MutateLock mutateLock;
-
     private final StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
-
     private final MdmService mdmService;
+    private final LoggingService loggingService;
 
     @Autowired
-    public StopPlaceDeleter(StopPlaceRepository stopPlaceRepository, EntityChangedListener entityChangedListener, ReflectionAuthorizationService authorizationService, UsernameFetcher usernameFetcher, MutateLock mutateLock, StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette, MdmService mdmService) {
+    public StopPlaceDeleter(StopPlaceRepository stopPlaceRepository, ReflectionAuthorizationService authorizationService, UsernameFetcher usernameFetcher, MutateLock mutateLock, StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette, MdmService mdmService, LoggingService loggingService) {
         this.stopPlaceRepository = stopPlaceRepository;
-        this.entityChangedListener = entityChangedListener;
         this.authorizationService = authorizationService;
         this.usernameFetcher = usernameFetcher;
         this.mutateLock = mutateLock;
         this.stopPlaceQuayDeleterToChouette = stopPlaceQuayDeleterToChouette;
         this.mdmService = mdmService;
+        this.loggingService = loggingService;
     }
 
     public boolean deleteStopPlace(String stopPlaceNetexId) {
@@ -84,11 +77,13 @@ public class StopPlaceDeleter {
 
             deleteIdsInMdm(lastVersionStopPlace);
 
+            for (StopPlace stopPlace : stopPlaces) {
+                loggingService.logStopPlaceDeletion(usernameForAuthenticatedUser, stopPlace);
+            }
+
             stopPlaceRepository.deleteStopPlaceChildrenByChildren(stopPlaces);
             stopPlaceRepository.deleteAll(stopPlaces);
 
-
-//            notifyDeleted(stopPlaces);
 
             logger.warn("All versions ({}) of stop place {} deleted by user {}", stopPlaces.size(), stopPlaceNetexId, usernameForAuthenticatedUser);
 
@@ -97,13 +92,13 @@ public class StopPlaceDeleter {
     }
 
     private void deleteIdsInMdm(StopPlace stopPlaceToDelete) {
-        if (stopPlaceToDelete == null){
+        if (stopPlaceToDelete == null) {
             return;
         }
 
         mdmService.deleteStopPlaceBySuperId(stopPlaceToDelete.getNetexId());
-        if (CollectionUtils.isNotEmpty(stopPlaceToDelete.getQuays())){
-            stopPlaceToDelete.getQuays().forEach(quay ->  mdmService.deleteQuaysBySuperId(quay.getNetexId()));
+        if (CollectionUtils.isNotEmpty(stopPlaceToDelete.getQuays())) {
+            stopPlaceToDelete.getQuays().forEach(quay -> mdmService.deleteQuaysBySuperId(quay.getNetexId()));
         }
     }
 
@@ -118,10 +113,4 @@ public class StopPlaceDeleter {
         return stopPlaces;
     }
 
-    private void notifyDeleted(List<StopPlace> stopPlaces) {
-        Collections.sort(stopPlaces,
-                (o1, o2) -> Long.compare(o1.getVersion(), o2.getVersion()));
-        StopPlace newest = stopPlaces.get(stopPlaces.size() - 1);
-        entityChangedListener.onDelete(newest);
-    }
 }

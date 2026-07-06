@@ -263,7 +263,7 @@ public class GbfsParkingImporter {
         Optional<org.rutebanken.tiamat.model.Organisation> optionalOrganisation = organisationRepository.findByName(organisation.getName());
         optionalOrganisation.ifPresent(value -> organisation.setId(value.getId()));
         organisationRepository.save(organisation);
-        StationInformationMapper stationInformationMapper = new StationInformationMapper(this.superIdPrefix);
+        StationInformationMapper stationInformationMapper = new StationInformationMapper();
         List<Parking> parkings = data.stationInformation().getData().getStations().stream()
                 .map(gbfsStation -> stationInformationMapper.toParking(organisation, gbfsStation, data.vehicleTypes(), params.getParkingType(), params.getParkingAreaType()))
                 .toList();

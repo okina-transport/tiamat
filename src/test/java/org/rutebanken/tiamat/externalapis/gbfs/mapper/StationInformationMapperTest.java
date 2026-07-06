@@ -107,7 +107,7 @@ class StationInformationMapperTest {
             }
             """;
 
-    private final StationInformationMapper tested = new StationInformationMapper("MOBIITI");
+    private final StationInformationMapper tested = new StationInformationMapper();
 
     @Test
     void test_toParking_whenInputIsValid_shouldMapCorrectly() throws JsonProcessingException {
@@ -121,7 +121,7 @@ class StationInformationMapperTest {
 
         // Assert
         assertNotNull(output);
-        assertEquals("MOBIITI:PARKING:CAL##3A##Station##3A##stn_bE8SHEQRa5rnLSuzpqoxJs",output.getNetexId());
+        assertNull(output.getNetexId());
         assertEquals("CAL:Station:stn_bE8SHEQRa5rnLSuzpqoxJs", output.getOriginalId());
         assertEquals("Lac des Nauves", output.getName().getValue());
         assertEquals("fr", output.getName().getLang());

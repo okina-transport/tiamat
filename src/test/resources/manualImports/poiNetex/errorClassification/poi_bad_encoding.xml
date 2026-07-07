@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<PublicationDelivery xmlns="http://www.netex.org.uk/netex"
+                     version="1.1:FR-NETEX-2.2">
+    <PublicationTimestamp>2024-04-08T08:58:14Z</PublicationTimestamp>
+    <ParticipantRef>MOBIITI</ParticipantRef>
+    <dataObjects>
+        <SiteFrame id="MOBIITI:SiteFrame:1" modification="new" version="1">
+            <pointsOfInterest>
+                <PointOfInterest id="MOBIITI:PointOfInterest:1" modification="new" version="1">
+                    <Description>POI Testé</Description>
+                </PointOfInterest>
+            </pointsOfInterest>
+        </SiteFrame>
+    </dataObjects>
+</PublicationDelivery>

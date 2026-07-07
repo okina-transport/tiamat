@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<PublicationDelivery xmlns="http://www.netex.org.uk/netex"
+                     version="1.1:FR-NETEX-2.2">
+    <PublicationTimestamp>2024-04-03T13:08:54.78Z</PublicationTimestamp>
+    <ParticipantRef>MOBIITI</ParticipantRef>
+    <dataObjects>
+        <GeneralFrame id="MOBI-ITI:GeneralFrame:NETEX_PARKING_20240403T130854Z:LOC" modification="revise" version="1">
+            <members>
+                <TypeOfFrame id="FR:TypeOfFrame:WRONG" version="2.01:FR-NETEX_PARKING-1.0">
+                    <Name>NETEX PARKING</Name>
+                    <Description>Profil d'échange français NETEX ARRET</Description>
+                </TypeOfFrame>
+                <Parking changed="2024-04-03T13:18:04.368" created="2024-04-03T12:13:43.094"
+                         id="FR:40088:Parking:327:LOC"
+                         modification="new" version="2">
+                    <keyList>
+                        <KeyValue>
+                            <Key>imported-name</Key>
+                            <Value>Test Parc-relais Henri Dunant</Value>
+                        </KeyValue>
+                        <KeyValue>
+                            <Key>imported-id</Key>
+                            <Value>63000-PRelais1</Value>
+                        </KeyValue>
+                    </keyList>
+                    <Name>Test Parc-relais Henri Dunant</Name>
+                    <Centroid>
+                        <Location>
+                            <Longitude>3.089807</Longitude>
+                            <Latitude>45.761526</Latitude>
+                        </Location>
+                    </Centroid>
+                    <PostalAddress id="MOBIITI:PostalAddress:5f7bfb29-d19f-4028-b1d9-cba37a384df9" version="any">
+                        <PostalRegion>63113</PostalRegion>
+                    </PostalAddress>
+                    <AllAreasWheelchairAccessible>false</AllAreasWheelchairAccessible>
+                    <ParkingType>parkAndRide</ParkingType>
+                    <ParkingVehicleTypes>pedalCycle</ParkingVehicleTypes>
+                    <ParkingLayout>undefined</ParkingLayout>
+                    <TotalCapacity>472</TotalCapacity>
+                    <ParkingPaymentProcess>payAndDisplay payByPrepaidToken payByMobileDevice</ParkingPaymentProcess>
+                    <PaymentMethods>debitCard</PaymentMethods>
+                    <BookingUrl>
+                        https://www.clermontmetropole.eu/fr/habiter-se-deplacer/deplacement-et-mobilite/en-voiture/stationnement/
+                    </BookingUrl>
+                    <parkingProperties>
+                        <ParkingProperties id="MOBIITI:ParkingProperties:331" version="0">
+                            <ParkingUserTypes>all</ParkingUserTypes>
+                            <ParkingVehicleTypes>pedalCycle</ParkingVehicleTypes>
+                            <spaces modificationSet="all">
+                                <ParkingCapacity id="MOBIITI:ParkingCapacity:429" version="0">
+                                    <ParkingUserType>registeredDisabled</ParkingUserType>
+                                    <NumberOfSpaces>22</NumberOfSpaces>
+                                </ParkingCapacity>
+                                <ParkingCapacity id="MOBIITI:ParkingCapacity:430" version="0">
+                                    <ParkingUserType>allUsers</ParkingUserType>
+                                    <NumberOfSpaces>450</NumberOfSpaces>
+                                </ParkingCapacity>
+                            </spaces>
+                        </ParkingProperties>
+                    </parkingProperties>
+                    <parkingAreas>
+                        <ParkingArea id="MOBIITI:ParkingArea:260:LOC" modification="new" version="1">
+                            <Name lang="FR">Zone P+R</Name>
+                            <placeTypes>
+                                <TypeOfPlaceRef ref="parkAndRide"/>
+                            </placeTypes>
+                            <PublicUse>all</PublicUse>
+                            <SiteRef ref="FR:40088:Parking:327:LOC"/>
+                            <MaximumHeight>180</MaximumHeight>
+                            <TotalCapacity>1</TotalCapacity>
+                        </ParkingArea>
+                    </parkingAreas>
+                </Parking>
+            </members>
+        </GeneralFrame>
+    </dataObjects>
+</PublicationDelivery>

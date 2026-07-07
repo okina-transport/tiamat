@@ -15,6 +15,8 @@
 
 package org.rutebanken.tiamat.general;
 
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.config.Messages;
 import org.rutebanken.tiamat.importer.GbfsParkingImporter;
@@ -24,8 +26,7 @@ import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.ParkingLayoutEnumeration;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportParams;
-import org.rutebanken.tiamat.model.job.Job;
-import org.rutebanken.tiamat.model.job.JobStatus;
+import org.rutebanken.tiamat.model.job.*;
 import org.rutebanken.tiamat.netex.NetexUtils;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
@@ -37,6 +38,7 @@ import org.rutebanken.tiamat.service.batch.MissingInseeCodeService;
 import org.rutebanken.tiamat.service.parking.BikeParkingsImportedService;
 import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
 import org.rutebanken.tiamat.service.parking.RentalBikeParkingsImportedService;
+import org.rutebanken.tiamat.validator.NetexValidationErrorClassifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -44,13 +46,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
-import jakarta.xml.bind.JAXBElement;
-import jakarta.xml.bind.JAXBException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ImportJobWorker implements Runnable {
@@ -148,8 +151,17 @@ public class ImportJobWorker implements Runnable {
                 exceptionMessage = bindException.getAllErrors().stream()
                         .map(oe -> messages.get(oe.getCode(), oe.getArguments()))
                         .collect(Collectors.joining(System.lineSeparator()));
+                if (job.getType() == JobType.NETEX_PARKING || job.getType() == JobType.NETEX_POI) {
+                    job.setErrors(NetexValidationErrorClassifier.classify(bindException));
+                }
             } else {
                 exceptionMessage = e.getMessage();
+            }
+            if (e instanceof AnalyzeImportException analyzeImportException) {
+                Set<AnalyzeImportErrorType> errorTypes = analyzeImportException.getErrors().stream()
+                        .map(AnalyzeImportError::getType)
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+                job.setErrors(errorTypes);
             }
             String message = "Error executing import job " + job.getId() + ". " + e.getClass().getSimpleName() + " - " + exceptionMessage;
             logger.error("{}.\nImport job was {}", message, job, e);
@@ -190,9 +202,20 @@ public class ImportJobWorker implements Runnable {
         gbfsParkingImporter.importProcess(gbfsParkingImportParams);
     }
 
-    private void launchNetexParkingImport() throws JAXBException, IOException, SAXException, BindException {
-        PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
+    private void launchNetexParkingImport() throws IOException, BindException {
+        PublicationDeliveryStructure incomingPublicationDelivery = unmarshalNetex();
         netexImporter.importProcess(incomingPublicationDelivery, new ImportParams(), false);
+    }
+
+    private PublicationDeliveryStructure unmarshalNetex() throws IOException {
+        byte[] netexBytes = NetexXmlHelper.readAllBytes(inputStream);
+        Utf8Helper.decodeStrictUtf8(netexBytes, "NeTEx");
+
+        try {
+            return publicationDeliveryUnmarshaller.unmarshal(new ByteArrayInputStream(netexBytes));
+        } catch (JAXBException | SAXException e) {
+            throw new AnalyzeImportException(AnalyzeImportErrorType.TEMPLATE, "Le fichier NeTEx est invalide ou mal formé : " + e.getMessage());
+        }
     }
 
     private void launchNetexStopPlaceImport() throws JAXBException, IOException, SAXException, BindException {
@@ -295,8 +318,9 @@ public class ImportJobWorker implements Runnable {
         return false;
     }
 
-    private void launchNetexPoiImport() throws JAXBException, IOException, SAXException, BindException {
-        PublicationDeliveryStructure incomingPublicationDelivery = publicationDeliveryUnmarshaller.unmarshal(inputStream);
+    private void launchNetexPoiImport() throws IOException, BindException {
+        PublicationDeliveryStructure incomingPublicationDelivery = unmarshalNetex();
+
         poiHelper.clearClassificationCache();
         netexImporter.importProcess(incomingPublicationDelivery, new ImportParams(), false);
     }
@@ -307,11 +331,6 @@ public class ImportJobWorker implements Runnable {
         PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
         List<DtoPointOfInterest> poiWithClassification = poiHelper.filterPoisWithClassificationOrShop(dtoPointOfInterest, job);
         poiHelper.persistPointsOfInterest(poiWithClassification);
-
-//        List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
-//        PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
-//        poiHelper.checkShops(dtoPointOfInterest);
-//        poiHelper.persistPointsOfInterest(dtoPointOfInterest);
     }
 
     private void launchMissingInseeCodeService() {

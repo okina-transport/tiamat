@@ -1,19 +1,20 @@
 package org.rutebanken.tiamat.general;
 
+import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
-import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.csv.PointOfInterestCsvHeader;
+import org.rutebanken.tiamat.model.job.AnalyzeImportError;
+import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.repository.PointOfInterestClassificationRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestFacilitySetRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.rest.dto.DtoPointOfInterest;
-import org.rutebanken.tiamat.service.Preconditions;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.PointOfInterestClassificationVersionedSaverService;
 import org.rutebanken.tiamat.versioning.save.PointOfInterestVersionedSaverService;
@@ -29,7 +30,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 
@@ -48,7 +48,10 @@ public class PointOfInterestCSVHelper {
 
     private final static Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
 
-    private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
+    private static final List<String> EXPECTED_HEADERS = PointOfInterestCsvHeader.headerNames();
+
+    // up to 2 additional free-form "key=value" tag columns are allowed after the mandatory headers
+    private static final int MAX_COLUMNS = EXPECTED_HEADERS.size() + 2;
 
     @Autowired
     private PointOfInterestClassificationRepository poiClassificationRepo;
@@ -87,12 +90,46 @@ public class PointOfInterestCSVHelper {
      * @throws IllegalArgumentException exception in case of error in the data
      */
     public List<DtoPointOfInterest> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
-        Iterable<CSVRecord> records = CSVHelper.getRecords(csvFile);
 
-        return StreamSupport.stream(records.spliterator(), false)
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        List<DtoPointOfInterest> dtoList = new ArrayList<>();
+        List<AnalyzeImportError> rowErrors = new ArrayList<>();
 
+        CSVParser parser = CSVHelper.getRecords(csvFile);
+        validateHeaders(parser.getHeaderNames());
+
+        for (CSVRecord csvRecord : parser) {
+            if (csvRecord.size() < EXPECTED_HEADERS.size() || csvRecord.size() > MAX_COLUMNS) {
+                rowErrors.add(new AnalyzeImportError(AnalyzeImportErrorType.TEMPLATE,
+                        "Expected between " + EXPECTED_HEADERS.size() + " and " + MAX_COLUMNS + " columns but found " + csvRecord.size(),
+                        (int) csvRecord.getRecordNumber(), null));
+                continue;
+            }
+
+            DtoPointOfInterest poiDTO = new DtoPointOfInterest(csvRecord);
+            List<AnalyzeImportError> validationErrors = validatePoi(poiDTO, (int) csvRecord.getRecordNumber());
+            if (!validationErrors.isEmpty()) {
+                rowErrors.addAll(validationErrors);
+                continue;
+            }
+
+            dtoList.add(poiDTO);
+        }
+
+        if (!rowErrors.isEmpty()) {
+            throw new AnalyzeImportException(rowErrors);
+        }
+
+        return dtoList;
+    }
+
+    private static void validateHeaders(List<String> actualHeaders) {
+        if (actualHeaders.size() < EXPECTED_HEADERS.size() || actualHeaders.size() > MAX_COLUMNS) {
+            throw new AnalyzeImportException(AnalyzeImportErrorType.TEMPLATE,
+                    "Expected between " + EXPECTED_HEADERS.size() + " and " + MAX_COLUMNS + " columns but found " + actualHeaders.size() + ".");
+        }
+
+        List<String> mandatoryHeaders = actualHeaders.subList(0, EXPECTED_HEADERS.size());
+        CSVHelper.validateHeaders(EXPECTED_HEADERS, mandatoryHeaders, "POI");
     }
 
     public List<DtoPointOfInterest> filterPoisWithClassificationOrShop(List<DtoPointOfInterest> dtoPointOfInterest, Job job){
@@ -115,29 +152,27 @@ public class PointOfInterestCSVHelper {
     }
 
     /**
-     * Converts a raw string from CSV to a DTO object
-     *
-     * @param rawString line from CSV file
-     * @return a DTO object with data from the CSV file
-     */
-    private DtoPointOfInterest convertToDTO(CSVRecord rawString) {
-
-        DtoPointOfInterest poiDTO = new DtoPointOfInterest(rawString);
-        validatePoi(poiDTO);
-        return poiDTO;
-    }
-
-    /**
      * Checks if Point of interest matches the conditions
      *
-     * @param poi The point of interest to check
-     * @throws IllegalArgumentException Exception if the point of interest does not meet the required conditions
+     * @param poi  The point of interest to check
+     * @param line the CSV line number the POI was read from
+     * @return the list of validation errors found for this POI, empty if valid
      */
-    private static void validatePoi(DtoPointOfInterest poi) throws IllegalArgumentException {
-        Preconditions.checkArgument(!poi.getId().isEmpty(), "ID is required in all POI");
-        Preconditions.checkArgument(!poi.getName().isEmpty(), "NAME is required for POI :" + poi.getId());
-        Preconditions.checkArgument(patternXlongYlat.matcher(poi.getLongitude()).matches(), "longitude is required for POI: " + poi.getId());
-        Preconditions.checkArgument(patternXlongYlat.matcher(poi.getLatitude()).matches(), "latitude is required for POI: " + poi.getId());
+    private static List<AnalyzeImportError> validatePoi(DtoPointOfInterest poi, int line) {
+        List<AnalyzeImportError> errors = new ArrayList<>();
+        if (StringUtils.isBlank(poi.getId())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "ID is required in all POI", line, "id"));
+        }
+        if (StringUtils.isBlank(poi.getName())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "NAME is required for POI :" + poi.getId(), line, "name"));
+        }
+        if (!patternXlongYlat.matcher(poi.getLongitude()).matches()) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "longitude is required for POI: " + poi.getId(), line, "longitude"));
+        }
+        if (!patternXlongYlat.matcher(poi.getLatitude()).matches()) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "latitude is required for POI: " + poi.getId(), line, "latitude"));
+        }
+        return errors;
     }
 
 

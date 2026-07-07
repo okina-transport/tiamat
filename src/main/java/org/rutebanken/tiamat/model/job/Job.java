@@ -84,6 +84,10 @@ public class Job {
     @Column(name = "operator", nullable = false, length = 100)
     private Set<String> operators = new HashSet<>();
 
+    @Convert(converter = AnalyzeErrorTypeSetConverter.class)
+    @Column(columnDefinition = "text")
+    private Set<AnalyzeImportErrorType> errors = new LinkedHashSet<>();
+
 
     public Job() {
     }
@@ -106,6 +110,7 @@ public class Job {
                 .add("finished", finished)
                 .add("message", message)
                 .add("username", userName)
+                .add("errors", errors)
                 .toString();
     }
 
@@ -242,5 +247,13 @@ public class Job {
 
     public void setOperators(Set<String> operators) {
         this.operators = operators;
+    }
+
+    public Set<AnalyzeImportErrorType> getErrors() {
+        return errors;
+    }
+
+    public void setErrors(Set<AnalyzeImportErrorType> errors) {
+        this.errors = errors;
     }
 }

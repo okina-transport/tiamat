@@ -1,23 +1,19 @@
 package org.rutebanken.tiamat.general;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.csv.CSVParser;
+import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
+import java.io.StringReader;
+import java.util.List;
 
 public class CSVHelper {
 
 
-    public static Iterable<CSVRecord> getRecords(InputStream csvFile) throws IOException {
+    public static CSVParser getRecords(InputStream csvFile) throws IOException {
 
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -31,12 +27,8 @@ public class CSVHelper {
 
         baos.flush();
 
-        InputStream is1 = new ByteArrayInputStream(baos.toByteArray());
-        InputStream is2 = new ByteArrayInputStream(baos.toByteArray());
-        String result = IOUtils.toString(is1, StandardCharsets.UTF_8);
-        String delimiter = guessDelimiter(result);
-
-        Reader reader = new InputStreamReader(is2);
+        String content = Utf8Helper.decodeStrictUtf8(baos.toByteArray(), "CSV");
+        String delimiter = guessDelimiter(content);
 
         return CSVFormat.DEFAULT
                 .builder()
@@ -44,7 +36,33 @@ public class CSVHelper {
                 .setSkipHeaderRecord(true)
                 .setDelimiter(delimiter)
                 .build()
-                .parse(reader);
+                .parse(new StringReader(content));
+    }
+
+    public static void validateHeaders(List<String> expectedHeaders, List<String> actualHeaders, String templateName) {
+        if (expectedHeaders.equals(actualHeaders)) {
+            return;
+        }
+
+        List<String> missing = expectedHeaders.stream()
+                .filter(header -> !actualHeaders.contains(header))
+                .toList();
+        List<String> unexpected = actualHeaders.stream()
+                .filter(header -> !expectedHeaders.contains(header))
+                .toList();
+
+        StringBuilder message = new StringBuilder("The CSV file does not match the expected " + templateName + " template.");
+        if (!missing.isEmpty()) {
+            message.append(" Missing column(s): ").append(String.join(", ", missing)).append(".");
+        }
+        if (!unexpected.isEmpty()) {
+            message.append(" Unexpected column(s): ").append(String.join(", ", unexpected)).append(".");
+        }
+        if (missing.isEmpty() && unexpected.isEmpty()) {
+            message.append(" Column order does not match the expected template: ").append(String.join(",", actualHeaders)).append(".");
+        }
+
+        throw new AnalyzeImportException(AnalyzeImportErrorType.TEMPLATE, message.toString());
     }
 
     private static String guessDelimiter(String fileContent) {

@@ -20,9 +20,11 @@ public class PublicationDeliveryValidator implements Validator {
     public static final int MAXIMUM_PARKING_DEPTH = 3;
 
     private final ParkingValidator parkingValidator;
+    private final PointOfInterestValidator pointOfInterestValidator;
 
-    public PublicationDeliveryValidator(ParkingValidator parkingValidator) {
+    public PublicationDeliveryValidator(ParkingValidator parkingValidator, PointOfInterestValidator pointOfInterestValidator) {
         this.parkingValidator = parkingValidator;
+        this.pointOfInterestValidator = pointOfInterestValidator;
     }
 
     @Override
@@ -81,10 +83,26 @@ public class PublicationDeliveryValidator implements Validator {
                     }
                 }
                 errors.popNestedPath(); // members
+            } else if (frame.getValue() instanceof SiteFrame siteFrame) {
+                validatePointsOfInterest(siteFrame, errors);
             }
             errors.popNestedPath(); // compositeFrameOrCommonFrame[i].value
         }
         errors.popNestedPath(); // dataObjects
+    }
+
+    private void validatePointsOfInterest(@NotNull SiteFrame siteFrame, @NotNull Errors errors) {
+        if (siteFrame.getPointsOfInterest() == null || CollectionUtils.isEmpty(siteFrame.getPointsOfInterest().getPointOfInterest())) {
+            return;
+        }
+        errors.pushNestedPath("pointsOfInterest");
+        var pointsOfInterest = siteFrame.getPointsOfInterest().getPointOfInterest();
+        for (int i = 0; i < pointsOfInterest.size(); i++) {
+            errors.pushNestedPath(String.format("pointOfInterest[%d]", i));
+            pointOfInterestValidator.validate(pointsOfInterest.get(i), errors);
+            errors.popNestedPath();
+        }
+        errors.popNestedPath();
     }
 
     /**

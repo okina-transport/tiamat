@@ -46,6 +46,9 @@ public class Messages {
     public static final String VALIDATION_TOF_VERSION_INVALID = "validation.type-of-frame-version-invalid";
     public static final String VALIDATION_TOF_NAME_INVALID = "validation.type-of-frame-name-invalid";
     public static final String VALIDATION_TOF_DESCRIPTION_INVALID = "validation.type-of-frame-description-invalid";
+    public static final String VALIDATION_IMPORTED_ID_REQUIRED = "validation.imported-id-required";
+
+    public static final String VALIDATION_POI_CENTROID_REQUIRED = "validation.poi-centroid-required";
 
     private static final Logger log = LoggerFactory.getLogger(Messages.class);
 

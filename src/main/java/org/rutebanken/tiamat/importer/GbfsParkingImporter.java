@@ -16,10 +16,14 @@ import org.mobilitydata.gbfs.v3_0.system_information.GBFSSystemInformation;
 import org.mobilitydata.gbfs.v3_0.vehicle_types.GBFSVehicleTypes;
 import org.rutebanken.tiamat.externalapis.gbfs.mapper.StationInformationMapper;
 import org.rutebanken.tiamat.externalapis.gbfs.mapper.SystemInformationMapper;
+import org.rutebanken.tiamat.general.AnalyzeImportException;
+import org.rutebanken.tiamat.general.NetexXmlHelper;
+import org.rutebanken.tiamat.general.Utf8Helper;
 import org.rutebanken.tiamat.model.Organisation;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportData;
 import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportParams;
+import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
 import org.rutebanken.tiamat.repository.OrganisationRepository;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
@@ -67,43 +71,46 @@ public class GbfsParkingImporter {
      *
      * @param gbfsJsonUri URI to gbfs.json file to retrieve GBFS data from (GBFS API must be version 2.3 or 3.0 GBFS)
      * @return GBFS data retrieved and parsed and validated from gbfsJsonUri
-     * @throws TiamatBusinessException when:
+     * @throws TiamatBusinessException when requesting GBFS through HTTP fails (network/availability issue)
+     * @throws AnalyzeImportException  when the retrieved GBFS data is invalid, classified as:
      *                                 <ul>
-     *                                 <li>Requesting GBFS through HTTP fails</li>
-     *                                 <li>Deserializing GBFS fails</li>
-     *                                 <li>Any GBFS json file contains validation errors</li>
-     *                                 <li>GBFS feed is not in version 2.3 or 3.0</li>
+     *                                 <li>{@link AnalyzeImportErrorType#ENCODING} when a GBFS file is not valid UTF-8</li>
+     *                                 <li>{@link AnalyzeImportErrorType#TEMPLATE} when a GBFS file is malformed, has an
+     *                                 unsupported version, or a required feed is missing</li>
+     *                                 <li>{@link AnalyzeImportErrorType#MISSING_DATA} when a GBFS feed's content fails
+     *                                 GBFS schema validation</li>
      *                                 </ul>
      */
     public GbfsParkingImportData getGBFSParkingImportData(URI gbfsJsonUri) throws TiamatBusinessException {
-        InputStream rawGbfsJsonFile;
-        try {
-            rawGbfsJsonFile = gbfsHttpClient.getData(gbfsJsonUri);
+        byte[] rawGbfsJsonBytes;
+        try (InputStream rawGbfsJsonFile = gbfsHttpClient.getData(gbfsJsonUri)) {
+            rawGbfsJsonBytes = NetexXmlHelper.readAllBytes(rawGbfsJsonFile);
         } catch (IOException ex) {
             String msg = "Error requesting gbfs.json file from " + gbfsJsonUri;
             logger.error(msg, ex);
             throw new TiamatBusinessException(TiamatBusinessException.GBFS_HTTP_RETRIEVAL_FAILED, msg);
         }
+        Utf8Helper.decodeStrictUtf8(rawGbfsJsonBytes, "gbfs.json");
 
         ValidationResult gbfsValidation;
         try {
-            gbfsValidation = gbfsValidator.validate(Map.of("gbfs", rawGbfsJsonFile));
+            gbfsValidation = gbfsValidator.validate(Map.of("gbfs", new ByteArrayInputStream(rawGbfsJsonBytes)));
         } catch (Exception ex) {
             String msg = "Error validating gbfs.json file from " + gbfsJsonUri;
             logger.error(msg, ex);
-            throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+            throw new AnalyzeImportException(AnalyzeImportErrorType.TEMPLATE, msg);
         }
         FileValidationResult gbfsFileValidation = gbfsValidation.files().get("gbfs");
         if (gbfsFileValidation == null || !gbfsFileValidation.exists()) {
             String msg = "Target url " + gbfsJsonUri + " is not a gbfs.json file";
             logger.error(msg);
-            throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+            throw new AnalyzeImportException(AnalyzeImportErrorType.TEMPLATE, msg);
         }
         if (CollectionUtils.isNotEmpty(gbfsFileValidation.errors())) {
             String msg =
                     "gbfs.json contains error(s):\n" + gbfsFileValidation.errors().stream().map(FileValidationError::toString).collect(Collectors.joining("\n"));
             logger.error(msg);
-            throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+            throw new AnalyzeImportException(AnalyzeImportErrorType.TEMPLATE, msg);
         }
 
         GBFSGbfs gbfsV3;
@@ -116,12 +123,12 @@ public class GbfsParkingImporter {
             } else if ("3.0".equals(version)) {
                 gbfsV3 = MAPPER.readValue(gbfsFileValidation.fileContents(), GBFSGbfs.class);
             } else {
-                throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, "Unsupported GBFS version: " + version);
+                throw new AnalyzeImportException(AnalyzeImportErrorType.TEMPLATE, "Unsupported GBFS version: " + version);
             }
         } catch (IOException ex) {
             String msg = "Could not parse gbfs.json file (version: " + version + ")";
             logger.error(msg, ex);
-            throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+            throw new AnalyzeImportException(AnalyzeImportErrorType.TEMPLATE, msg);
         }
 
         List<GBFSFeed.Name> requiredFeeds = List.of(
@@ -150,19 +157,22 @@ public class GbfsParkingImporter {
                 if (requiredFeeds.contains(feedName)) {
                     String msg = "Could not find feed " + feedName + " in gbfs.json";
                     logger.error(msg);
-                    throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+                    throw new AnalyzeImportException(AnalyzeImportErrorType.TEMPLATE, msg);
                 } else {
                     continue;
                 }
             }
 
+            byte[] rawFeedBytes;
             try (InputStream is = gbfsHttpClient.getData(URI.create(feed.getUrl()))) {
-                feedBytes.put(feedName.toString().toLowerCase(), is.readAllBytes());
+                rawFeedBytes = is.readAllBytes();
             } catch (IOException ex) {
                 String msg = "Error requesting GBFS " + feedName + ".json from " + feed.getUrl();
                 logger.error(msg, ex);
                 throw new TiamatBusinessException(TiamatBusinessException.GBFS_HTTP_RETRIEVAL_FAILED, msg);
             }
+            Utf8Helper.decodeStrictUtf8(rawFeedBytes, feedName.toString());
+            feedBytes.put(feedName.toString().toLowerCase(), rawFeedBytes);
         }
 
         ValidationResult compositeValidation;
@@ -173,7 +183,7 @@ public class GbfsParkingImporter {
         } catch (Exception ex) {
             String msg = "Error validating GBFS feeds (composite validation)";
             logger.error(msg, ex);
-            throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+            throw new AnalyzeImportException(AnalyzeImportErrorType.TEMPLATE, msg);
         }
 
         for (GBFSFeed.Name feedName : requiredFeeds) {
@@ -182,13 +192,13 @@ public class GbfsParkingImporter {
             if (res == null || !res.exists()) {
                 String msg = "Url for " + key + ".json is not valid";
                 logger.error(msg);
-                throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+                throw new AnalyzeImportException(AnalyzeImportErrorType.TEMPLATE, msg);
             }
             if (CollectionUtils.isNotEmpty(res.errors())) {
                 String msg = key + ".json contains error(s):\n" +
                         res.errors().stream().map(FileValidationError::toString).collect(Collectors.joining("\n"));
                 logger.error(msg);
-                throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+                throw new AnalyzeImportException(AnalyzeImportErrorType.MISSING_DATA, msg);
             }
         }
         for (GBFSFeed.Name feedName : optionalFeedsIfPresentForValidation) {
@@ -198,7 +208,7 @@ public class GbfsParkingImporter {
                 String msg = key + ".json contains error(s):\n" +
                         res.errors().stream().map(FileValidationError::toString).collect(Collectors.joining("\n"));
                 logger.error(msg);
-                throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+                throw new AnalyzeImportException(AnalyzeImportErrorType.MISSING_DATA, msg);
             }
         }
 
@@ -236,7 +246,7 @@ public class GbfsParkingImporter {
         } catch (IOException ex) {
             String msg = "Could not parse one of the GBFS feed files (version: " + version + ")";
             logger.error(msg, ex);
-            throw new TiamatBusinessException(TiamatBusinessException.GBFS_INVALID, msg);
+            throw new AnalyzeImportException(AnalyzeImportErrorType.TEMPLATE, msg);
         }
 
         return new GbfsParkingImportData(stationInformation, systemInformation, vehicleTypes);

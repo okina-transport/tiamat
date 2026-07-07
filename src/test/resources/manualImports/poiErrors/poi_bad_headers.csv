@@ -1,0 +1,2 @@
+identifier,name,houseNumber,street,city,postCode,longitude,latitude,amenity,building,historic,landuse,leisure,tourism,office,shop,lpImportId,operateur
+POI1,Boulangerie Test,1,rue Test,Paris,75001,2.3488,48.8534,,,,,,,,bakery,LP1,TestOperator

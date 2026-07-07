@@ -1,0 +1,2 @@
+id,name,insee,address,url,userType,free,nbOfPlaces,nbOfPr,disabledParkingNb,electricVehicleNb,bikeNb,electricBikesNb,carSharingNb,motorcycleNb,carPoolingNb,maxHeight,siretNumber,Xlong,Ylat,disabledParkingPrice,oneHourPrice,twoHoursPrice,threeHoursPrice,fourHoursPrice,twentyFourHoursPrice,residentSubscription,nonResidentSubscription,workType,info,operator
+P6,Parking Incomplet,75056,6 rue Test,,,,,0,1,0,0,0,0,0,0,,,2.3488,48.8534,,,,,,,,,,,

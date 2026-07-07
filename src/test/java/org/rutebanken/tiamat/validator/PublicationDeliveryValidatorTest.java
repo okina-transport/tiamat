@@ -1,13 +1,12 @@
 package org.rutebanken.tiamat.validator;
 
 
+import jakarta.xml.bind.JAXBException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.rutebanken.tiamat.netex.NetexConstants;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
@@ -16,7 +15,6 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.xml.sax.SAXException;
 
-import jakarta.xml.bind.JAXBException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -30,7 +28,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.rutebanken.tiamat.config.Messages.*;
 
 @ExtendWith(MockitoExtension.class)
-public class PublicationDeliveryValidatorTest {
+class PublicationDeliveryValidatorTest {
 
     private static final File NETEX_PARKING_XML_MORE_THAN_3_PARKING_LEVELS = new File("src/test/resources/manualImports/parkingsNetex/parkings_v1.2_3_or_more_parking_levels.xml");
     private static final File NETEX_PARKING_XML_3_OR_LESS_PARKING_LEVELS = new File("src/test/resources/manualImports/parkingsNetex/parkings_v1.2_3_or_less_parking_levels.xml");
@@ -41,19 +39,23 @@ public class PublicationDeliveryValidatorTest {
     private static final File NETEX_PARKING_XML_TYPE_OF_FRAME_MISSING = new File("src/test/resources/manualImports/parkingsNetex/parkings_v1.2_tof_missing.xml");
     private static final File NETEX_PARKING_XML_TYPE_OF_FRAME_INVALID = new File("src/test/resources/manualImports/parkingsNetex/parkings_v1.2_tof_invalid.xml");
     private static final File NETEX_PARKING_XML_TYPE_OF_FRAME_VALID = new File("src/test/resources/manualImports/parkingsNetex/parkings_v1.2_tof_valid.xml");
+    private static final File NETEX_POI_TWO_VALID = new File("src/test/resources/manualImports/poiNetex/poi_two_valid.xml");
     private final PublicationDeliveryUnmarshaller unmarshaller = new PublicationDeliveryUnmarshaller();
 
     @Mock
     private ParkingValidator mockParkingValidator;
 
+    @Mock
+    private PointOfInterestValidator mockPointOfInterestValidator;
+
     @InjectMocks
     private PublicationDeliveryValidator tested;
 
-    public PublicationDeliveryValidatorTest() throws IOException, SAXException {
+    PublicationDeliveryValidatorTest() throws IOException, SAXException {
     }
 
     @Test
-    public void givenParkingHasMoreThan3Levels_whenValidatingPublicationDelivery_thenProducesValidationError() throws IOException, JAXBException, SAXException {
+    void givenParkingHasMoreThan3Levels_whenValidatingPublicationDelivery_thenProducesValidationError() throws IOException, JAXBException, SAXException {
         // Arrange
         var pd = unmarshaller.unmarshal(new FileInputStream(NETEX_PARKING_XML_MORE_THAN_3_PARKING_LEVELS));
         Errors errors = new BeanPropertyBindingResult(pd, "");
@@ -71,7 +73,7 @@ public class PublicationDeliveryValidatorTest {
     }
 
     @Test
-    public void givenNoParkingHasMoreThan3Levels_whenValidatingPublicationDelivery_thenDoesNotProduceValidationError() throws IOException, JAXBException, SAXException {
+    void givenNoParkingHasMoreThan3Levels_whenValidatingPublicationDelivery_thenDoesNotProduceValidationError() throws IOException, JAXBException, SAXException {
         // Arrange
         var pd = unmarshaller.unmarshal(new FileInputStream(NETEX_PARKING_XML_3_OR_LESS_PARKING_LEVELS));
         Errors errors = new BeanPropertyBindingResult(pd, "");
@@ -88,7 +90,7 @@ public class PublicationDeliveryValidatorTest {
     }
 
     @Test
-    public void givenOrganisationIsInvalid_whenValidatingPublicationDelivery_thenProducesValidationError() throws IOException, JAXBException, SAXException {
+    void givenOrganisationIsInvalid_whenValidatingPublicationDelivery_thenProducesValidationError() throws IOException, JAXBException, SAXException {
         // Arrange
         var pd = unmarshaller.unmarshal(new FileInputStream(NETEX_PARKING_XML_ORGANISATION_INVALID));
         Errors errors = new BeanPropertyBindingResult(pd, "");
@@ -104,7 +106,7 @@ public class PublicationDeliveryValidatorTest {
     }
 
     @Test
-    public void givenOrganisationIsValid_whenValidatingPublicationDelivery_thenDoesNotProduceValidationError() throws IOException, JAXBException, SAXException {
+    void givenOrganisationIsValid_whenValidatingPublicationDelivery_thenDoesNotProduceValidationError() throws IOException, JAXBException, SAXException {
         // Arrange
         var pd = unmarshaller.unmarshal(new FileInputStream(NETEX_PARKING_XML_ORGANISATION_VALID));
         Errors errors = new BeanPropertyBindingResult(pd, "");
@@ -119,7 +121,7 @@ public class PublicationDeliveryValidatorTest {
     }
 
     @Test
-    public void givenGeneralOrganisationIsInvalid_whenValidatingPublicationDelivery_thenProducesValidationError() throws IOException, JAXBException, SAXException {
+    void givenGeneralOrganisationIsInvalid_whenValidatingPublicationDelivery_thenProducesValidationError() throws IOException, JAXBException, SAXException {
         // Arrange
         var pd = unmarshaller.unmarshal(new FileInputStream(NETEX_PARKING_XML_GENERAL_ORGANISATION_INVALID));
         Errors errors = new BeanPropertyBindingResult(pd, "");
@@ -135,7 +137,7 @@ public class PublicationDeliveryValidatorTest {
     }
 
     @Test
-    public void givenGeneralOrganisationIsValid_whenValidatingPublicationDelivery_thenDoesNotProduceValidationError() throws IOException, JAXBException, SAXException {
+    void givenGeneralOrganisationIsValid_whenValidatingPublicationDelivery_thenDoesNotProduceValidationError() throws IOException, JAXBException, SAXException {
         // Arrange
         var pd = unmarshaller.unmarshal(new FileInputStream(NETEX_PARKING_XML_GENERAL_ORGANISATION_VALID));
         Errors errors = new BeanPropertyBindingResult(pd, "");
@@ -150,7 +152,7 @@ public class PublicationDeliveryValidatorTest {
     }
 
     @Test
-    public void givenTypeOfFrameIsMissing_whenValidatingPublicationDelivery_thenProducesValidationError() throws IOException, JAXBException, SAXException {
+    void givenTypeOfFrameIsMissing_whenValidatingPublicationDelivery_thenProducesValidationError() throws IOException, JAXBException, SAXException {
         // Arrange
         var pd = unmarshaller.unmarshal(new FileInputStream(NETEX_PARKING_XML_TYPE_OF_FRAME_MISSING));
         Errors errors = new BeanPropertyBindingResult(pd, "");
@@ -166,7 +168,7 @@ public class PublicationDeliveryValidatorTest {
     }
 
     @Test
-    public void givenTypeOfFrameIsInvalid_whenValidatingPublicationDelivery_thenProducesValidationError() throws IOException, JAXBException, SAXException {
+    void givenTypeOfFrameIsInvalid_whenValidatingPublicationDelivery_thenProducesValidationError() throws IOException, JAXBException, SAXException {
         // Arrange
         var pd = unmarshaller.unmarshal(new FileInputStream(NETEX_PARKING_XML_TYPE_OF_FRAME_INVALID));
         Errors errors = new BeanPropertyBindingResult(pd, "");
@@ -191,7 +193,7 @@ public class PublicationDeliveryValidatorTest {
     }
 
     @Test
-    public void givenTypeOfFrameIsValid_whenValidatingPublicationDelivery_thenDoesNotProduceValidationError() throws IOException, JAXBException, SAXException {
+    void givenTypeOfFrameIsValid_whenValidatingPublicationDelivery_thenDoesNotProduceValidationError() throws IOException, JAXBException, SAXException {
         // Arrange
         var pd = unmarshaller.unmarshal(new FileInputStream(NETEX_PARKING_XML_TYPE_OF_FRAME_VALID));
         Errors errors = new BeanPropertyBindingResult(pd, "");
@@ -204,6 +206,21 @@ public class PublicationDeliveryValidatorTest {
         List<String> expectedErrorCodes = List.of(VALIDATION_TOF_ID_INVALID, VALIDATION_TOF_VERSION_INVALID, VALIDATION_TOF_NAME_INVALID, VALIDATION_TOF_DESCRIPTION_INVALID);
         var expectedErrors = errors.getFieldErrors().stream().filter(e -> expectedErrorCodes.contains(e.getCode())).toList();
         assertEquals(0, expectedErrors.size(), "there should no type of frame validation error");
+    }
+
+    @Test
+    void givenSiteFrameHasPointsOfInterest_whenValidatingPublicationDelivery_thenDelegatesToPointOfInterestValidator() throws IOException, JAXBException, SAXException {
+        // Arrange
+        var pd = unmarshaller.unmarshal(new FileInputStream(NETEX_POI_TWO_VALID));
+        Errors errors = new BeanPropertyBindingResult(pd, "");
+        Mockito.doNothing().when(mockPointOfInterestValidator).validate(any(), eq(errors));
+
+        // Act
+        tested.validate(pd, errors);
+
+        // Assert
+        Mockito.verify(mockPointOfInterestValidator, Mockito.times(2)).validate(any(), eq(errors));
+        Mockito.verifyNoInteractions(mockParkingValidator);
     }
 
     record FieldErrorRecordTest(String field, String code, Object[] args) {

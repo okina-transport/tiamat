@@ -1,16 +1,16 @@
 package org.rutebanken.tiamat.general;
 
+import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.csv.BikeParkingCsvHeader;
+import org.rutebanken.tiamat.model.job.AnalyzeImportError;
+import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
-import org.rutebanken.tiamat.service.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
@@ -21,7 +21,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -31,27 +32,91 @@ public class BikesCSVHelper {
     private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
     private static final Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
 
-    private final static String DATA_GOUV_ENDPOINT = "https://api-adresse.data.gouv.fr/reverse/?lat=%s&lon=%s";
-    private final static String GEO_API_GOUV_ENDPOINT = "https://geo.api.gouv.fr/communes?lat=%s&lon=%s&fields=nom,code,codesPostaux&format=json";
-
-    private static GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
+    private static final  String DATA_GOUV_ENDPOINT = "https://api-adresse.data.gouv.fr/reverse/?lat=%s&lon=%s";
+    private static final  String GEO_API_GOUV_ENDPOINT = "https://geo.api.gouv.fr/communes?lat=%s&lon=%s&fields=nom,code,codesPostaux&format=json";
 
     private static final Logger logger = LoggerFactory.getLogger(BikesCSVHelper.class);
 
+    private static final List<String> EXPECTED_HEADERS = BikeParkingCsvHeader.headerNames();
 
     public static List<DtoBikeParking> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
 
-        Iterable<CSVRecord> records = CSVHelper.getRecords(csvFile);
         List<DtoBikeParking> bikeParkingList = new ArrayList<>();
+        List<AnalyzeImportError> rowErrors = new ArrayList<>();
 
+        CSVParser parser = CSVHelper.getRecords(csvFile);
+        CSVHelper.validateHeaders(EXPECTED_HEADERS, parser.getHeaderNames(), "bike parking");
 
-        for (CSVRecord csvRecord : records) {
-            DtoBikeParking dtoBikeParking = createBikeParkingFromCSVRecord(csvRecord);
-            validateBikeParking(dtoBikeParking);
-            bikeParkingList.add(dtoBikeParking);
+        for (CSVRecord csvRecord : parser) {
+            RowOutcome outcome = parseRow(csvRecord);
+            if (outcome.isSuccess()) {
+                bikeParkingList.add(outcome.dtoBikeParking());
+            } else {
+                rowErrors.addAll(outcome.errors());
+            }
+        }
+
+        if (!rowErrors.isEmpty()) {
+            throw new AnalyzeImportException(rowErrors);
         }
 
         return bikeParkingList;
+    }
+
+    private static RowOutcome parseRow(CSVRecord csvRecord) {
+        int line = (int) csvRecord.getRecordNumber();
+
+        if (csvRecord.size() != EXPECTED_HEADERS.size()) {
+            return RowOutcome.failure(AnalyzeImportError.builder()
+                    .type(AnalyzeImportErrorType.TEMPLATE)
+                    .message("Expected " + EXPECTED_HEADERS.size() + " columns but found " + csvRecord.size())
+                    .line(line)
+                    .build());
+        }
+
+        DtoBikeParking dtoBikeParking;
+        try {
+            dtoBikeParking = createBikeParkingFromCSVRecord(csvRecord);
+        } catch (InvalidCoordinatesException e) {
+            return RowOutcome.failure(AnalyzeImportError.builder()
+                    .type(AnalyzeImportErrorType.MISSING_DATA)
+                    .message("Coordinates are missing or malformed")
+                    .line(line)
+                    .field(BikeParkingCsvHeader.COORDONNEESXY.value())
+                    .build());
+        }
+
+        List<AnalyzeImportError> validationErrors = validateBikeParking(dtoBikeParking, line);
+        if (!validationErrors.isEmpty()) {
+            return RowOutcome.failure(validationErrors);
+        }
+
+        return RowOutcome.success(dtoBikeParking);
+    }
+
+    private record RowOutcome(DtoBikeParking dtoBikeParking, List<AnalyzeImportError> errors) {
+
+        static RowOutcome success(DtoBikeParking dtoBikeParking) {
+            return new RowOutcome(dtoBikeParking, List.of());
+        }
+
+        static RowOutcome failure(AnalyzeImportError error) {
+            return new RowOutcome(null, List.of(error));
+        }
+
+        static RowOutcome failure(List<AnalyzeImportError> errors) {
+            return new RowOutcome(null, errors);
+        }
+
+        boolean isSuccess() {
+            return errors.isEmpty();
+        }
+    }
+
+    private static class InvalidCoordinatesException extends RuntimeException {
+        InvalidCoordinatesException(String rawValue) {
+            super("Malformed coordinates: " + rawValue);
+        }
     }
 
     private static DtoBikeParking createBikeParkingFromCSVRecord(CSVRecord csvRecord) {
@@ -60,11 +125,9 @@ public class BikesCSVHelper {
         dtoBikeParking.setIdOsm(csvRecord.get(1));
         dtoBikeParking.setCodeCom(csvRecord.get(2));
 
-        String coordinates = csvRecord.get(3);
-        coordinates = coordinates.replace("[", "").replace("]", "");
-        String[] coordinatesTab = coordinates.split(",");
-        dtoBikeParking.setXlong(coordinatesTab[0]);
-        dtoBikeParking.setYlat(coordinatesTab[1]);
+        String[] coordinates = parseCoordinates(csvRecord.get(3));
+        dtoBikeParking.setXlong(coordinates[0]);
+        dtoBikeParking.setYlat(coordinates[1]);
 
         dtoBikeParking.setCapacite(csvRecord.get(4));
         dtoBikeParking.setCapaciteCargo(csvRecord.get(5));
@@ -88,12 +151,36 @@ public class BikesCSVHelper {
         return dtoBikeParking;
     }
 
-    private static void validateBikeParking(DtoBikeParking bikeParking) throws IllegalArgumentException {
-        Preconditions.checkArgument(!bikeParking.getIdLocal().isEmpty(), "ID is required in all your parkings");
-        Preconditions.checkArgument(patternXlongYlat.matcher(bikeParking.getXlong()).matches(), "X Longitud is not correct in the parking with " + bikeParking.getIdLocal());
-        Preconditions.checkArgument(patternXlongYlat.matcher(bikeParking.getYlat()).matches(), "Y Latitud is not correct in the parking with " + bikeParking.getIdLocal());
-        Preconditions.checkArgument(!bikeParking.getCapacite().isEmpty(), "Capacity is required in all your bike parkings");
-        Preconditions.checkArgument(!bikeParking.getTypeAccroche().isEmpty(), "Hook type is required in all your bike parkings");
+    private static String[] parseCoordinates(String rawCoordinates) {
+        if (StringUtils.isBlank(rawCoordinates)) {
+            throw new InvalidCoordinatesException(rawCoordinates);
+        }
+        String coordinates = rawCoordinates.replace("[", "").replace("]", "");
+        String[] coordinatesTab = coordinates.split(",");
+        if (coordinatesTab.length != 2) {
+            throw new InvalidCoordinatesException(rawCoordinates);
+        }
+        return coordinatesTab;
+    }
+
+    private static List<AnalyzeImportError> validateBikeParking(DtoBikeParking bikeParking, int line) {
+        List<AnalyzeImportError> errors = new ArrayList<>();
+        if (StringUtils.isBlank(bikeParking.getIdLocal())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "ID is required in all your parkings", line, "id_local"));
+        }
+        if (!patternXlongYlat.matcher(bikeParking.getXlong()).matches()) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "X Longitude is not correct in the parking with " + bikeParking.getIdLocal(), line, "coordonneesxy"));
+        }
+        if (!patternXlongYlat.matcher(bikeParking.getYlat()).matches()) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "Y Latitude is not correct in the parking with " + bikeParking.getIdLocal(), line, "coordonneesxy"));
+        }
+        if (StringUtils.isBlank(bikeParking.getCapacite())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "Capacity is required in all your bike parkings", line, "capacite"));
+        }
+        if (StringUtils.isBlank(bikeParking.getTypeAccroche())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "Hook type is required in all your bike parkings", line, "type_accroche"));
+        }
+        return errors;
     }
 
     public static void checkDuplicatedBikeParkings(List<DtoBikeParking> bikeParkings) throws IllegalArgumentException {

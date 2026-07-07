@@ -1,16 +1,16 @@
 package org.rutebanken.tiamat.general;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.csv.ParkingCsvHeader;
+import org.rutebanken.tiamat.model.job.AnalyzeImportError;
+import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
 import org.rutebanken.tiamat.rest.dto.DtoParking;
-import org.rutebanken.tiamat.service.Preconditions;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,16 +28,24 @@ public class ParkingsCSVHelper {
     private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
     private final static Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
 
-    private static final GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
-
+    private static final List<String> EXPECTED_HEADERS = ParkingCsvHeader.headerNames();
 
     public static List<DtoParking> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
 
         List<DtoParking> dtoParkingList = new ArrayList<>();
+        List<AnalyzeImportError> rowErrors = new ArrayList<>();
 
-        Iterable<CSVRecord> records = CSVHelper.getRecords(csvFile);
+        CSVParser parser = CSVHelper.getRecords(csvFile);
+        CSVHelper.validateHeaders(EXPECTED_HEADERS, parser.getHeaderNames(), "parking");
 
-        for (CSVRecord csvRecord : records) {
+        for (CSVRecord csvRecord : parser) {
+            if (csvRecord.size() != EXPECTED_HEADERS.size()) {
+                rowErrors.add(new AnalyzeImportError(AnalyzeImportErrorType.TEMPLATE,
+                        "Expected " + EXPECTED_HEADERS.size() + " columns but found " + csvRecord.size(),
+                        (int) csvRecord.getRecordNumber(), null));
+                continue;
+            }
+
             DtoParking dtoParking = new DtoParking(
                     csvRecord.get(0),
                     csvRecord.get(1),
@@ -72,20 +80,58 @@ public class ParkingsCSVHelper {
                     csvRecord.get(30)
             );
 
-            validateParking(dtoParking);
+            List<AnalyzeImportError> validationErrors = validateParking(dtoParking, (int) csvRecord.getRecordNumber());
+            if (!validationErrors.isEmpty()) {
+                rowErrors.addAll(validationErrors);
+                continue;
+            }
 
             dtoParkingList.add(dtoParking);
+        }
+
+        if (!rowErrors.isEmpty()) {
+            throw new AnalyzeImportException(rowErrors);
         }
 
         return dtoParkingList;
     }
 
-    private static void validateParking(DtoParking parking) throws IllegalArgumentException {
-        Preconditions.checkArgument(StringUtils.isNotBlank(parking.getId()), "ID is required in all your parkings");
-        Preconditions.checkArgument(StringUtils.isNotBlank(parking.getInsee()), "INSEE is required for parking with id " + parking.getId());
-        Preconditions.checkArgument(StringUtils.isNotBlank(parking.getName()), "NAME is required for parking with id " + parking.getId());
-        Preconditions.checkArgument(patternXlongYlat.matcher(parking.getXlong()).matches(), "X Longitude is not correct for parking with id " + parking.getId());
-        Preconditions.checkArgument(patternXlongYlat.matcher(parking.getYlat()).matches(), "Y Latitude is not correct for parking with id " + parking.getId());
+    private static List<AnalyzeImportError> validateParking(DtoParking parking, int line) {
+        List<AnalyzeImportError> errors = new ArrayList<>();
+        if (StringUtils.isBlank(parking.getId())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "ID is required in all your parkings", line, "id"));
+        }
+        if (StringUtils.isBlank(parking.getInsee())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "INSEE is required for parking with id " + parking.getId(), line, "insee"));
+        }
+        if (StringUtils.isBlank(parking.getName())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "NAME is required for parking with id " + parking.getId(), line, "name"));
+        }
+        if (StringUtils.isBlank(parking.getUserType())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "TYPE_USAGERS is required for parking with id " + parking.getId(), line, "userType"));
+        }
+        if (StringUtils.isBlank(parking.getFree())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "GRATUIT is required for parking with id " + parking.getId(), line, "free"));
+        }
+        if (StringUtils.isBlank(parking.getNbOfPlaces())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "NB_PLACES is required for parking with id " + parking.getId(), line, "nbOfPlaces"));
+        }
+        if (StringUtils.isBlank(parking.getMaxHeight())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "HAUTEUR_MAX is required for parking with id " + parking.getId(), line, "maxHeight"));
+        }
+        if (StringUtils.isBlank(parking.getSiretNumber())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "NUM_SIRET is required for parking with id " + parking.getId(), line, "siretNumber"));
+        }
+        if (StringUtils.isBlank(parking.getOperator())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "OPERATOR is required for parking with id " + parking.getId(), line, "operator"));
+        }
+        if (!patternXlongYlat.matcher(parking.getXlong()).matches()) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "X Longitude is not correct for parking with id " + parking.getId(), line, "Xlong"));
+        }
+        if (!patternXlongYlat.matcher(parking.getYlat()).matches()) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "Y Latitude is not correct for parking with id " + parking.getId(), line, "Ylat"));
+        }
+        return errors;
     }
 
     public static void checkDuplicatedParkings(List<DtoParking> parkings) throws IllegalArgumentException {

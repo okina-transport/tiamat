@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.model;
 
 import jakarta.persistence.Embeddable;
+
 import java.io.Serializable;
 
 /**
@@ -36,3 +37,4 @@ public class EmbeddableMultilingualString extends MultilingualString implements 
     }
 
 }
+

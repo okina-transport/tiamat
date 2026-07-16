@@ -10,6 +10,9 @@ import java.io.IOException;
 public class PointSerializer extends JsonSerializer<Point> {
     @Override
     public void serialize(Point value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-        gen.writeString(String.format("[%f, %f]", value.getX(), value.getY()));
+        gen.writeStartObject();
+        gen.writeNumberField("x", value.getX());
+        gen.writeNumberField("y", value.getY());
+        gen.writeEndObject();
     }
 }

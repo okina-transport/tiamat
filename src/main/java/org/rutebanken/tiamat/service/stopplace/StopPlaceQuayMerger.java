@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.service.stopplace;
 
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.config.Messages;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.Quay;
@@ -32,7 +33,6 @@ import org.rutebanken.tiamat.versioning.util.CopiedEntity;
 import org.rutebanken.tiamat.versioning.util.StopPlaceCopyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,40 +51,38 @@ public class StopPlaceQuayMerger {
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceQuayMerger.class);
 
-    @Autowired
-    private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceRepository stopPlaceRepository;
+    private final ReflectionAuthorizationService authorizationService;
+    private final KeyValuesMerger keyValuesMerger;
+    private final PlaceEquipmentMerger placeEquipmentMerger;
+    private final AlternativeNamesMerger alternativeNamesMerger;
+    private final UsernameFetcher usernameFetcher;
+    private final StopPlaceCopyHelper stopPlaceCopyHelper;
+    private final MutateLock mutateLock;
+    private final Messages messages;
+    private final LoggingService loggingService;
 
-    @Autowired
-    private StopPlaceRepository stopPlaceRepository;
-
-    @Autowired
-    private ReflectionAuthorizationService authorizationService;
-
-    @Autowired
-    private KeyValuesMerger keyValuesMerger;
-
-    @Autowired
-    private PlaceEquipmentMerger placeEquipmentMerger;
-
-    @Autowired
-    private AlternativeNamesMerger alternativeNamesMerger;
-
-    @Autowired
-    private UsernameFetcher usernameFetcher;
-
-    @Autowired
-    private StopPlaceCopyHelper stopPlaceCopyHelper;
-
-    @Autowired
-    private MutateLock mutateLock;
-
-    @Autowired
-    private Messages messages;
+    public StopPlaceQuayMerger(StopPlaceVersionedSaverService stopPlaceVersionedSaverService, StopPlaceRepository stopPlaceRepository, ReflectionAuthorizationService authorizationService, KeyValuesMerger keyValuesMerger, PlaceEquipmentMerger placeEquipmentMerger, AlternativeNamesMerger alternativeNamesMerger, UsernameFetcher usernameFetcher, StopPlaceCopyHelper stopPlaceCopyHelper, MutateLock mutateLock, Messages messages, LoggingService loggingService) {
+        this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.authorizationService = authorizationService;
+        this.keyValuesMerger = keyValuesMerger;
+        this.placeEquipmentMerger = placeEquipmentMerger;
+        this.alternativeNamesMerger = alternativeNamesMerger;
+        this.usernameFetcher = usernameFetcher;
+        this.stopPlaceCopyHelper = stopPlaceCopyHelper;
+        this.mutateLock = mutateLock;
+        this.messages = messages;
+        this.loggingService = loggingService;
+    }
 
     public StopPlace mergeQuays(final String stopPlaceId, String fromQuayId, String toQuayId, String versionComment, boolean isDryRun) {
 
         return mutateLock.executeInLock(() -> {
-            logger.info("{} is about to merge quays {} -> {} of stop place {}", usernameFetcher.getUserNameForAuthenticatedUser(), fromQuayId, toQuayId, stopPlaceId);
+            String user = usernameFetcher.getUserNameForAuthenticatedUser();
+            
+            logger.info("{} is about to merge quays {} -> {} of stop place {}", user, fromQuayId, toQuayId, stopPlaceId);
 
             final StopPlace stopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceId);
             Preconditions.checkArgument(stopPlace != null, "Attempting to quays from StopPlace [id = %s], but StopPlace does not exist.", stopPlaceId);

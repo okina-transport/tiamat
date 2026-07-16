@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.service.stopplace;
 
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -27,7 +28,6 @@ import org.rutebanken.tiamat.versioning.util.CopiedEntity;
 import org.rutebanken.tiamat.versioning.util.StopPlaceCopyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -41,31 +41,32 @@ public class StopPlaceQuayDeleter {
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceQuayDeleter.class);
 
-    @Autowired
-    private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceRepository stopPlaceRepository;
+    private final ReflectionAuthorizationService authorizationService;
+    private final UsernameFetcher usernameFetcher;
+    private final StopPlaceCopyHelper stopPlaceCopyHelper;
+    private final MutateLock mutateLock;
+    private final StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
+    private final LoggingService loggingService;
 
-    @Autowired
-    private StopPlaceRepository stopPlaceRepository;
-
-    @Autowired
-    private ReflectionAuthorizationService authorizationService;
-
-    @Autowired
-    private UsernameFetcher usernameFetcher;
-
-    @Autowired
-    private StopPlaceCopyHelper stopPlaceCopyHelper;
-
-    @Autowired
-    private MutateLock mutateLock;
-
-    @Autowired
-    private StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
+    public StopPlaceQuayDeleter(StopPlaceVersionedSaverService stopPlaceVersionedSaverService, StopPlaceRepository stopPlaceRepository, ReflectionAuthorizationService authorizationService, UsernameFetcher usernameFetcher, StopPlaceCopyHelper stopPlaceCopyHelper, MutateLock mutateLock, StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette, LoggingService loggingService) {
+        this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.authorizationService = authorizationService;
+        this.usernameFetcher = usernameFetcher;
+        this.stopPlaceCopyHelper = stopPlaceCopyHelper;
+        this.mutateLock = mutateLock;
+        this.stopPlaceQuayDeleterToChouette = stopPlaceQuayDeleterToChouette;
+        this.loggingService = loggingService;
+    }
 
     public StopPlace deleteQuay(String stopPlaceNetexId, String quayNetexId, String versionComment) {
 
         return mutateLock.executeInLock(() -> {
-            logger.warn("{} is deleting quay {} from stop place {} with comment {}", usernameFetcher.getUserNameForAuthenticatedUser(), quayNetexId, stopPlaceNetexId, versionComment);
+            String user = usernameFetcher.getUserNameForAuthenticatedUser();
+
+            logger.warn("{} is deleting quay {} from stop place {} with comment {}", user, quayNetexId, stopPlaceNetexId, versionComment);
 
             stopPlaceQuayDeleterToChouette.delete(quayNetexId);
 
@@ -92,6 +93,8 @@ public class StopPlaceQuayDeleter {
                 stopPlaceCopies.getCopiedEntity().setVersionComment(versionComment);
             }
 
+            loggingService.logStopPlaceQuayDeletion(user, optionalQuay.get());
+            loggingService.logStopPlaceUpdate(user, stopPlaceCopies.getExistingEntity(), stopPlaceCopies.getCopiedEntity());
 
             if (stopPlaceCopies.hasParent()) {
                 logger.info("Saving parent stop place {}. Returning parent of child: {}", stopPlaceCopies.getCopiedParent().getNetexId(), stopPlace.getNetexId());

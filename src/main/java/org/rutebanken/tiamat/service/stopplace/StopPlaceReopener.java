@@ -16,14 +16,14 @@
 package org.rutebanken.tiamat.service.stopplace;
 
 import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
+import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.lock.MutateLock;
-import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.rutebanken.tiamat.versioning.VersionCreator;
+import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -31,25 +31,31 @@ public class StopPlaceReopener {
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceReopener.class);
 
-    @Autowired
-    private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceRepository stopPlaceRepository;
+    private final UsernameFetcher usernameFetcher;
+    private final MutateLock mutateLock;
+    private final VersionCreator versionCreator;
+    private final LoggingService loggingService;
 
-    @Autowired
-    private StopPlaceRepository stopPlaceRepository;
-
-    @Autowired
-    private UsernameFetcher usernameFetcher;
-
-    @Autowired
-    private MutateLock mutateLock;
-
-    @Autowired
-    private VersionCreator versionCreator;
+    public StopPlaceReopener(StopPlaceVersionedSaverService stopPlaceVersionedSaverService, StopPlaceRepository stopPlaceRepository, UsernameFetcher usernameFetcher, MutateLock mutateLock, VersionCreator versionCreator, LoggingService loggingService) {
+        this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.usernameFetcher = usernameFetcher;
+        this.mutateLock = mutateLock;
+        this.versionCreator = versionCreator;
+        this.loggingService = loggingService;
+    }
 
     public StopPlace reopenStopPlace(String stopPlaceId, String versionComment) {
 
         return mutateLock.executeInLock(() -> {
-            logger.info("User {} is reopening stop place {} with comment {}", usernameFetcher.getUserNameForAuthenticatedUser(), stopPlaceId, versionComment);
+            String user = usernameFetcher.getUserNameForAuthenticatedUser();
+
+            logger.info("User {} is reopening stop place {} with comment {}", user, stopPlaceId, versionComment);
+
+            loggingService.logStopPlaceReopen(user, stopPlaceId,
+                    versionComment);
 
             StopPlace stopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceId);
 
@@ -62,6 +68,7 @@ public class StopPlaceReopener {
 
                 return stopPlaceVersionedSaverService.saveNewVersion(stopPlace, nextVersionStopPlace);
             }
+
             return stopPlace;
         });
     }

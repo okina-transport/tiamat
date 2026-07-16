@@ -40,7 +40,7 @@ public class DeleteRessource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteAllPoi() throws IllegalArgumentException {
         String username = usernameFetcher.getUserNameForAuthenticatedUser();
-        loggingService.logPoiDeleteAll(username);
+        loggingService.logPOIDeleteAll(username);
         deleteService.deleteAllPoi();
         return Response.status(200).build();
     }

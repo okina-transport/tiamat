@@ -15,7 +15,8 @@
 
 package org.rutebanken.tiamat.service.stopplace;
 
-import org.apache.commons.lang3.text.WordUtils;
+import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.AlternativeName;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
@@ -28,7 +29,6 @@ import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,23 +42,25 @@ public class StopPlaceRenamer {
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceRenamer.class);
 
-    @Autowired
-    StopPlaceRepository stopPlaceRepository;
+    private final StopPlaceRepository stopPlaceRepository;
+    private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final AlternativeNameUpdater alternativeNameUpdater;
+    private final MutateLock mutateLock;
+    private final VersionCreator versionCreator;
+    private final Renamer renamer;
+    private final UsernameFetcher usernameFetcher;
+    private final LoggingService loggingService;
 
-    @Autowired
-    private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
-
-    @Autowired
-    private AlternativeNameUpdater alternativeNameUpdater;
-
-    @Autowired
-    private MutateLock mutateLock;
-
-    @Autowired
-    private VersionCreator versionCreator;
-
-    @Autowired
-    private Renamer renamer;
+    public StopPlaceRenamer(StopPlaceRepository stopPlaceRepository, StopPlaceVersionedSaverService stopPlaceVersionedSaverService, AlternativeNameUpdater alternativeNameUpdater, MutateLock mutateLock, VersionCreator versionCreator, Renamer renamer, UsernameFetcher usernameFetcher, LoggingService loggingService) {
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
+        this.alternativeNameUpdater = alternativeNameUpdater;
+        this.mutateLock = mutateLock;
+        this.versionCreator = versionCreator;
+        this.renamer = renamer;
+        this.usernameFetcher = usernameFetcher;
+        this.loggingService = loggingService;
+    }
 
 
     /**
@@ -71,6 +73,8 @@ public class StopPlaceRenamer {
     public Set<StopPlace> checkAllAndRename(boolean shouldSave) {
 
         return mutateLock.executeInLock(() -> {
+
+            loggingService.logStopPlaceRename(usernameFetcher.getUserNameForAuthenticatedUser());
 
             Set<StopPlace> lastVersionStopPlaces = new HashSet<>();
             Set<StopPlace> updatedStopPlaces = new HashSet<>();

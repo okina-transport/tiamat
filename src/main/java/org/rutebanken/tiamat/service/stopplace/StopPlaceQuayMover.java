@@ -15,23 +15,23 @@
 
 package org.rutebanken.tiamat.service.stopplace;
 
+import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
+import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.lock.MutateLock;
-import org.rutebanken.tiamat.versioning.util.CopiedEntity;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
+import org.rutebanken.tiamat.versioning.util.CopiedEntity;
 import org.rutebanken.tiamat.versioning.util.StopPlaceCopyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -44,23 +44,25 @@ public class StopPlaceQuayMover {
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceQuayMover.class);
 
-    @Autowired
-    private StopPlaceRepository stopPlaceRepository;
+    private final StopPlaceRepository stopPlaceRepository;
+    private final QuayRepository quayRepository;
+    private final StopPlaceCentroidComputer stopPlaceCentroidComputer;
+    private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceCopyHelper stopPlaceCopyHelper;
+    private final MutateLock mutateLock;
+    private final UsernameFetcher usernameFetcher;
+    private final LoggingService loggingService;
 
-    @Autowired
-    private QuayRepository quayRepository;
-
-    @Autowired
-    private StopPlaceCentroidComputer stopPlaceCentroidComputer;
-
-    @Autowired
-    private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
-
-    @Autowired
-    private StopPlaceCopyHelper stopPlaceCopyHelper;
-
-    @Autowired
-    private MutateLock mutateLock;
+    public StopPlaceQuayMover(StopPlaceRepository stopPlaceRepository, QuayRepository quayRepository, StopPlaceCentroidComputer stopPlaceCentroidComputer, StopPlaceVersionedSaverService stopPlaceVersionedSaverService, StopPlaceCopyHelper stopPlaceCopyHelper, MutateLock mutateLock, UsernameFetcher usernameFetcher, LoggingService loggingService) {
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.quayRepository = quayRepository;
+        this.stopPlaceCentroidComputer = stopPlaceCentroidComputer;
+        this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
+        this.stopPlaceCopyHelper = stopPlaceCopyHelper;
+        this.mutateLock = mutateLock;
+        this.usernameFetcher = usernameFetcher;
+        this.loggingService = loggingService;
+    }
 
     public StopPlace moveQuays(List<String> quayIds, String destinationStopPlaceId, String fromVersionComment, String toVersionComment) {
 
@@ -78,7 +80,10 @@ public class StopPlaceQuayMover {
 
             StopPlace response = addQuaysToDestinationStop(destinationStopPlaceId, quaysToMove, toVersionComment, now);
 
+            loggingService.logStopPlaceQuayMove(usernameFetcher.getUserNameForAuthenticatedUser(), quayIds, destinationStopPlaceId, fromVersionComment, toVersionComment);
+
             logger.info("Moved quays: {} from stop {} to {}", quayIds, sourceStopPlace.getNetexId(), response.getNetexId());
+
             return response;
         });
     }

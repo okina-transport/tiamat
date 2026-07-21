@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.importer.merging;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.importer.finder.NearbyParkingFinder;
 import org.rutebanken.tiamat.importer.finder.ParkingFromOriginalIdFinder;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
@@ -289,6 +290,7 @@ public class MergingParkingImporter {
             copyParking.setPlaceEquipments(parkingPlaceEquipmentsVersionedSaverService.saveNewVersion(copyParking.getPlaceEquipments()));
 
             for (InstalledEquipment_VersionStructure cycleStorageEquipment : incomingParking.getPlaceEquipments().getInstalledEquipment()) {
+                checkInstalledEquipmentOwner(cycleStorageEquipment, incomingParking.getOrCreateValues("imported-id"));
                 copyParking.getPlaceEquipments().getInstalledEquipment().add(parkingInstalledEquipmentsVersionedSaverService.saveNewVersion(cycleStorageEquipment));
             }
 
@@ -308,6 +310,35 @@ public class MergingParkingImporter {
         logger.debug("No changes. Returning existing parking {}", existingParking);
         return existingParking;
 
+    }
+
+    private void checkInstalledEquipmentOwner(InstalledEquipment_VersionStructure cycleStorageEquipment, Set<String> incommingParkingImportedIds) {
+
+        if (CollectionUtils.isEmpty(incommingParkingImportedIds)){
+            return;
+        }
+
+        Optional<String> incomingParkingIdOpt = incommingParkingImportedIds.stream()
+                .filter(id -> id.split(":").length > 2)
+                .findFirst();
+
+        if (incomingParkingIdOpt.isEmpty()){
+            return;
+        }
+        String incomingParkingId = incomingParkingIdOpt.get();
+
+
+        Set<String> existingParkingsRelatedToPlaceEquipment = parkingRepository.findNetexIdsByPlaceEquipmentId(cycleStorageEquipment.getNetexId());
+        if (CollectionUtils.isNotEmpty(existingParkingsRelatedToPlaceEquipment)){
+            for (String existingParking : existingParkingsRelatedToPlaceEquipment) {
+                if (!existingParking.equals(incomingParkingId)){
+                    logger.error("PlaceEquipment/Parking mismatch");
+                    logger.error("PlaceEquipment:{}", cycleStorageEquipment.getNetexId());
+                    logger.error("associated to parking in DB:{}", existingParking);
+                    logger.error("associated to parking in File:{}", incomingParkingId);
+                }
+            }
+        }
     }
 
     private boolean updatePostalAddress(Parking copyParking, Parking incomingParking) {

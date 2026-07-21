@@ -65,5 +65,7 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
     Integer findByIdLocForOtherParking(String idLoc, String netexId);
 
     List<Parking> getAllParkingsWithoutInsee();
+
+    Set<String> findNetexIdsByPlaceEquipmentId(String placeEquipmentNetexId);
 }
 

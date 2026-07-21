@@ -312,6 +312,35 @@ public class MergingParkingImporter {
 
     }
 
+    private void checkInstalledEquipmentOwner(InstalledEquipment_VersionStructure cycleStorageEquipment, Set<String> incommingParkingImportedIds) {
+
+        if (CollectionUtils.isEmpty(incommingParkingImportedIds)){
+            return;
+        }
+
+        Optional<String> incomingParkingIdOpt = incommingParkingImportedIds.stream()
+                .filter(id -> id.split(":").length > 2)
+                .findFirst();
+
+        if (incomingParkingIdOpt.isEmpty()){
+            return;
+        }
+        String incomingParkingId = incomingParkingIdOpt.get();
+
+
+        Set<String> existingParkingsRelatedToPlaceEquipment = parkingRepository.findNetexIdsByPlaceEquipmentId(cycleStorageEquipment.getNetexId());
+        if (CollectionUtils.isNotEmpty(existingParkingsRelatedToPlaceEquipment)){
+            for (String existingParking : existingParkingsRelatedToPlaceEquipment) {
+                if (!existingParking.equals(incomingParkingId)){
+                    logger.error("PlaceEquipment/Parking mismatch");
+                    logger.error("PlaceEquipment:{}", cycleStorageEquipment.getNetexId());
+                    logger.error("associated to parking in DB:{}", existingParking);
+                    logger.error("associated to parking in File:{}", incomingParkingId);
+                }
+            }
+        }
+    }
+
     private boolean updatePostalAddress(Parking copyParking, Parking incomingParking) {
         if (copyParking.getPostalAddress() == null && incomingParking.getPostalAddress() == null){
             return false;

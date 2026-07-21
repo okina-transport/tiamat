@@ -69,5 +69,7 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
     List<Parking> createCopyAndFillImportedIdsFromMDM(List<Parking> parkings);
 
     Optional<Parking> findByIdLocAndOsm(String idLoc, String idOsm);
+
+    Set<String> findNetexIdsByPlaceEquipmentId(String placeEquipmentNetexId);
 }
 

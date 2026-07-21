@@ -332,6 +332,21 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     }
 
     @Override
+    public Set<String> findNetexIdsByPlaceEquipmentId(String placeEquipmentNetexId) {
+        String sql = "SELECT DISTINCT p.netex_id " +
+                "FROM parking p " +
+                "INNER JOIN installed_equipment_version_structure iev " +
+                "ON iev.id = p.place_equipments_id " +
+                "WHERE iev.netex_id = :placeEquipmentNetexId";
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("placeEquipmentNetexId", placeEquipmentNetexId);
+
+        List<String> results = query.getResultList();
+        return new HashSet<>(results);
+    }
+
+    @Override
     public List<Parking> createCopyAndFillImportedIdsFromMDM(List<Parking> parkings){
         List<Parking> results = new ArrayList<>();
         if (parkings.isEmpty()){

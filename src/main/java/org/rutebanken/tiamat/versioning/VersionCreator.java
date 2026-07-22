@@ -123,7 +123,7 @@ public class VersionCreator {
                         WaitingRoomEquipment.class, SanitaryEquipment.class,
                         TicketingEquipment.class, ShelterEquipment.class,
                         CycleStorageEquipment.class, GeneralSign.class,
-                        AlternativeName.class);
+                        AlternativeName.class, AlternativeText.class);
 
 
         commonClassesToConfigure.forEach(clazz -> mapperFactory.classMap(clazz, clazz)

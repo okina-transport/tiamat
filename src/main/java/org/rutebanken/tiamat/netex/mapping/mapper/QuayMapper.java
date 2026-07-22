@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.importer.CityNameService;
@@ -30,9 +31,8 @@ import java.util.Map;
 
 public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Quay> {
 
-    private Map<String,Integer> postalAddressVersionMap = new HashMap<>();
-
     private final CityNameService cityNameService;
+    private Map<String, Integer> postalAddressVersionMap = new HashMap<>();
 
     public QuayMapper(CityNameService cityNameService) {
         this.cityNameService = cityNameService;
@@ -74,11 +74,32 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
             }
         }
 
+        if (quay.getAlternativeTexts() != null &&
+                CollectionUtils.isNotEmpty(quay.getAlternativeTexts().getAlternativeText())) {
+            List<org.rutebanken.netex.model.AlternativeText> netexAlternativeText = quay.getAlternativeTexts().getAlternativeText();
+            List<org.rutebanken.tiamat.model.AlternativeText> alternativeTexts = new ArrayList<>();
+
+            for (org.rutebanken.netex.model.AlternativeText netexAltText : netexAlternativeText) {
+                if (netexAltText != null
+                        && netexAltText.getText() != null
+                        && StringUtils.isNotBlank(netexAltText.getText().getValue())) {
+                    //Only include non-empty alternative texts
+                    org.rutebanken.tiamat.model.AlternativeText tiamatAltText = new org.rutebanken.tiamat.model.AlternativeText();
+                    mapperFacade.map(netexAltText, tiamatAltText);
+                    alternativeTexts.add(tiamatAltText);
+                }
+            }
+
+            if (CollectionUtils.isNotEmpty(alternativeTexts)) {
+                quay2.getAlternativeTexts().addAll(alternativeTexts);
+            }
+        }
+
         if (quay.getPrivateCode() != null && quay.getPrivateCode().getValue() != null) {
             quay2.setPrivateCode(new org.rutebanken.tiamat.model.PrivateCodeStructure(quay.getPrivateCode().getValue(), quay.getPrivateCode().getType()));
         }
 
-        if(quay.getPostalAddress() != null){
+        if (quay.getPostalAddress() != null) {
             String town = null;
             if (quay.getPostalAddress().getTown() != null) {
                 town = quay.getPostalAddress().getTown().getValue();
@@ -131,26 +152,51 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
             quay2.setAlternativeNames(null);
         }
 
-        if (quay.getSiteRef() != null){
+        if (CollectionUtils.isNotEmpty(quay.getAlternativeTexts())) {
+            List<org.rutebanken.tiamat.model.AlternativeText> alternativeTexts = quay.getAlternativeTexts();
+            List<org.rutebanken.netex.model.AlternativeText> netexAlternativeTexts = new ArrayList<>();
+
+            for (org.rutebanken.tiamat.model.AlternativeText alternativeText : alternativeTexts) {
+                if (alternativeText != null
+                        && alternativeText.getText() != null
+                        && StringUtils.isNotBlank(alternativeText.getText().getValue())) {
+                    //Only include non-empty alternative texts
+                    org.rutebanken.netex.model.AlternativeText netexAltText = new org.rutebanken.netex.model.AlternativeText();
+                    mapperFacade.map(alternativeText, netexAltText);
+                    netexAltText.setId(alternativeText.getNetexId());
+                    netexAlternativeTexts.add(netexAltText);
+                }
+            }
+
+            if (CollectionUtils.isNotEmpty(netexAlternativeTexts)) {
+                AlternativeTexts_RelStructure altText = new AlternativeTexts_RelStructure();
+                altText.getAlternativeText().addAll(netexAlternativeTexts);
+                quay2.setAlternativeTexts(altText);
+            }
+        } else {
+            quay2.setAlternativeTexts(null);
+        }
+
+        if (quay.getSiteRef() != null) {
             SiteRefStructure siteRef = new SiteRefStructure();
             siteRef.withRef(quay.getSiteRef().getRef());
             quay2.setSiteRef(siteRef);
         }
 
-        if (!quay.getOriginalNames().isEmpty()){
+        if (!quay.getOriginalNames().isEmpty()) {
             MultilingualString name = new MultilingualString();
             name.setValue(quay.getOriginalNames().stream().findFirst().get());
             quay2.setName(name);
         }
 
-        if(quay.getInseeCode() != null){
-            feedPostalAddress(quay,quay2);
+        if (quay.getInseeCode() != null) {
+            feedPostalAddress(quay, quay2);
         }
 
     }
 
 
-    private void feedPostalAddress(org.rutebanken.tiamat.model.Quay tiamatQuay, Quay netexQuay){
+    private void feedPostalAddress(org.rutebanken.tiamat.model.Quay tiamatQuay, Quay netexQuay) {
 
         PostalAddress postalAddress = new PostalAddress();
         postalAddress.setPostalRegion(tiamatQuay.getInseeCode());
@@ -177,20 +223,19 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
 
     /**
      * Get a new version number each time it is called for a netexQuayId
-     * @param netexQuayId
-     *  Quay for which a version number should be recovered
-     * @return
-     *  The postall address version
+     *
+     * @param netexQuayId Quay for which a version number should be recovered
+     * @return The postall address version
      */
-    private String getPostalAdressVersion(String netexQuayId){
-        if (!postalAddressVersionMap.containsKey(netexQuayId)){
-            postalAddressVersionMap.put(netexQuayId,1);
+    private String getPostalAdressVersion(String netexQuayId) {
+        if (!postalAddressVersionMap.containsKey(netexQuayId)) {
+            postalAddressVersionMap.put(netexQuayId, 1);
             return String.valueOf(1);
         }
 
         Integer currentVersion = postalAddressVersionMap.get(netexQuayId);
         int newVersion = currentVersion + 1;
-        postalAddressVersionMap.put(netexQuayId,newVersion);
+        postalAddressVersionMap.put(netexQuayId, newVersion);
         return String.valueOf(newVersion);
 
     }

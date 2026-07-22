@@ -16,9 +16,9 @@
 package org.rutebanken.tiamat.importer.matching;
 
 import org.rutebanken.netex.model.StopPlace;
+import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.config.TiamatProperties;
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
-import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
 import org.rutebanken.tiamat.importer.AlternativeStopTypes;
 import org.rutebanken.tiamat.importer.ImportParams;
@@ -27,6 +27,7 @@ import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByIdFinder;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.importer.merging.AlternativeNameMerger;
+import org.rutebanken.tiamat.importer.merging.AlternativeTextMerger;
 import org.rutebanken.tiamat.importer.merging.MergingStopPlaceImporter;
 import org.rutebanken.tiamat.importer.merging.QuayMerger;
 import org.rutebanken.tiamat.model.*;
@@ -40,7 +41,6 @@ import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -62,40 +62,45 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     private static final Logger logger = LoggerFactory.getLogger(TransactionalMatchingAppendingStopPlaceImporter.class);
     private static final boolean CREATE_NEW_QUAYS = true;
 
-    @Autowired
-    protected VersionCreator versionCreator;
-    @Autowired
-    private KeyValueListAppender keyValueListAppender;
-    @Autowired
-    private StopPlaceRepository stopPlaceRepository;
-    @Autowired
-    private QuayRepository quayRepository;
-    @Autowired
-    private TariffZoneRepository tariffZoneRepository;
-    @Autowired
-    private QuayMerger quayMerger;
-    @Autowired
-    private NetexMapper netexMapper;
-    @Autowired
-    private StopPlaceByIdFinder stopPlaceByIdFinder;
-    @Autowired
-    private AlternativeStopTypes alternativeStopTypes;
-    @Autowired
-    private MergingStopPlaceImporter mergingStopPlaceImporter;
-    @Autowired
-    private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
-    @Autowired
-    private StopPlaceCentroidComputer stopPlaceCentroidComputer;
-    @Autowired
-    private QuayMover quayMover;
-    @Autowired
-    private AlternativeNameMerger alternativeNameMerger;
-    @Autowired
-    private MdmService mdmService;
-    @Autowired
-    private TiamatProperties tiamatProperties;
+    protected final VersionCreator versionCreator;
+    private final KeyValueListAppender keyValueListAppender;
+    private final StopPlaceRepository stopPlaceRepository;
+    private final QuayRepository quayRepository;
+    private final TariffZoneRepository tariffZoneRepository;
+    private final QuayMerger quayMerger;
+    private final NetexMapper netexMapper;
+    private final StopPlaceByIdFinder stopPlaceByIdFinder;
+    private final AlternativeStopTypes alternativeStopTypes;
+    private final MergingStopPlaceImporter mergingStopPlaceImporter;
+    private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceCentroidComputer stopPlaceCentroidComputer;
+    private final QuayMover quayMover;
+    private final AlternativeNameMerger alternativeNameMerger;
+    private final AlternativeTextMerger alternativeTextMerger;
+    private final MdmService mdmService;
+    private final TiamatProperties tiamatProperties;
     @Value("${netex.validPrefix:MOBIITI}")
     String validNetexPrefix;
+
+    public TransactionalMatchingAppendingStopPlaceImporter(KeyValueListAppender keyValueListAppender, VersionCreator versionCreator, StopPlaceRepository stopPlaceRepository, AlternativeTextMerger alternativeTextMerger, QuayRepository quayRepository, TariffZoneRepository tariffZoneRepository, QuayMerger quayMerger, NetexMapper netexMapper, StopPlaceByIdFinder stopPlaceByIdFinder, StopPlaceCentroidComputer stopPlaceCentroidComputer, TiamatProperties tiamatProperties, AlternativeStopTypes alternativeStopTypes, QuayMover quayMover, AlternativeNameMerger alternativeNameMerger, MergingStopPlaceImporter mergingStopPlaceImporter, MdmService mdmService, StopPlaceVersionedSaverService stopPlaceVersionedSaverService) {
+        this.keyValueListAppender = keyValueListAppender;
+        this.versionCreator = versionCreator;
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.alternativeTextMerger = alternativeTextMerger;
+        this.quayRepository = quayRepository;
+        this.tariffZoneRepository = tariffZoneRepository;
+        this.quayMerger = quayMerger;
+        this.netexMapper = netexMapper;
+        this.stopPlaceByIdFinder = stopPlaceByIdFinder;
+        this.stopPlaceCentroidComputer = stopPlaceCentroidComputer;
+        this.tiamatProperties = tiamatProperties;
+        this.alternativeStopTypes = alternativeStopTypes;
+        this.quayMover = quayMover;
+        this.alternativeNameMerger = alternativeNameMerger;
+        this.mergingStopPlaceImporter = mergingStopPlaceImporter;
+        this.mdmService = mdmService;
+        this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
+    }
 
     public void findAppendAndAdd(final org.rutebanken.tiamat.model.StopPlace incomingStopPlace,
                                  List<StopPlace> matchedStopPlaces,
@@ -106,7 +111,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
         }
 
         List<org.rutebanken.tiamat.model.StopPlace> foundStopPlaces;
-        if (tiamatProperties.isMdmEnabled()){
+        if (tiamatProperties.isMdmEnabled()) {
             foundStopPlaces = foundStopPlacesFromMDM(incomingStopPlace).stream().toList();
         } else if (importParams.isNetex && incomingStopPlace.getNetexId().contains("MOBIITI")) {
             foundStopPlaces = stopPlaceRepository.findByNetexId(incomingStopPlace.getNetexId());
@@ -204,7 +209,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 if (keyValueListAppender.appendKeyValue(RAIL_UIC_KEY, incomingStopPlace, copy)) {
                     keyValuesChanged = true;
                 }
-                if (keyValueListAppender.appendKeyValue(IMPORTED_VERSION,  incomingStopPlace, copy)) {
+                if (keyValueListAppender.appendKeyValue(IMPORTED_VERSION, incomingStopPlace, copy)) {
                     keyValuesChanged = true;
                 }
 
@@ -237,8 +242,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 if (!importParams.keepStopGeolocalisation) {
                     if (importParams.recomputeStopPlacesLocation) {
                         centroidChanged = stopPlaceCentroidComputer.computeCentroidForStopPlace(copy);
-                    }
-                    else {
+                    } else {
                         if (incomingStopPlace.getCentroid() != null && !incomingStopPlace.getCentroid().equalsExact(copy.getCentroid(), 0.0001)) {
                             copy.setCentroid(incomingStopPlace.getCentroid());
                             centroidChanged = true;
@@ -248,7 +252,9 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
                 boolean updateAlternativeName = alternativeNameMerger.updateSiteElementAlternativeName(incomingStopPlace, copy);
 
-                if (quayChanged || keyValuesChanged || centroidChanged || nameChanged || wheelChairChanged || tariffZoneChanged || privateCodeChanged || hasTransportModeChanged || updateAlternativeName) {
+                boolean updateAlternativeTexts = alternativeTextMerger.updateAlternativeTexts(copy.getAlternativeTexts(), incomingStopPlace.getAlternativeTexts());
+
+                if (quayChanged || keyValuesChanged || centroidChanged || nameChanged || wheelChairChanged || tariffZoneChanged || privateCodeChanged || hasTransportModeChanged || updateAlternativeName || updateAlternativeTexts) {
                     if (existingStopPlace.getParentSiteRef() != null && !existingStopPlace.isParentStopPlace()) {
                         org.rutebanken.tiamat.model.StopPlace existingParentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingStopPlace.getParentSiteRef().getRef());
                         org.rutebanken.tiamat.model.StopPlace copyParentStopPlace = versionCreator.createCopy(existingParentStopPlace, org.rutebanken.tiamat.model.StopPlace.class);
@@ -276,12 +282,12 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
         }
     }
 
-    private Set<org.rutebanken.tiamat.model.StopPlace> foundStopPlacesFromMDM( org.rutebanken.tiamat.model.StopPlace incomingStopPlace) {
+    private Set<org.rutebanken.tiamat.model.StopPlace> foundStopPlacesFromMDM(org.rutebanken.tiamat.model.StopPlace incomingStopPlace) {
         Set<org.rutebanken.tiamat.model.StopPlace> results = new HashSet<>();
         Optional<Long> stopPlaceOpt = mdmService.getExistingStopPlaceMdmIds(incomingStopPlace);
         if (stopPlaceOpt.isPresent()) {
-            org.rutebanken.tiamat.model.StopPlace existingStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(validNetexPrefix + ":StopPlace:" +stopPlaceOpt.get());
-            if (existingStopPlace != null){
+            org.rutebanken.tiamat.model.StopPlace existingStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(validNetexPrefix + ":StopPlace:" + stopPlaceOpt.get());
+            if (existingStopPlace != null) {
                 results.add(existingStopPlace);
             }
         }
@@ -304,9 +310,9 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
         }
 
         return quayMdmIds.stream()
-                        .map(okinaIdentifier -> quayRepository.findFirstByNetexIdOrderByVersionDesc(validNetexPrefix + ":Quay:" + okinaIdentifier.getSuperId()))
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
+                .map(okinaIdentifier -> quayRepository.findFirstByNetexIdOrderByVersionDesc(validNetexPrefix + ":Quay:" + okinaIdentifier.getSuperId()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
     }
 

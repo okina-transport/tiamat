@@ -20,7 +20,6 @@ import org.geotools.referencing.GeodeticCalculator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -30,6 +29,7 @@ import org.rutebanken.tiamat.config.GeometryFactoryConfig;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
+import org.rutebanken.tiamat.model.AlternativeText;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -45,12 +45,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-public class QuayMergerTest {
-
-    private GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
+class QuayMergerTest {
 
     private final AlternativeNameMerger alternativeNameMerger = new AlternativeNameMerger();
-
+    private final AlternativeTextMerger alternativeTextMerger = new AlternativeTextMerger();
+    private GeometryFactory geometryFactory = new GeometryFactoryConfig().geometryFactory();
     @Mock
     private KeyValueListAppender keyValueListAppender;
 
@@ -60,12 +59,12 @@ public class QuayMergerTest {
     private QuayMerger quayMerger;
 
     @BeforeEach
-    public void setUp() {
-        quayMerger = new QuayMerger(alternativeNameMerger, keyValueListAppender, mdmService);
+    void setUp() {
+        quayMerger = new QuayMerger(alternativeNameMerger, alternativeTextMerger, keyValueListAppender, mdmService);
     }
 
     @Test
-    public void disableMatchingQuaysWithinLowDistanceBeforeIdMatch() {
+    void disableMatchingQuaysWithinLowDistanceBeforeIdMatch() {
 
         Quay quay1 = new Quay();
         quay1.getOriginalIds().add("BRA:Quay:12321234");
@@ -88,7 +87,7 @@ public class QuayMergerTest {
 
 
     @Test
-    public void twoQuaysWithSameOriginalIdButDifferentCoordinatesShouldBeTreatedAsSame() {
+    void twoQuaysWithSameOriginalIdButDifferentCoordinatesShouldBeTreatedAsSame() {
 
         AtomicInteger updatedQuaysCounter = new AtomicInteger();
         AtomicInteger createQuaysCounter = new AtomicInteger();
@@ -117,7 +116,7 @@ public class QuayMergerTest {
      * https://rutebanken.atlassian.net/browse/NRP-894
      */
     @Test
-    public void twoQuaysWithDifferentBearingPointShouldNotBeTreatedAsSame() {
+    void twoQuaysWithDifferentBearingPointShouldNotBeTreatedAsSame() {
 
         Quay west = new Quay();
         west.setCentroid(geometryFactory.createPoint(new Coordinate(60, 11)));
@@ -140,7 +139,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void twoQuaysWithSimilarCompassBearing() {
+    void twoQuaysWithSimilarCompassBearing() {
         Quay one = new Quay();
         one.setCompassBearing(1f);
 
@@ -153,7 +152,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void twoQuaysWithSimilarCompassBearingCrossingZero() {
+    void twoQuaysWithSimilarCompassBearingCrossingZero() {
         Quay one = new Quay();
         one.setCompassBearing(350f);
 
@@ -166,7 +165,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void twoQuaysWithTooMuchdifferenceInCompassBearing() {
+    void twoQuaysWithTooMuchdifferenceInCompassBearing() {
         Quay one = new Quay();
         one.setCompassBearing(90f);
 
@@ -177,7 +176,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void twoQuaysWithSimilarCompassBearingOneAndThreeFiftyNine() {
+    void twoQuaysWithSimilarCompassBearingOneAndThreeFiftyNine() {
         Quay one = new Quay();
         one.setCompassBearing(1f);
 
@@ -188,7 +187,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void twoNewQuaysThatMatchesOnIdMustNotBeAddedMultipleTimes() {
+    void twoNewQuaysThatMatchesOnIdMustNotBeAddedMultipleTimes() {
         AtomicInteger updatedQuaysCounter = new AtomicInteger();
         AtomicInteger createQuaysCounter = new AtomicInteger();
 
@@ -209,7 +208,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void twoNewQuaysThatMatchesOnCoordinatesMustNotBeAddedMultipleTimes() {
+    void twoNewQuaysThatMatchesOnCoordinatesMustNotBeAddedMultipleTimes() {
         AtomicInteger updatedQuaysCounter = new AtomicInteger();
         AtomicInteger createQuaysCounter = new AtomicInteger();
 
@@ -239,7 +238,7 @@ public class QuayMergerTest {
      * Add two new quays with already existing original IDs with different coordinates that are close to other quay.
      */
     @Test
-    public void idsMustNotBeAddedToOtherQuayEvenIfTheyAreClose() {
+    void idsMustNotBeAddedToOtherQuayEvenIfTheyAreClose() {
         Quay existingQuay1 = new Quay(new EmbeddableMultilingualString("Fredheimveien"));
         existingQuay1.setNetexId("123");
         existingQuay1.setCentroid(geometryFactory.createPoint(new Coordinate(11.142897636770531, 59.83297022041692)));
@@ -280,7 +279,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void quaysAreClose() {
+    void quaysAreClose() {
         Quay quay1 = new Quay();
         quay1.setCentroid(geometryFactory.createPoint(new Coordinate(59.933307, 10.775973)));
 
@@ -291,7 +290,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void quaysAreCloseWithSimilarCoordinates() {
+    void quaysAreCloseWithSimilarCoordinates() {
         Quay quay1 = new Quay();
         quay1.setCentroid(geometryFactory.createPoint(new Coordinate(59.933300, 10.775979)));
 
@@ -302,7 +301,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void doesNotHaveSameCoordinates() {
+    void doesNotHaveSameCoordinates() {
         Quay quay1 = new Quay();
         quay1.setCentroid(geometryFactory.createPoint(new Coordinate(60, 10.775973)));
 
@@ -313,7 +312,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void notCloseEnoughIfAbout10MetersBetween() {
+    void notCloseEnoughIfAbout10MetersBetween() {
         Quay quay1 = new Quay(new EmbeddableMultilingualString("One side of the road"));
         quay1.setCentroid(geometryFactory.createPoint(new Coordinate(59.858690, 10.493860)));
 
@@ -323,17 +322,17 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void closeEnoughIfAbout8MetersBetween() {
+    void closeEnoughIfAbout8MetersBetween() {
         Quay quay1 = new Quay();
         quay1.setCentroid(geometryFactory.createPoint(new Coordinate(59.858690, 10.493860)));
 
         Quay quay2 = new Quay();
-        quay2.setCentroid(geometryFactory.createPoint(new Coordinate(59.858674,10.493818)));
+        quay2.setCentroid(geometryFactory.createPoint(new Coordinate(59.858674, 10.493818)));
         assertThat(quayMerger.areClose(quay1, quay2)).isTrue();
     }
 
     @Test
-    public void findQuayIfAlreadyExisting() {
+    void findQuayIfAlreadyExisting() {
 
         Point existingQuayPoint = geometryFactory.createPoint(new Coordinate(60, 11));
 
@@ -360,7 +359,7 @@ public class QuayMergerTest {
      * https://rutebanken.atlassian.net/browse/NRP-1149
      */
     @Test
-    public void twoQuaysOneWithCompassBearingAndOtherWithoutShouldMatchIfNearby() {
+    void twoQuaysOneWithCompassBearingAndOtherWithoutShouldMatchIfNearby() {
 
         Quay first = new Quay();
         first.setCentroid(geometryFactory.createPoint(new Coordinate(60, 11)));
@@ -385,7 +384,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void twoQuaysOneWithCompassBearingAndOtherWithoutShouldNotMatchIfNearbyButDifferentName() {
+    void twoQuaysOneWithCompassBearingAndOtherWithoutShouldNotMatchIfNearbyButDifferentName() {
 
         Quay first = new Quay();
         first.setCentroid(geometryFactory.createPoint(new Coordinate(60, 11)));
@@ -410,7 +409,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void ifTwoQuaysAreMergedKeepName() {
+    void ifTwoQuaysAreMergedKeepName() {
 
         Quay first = new Quay();
         first.setCentroid(geometryFactory.createPoint(new Coordinate(60, 11)));
@@ -438,7 +437,7 @@ public class QuayMergerTest {
 
 
     @Test
-    public void ifTwoQuaysAreMergedKeepCompassBearing() {
+    void ifTwoQuaysAreMergedKeepCompassBearing() {
 
         Quay first = new Quay();
         first.setCentroid(geometryFactory.createPoint(new Coordinate(60, 11)));
@@ -466,7 +465,7 @@ public class QuayMergerTest {
      * When two quays have similar compass bearing, we can use a greater limit for distance in meters when merging.
      */
     @Test
-    public void ifTwoQuaysHaveSimilarCompassBearingIncreaseMergeDistance() {
+    void ifTwoQuaysHaveSimilarCompassBearingIncreaseMergeDistance() {
 
         Quay first = new Quay();
         Point firstQuayPoint = geometryFactory.createPoint(new Coordinate(60, 11));
@@ -492,7 +491,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void twoQuaysWithSimilarCompassBearingNoMatchIfDistanceExceedsExtendedMergeDistance() {
+    void twoQuaysWithSimilarCompassBearingNoMatchIfDistanceExceedsExtendedMergeDistance() {
         int distanceBetweenQuays = 40;
 
         Quay first = new Quay();
@@ -518,7 +517,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void twoQuaysWithDifferentPublicCodeShouldNotBeMerged() {
+    void twoQuaysWithDifferentPublicCodeShouldNotBeMerged() {
 
         Quay first = new Quay();
         Point firstQuayPoint = geometryFactory.createPoint(new Coordinate(60, 11));
@@ -540,7 +539,7 @@ public class QuayMergerTest {
         stopPlaceForLogging.getOriginalIds().add("12341234");
 
         Set<Quay> result = quayMerger.mergeQuays(stopPlaceForLogging, incomingQuays, existingQuays, new AtomicInteger(), new AtomicInteger(), false);
-        assertThat(result).as("Quay should NOT have been added. Public Code is different").hasSize(1);
+        assertThat(result).as("Quay should NOT have been added. Code is different").hasSize(1);
     }
 
     /**
@@ -550,7 +549,7 @@ public class QuayMergerTest {
      * roid=POINT (11.57647 60.197437), publicCode=1, keyValues={imported-id=Value{id=32161, items=[HED:Quay:0419020101]}}}]
      */
     @Test
-    public void dysterudBru() {
+    void dysterudBru() {
         Quay incomingQuay = new Quay();
         incomingQuay.setCentroid(geometryFactory.createPoint(new Coordinate(11.576007, 60.19752)));
         incomingQuay.setPublicCode("1");
@@ -589,7 +588,7 @@ public class QuayMergerTest {
     }
 
     @Test
-    public void matchQuaysIfMissingPublicCode() {
+    void matchQuaysIfMissingPublicCode() {
         Quay existingQuay = new Quay();
         existingQuay.setCentroid(geometryFactory.createPoint(new Coordinate(16.502, 68.59)));
         existingQuay.setPublicCode("01");
@@ -612,7 +611,7 @@ public class QuayMergerTest {
      * Reason: Inconsistency in stop place data
      */
     @Test
-    public void matchCloseQuaysBeforeIdMatch() {
+    void matchCloseQuaysBeforeIdMatch() {
 
         // Existing
         Quay existingQuay = new Quay();
@@ -638,7 +637,7 @@ public class QuayMergerTest {
         incomingQuay2.getOriginalIds().addAll(Arrays.asList("NOR:Quay:17439010", "NOR:Quay:1743901001"));
 
         // Merge
-        Set<Quay> result = quayMerger.mergeQuays(Sets.newHashSet(incomingQuay2, incomingQuay ), Sets.newHashSet(existingQuay2, existingQuay), new AtomicInteger(), new AtomicInteger(), false);
+        Set<Quay> result = quayMerger.mergeQuays(Sets.newHashSet(incomingQuay2, incomingQuay), Sets.newHashSet(existingQuay2, existingQuay), new AtomicInteger(), new AtomicInteger(), false);
 
         assertThat(result).hasSize(2);
         assertThat(existingQuay.getOriginalIds()).containsAll(incomingQuay.getOriginalIds());
@@ -651,6 +650,39 @@ public class QuayMergerTest {
         assertThat(existingQuay2.getCompassBearing()).isEqualTo(incomingQuay2.getCompassBearing());
         assertThat(existingQuay2.getOriginalIds()).doesNotContainAnyElementsOf(incomingQuay.getOriginalIds());
 
+    }
+
+    @Test
+    void ifTwoQuaysAreMergedKeepIncomingAlternativeTexts() {
+
+        Quay first = new Quay();
+        first.setCentroid(geometryFactory.createPoint(new Coordinate(60, 11)));
+        first.getOrCreateValues(NetexIdMapper.ORIGINAL_ID_KEY).add("original-id-1");
+
+        AlternativeText alternativeText = new AlternativeText();
+        alternativeText.setAttributeName("name");
+        alternativeText.setUseForLanguage("no");
+        alternativeText.setText(new EmbeddableMultilingualString("Alternativt navn", "no"));
+
+        Quay second = new Quay();
+        second.setCentroid(geometryFactory.createPoint(new Coordinate(60, 11)));
+        second.getOrCreateValues(NetexIdMapper.ORIGINAL_ID_KEY).add("original-id-1");
+        second.getAlternativeTexts().add(alternativeText);
+
+        Set<Quay> existingQuays = new HashSet<>();
+        existingQuays.add(first);
+
+        Set<Quay> incomingQuays = new HashSet<>();
+        incomingQuays.add(second);
+
+        AtomicInteger updatedQuaysCounter = new AtomicInteger();
+        Set<Quay> result = quayMerger.mergeQuays(incomingQuays, existingQuays, updatedQuaysCounter, new AtomicInteger(), true);
+        assertThat(result).as("Quays should have been merged.").hasSize(1);
+        Quay actual = result.iterator().next();
+
+        assertThat(actual.getAlternativeTexts()).hasSize(1);
+        assertThat(actual.getAlternativeTexts().get(0).getText().getValue()).isEqualTo("Alternativt navn");
+        assertThat(updatedQuaysCounter.get()).isEqualTo(1);
     }
 
     private Point getOffsetPoint(Point point, int offsetMeters, int azimuth) {

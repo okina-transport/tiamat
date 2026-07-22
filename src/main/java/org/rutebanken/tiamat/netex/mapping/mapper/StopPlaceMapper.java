@@ -17,6 +17,8 @@ package org.rutebanken.tiamat.netex.mapping.mapper;
 
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.exporter.params.TiamatVehicleModeStopPlacetypeMapping;
 import org.rutebanken.tiamat.netex.NetexUtils;
@@ -77,6 +79,28 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
                 }
             }
 
+            if (netexStopPlace.getAlternativeTexts() != null &&
+                    CollectionUtils.isNotEmpty(netexStopPlace.getAlternativeTexts().getAlternativeText())) {
+
+                List<org.rutebanken.netex.model.AlternativeText> netexAlternativeText = netexStopPlace.getAlternativeTexts().getAlternativeText();
+                List<org.rutebanken.tiamat.model.AlternativeText> alternativeTexts = new ArrayList<>();
+
+                for (org.rutebanken.netex.model.AlternativeText netexAltText : netexAlternativeText) {
+                    if (netexAltText != null
+                            && netexAltText.getText() != null
+                            && StringUtils.isNotBlank(netexAltText.getText().getValue())) {
+                        //Only include non-empty alternative texts
+                        org.rutebanken.tiamat.model.AlternativeText tiamatAltText = new org.rutebanken.tiamat.model.AlternativeText();
+                        mapperFacade.map(netexAltText, tiamatAltText);
+                        alternativeTexts.add(tiamatAltText);
+                    }
+                }
+
+                if (CollectionUtils.isNotEmpty(alternativeTexts)) {
+                    stopPlace.getAlternativeTexts().addAll(alternativeTexts);
+                }
+            }
+
             String isParentStopPlaceStringValue = publicationDeliveryHelper.getValueByKey(netexStopPlace, IS_PARENT_STOP_PLACE);
             if (isParentStopPlaceStringValue != null) {
                 if (isParentStopPlaceStringValue.equalsIgnoreCase("true")) {
@@ -130,6 +154,31 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
                 }
             } else {
                 netexStopPlace.setAlternativeNames(null);
+            }
+
+            if (CollectionUtils.isNotEmpty(stopPlace.getAlternativeTexts())) {
+                List<org.rutebanken.tiamat.model.AlternativeText> alternativeTexts = stopPlace.getAlternativeTexts();
+                List<org.rutebanken.netex.model.AlternativeText> netexAlternativeTexts = new ArrayList<>();
+
+                for (org.rutebanken.tiamat.model.AlternativeText alternativeText : alternativeTexts) {
+                    if (alternativeText != null
+                            && alternativeText.getText() != null
+                            && StringUtils.isNotBlank(alternativeText.getText().getValue())) {
+                        //Only include non-empty alternative texts
+                        org.rutebanken.netex.model.AlternativeText netexAltText = new org.rutebanken.netex.model.AlternativeText();
+                        mapperFacade.map(alternativeText, netexAltText);
+                        netexAltText.setId(alternativeText.getNetexId());
+                        netexAlternativeTexts.add(netexAltText);
+                    }
+                }
+
+                if (CollectionUtils.isNotEmpty(netexAlternativeTexts)) {
+                    AlternativeTexts_RelStructure altText = new AlternativeTexts_RelStructure();
+                    altText.getAlternativeText().addAll(netexAlternativeTexts);
+                    netexStopPlace.setAlternativeTexts(altText);
+                }
+            } else {
+                netexStopPlace.setAlternativeTexts(null);
             }
 
             if (netexStopPlace.getKeyList() == null) {

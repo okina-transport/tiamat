@@ -59,13 +59,16 @@ public class QuayMerger {
 
     private final AlternativeNameMerger alternativeNameMerger;
 
+    private final AlternativeTextMerger alternativeTextMerger;
+
     private final MdmService mdmService;
 
     private final KeyValueListAppender keyValueListAppender;
 
-    public QuayMerger(AlternativeNameMerger alternativeNameMerger, KeyValueListAppender keyValueListAppender,
+    public QuayMerger(AlternativeNameMerger alternativeNameMerger, AlternativeTextMerger alternativeTextMerger, KeyValueListAppender keyValueListAppender,
                 MdmService mdmService) {
         this.alternativeNameMerger = alternativeNameMerger;
+        this.alternativeTextMerger = alternativeTextMerger;
         this.keyValueListAppender = keyValueListAppender;
         this.mdmService = mdmService;
     }
@@ -259,7 +262,9 @@ public class QuayMerger {
 
         boolean updateAlternativeName = alternativeNameMerger.updateSiteElementAlternativeName(incomingQuay, alreadyAdded);
 
-        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || inseeCodeUpdated || urlUpdated || descUpdated || nameUpdated || keyValueExternalRefUpdated || accessibilityUpdated || keyValueFareZoneUpdated || updateAlternativeName) {
+        boolean alternativeTextsUpdated = alternativeTextMerger.updateAlternativeTexts(alreadyAdded.getAlternativeTexts(), incomingQuay.getAlternativeTexts());
+
+        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || inseeCodeUpdated || urlUpdated || descUpdated || nameUpdated || keyValueExternalRefUpdated || accessibilityUpdated || keyValueFareZoneUpdated || updateAlternativeName || alternativeTextsUpdated) {
             logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, inseeCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, nameUpdated:{}, keyValueExternalRefUpdated:{}, accessibilityUpdated:{}, keyValueFareZoneUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, inseeCodeUpdated, urlUpdated, descUpdated, nameUpdated, keyValueExternalRefUpdated, accessibilityUpdated, keyValueFareZoneUpdated);
 
             alreadyAdded.setChanged(Instant.now());

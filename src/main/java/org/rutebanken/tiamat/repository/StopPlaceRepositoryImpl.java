@@ -1483,6 +1483,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
             Hibernate.initialize(stopPlace.getAccessibilityAssessment().getLimitations());
         }
         Hibernate.initialize(stopPlace.getAlternativeNames());
+        Hibernate.initialize(stopPlace.getAlternativeTexts());
         Hibernate.initialize(stopPlace.getPolygon());
         Hibernate.initialize(stopPlace.getTariffZones());
         Hibernate.initialize(stopPlace.getPlaceEquipments());
@@ -1510,6 +1511,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
             Hibernate.initialize(quay.getOriginalIds());
             quay.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
             Hibernate.initialize(quay.getAlternativeNames());
+            Hibernate.initialize(quay.getAlternativeTexts());
             Hibernate.initialize(quay.getPolygon());
             Hibernate.initialize(quay.getPlaceEquipments());
             if (quay.getPlaceEquipments() != null){

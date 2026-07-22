@@ -35,6 +35,10 @@ public class Quay extends StopPlaceSpace_VersionStructure {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private final List<BoardingPosition> boardingPositions = new ArrayList<>();
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private final List<AlternativeText> alternativeTexts = new ArrayList<>();
+
     protected String publicCode;
 
     @Column(name = "insee_code")
@@ -77,6 +81,10 @@ public class Quay extends StopPlaceSpace_VersionStructure {
 
     public List<BoardingPosition> getBoardingPositions() {
         return boardingPositions;
+    }
+
+    public List<AlternativeText> getAlternativeTexts() {
+        return alternativeTexts;
     }
 
     public String getInseeCode() { return inseeCode; }

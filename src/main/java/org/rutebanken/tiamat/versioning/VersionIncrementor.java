@@ -67,6 +67,12 @@ public class VersionIncrementor {
         }
     }
 
+    public void initiateOrIncrementAlternativeTextsVersion(List<AlternativeText> alternativeTexts) {
+        if (alternativeTexts != null) {
+            alternativeTexts.forEach(this::initiateOrIncrement);
+        }
+    }
+
     public void initiateOrIncrement(EntityInVersionStructure entityInVersionStructure) {
         if(entityInVersionStructure.getNetexId() == null) {
             initiateFirstVersion(entityInVersionStructure, EntityInVersionStructure.class);
@@ -91,12 +97,14 @@ public class VersionIncrementor {
     public StopPlace initiateOrIncrementVersionsStopPlace(StopPlace stopPlace) {
         initiateOrIncrementSiteElementVersion(stopPlace);
         initiateOrIncrementPlaceEquipment(stopPlace.getPlaceEquipments());
+        initiateOrIncrementAlternativeTextsVersion(stopPlace.getAlternativeTexts());
 
         if (stopPlace.getQuays() != null) {
             logger.debug("Initiating first versions for {} quays", stopPlace.getQuays().size());
             stopPlace.getQuays().forEach(quay -> {
                 initiateOrIncrementSiteElementVersion(quay);
                 initiateOrIncrementPlaceEquipment(quay.getPlaceEquipments());
+                initiateOrIncrementAlternativeTextsVersion(quay.getAlternativeTexts());
             });
         }
 
@@ -117,11 +125,13 @@ public class VersionIncrementor {
     public Quay initiateOrIncrementVersionsQuay(Quay quay) {
         initiateOrIncrementSiteElementVersion(quay);
         initiateOrIncrementPlaceEquipment(quay.getPlaceEquipments());
+        initiateOrIncrementAlternativeTextsVersion(quay.getAlternativeTexts());
 
         if (quay != null) {
             logger.debug("Initiating first versions for {} quay", quay);
             initiateOrIncrementSiteElementVersion(quay);
             initiateOrIncrementPlaceEquipment(quay.getPlaceEquipments());
+            initiateOrIncrementAlternativeTextsVersion(quay.getAlternativeTexts());
         }
 
         return quay;

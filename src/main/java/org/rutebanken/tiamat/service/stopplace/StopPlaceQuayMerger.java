@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.service.stopplace;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.LoggingService;
@@ -26,6 +27,7 @@ import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.service.ObjectMerger;
 import org.rutebanken.tiamat.service.Preconditions;
 import org.rutebanken.tiamat.service.merge.AlternativeNamesMerger;
+import org.rutebanken.tiamat.service.merge.AlternativeTextsMerger;
 import org.rutebanken.tiamat.service.merge.KeyValuesMerger;
 import org.rutebanken.tiamat.service.merge.PlaceEquipmentMerger;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
@@ -57,19 +59,21 @@ public class StopPlaceQuayMerger {
     private final KeyValuesMerger keyValuesMerger;
     private final PlaceEquipmentMerger placeEquipmentMerger;
     private final AlternativeNamesMerger alternativeNamesMerger;
+    private final AlternativeTextsMerger alternativeTextsMerger;
     private final UsernameFetcher usernameFetcher;
     private final StopPlaceCopyHelper stopPlaceCopyHelper;
     private final MutateLock mutateLock;
     private final Messages messages;
     private final LoggingService loggingService;
 
-    public StopPlaceQuayMerger(StopPlaceVersionedSaverService stopPlaceVersionedSaverService, StopPlaceRepository stopPlaceRepository, ReflectionAuthorizationService authorizationService, KeyValuesMerger keyValuesMerger, PlaceEquipmentMerger placeEquipmentMerger, AlternativeNamesMerger alternativeNamesMerger, UsernameFetcher usernameFetcher, StopPlaceCopyHelper stopPlaceCopyHelper, MutateLock mutateLock, Messages messages, LoggingService loggingService) {
+    public StopPlaceQuayMerger(StopPlaceVersionedSaverService stopPlaceVersionedSaverService, StopPlaceRepository stopPlaceRepository, ReflectionAuthorizationService authorizationService, KeyValuesMerger keyValuesMerger, PlaceEquipmentMerger placeEquipmentMerger, AlternativeNamesMerger alternativeNamesMerger, AlternativeTextsMerger alternativeTextsMerger, UsernameFetcher usernameFetcher, StopPlaceCopyHelper stopPlaceCopyHelper, MutateLock mutateLock, Messages messages, LoggingService loggingService) {
         this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
         this.stopPlaceRepository = stopPlaceRepository;
         this.authorizationService = authorizationService;
         this.keyValuesMerger = keyValuesMerger;
         this.placeEquipmentMerger = placeEquipmentMerger;
         this.alternativeNamesMerger = alternativeNamesMerger;
+        this.alternativeTextsMerger = alternativeTextsMerger;
         this.usernameFetcher = usernameFetcher;
         this.stopPlaceCopyHelper = stopPlaceCopyHelper;
         this.mutateLock = mutateLock;
@@ -151,6 +155,10 @@ public class StopPlaceQuayMerger {
 
         if (fromQuay.getAlternativeNames() != null) {
             alternativeNamesMerger.mergeAlternativeNames(fromQuay.getAlternativeNames(), toQuay.getAlternativeNames());
+        }
+
+        if (CollectionUtils.isNotEmpty(fromQuay.getAlternativeTexts())) {
+            alternativeTextsMerger.mergeAlternativeTexts(fromQuay.getAlternativeTexts(), toQuay.getAlternativeTexts());
         }
     }
 }

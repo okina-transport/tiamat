@@ -50,6 +50,10 @@ public class StopPlace
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private final List<AccessSpace> accessSpaces = new ArrayList<>();
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private final List<AlternativeText> alternativeTexts = new ArrayList<>();
+
     protected String publicCode;
 
     @Enumerated(EnumType.STRING)
@@ -284,6 +288,10 @@ public class StopPlace
 
     public List<AccessSpace> getAccessSpaces() {
         return accessSpaces;
+    }
+
+    public List<AlternativeText> getAlternativeTexts() {
+        return alternativeTexts;
     }
 
     public Set<Quay> getQuays() {

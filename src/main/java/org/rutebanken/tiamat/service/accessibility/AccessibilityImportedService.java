@@ -1,7 +1,7 @@
 package org.rutebanken.tiamat.service.accessibility;
 
+import jakarta.transaction.Transactional;
 import org.rutebanken.tiamat.model.*;
-
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
@@ -11,7 +11,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import jakarta.transaction.Transactional;
+import java.time.Instant;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -108,37 +108,65 @@ public class AccessibilityImportedService {
      */
     public void updateAccessibilityStopPlacesAndQuays(List<StopPlace> stopPlaces) {
         for (StopPlace stopPlaceToSave : stopPlaces) {
+            String netexId = stopPlaceToSave.getNetexId();
             try {
-                StopPlace existingStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceToSave.getNetexId());
+                StopPlace existingStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(netexId);
+                if (existingStopPlace == null) {
+                    logger.warn("StopPlace non traité : aucun stopPlace trouvé en base pour le netexId : {}", netexId);
+                    continue;
+                }
+
+                if (stopPlaceToSave.getAccessibilityAssessment() == null) {
+                    logger.warn("StopPlace non traité : aucune donnée d'accessibilité fournie pour le netexId : {}", netexId);
+                    continue;
+                }
+
                 StopPlace newVersionStopPlace = versionCreator.createCopy(existingStopPlace, StopPlace.class);
+                if (newVersionStopPlace == null) {
+                    logger.warn("StopPlace non traité : échec de la copie de version pour le netexId : {}", netexId);
+                    continue;
+                }
 
                 AccessibilityLimitation newAccessibilityLimitation = newAccessibilityLimitation(null, stopPlaceToSave);
                 AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
                 accessibilityAssessment.setMobilityImpairedAccess(stopPlaceToSave.getAccessibilityAssessment().getMobilityImpairedAccess());
+                accessibilityAssessment.setCreated(Instant.now());
+                newAccessibilityLimitation.setCreated(Instant.now());
                 accessibilityAssessment.setLimitations(List.of(newAccessibilityLimitation));
                 newVersionStopPlace.setAccessibilityAssessment(accessibilityAssessment);
-                newVersionStopPlace.getQuays().forEach(quay -> {
-                    AccessibilityLimitation accessibilityLimitationQuay = new AccessibilityLimitation();
-                    BeanUtils.copyProperties(accessibilityAssessment.getLimitations().get(0), accessibilityLimitationQuay);
-                    AccessibilityAssessment accessibilityAssessmentQuay = new AccessibilityAssessment();
-                    BeanUtils.copyProperties(accessibilityAssessment, accessibilityAssessmentQuay);
-                    accessibilityAssessmentQuay.setLimitations(List.of(accessibilityLimitationQuay));
-                    quay.setAccessibilityAssessment(accessibilityAssessmentQuay);
-                });
+
+                if (newVersionStopPlace.getQuays() == null || newVersionStopPlace.getQuays().isEmpty()) {
+                    logger.warn("Aucun quai à mettre à jour pour le stopPlace avec netexId : {}", netexId);
+                } else {
+                    newVersionStopPlace.getQuays().stream()
+                            .filter(Objects::nonNull)
+                            .forEach(quay -> {
+                                try {
+                                    AccessibilityLimitation accessibilityLimitationQuay = new AccessibilityLimitation();
+                                    BeanUtils.copyProperties(accessibilityAssessment.getLimitations().getFirst(), accessibilityLimitationQuay);
+                                    AccessibilityAssessment accessibilityAssessmentQuay = new AccessibilityAssessment();
+                                    BeanUtils.copyProperties(accessibilityAssessment, accessibilityAssessmentQuay);
+                                    accessibilityAssessmentQuay.setLimitations(List.of(accessibilityLimitationQuay));
+                                    quay.setAccessibilityAssessment(accessibilityAssessmentQuay);
+                                } catch (Exception e) {
+                                    logger.warn("Quai non traité pour le stopPlace {} : netexId du quai : {}", netexId, quay.getNetexId(), e);
+                                }
+                            });
+                }
 
                 try {
                     saveNewVersionStopPlace(existingStopPlace, newVersionStopPlace, true);
                 } catch (Exception e) {
-                    logger.warn("Cannot update stop place with netexId : {}", existingStopPlace.getNetexId(), e);
+                    logger.warn("StopPlace non traité : impossible de sauvegarder la nouvelle version pour le netexId : {}", netexId, e);
                 }
             } catch (Exception e) {
-                logger.warn("Cannot find in BDD stop place with netexId : {}", stopPlaceToSave.getNetexId(), e);
+                logger.warn("StopPlace non traité : erreur inattendue lors de la mise à jour de l'accessibilité pour le netexId : {}", netexId, e);
             }
         }
     }
 
     private void saveNewVersionStopPlace(StopPlace existingStopPlace, StopPlace newVersionStopPlace, boolean optimizeAccessibilityAssessments) {
-        if (existingStopPlace.getParentSiteRef() != null && !existingStopPlace.isParentStopPlace()) {
+        if (existingStopPlace != null && existingStopPlace.getParentSiteRef() != null && !existingStopPlace.isParentStopPlace()) {
             StopPlace existingParentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingStopPlace.getParentSiteRef().getRef());
             StopPlace copyParentStopPlace = versionCreator.createCopy(existingParentStopPlace, StopPlace.class);
             copyParentStopPlace.getChildren().removeIf(stopPlace -> stopPlace.getNetexId().equals(newVersionStopPlace.getNetexId()));
@@ -161,27 +189,42 @@ public class AccessibilityImportedService {
      */
     public void updateAccessibilityQuaysAndStopPlaces(List<Quay> quays) {
         for (Quay quay : quays) {
-            StopPlace existingStopPlace = stopPlaceRepository.findFirstStopPlaceByNetexQuayOrderByVersionDesc(quay.getNetexId());
-            StopPlace newVersionStopPlace = versionCreator.createCopy(existingStopPlace, StopPlace.class);
-
-            // Création d'une nouvelle évaluation d'accessibilité pour le quai
-            AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
-            accessibilityAssessment.setMobilityImpairedAccess(quay.getAccessibilityAssessment().getMobilityImpairedAccess());
-            accessibilityAssessment.setLimitations(List.of(newAccessibilityLimitation(quay, null)));
-
-            // Mise à jour du quai dans le StopPlace
-            newVersionStopPlace.getQuays().stream()
-                    .filter(newQuay -> newQuay.getNetexId().equals(quay.getNetexId()))
-                    .forEach(newQuay -> newQuay.setAccessibilityAssessment(accessibilityAssessment));
-
-            // Fusion des accessibilités des quais pour calculer celle du StopPlace
-            aggregateQuayAccessibilitiesToStopPlace(newVersionStopPlace);
-
-            // Sauvegarde du StopPlace avec gestion des erreurs
+            String quayNetexId = quay.getNetexId();
             try {
-                saveNewVersionStopPlace(existingStopPlace, newVersionStopPlace, false);
+                StopPlace existingStopPlace = stopPlaceRepository.findFirstStopPlaceByNetexQuayOrderByVersionDesc(quayNetexId);
+                if (existingStopPlace == null) {
+                    logger.warn("Quai non traité : aucun stopPlace trouvé en base pour le quai avec netexId : {}", quayNetexId);
+                    continue;
+                }
+
+                if (quay.getAccessibilityAssessment() == null) {
+                    logger.warn("Quai non traité : aucune donnée d'accessibilité fournie pour le quai avec netexId : {}", quayNetexId);
+                    continue;
+                }
+
+                StopPlace newVersionStopPlace = versionCreator.createCopy(existingStopPlace, StopPlace.class);
+                if (newVersionStopPlace == null || newVersionStopPlace.getQuays() == null) {
+                    logger.warn("Quai non traité : échec de la copie de version du stopPlace pour le quai avec netexId : {}", quayNetexId);
+                    continue;
+                }
+
+                AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
+                accessibilityAssessment.setMobilityImpairedAccess(quay.getAccessibilityAssessment().getMobilityImpairedAccess());
+                accessibilityAssessment.setLimitations(List.of(newAccessibilityLimitation(quay, null)));
+
+                newVersionStopPlace.getQuays().stream()
+                        .filter(newQuay -> quayNetexId.equals(newQuay.getNetexId()))
+                        .forEach(newQuay -> newQuay.setAccessibilityAssessment(accessibilityAssessment));
+
+                aggregateQuayAccessibilitiesToStopPlace(newVersionStopPlace);
+
+                try {
+                    saveNewVersionStopPlace(existingStopPlace, newVersionStopPlace, false);
+                } catch (Exception e) {
+                    logger.warn("Quai non traité : impossible de sauvegarder la nouvelle version du stopPlace pour le quai avec netexId : {}", quayNetexId, e);
+                }
             } catch (Exception e) {
-                logger.warn("Cannot update stop place with netexId : {}", existingStopPlace.getNetexId(), e);
+                logger.warn("Quai non traité : erreur inattendue lors de la mise à jour de l'accessibilité pour le quai avec netexId : {}", quayNetexId, e);
             }
         }
     }
@@ -219,16 +262,23 @@ public class AccessibilityImportedService {
      * @return La valeur fusionnée selon la logique définie
      */
     private LimitationStatusEnumeration compareTwoAccessibilities(LimitationStatusEnumeration value1, LimitationStatusEnumeration value2) {
-        if (value1 == null) return value2;
-        if (value2 == null) return value1;
+        if (value1 == null) {
+            return value2;
+        }
+        if (value2 == null) {
+            return value1;
+        }
 
-        if (value1 == LimitationStatusEnumeration.TRUE && value2 == LimitationStatusEnumeration.TRUE)
+        if (value1 == LimitationStatusEnumeration.TRUE && value2 == LimitationStatusEnumeration.TRUE) {
             return LimitationStatusEnumeration.TRUE;
-        if (value1 == LimitationStatusEnumeration.TRUE || value2 == LimitationStatusEnumeration.TRUE)
+        }
+        if (value1 == LimitationStatusEnumeration.TRUE || value2 == LimitationStatusEnumeration.TRUE) {
             return LimitationStatusEnumeration.PARTIAL;
+        }
 
-        if (value1 == LimitationStatusEnumeration.FALSE && value2 == LimitationStatusEnumeration.FALSE)
+        if (value1 == LimitationStatusEnumeration.FALSE && value2 == LimitationStatusEnumeration.FALSE) {
             return LimitationStatusEnumeration.FALSE;
+        }
 
         // Si l'un est FALSE et l'autre UNKNOWN, on retourne UNKNOWN
         if ((value1 == LimitationStatusEnumeration.FALSE && value2 == LimitationStatusEnumeration.UNKNOWN) ||
@@ -237,12 +287,14 @@ public class AccessibilityImportedService {
         }
 
         // PARTIAL est prioritaire sur FALSE
-        if (value1 == LimitationStatusEnumeration.PARTIAL || value2 == LimitationStatusEnumeration.PARTIAL)
+        if (value1 == LimitationStatusEnumeration.PARTIAL || value2 == LimitationStatusEnumeration.PARTIAL) {
             return LimitationStatusEnumeration.PARTIAL;
+        }
 
         // Si l'un est UNKNOWN et qu'on n'a pas de FALSE, on retourne UNKNOWN
-        if (value1 == LimitationStatusEnumeration.UNKNOWN || value2 == LimitationStatusEnumeration.UNKNOWN)
+        if (value1 == LimitationStatusEnumeration.UNKNOWN || value2 == LimitationStatusEnumeration.UNKNOWN) {
             return LimitationStatusEnumeration.UNKNOWN;
+        }
 
         return LimitationStatusEnumeration.UNKNOWN;
     }

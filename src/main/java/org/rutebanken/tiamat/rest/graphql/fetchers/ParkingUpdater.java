@@ -412,7 +412,9 @@ class ParkingUpdater implements DataFetcher {
 
     private ParkingArea createParkingAreaFromInputParameters(Map inputParams) {
         ParkingArea newParkingArea = new ParkingArea();
-        newParkingArea.setSpecificParkingAreaUsage((SpecificParkingAreaUsageEnumeration) inputParams.get("specificParkingAreaUsage"));
+        if (inputParams.get("specificParkingAreaUsage") != null){
+            newParkingArea.setSpecificParkingAreaUsage((SpecificParkingAreaUsageEnumeration) inputParams.get("specificParkingAreaUsage"));
+        }
         newParkingArea.setTotalCapacity((BigInteger) inputParams.get(TOTAL_CAPACITY));
         return newParkingArea;
     }

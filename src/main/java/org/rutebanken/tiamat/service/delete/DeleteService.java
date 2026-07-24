@@ -62,7 +62,12 @@ public class DeleteService {
                         "FROM installed_equipment_version_structure_installed_equipment " +
                         "WHERE place_equipment_id IN (SELECT place_equipments_id FROM temp_place_equipment_ids)"
         ).executeUpdate();
-        logger.info("Captured equipment IDs before deletion.");
+
+        entityManager.createNativeQuery(
+                "CREATE TEMP TABLE IF NOT EXISTS temp_accessibility_assessment_ids AS " +
+                        "SELECT accessibility_assessment_id FROM parking WHERE accessibility_assessment_id IS NOT NULL"
+        ).executeUpdate();
+        logger.info("Captured equipment and accessibility assessment IDs before deletion.");
 
         entityManager.createNativeQuery("DELETE FROM parking_area_check_constraints").executeUpdate();
         logger.info("Executed DELETE on parking_area_check_constraints.");
@@ -149,28 +154,39 @@ public class DeleteService {
         logger.info("Executed DELETE on parking_transport_types.");
 
         entityManager.createNativeQuery(
-                "DELETE FROM accessibility_limitation " +
-                        "WHERE id IN (SELECT limitations_id FROM accessibility_assessment_limitations " +
-                        "WHERE accessibility_assessment_id IN (SELECT accessibility_assessment_id FROM parking))"
+                "CREATE TEMP TABLE IF NOT EXISTS temp_limitation_ids AS " +
+                        "SELECT limitations_id FROM accessibility_assessment_limitations " +
+                        "WHERE accessibility_assessment_id IN (SELECT accessibility_assessment_id FROM temp_accessibility_assessment_ids)"
         ).executeUpdate();
-        logger.info("Executed DELETE on accessibility_limitation.");
+        logger.info("Captured limitation IDs before deletion.");
 
         entityManager.createNativeQuery(
                 "DELETE FROM accessibility_assessment_limitations " +
-                        "WHERE accessibility_assessment_id IN (SELECT accessibility_assessment_id FROM parking)"
+                        "WHERE accessibility_assessment_id IN (SELECT accessibility_assessment_id FROM temp_accessibility_assessment_ids)"
         ).executeUpdate();
         logger.info("Executed DELETE on accessibility_assessment_limitations.");
-
-        entityManager.createNativeQuery(
-                "DELETE FROM accessibility_assessment WHERE id IN (SELECT accessibility_assessment_id FROM parking)"
-        ).executeUpdate();
-        logger.info("Executed DELETE on accessibility_assessment.");
 
         entityManager.createNativeQuery("DELETE FROM parking").executeUpdate();
         logger.info("Executed DELETE on parking.");
 
+        entityManager.createNativeQuery(
+                "DELETE FROM accessibility_assessment " +
+                        "WHERE id IN (SELECT accessibility_assessment_id FROM temp_accessibility_assessment_ids)"
+        ).executeUpdate();
+        logger.info("Executed DELETE on accessibility_assessment.");
+
+        entityManager.createNativeQuery(
+                "DELETE FROM accessibility_limitation " +
+                        "WHERE id IN (SELECT limitations_id FROM temp_limitation_ids) " +
+                        "AND NOT EXISTS (SELECT 1 FROM accessibility_assessment_limitations " +
+                        "WHERE limitations_id = accessibility_limitation.id)"
+        ).executeUpdate();
+        logger.info("Executed DELETE on accessibility_limitation.");
+
         entityManager.createNativeQuery("DROP TABLE IF EXISTS temp_installed_equipment_ids").executeUpdate();
         entityManager.createNativeQuery("DROP TABLE IF EXISTS temp_place_equipment_ids").executeUpdate();
+        entityManager.createNativeQuery("DROP TABLE IF EXISTS temp_limitation_ids").executeUpdate();
+        entityManager.createNativeQuery("DROP TABLE IF EXISTS temp_accessibility_assessment_ids").executeUpdate();
         logger.info("Dropped temporary tables.");
 
         logger.info("All parking data successfully deleted.");

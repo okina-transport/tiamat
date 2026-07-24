@@ -1,7 +1,6 @@
 package org.rutebanken.tiamat.importer.manualImports;
 
 import org.hibernate.Hibernate;
-
 import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.PointOfInterest;
@@ -19,9 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 @Transactional
@@ -55,7 +52,7 @@ public class ShopImportTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void testDuplicateDetection() throws IOException {
+    public void testDuplicateDetection() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/shop/poi_pdv_with_duplicates.csv") );
         String expectedMessage = "There are duplicated POI in your CSV File (With the same ID & Name";
         String actualMessage = exception.getMessage();
@@ -63,7 +60,7 @@ public class ShopImportTest extends TiamatIntegrationTest {
     }
 
    @Test
-    public void testPOIWithoutID() throws IOException {
+    public void testPOIWithoutID() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/shop/poi_pdv_without_id.csv") );
         String expectedMessage = "ID is required in all POI";
         String actualMessage = exception.getMessage();
@@ -71,7 +68,7 @@ public class ShopImportTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void testPOIWithoutName() throws IOException {
+    public void testPOIWithoutName() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/shop/poi_pdv_without_name.csv") );
         String expectedMessage = "NAME is required for POI ";
         String actualMessage = exception.getMessage();
@@ -79,7 +76,7 @@ public class ShopImportTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void testPOIWithoutLongitude() throws IOException {
+    public void testPOIWithoutLongitude() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/shop/poi_pdv_without_longitude.csv") );
         String expectedMessage = "longitude is required for POI";
         String actualMessage = exception.getMessage();
@@ -87,7 +84,7 @@ public class ShopImportTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void testPOIWithoutLatitude() throws IOException {
+    public void testPOIWithoutLatitude() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/shop/poi_pdv_without_latitude.csv") );
         String expectedMessage = "latitude is required for POI";
         String actualMessage = exception.getMessage();

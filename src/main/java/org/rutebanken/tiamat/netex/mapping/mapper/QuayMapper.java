@@ -158,6 +158,12 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
         postalAddress.setId(postalAddressId);
         postalAddress.setVersion(getPostalAdressVersion(postalAddressId));
 
+        if (tiamatQuay.getName() != null){
+            postalAddress.setName(new MultilingualString().withValue(tiamatQuay.getName().getValue()));
+        } else if (netexQuay.getName() != null){
+            postalAddress.setName(new MultilingualString().withValue(netexQuay.getName().getValue()));
+        }
+
         String town = tiamatQuay.getTown();
         if (StringUtils.isBlank(town)) {
             town = cityNameService.getCityNameFromInseeCode(tiamatQuay.getInseeCode()).orElse(null);

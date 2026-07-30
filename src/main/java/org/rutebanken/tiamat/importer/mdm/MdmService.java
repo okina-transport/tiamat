@@ -5,6 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.client.mdm.*;
 import org.rutebanken.tiamat.config.TiamatProperties;
 import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -289,11 +290,12 @@ public class MdmService {
 
                 List<OkinaIdentifier> mdmQuayIdentifiers = mdmClient.generateQuayIdentifiers(quayIdentifiers);
                 fillMdmId(incomingStopPlace.getQuays(), mdmQuayIdentifiers);
-                removeImportedIds(incomingStopPlace);
             } catch (Exception e) {
                 logger.error("Failed to create stop identifiers in mdm: {}", e.getMessage());
             }
         }
+
+        removeImportedIds(incomingStopPlace);
     }
 
     public void mergeStopIdentifier(String fromIdentifier, String targetIdentifier) {
@@ -308,9 +310,8 @@ public class MdmService {
     }
 
     public void removeImportedIds(StopPlace incomingStopPlace) {
-        incomingStopPlace.getOriginalIds().clear();
-        incomingStopPlace.getQuays().forEach(quay -> quay.getOriginalIds().clear());
-
+        incomingStopPlace.getKeyValues().remove(NetexIdMapper.ORIGINAL_ID_KEY);
+        incomingStopPlace.getQuays().forEach(quay -> quay.getKeyValues().remove(NetexIdMapper.ORIGINAL_ID_KEY));
     }
 
     public List<OkinaIdentifier> getAllQuaysFromSuperId(Set<Long> superIds) {

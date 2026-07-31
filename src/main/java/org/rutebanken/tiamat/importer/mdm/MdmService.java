@@ -311,7 +311,13 @@ public class MdmService {
 
     public void removeImportedIds(StopPlace incomingStopPlace) {
         incomingStopPlace.getKeyValues().remove(NetexIdMapper.ORIGINAL_ID_KEY);
-        incomingStopPlace.getQuays().forEach(quay -> quay.getKeyValues().remove(NetexIdMapper.ORIGINAL_ID_KEY));
+
+        Set<Quay> modifiedQuays = new HashSet<>();
+        for (Quay quay : incomingStopPlace.getQuays()) {
+            quay.getKeyValues().remove(NetexIdMapper.ORIGINAL_ID_KEY);
+            modifiedQuays.add(quay);
+        }
+        incomingStopPlace.setQuays(modifiedQuays);
     }
 
     public List<OkinaIdentifier> getAllQuaysFromSuperId(Set<Long> superIds) {

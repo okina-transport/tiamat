@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.model.csv.ParkingCsvHeader;
+import org.rutebanken.tiamat.model.csv.ParkingCsvHeaderFr;
 import org.rutebanken.tiamat.model.job.AnalyzeImportError;
 import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
 import org.rutebanken.tiamat.rest.dto.DtoParking;
@@ -28,7 +29,8 @@ public class ParkingsCSVHelper {
     private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
     private final static Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
 
-    private static final List<String> EXPECTED_HEADERS = ParkingCsvHeader.headerNames();
+    private static final List<String> EXPECTED_HEADERS_EN = ParkingCsvHeader.headerNames();
+    private static final List<String> EXPECTED_HEADERS_FR = ParkingCsvHeaderFr.headerNames();
 
     public static List<DtoParking> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
 
@@ -36,12 +38,14 @@ public class ParkingsCSVHelper {
         List<AnalyzeImportError> rowErrors = new ArrayList<>();
 
         CSVParser parser = CSVHelper.getRecords(csvFile);
-        CSVHelper.validateHeaders(EXPECTED_HEADERS, parser.getHeaderNames(), "parking");
+        List<String> actualHeaders = parser.getHeaderNames();
+        List<String> expectedHeaders = resolveExpectedHeaders(actualHeaders);
+        CSVHelper.validateHeaders(expectedHeaders, actualHeaders, "parking");
 
         for (CSVRecord csvRecord : parser) {
-            if (csvRecord.size() != EXPECTED_HEADERS.size()) {
+            if (csvRecord.size() != expectedHeaders.size()) {
                 rowErrors.add(new AnalyzeImportError(AnalyzeImportErrorType.TEMPLATE,
-                        "Expected " + EXPECTED_HEADERS.size() + " columns but found " + csvRecord.size(),
+                        "Expected " + expectedHeaders.size() + " columns but found " + csvRecord.size(),
                         (int) csvRecord.getRecordNumber(), null));
                 continue;
             }
@@ -94,6 +98,12 @@ public class ParkingsCSVHelper {
         }
 
         return dtoParkingList;
+    }
+
+    private static List<String> resolveExpectedHeaders(List<String> actualHeaders) {
+        long matchesFr = actualHeaders.stream().filter(EXPECTED_HEADERS_FR::contains).count();
+        long matchesEn = actualHeaders.stream().filter(EXPECTED_HEADERS_EN::contains).count();
+        return matchesFr > matchesEn ? EXPECTED_HEADERS_FR : EXPECTED_HEADERS_EN;
     }
 
     private static List<AnalyzeImportError> validateParking(DtoParking parking, int line) {

@@ -1,8 +1,8 @@
 package org.rutebanken.tiamat.general;
 
 import org.junit.jupiter.api.Test;
-import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
 import org.rutebanken.tiamat.model.job.AnalyzeImportError;
+import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
 import org.rutebanken.tiamat.rest.dto.DtoParking;
 
 import java.io.FileInputStream;
@@ -20,6 +20,12 @@ class ParkingsCSVHelperTest {
     @Test
     void parsesValidFile() throws IOException {
         List<DtoParking> parkings = ParkingsCSVHelper.parseDocument(fileStream("parkings_valid.csv"));
+        assertThat(parkings).hasSize(2);
+    }
+
+    @Test
+    void parsesValidFrenchHeaderFile() throws IOException {
+        List<DtoParking> parkings = ParkingsCSVHelper.parseDocument(fileStream("parkings_valid_fr.csv"));
         assertThat(parkings).hasSize(2);
     }
 

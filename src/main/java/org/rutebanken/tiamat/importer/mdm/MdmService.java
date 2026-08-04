@@ -290,12 +290,11 @@ public class MdmService {
 
                 List<OkinaIdentifier> mdmQuayIdentifiers = mdmClient.generateQuayIdentifiers(quayIdentifiers);
                 fillMdmId(incomingStopPlace.getQuays(), mdmQuayIdentifiers);
+                removeImportedIds(incomingStopPlace);
             } catch (Exception e) {
                 logger.error("Failed to create stop identifiers in mdm: {}", e.getMessage());
             }
         }
-
-        removeImportedIds(incomingStopPlace);
     }
 
     public void mergeStopIdentifier(String fromIdentifier, String targetIdentifier) {
@@ -310,14 +309,8 @@ public class MdmService {
     }
 
     public void removeImportedIds(StopPlace incomingStopPlace) {
-        incomingStopPlace.getKeyValues().remove(NetexIdMapper.ORIGINAL_ID_KEY);
-
-        Set<Quay> modifiedQuays = new HashSet<>();
-        for (Quay quay : incomingStopPlace.getQuays()) {
-            quay.getKeyValues().remove(NetexIdMapper.ORIGINAL_ID_KEY);
-            modifiedQuays.add(quay);
-        }
-        incomingStopPlace.setQuays(modifiedQuays);
+        incomingStopPlace.getOriginalIds().clear();
+        incomingStopPlace.getQuays().forEach(quay -> quay.getOriginalIds().clear());
     }
 
     public List<OkinaIdentifier> getAllQuaysFromSuperId(Set<Long> superIds) {

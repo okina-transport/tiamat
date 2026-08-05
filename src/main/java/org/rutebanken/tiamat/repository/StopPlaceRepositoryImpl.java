@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.repository;
 
 import com.google.common.collect.Sets;
 import jakarta.persistence.*;
+import org.apache.commons.collections4.CollectionUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
@@ -1583,6 +1584,19 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                 .getResultList();
         results.forEach(this::initializeStopPlace);
         return results.isEmpty() ? null : results.get(0);
+    }
+
+
+    public StopPlace removeImportedIdAndSave(StopPlace stopPlace){
+
+        stopPlace.getKeyValues().remove(ORIGINAL_ID_KEY);
+
+        if (CollectionUtils.isNotEmpty(stopPlace.getQuays())){
+            for (Quay quay : stopPlace.getQuays()) {
+                quay.getKeyValues().remove(ORIGINAL_ID_KEY);
+            }
+        }
+        return entityManager.merge(stopPlace);
     }
 
 }

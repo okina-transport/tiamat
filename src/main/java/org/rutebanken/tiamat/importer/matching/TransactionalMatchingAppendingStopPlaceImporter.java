@@ -82,7 +82,12 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
     @Value("${netex.validPrefix:MOBIITI}")
     String validNetexPrefix;
 
-    public TransactionalMatchingAppendingStopPlaceImporter(KeyValueListAppender keyValueListAppender, VersionCreator versionCreator, StopPlaceRepository stopPlaceRepository, AlternativeTextMerger alternativeTextMerger, QuayRepository quayRepository, TariffZoneRepository tariffZoneRepository, QuayMerger quayMerger, NetexMapper netexMapper, StopPlaceByIdFinder stopPlaceByIdFinder, StopPlaceCentroidComputer stopPlaceCentroidComputer, TiamatProperties tiamatProperties, AlternativeStopTypes alternativeStopTypes, QuayMover quayMover, AlternativeNameMerger alternativeNameMerger, MergingStopPlaceImporter mergingStopPlaceImporter, MdmService mdmService, StopPlaceVersionedSaverService stopPlaceVersionedSaverService) {
+
+    public TransactionalMatchingAppendingStopPlaceImporter(KeyValueListAppender keyValueListAppender, VersionCreator versionCreator, StopPlaceRepository stopPlaceRepository, AlternativeTextMerger alternativeTextMerger,
+                                                           QuayRepository quayRepository, TariffZoneRepository tariffZoneRepository, QuayMerger quayMerger, NetexMapper netexMapper, StopPlaceByIdFinder stopPlaceByIdFinder,
+                                                           StopPlaceCentroidComputer stopPlaceCentroidComputer, TiamatProperties tiamatProperties, AlternativeStopTypes alternativeStopTypes, QuayMover quayMover,
+                                                           AlternativeNameMerger alternativeNameMerger, MergingStopPlaceImporter mergingStopPlaceImporter, MdmService mdmService, StopPlaceVersionedSaverService stopPlaceVersionedSaverService
+                                                          ) {
         this.keyValueListAppender = keyValueListAppender;
         this.versionCreator = versionCreator;
         this.stopPlaceRepository = stopPlaceRepository;
@@ -170,7 +175,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                     incomingStopPlace);
 
             StopPlace newStopPlace = mergingStopPlaceImporter.importStopPlace(incomingStopPlace, false, importParams.recomputeStopPlacesLocation, importParams.isNetex);
-
+            mdmService.fillImportedIdsInNetexStopPlace(newStopPlace, importParams.providerCode.toUpperCase());
             matchedStopPlaces.add(newStopPlace);
             stopPlacesCreatedOrUpdated.incrementAndGet();
 
@@ -274,7 +279,11 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
                 matchedStopPlaces.removeIf(stopPlace -> stopPlace.getId().equals(netexId));
 
-                matchedStopPlaces.add(netexMapper.mapToNetexModel(copy));
+                StopPlace netexStopPlace = netexMapper.mapToNetexModel(copy);
+                mdmService.fillImportedIdsInNetexStopPlace(netexStopPlace, importParams.providerCode.toUpperCase());
+                matchedStopPlaces.add(netexStopPlace);
+
+
 
                 stopPlacesCreatedOrUpdated.incrementAndGet();
 

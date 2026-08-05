@@ -43,6 +43,20 @@ public class NetexUtils {
         }
     }
 
+    public static void addImportedId(DataManagedObjectStructure object, String importedId){
+
+        if (object.getKeyList() == null){
+            KeyListStructure keyListStruct = new KeyListStructure();
+            object.setKeyList(keyListStruct);
+        }
+
+        KeyValueStructure importedIdKey = new KeyValueStructure();
+        importedIdKey.setKey("imported-id");
+        importedIdKey.setValue(importedId);
+        object.getKeyList().getKeyValue().add(importedIdKey);
+
+    }
+
     public static <Parking> List<Parking> getMembers(Class<Parking> clazz, List<JAXBElement<? extends EntityStructure>> members) {
         List<Parking> foundMembers = new ArrayList<>();
 

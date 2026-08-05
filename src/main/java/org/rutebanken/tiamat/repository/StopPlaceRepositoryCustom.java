@@ -140,4 +140,6 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     List<String> getAllProviders();
 
+    StopPlace removeImportedIdAndSave(StopPlace stopPlace);
+
 }

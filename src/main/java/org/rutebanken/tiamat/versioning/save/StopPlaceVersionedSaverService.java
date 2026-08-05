@@ -216,7 +216,9 @@ public class StopPlaceVersionedSaverService {
                 tariffZonesLookupService.populateTariffZone(child);
             });
 
-            stopPlaceRepository.saveAll(newVersion.getChildren());
+            for (StopPlace child : newVersion.getChildren()) {
+                stopPlaceRepository.removeImportedIdAndSave(child);
+            }
             if (logger.isDebugEnabled()) {
                 logger.debug("Saved children: {}", newVersion.getChildren().stream()
                                                            .map(sp -> "{id:" + sp.getId() + " netexId:" + sp.getNetexId() + " version:" + sp.getVersion() + "}")
@@ -224,7 +226,7 @@ public class StopPlaceVersionedSaverService {
             }
         }
         mdmService.generateIdentifier(newVersion);
-        newVersion = stopPlaceRepository.save(newVersion);
+        newVersion = stopPlaceRepository.removeImportedIdAndSave(newVersion);
         logger.debug("Saved stop place with id: {} and childs {}", newVersion.getId(), newVersion.getChildren().stream().map(ch -> ch.getId()).collect(toList()));
 
         updateParentSiteRefsForChildren(newVersion);

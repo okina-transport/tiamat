@@ -5,7 +5,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.client.mdm.*;
 import org.rutebanken.tiamat.config.TiamatProperties;
 import org.rutebanken.tiamat.model.*;
-import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.rutebanken.tiamat.netex.NetexUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -203,6 +204,43 @@ public class MdmService {
                 quayToComplete = identifierToCheck.quayMap().get(okinaIdentifier.getSuperId());
                 if (quayToComplete != null) {
                     quayToComplete.getOriginalIds().add(okinaIdentifier.getDataset() + QUAY_QUALIFIER + okinaIdentifier.getOriginalId());
+                }
+            }
+        }
+    }
+
+
+    public void fillImportedIdsInNetexStopPlace( org.rutebanken.netex.model.StopPlace netexStopPlace, String datasetId) {
+        if (netexStopPlace == null || !tiamatProperties.isMdmEnabled()) {
+            return;
+        }
+
+        Long stopIdentifier = getIdentifierFromNetexId(netexStopPlace.getId());
+
+        List<OkinaIdentifier> stopPlacesMdmData = mdmClient.getStopPlaceIdentifiers(List.of(stopIdentifier));
+
+        for (OkinaIdentifier okinaIdentifier : stopPlacesMdmData) {
+            if (datasetId.equals(okinaIdentifier.getDataset())){
+                String completeOriginalId = okinaIdentifier.getDataset() + STOP_PLACE_QUALIFIER + okinaIdentifier.getOriginalId();
+                NetexUtils.addImportedId(netexStopPlace, completeOriginalId);
+            }
+        }
+
+        List<Long> searchList = new ArrayList<>();
+        for (org.rutebanken.netex.model.Quay quay : NetexUtils.getQuaysFromStopPlace(netexStopPlace)) {
+            Long quayIdentifier = getIdentifierFromNetexId(quay.getId());
+            searchList.add(quayIdentifier);
+        }
+
+        List<OkinaIdentifier> quaysMdmData = mdmClient.getQuayIdentifiers(searchList);
+
+        for (org.rutebanken.netex.model.Quay quay : NetexUtils.getQuaysFromStopPlace(netexStopPlace)) {
+            Long quayNetexId = getIdentifierFromNetexId(quay.getId());
+
+            for (OkinaIdentifier quayMdm : quaysMdmData) {
+                if (quayMdm.getSuperId().equals(quayNetexId) && datasetId.equals(quayMdm.getDataset())){
+                    String importedId = quayMdm.getDataset() + QUAY_QUALIFIER + quayMdm.getOriginalId();
+                    NetexUtils.addImportedId(quay, importedId);
                 }
             }
         }

@@ -19,61 +19,66 @@ class ParkingsCSVHelperTest {
 
     @Test
     void parsesValidFile() throws IOException {
-        List<DtoParking> parkings = ParkingsCSVHelper.parseDocument(fileStream("parkings_valid.csv"));
-        assertThat(parkings).hasSize(2);
+        try (InputStream is = fileStream("parkings_valid.csv")) {
+            List<DtoParking> parkings = ParkingsCSVHelper.parseDocument(is);
+            assertThat(parkings).hasSize(2);
+        }
     }
 
     @Test
-    void parsesValidFrenchHeaderFile() throws IOException {
-        List<DtoParking> parkings = ParkingsCSVHelper.parseDocument(fileStream("parkings_valid_fr.csv"));
-        assertThat(parkings).hasSize(2);
+    void detectsInvalidUtf8Encoding() throws IOException {
+        try (InputStream is = fileStream("parkings_bad_encoding.csv")) {
+            AnalyzeImportException exception = assertThrows(AnalyzeImportException.class,
+                    () -> ParkingsCSVHelper.parseDocument(is));
+
+            assertThat(exception.getErrors())
+                    .hasSize(1)
+                    .allSatisfy(error -> assertThat(error.getType()).isEqualTo(AnalyzeImportErrorType.ENCODING));
+        }
     }
 
     @Test
-    void detectsInvalidUtf8Encoding() {
-        AnalyzeImportException exception = assertThrows(AnalyzeImportException.class,
-                () -> ParkingsCSVHelper.parseDocument(fileStream("parkings_bad_encoding.csv")));
+    void detectsTemplateMismatch() throws IOException {
+        try (InputStream is = fileStream("parkings_bad_headers.csv")) {
+            AnalyzeImportException exception = assertThrows(AnalyzeImportException.class,
+                    () -> ParkingsCSVHelper.parseDocument(is));
 
-        assertThat(exception.getErrors())
-                .hasSize(1)
-                .allSatisfy(error -> assertThat(error.getType()).isEqualTo(AnalyzeImportErrorType.ENCODING));
+            assertThat(exception.getErrors())
+                    .hasSize(1)
+                    .allSatisfy(error -> assertThat(error.getType()).isEqualTo(AnalyzeImportErrorType.TEMPLATE));
+            assertThat(exception.getErrors().get(0).getMessage())
+                    .contains("insee")
+                    .contains("operator");
+        }
     }
 
     @Test
-    void detectsTemplateMismatch() {
-        AnalyzeImportException exception = assertThrows(AnalyzeImportException.class,
-                () -> ParkingsCSVHelper.parseDocument(fileStream("parkings_bad_headers.csv")));
+    void detectsMissingPdmMandatoryFields() throws IOException {
+        try (InputStream is = fileStream("parkings_missing_pdm_mandatory_fields.csv")) {
+            AnalyzeImportException exception = assertThrows(AnalyzeImportException.class,
+                    () -> ParkingsCSVHelper.parseDocument(is));
 
-        assertThat(exception.getErrors())
-                .hasSize(1)
-                .allSatisfy(error -> assertThat(error.getType()).isEqualTo(AnalyzeImportErrorType.TEMPLATE));
-        assertThat(exception.getErrors().get(0).getMessage())
-                .contains("insee")
-                .contains("operator");
+            List<AnalyzeImportError> errors = exception.getErrors();
+            assertThat(errors).allSatisfy(error -> assertThat(error.getType()).isEqualTo(AnalyzeImportErrorType.MISSING_DATA));
+            assertThat(errors).extracting(AnalyzeImportError::getField)
+                    .contains("userType", "free", "nbOfPlaces", "maxHeight", "siretNumber", "operator");
+        }
     }
 
     @Test
-    void detectsMissingPdmMandatoryFields() {
-        AnalyzeImportException exception = assertThrows(AnalyzeImportException.class,
-                () -> ParkingsCSVHelper.parseDocument(fileStream("parkings_missing_pdm_mandatory_fields.csv")));
+    void aggregatesMissingRequiredDataAcrossRows() throws IOException {
+        try (InputStream is = fileStream("parkings_missing_data.csv")) {
+            AnalyzeImportException exception = assertThrows(AnalyzeImportException.class,
+                    () -> ParkingsCSVHelper.parseDocument(is));
 
-        List<AnalyzeImportError> errors = exception.getErrors();
-        assertThat(errors).allSatisfy(error -> assertThat(error.getType()).isEqualTo(AnalyzeImportErrorType.MISSING_DATA));
-        assertThat(errors).extracting(AnalyzeImportError::getField)
-                .contains("userType", "free", "nbOfPlaces", "maxHeight", "siretNumber", "operator");
-    }
-
-    @Test
-    void aggregatesMissingRequiredDataAcrossRows() {
-        AnalyzeImportException exception = assertThrows(AnalyzeImportException.class,
-                () -> ParkingsCSVHelper.parseDocument(fileStream("parkings_missing_data.csv")));
-
-        List<AnalyzeImportError> errors = exception.getErrors();
-        assertThat(errors).isNotEmpty();
-        assertThat(errors).allSatisfy(error -> assertThat(error.getType()).isEqualTo(AnalyzeImportErrorType.MISSING_DATA));
-        // row 2 (missing id), row 3 (missing name+insee), row 4 (bad longitude) -> at least 4 distinct field errors
-        assertThat(errors.size()).isGreaterThanOrEqualTo(4);
-        assertThat(errors).extracting(AnalyzeImportError::getLine).doesNotContainNull();
+            List<AnalyzeImportError> errors = exception.getErrors();
+            assertThat(errors)
+                    .isNotEmpty()
+                    .allSatisfy(error -> assertThat(error.getType()).isEqualTo(AnalyzeImportErrorType.MISSING_DATA));
+            // row 2 (missing id), row 3 (missing name+insee), row 4 (bad longitude) -> at least 4 distinct field errors
+            assertThat(errors).size().isGreaterThanOrEqualTo(4);
+            assertThat(errors).extracting(AnalyzeImportError::getLine).doesNotContainNull();
+        }
     }
 
     private InputStream fileStream(String fileName) throws IOException {

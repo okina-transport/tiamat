@@ -1,3 +1,3 @@
-id,name,houseNumber,street,city,postCode,longitude,latitude,amenity,building,historic,landuse,leisure,tourism,office,shop,lpImportId,operator
+id,name,addr:housenumber,addr:street,addr:city,addr:postcode,lon,lat,amenity,building,historic,landuse,leisure,tourism,office,shop,LP_IMPORT_ID,operator
 POI1,Boulangerie Test,1,rue Test,Paris,75001,2.3488,48.8534,,,,,,,,bakery,LP1,TestOperator
 POI2,Boulangerie Deux,2,rue Deux,Paris,75002,2.35,48.86,,,,,,,,bakery,LP2,TestOperator

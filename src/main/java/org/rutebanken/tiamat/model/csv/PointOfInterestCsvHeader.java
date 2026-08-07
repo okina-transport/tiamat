@@ -8,12 +8,12 @@ public enum PointOfInterestCsvHeader {
 
     ID("id"),
     NAME("name"),
-    HOUSE_NUMBER("houseNumber"),
-    STREET("street"),
-    CITY("city"),
-    POST_CODE("postCode"),
-    LONGITUDE("longitude"),
-    LATITUDE("latitude"),
+    HOUSE_NUMBER("addr:housenumber"),
+    STREET("addr:street"),
+    CITY("addr:city"),
+    POST_CODE("addr:postcode"),
+    LONGITUDE("lon"),
+    LATITUDE("lat"),
     AMENITY("amenity"),
     BUILDING("building"),
     HISTORIC("historic"),
@@ -22,7 +22,7 @@ public enum PointOfInterestCsvHeader {
     TOURISM("tourism"),
     OFFICE("office"),
     SHOP("shop"),
-    LP_IMPORT_ID("lpImportId"),
+    LP_IMPORT_ID("LP_IMPORT_ID"),
     OPERATOR("operator");
 
     private final String value;
@@ -31,11 +31,11 @@ public enum PointOfInterestCsvHeader {
         this.value = value;
     }
 
-    public String value() {
-        return value;
-    }
-
     public static List<String> headerNames() {
         return Arrays.stream(values()).map(PointOfInterestCsvHeader::value).collect(Collectors.toList());
+    }
+
+    public String value() {
+        return value;
     }
 }

@@ -1,8 +1,8 @@
 package org.rutebanken.tiamat.general;
 
 import org.junit.jupiter.api.Test;
-import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
 import org.rutebanken.tiamat.model.job.AnalyzeImportError;
+import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
 import org.rutebanken.tiamat.rest.dto.DtoPointOfInterest;
 
 import java.io.FileInputStream;
@@ -21,45 +21,51 @@ class PointOfInterestCSVHelperTest {
 
     @Test
     void parsesValidFile() throws IOException {
-        List<DtoPointOfInterest> pois = poiHelper.parseDocument(fileStream("poi_valid.csv"));
-        assertThat(pois).hasSize(2);
+        try (InputStream is = fileStream("poi_valid.csv")) {
+            List<DtoPointOfInterest> pois = poiHelper.parseDocument(is);
+            assertThat(pois).hasSize(2);
+        }
     }
 
     @Test
-    void detectsInvalidUtf8Encoding() {
-        // shares CSVHelper.getRecords with ParkingsCSVHelper, so encoding detection is already covered there;
-        // this fixture reuses the same genuinely-invalid byte pattern to confirm it also applies to POI import.
-        AnalyzeImportException exception = assertThrows(AnalyzeImportException.class,
-                () -> poiHelper.parseDocument(fileStream("../parkings/parkings_bad_encoding.csv")));
+    void detectsInvalidUtf8Encoding() throws IOException {
+        try (InputStream is = fileStream("../parkings/parkings_bad_encoding.csv")) {
+            AnalyzeImportException exception = assertThrows(AnalyzeImportException.class,
+                    () -> poiHelper.parseDocument(is));
 
-        assertThat(exception.getErrors())
-                .hasSize(1)
-                .allSatisfy(error -> assertThat(error.getType()).isEqualTo(AnalyzeImportErrorType.ENCODING));
+            assertThat(exception.getErrors())
+                    .hasSize(1)
+                    .allSatisfy(error -> assertThat(error.getType()).isEqualTo(AnalyzeImportErrorType.ENCODING));
+        }
     }
 
     @Test
-    void detectsTemplateMismatch() {
-        AnalyzeImportException exception = assertThrows(AnalyzeImportException.class,
-                () -> poiHelper.parseDocument(fileStream("poi_bad_headers.csv")));
+    void detectsTemplateMismatch() throws IOException {
+        try (InputStream is = fileStream("poi_bad_headers.csv")) {
+            AnalyzeImportException exception = assertThrows(AnalyzeImportException.class,
+                    () -> poiHelper.parseDocument(is));
 
-        assertThat(exception.getErrors())
-                .hasSize(1)
-                .allSatisfy(error -> assertThat(error.getType()).isEqualTo(AnalyzeImportErrorType.TEMPLATE));
-        assertThat(exception.getErrors().get(0).getMessage())
-                .contains("id")
-                .contains("operator");
+            assertThat(exception.getErrors())
+                    .hasSize(1)
+                    .allSatisfy(error -> assertThat(error.getType()).isEqualTo(AnalyzeImportErrorType.TEMPLATE));
+            assertThat(exception.getErrors().getFirst().getMessage())
+                    .contains("id")
+                    .contains("operator");
+        }
     }
 
     @Test
-    void aggregatesMissingRequiredDataAcrossRows() {
-        AnalyzeImportException exception = assertThrows(AnalyzeImportException.class,
-                () -> poiHelper.parseDocument(fileStream("poi_missing_data.csv")));
+    void aggregatesMissingRequiredDataAcrossRows() throws IOException {
+        try (InputStream is = fileStream("poi_missing_data.csv")) {
+            AnalyzeImportException exception = assertThrows(AnalyzeImportException.class,
+                    () -> poiHelper.parseDocument(is));
 
-        List<AnalyzeImportError> errors = exception.getErrors();
-        assertThat(errors).isNotEmpty();
-        assertThat(errors).allSatisfy(error -> assertThat(error.getType()).isEqualTo(AnalyzeImportErrorType.MISSING_DATA));
-        assertThat(errors.size()).isGreaterThanOrEqualTo(3);
-        assertThat(errors).extracting(AnalyzeImportError::getLine).doesNotContainNull();
+            List<AnalyzeImportError> errors = exception.getErrors();
+            assertThat(errors).isNotEmpty();
+            assertThat(errors).allSatisfy(error -> assertThat(error.getType()).isEqualTo(AnalyzeImportErrorType.MISSING_DATA));
+            assertThat(errors).size().isGreaterThanOrEqualTo(3);
+            assertThat(errors).extracting(AnalyzeImportError::getLine).doesNotContainNull();
+        }
     }
 
     private InputStream fileStream(String fileName) throws IOException {

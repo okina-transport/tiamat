@@ -1,4 +1,4 @@
-id,name,houseNumber,street,city,postCode,longitude,latitude,amenity,building,historic,landuse,leisure,tourism,office,shop,lpImportId,operator
+id,name,addr:housenumber,addr:street,addr:city,addr:postcode,lon,lat,amenity,building,historic,landuse,leisure,tourism,office,shop,LP_IMPORT_ID,operator
 ,Boulangerie SansId,3,rue Trois,Paris,75003,2.3488,48.8534,,,,,,,,bakery,LP3,TestOperator
 POI4,,4,rue Quatre,Paris,75004,2.3488,48.8534,,,,,,,,bakery,LP4,TestOperator
 POI5,Boulangerie Coords,5,rue Cinq,Paris,75005,notanumber,48.8534,,,,,,,,bakery,LP5,TestOperator

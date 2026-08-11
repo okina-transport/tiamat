@@ -211,7 +211,7 @@ public class MdmService {
 
 
     public void fillImportedIdsInNetexStopPlace( org.rutebanken.netex.model.StopPlace netexStopPlace, String datasetId) {
-        if (netexStopPlace == null || !tiamatProperties.isMdmEnabled()) {
+        if (netexStopPlace == null || !tiamatProperties.isMdmEnabled() || isImportedIdAlreadyDefinedForDataset(netexStopPlace, datasetId)) {
             return;
         }
 
@@ -244,6 +244,17 @@ public class MdmService {
                 }
             }
         }
+    }
+
+    private boolean isImportedIdAlreadyDefinedForDataset(org.rutebanken.netex.model.StopPlace netexStopPlace, String datasetId) {
+
+        if (netexStopPlace.getKeyList() == null || CollectionUtils.isEmpty(netexStopPlace.getKeyList().getKeyValue())){
+            return false;
+        }
+
+        return netexStopPlace.getKeyList().getKeyValue().stream()
+                .anyMatch(keyValueStructure -> keyValueStructure.getKey().equals("imported-id") && keyValueStructure.getValue().toLowerCase().startsWith(datasetId.toLowerCase()));
+
     }
 
     /**

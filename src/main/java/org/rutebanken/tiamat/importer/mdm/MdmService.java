@@ -1,6 +1,7 @@
 package org.rutebanken.tiamat.importer.mdm;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.client.mdm.*;
 import org.rutebanken.tiamat.config.TiamatProperties;
@@ -22,6 +23,7 @@ public class MdmService {
     private static final Logger logger = LoggerFactory.getLogger(MdmService.class);
     private static final String STOP_PLACE_QUALIFIER = ":StopPlace:";
     private static final String QUAY_QUALIFIER = ":Quay:";
+    private static final String DEFAULT_PROVIDER = "technique";
 
     private final MdmClient mdmClient;
 
@@ -105,7 +107,9 @@ public class MdmService {
 
     private static OkinaIdentifier buildInputStopIdentifier(StopPlace incomingStopPlace) {
         OkinaIdentifier stopIdentifier = new OkinaIdentifier();
-        stopIdentifier.setDataset(incomingStopPlace.getProvider().toUpperCase());
+
+
+        stopIdentifier.setDataset(StringUtils.upperCase(getProvider(incomingStopPlace)));
 
         for (String originalId : incomingStopPlace.getOriginalIds()) {
             String[] originalIdTab = originalId.split(":");
@@ -120,6 +124,30 @@ public class MdmService {
             stopIdentifier.setSuperId(Long.valueOf(incomingStopPlace.getNetexId().split(":")[2]));
         }
         return stopIdentifier;
+    }
+
+    private static String getProvider(StopPlace incomingStopPlace) {
+        if (StringUtils.isNotEmpty(incomingStopPlace.getProvider())){
+            return incomingStopPlace.getProvider().toUpperCase();
+        }
+
+        if (MapUtils.isNotEmpty(incomingStopPlace.getKeyValues())){
+            List<String> spImportedIds = incomingStopPlace.getKeyValues().entrySet()
+                    .stream().filter(entry -> entry.getKey().equals("imported-id"))
+                    .map(Map.Entry::getValue)
+                    .flatMap(value -> value.getItems().stream())
+                    .toList();
+
+            if (CollectionUtils.isNotEmpty(spImportedIds)) {
+                String[] importedIdParts = spImportedIds.getFirst().split(":");
+                if (importedIdParts.length > 0) {
+                    incomingStopPlace.setProvider(StringUtils.lowerCase(importedIdParts[0]));
+                    return importedIdParts[0];
+                }
+            }
+        }
+        incomingStopPlace.setProvider(DEFAULT_PROVIDER);
+        return DEFAULT_PROVIDER;
     }
 
     private static OkinaIdentifier buildInputQuayIdentifier(String dataset, Quay quay) {

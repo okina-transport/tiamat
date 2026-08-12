@@ -210,6 +210,9 @@ class StopPlaceUpdater implements DataFetcher {
     }
 
     private boolean doesExistsInSameStoplace(String originalId, Quay currentQuay, StopPlace existingStopPlace) {
+        if (existingStopPlace == null) {
+            return false;
+        }
         for (Quay q : existingStopPlace.getQuays()) {
             if (q.getOriginalIds().contains(originalId)) {
                 return q.getNetexId().equals(currentQuay.getNetexId());

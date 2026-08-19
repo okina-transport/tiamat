@@ -16,11 +16,12 @@
 package org.rutebanken.tiamat;
 
 import com.hazelcast.core.HazelcastInstance;
-import org.aspectj.lang.annotation.Before;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
 import org.entur.gbfs.http.GBFSHttpClient;
 import org.entur.gbfs.mapper.GBFSMapper;
 import org.entur.gbfs.validation.GbfsValidator;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -30,7 +31,17 @@ import org.rutebanken.tiamat.domain.ChouetteInfo;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.GeneratedIdState;
-import org.rutebanken.tiamat.repository.*;
+import org.rutebanken.tiamat.repository.CacheProviderRepository;
+import org.rutebanken.tiamat.repository.GroupOfStopPlacesRepository;
+import org.rutebanken.tiamat.repository.ParkingRepository;
+import org.rutebanken.tiamat.repository.PathJunctionRepository;
+import org.rutebanken.tiamat.repository.PathLinkRepository;
+import org.rutebanken.tiamat.repository.PointOfInterestRepository;
+import org.rutebanken.tiamat.repository.QuayRepository;
+import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.rutebanken.tiamat.repository.TagRepository;
+import org.rutebanken.tiamat.repository.TariffZoneRepository;
+import org.rutebanken.tiamat.repository.TopographicPlaceRepository;
 import org.rutebanken.tiamat.service.BlobStoreService;
 import org.rutebanken.tiamat.service.TariffZonesLookupService;
 import org.rutebanken.tiamat.service.TopographicPlaceLookupService;
@@ -44,14 +55,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityTransaction;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +78,13 @@ import static org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService.INITIAL_L
 public abstract class TiamatIntegrationTest {
 
     private static Logger logger = LoggerFactory.getLogger(TiamatIntegrationTest.class);
+
+    @DynamicPropertySource
+    static void datasourceProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", PostgresTestContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", PostgresTestContainer.INSTANCE::getUsername);
+        registry.add("spring.datasource.password", PostgresTestContainer.INSTANCE::getPassword);
+    }
 
     @Autowired
     protected GroupOfStopPlacesRepository groupOfStopPlacesRepository;
@@ -134,25 +150,25 @@ public abstract class TiamatIntegrationTest {
     @Autowired
     protected RoleAssignmentExtractor roleAssignmentExtractor;
 
-    @MockBean
+    @MockitoBean
     protected CacheProviderRepository providerRepository ;
 
-    @MockBean
+    @MockitoBean
     protected BlobStoreService blobStoreService ;
 
-    @MockBean
+    @MockitoBean
     protected StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
 
     @Autowired
     protected ReflectionAuthorizationService reflectionAuthorizationService;
 
-    @MockBean
+    @MockitoBean
     public GBFSMapper gbfsMapper;
 
-    @MockBean
+    @MockitoBean
     public GbfsValidator gbfsValidator;
 
-    @MockBean
+    @MockitoBean
     public GBFSHttpClient gbfsHttpClient;
 
     @Value("${local.server.port}")

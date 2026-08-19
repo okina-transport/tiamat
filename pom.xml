@@ -681,6 +681,18 @@
         </dependency>
 
         <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <version>${rest-assured.version}</version>
@@ -817,8 +829,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.plugin.version}</version>
                 <configuration>
-                    <source>17</source>
-                    <target>17</target>
+                    <source>21</source>
+                    <target>21</target>
                     <encoding>UTF-8</encoding>
                     <compilerArgs>
                         <!--arg>-Werror</arg-->
@@ -840,55 +852,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
-                    <!--                    <excludes>-->
-                    <!--                        <exclude>**/*IntegrationTest.java</exclude>-->
-                    <!--                        <exclude>**/*ServiceTest.java</exclude>-->
-                    <!--                        <exclude>**/*ExporterTest.java</exclude>-->
-                    <!--                        <exclude>**/*ImporterTest.java</exclude>-->
-                    <!--                        <exclude>**/*FinderTest.java</exclude>-->
-                    <!--                        <exclude>**/*ImportTest.java</exclude>-->
-                    <!--                        <exclude>**/*IsolatedModeTest.java</exclude>-->
-                    <!--                        <exclude>**/*SharedModeTest.java</exclude>-->
-                    <!--                        <exclude>**/*MoverTest.java</exclude>-->
-                    <!--                        <exclude>**/*TimeLockTest.java</exclude>-->
-                    <!--                        <exclude>**/*StopPlacesTest.java</exclude>-->
-                    <!--                        <exclude>**/PathLinkTest.java</exclude>-->
-                    <!--                        <exclude>**/QuayTest.java</exclude>-->
-                    <!--                        <exclude>**/StopPlaceTest.java</exclude>-->
-                    <!--                        <exclude>**/TagTest.java</exclude>-->
-                    <!--                        <exclude>**/TopographicPlaceTest.java</exclude>-->
-                    <!--                        <exclude>**/ExportJobTest.java</exclude>-->
-                    <!--                        <exclude>**/NetexMapperTest.java</exclude>-->
-                    <!--                        <exclude>**/NetexFranceComplianceTest.java</exclude>-->
-                    <!--                        <exclude>**/repository/*</exclude>-->
-                    <!--                        <exclude>**/*DateScalarTest.java</exclude>-->
-                    <!--                        <exclude>**/*ExportResourceTest.java</exclude>-->
-                    <!--                        <exclude>**/*ImportResourceTest.java</exclude>-->
-                    <!--                        <exclude>**/OkinaStopPlaceManagementRulesTest.java</exclude>-->
-                    <!--                        <exclude>**/*ImportTest.java</exclude>-->
-                    <!--                        <exclude>**/StopPlaceMatchingTest.java</exclude>-->
-                    <!--                        <exclude>**/*ComputerTest.java</exclude>-->
-                    <!--                        <exclude>**/*ComputerTest.java</exclude>-->
-                    <!--                        <exclude>**/PlaceEquipmentMergerTest.java</exclude>-->
-                    <!--                        <exclude>**/ParkingDeleterTest.java</exclude>-->
-                    <!--                        <exclude>**/StopPlaceMergerTest.java</exclude>-->
-                    <!--                        <exclude>**/StopPlaceQuayDeleterTest.java</exclude>-->
-                    <!--                        <exclude>**/StopPlaceQuayMergerTest.java</exclude>-->
-                    <!--                        <exclude>**/StopPlaceQuayMoverTest.java</exclude>-->
-                    <!--                        <exclude>**/StopPlaceRenamerTest.java</exclude>-->
-                    <!--                        <exclude>**/StopPlaceReopenerTest.java</exclude>-->
-                    <!--                        <exclude>**/StopPlaceTerminatorTest.java</exclude>-->
-                    <!--                        <exclude>**/AccessibilityAssessmentOptimizerTest.java</exclude>-->
-                    <!--                        <exclude>**/AccessibilityAssessmentVersioningTest.java</exclude>-->
-                    <!--                        <exclude>**/ValidityUpdaterTest.java</exclude>-->
-                    <!--                        <exclude>**/VersionCreatorTest.java</exclude>-->
-                    <!--                        <exclude>**/MultiModalStopPlaceEditorTest.java</exclude>-->
-                    <!--                        <exclude>**/QuayMergerTest.java</exclude>-->
-                    <!--                        <exclude>**/ReferenceResolverTest.java</exclude>-->
-                    <!--                        <exclude>**/GraphQLResourceStopPlaceMergerTest.java</exclude>-->
-                    <!--                        <exclude>**/GraphQLResourceQuayMergerTest.java</exclude>-->
-                    <!--                    </excludes>-->
                     <argLine>@{argLine} -Xms500m -Xmx5000m -Xss256k --add-opens java.base/java.lang=ALL-UNNAMED
+                        -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar
+                        -Xshare:off
                         -Dhazelcast.ignoreXxeProtectionFailures=true
                     </argLine>
                     <runOrder>alphabetical</runOrder>

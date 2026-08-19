@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.importer.matching;
 
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
@@ -43,57 +44,57 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@TestPropertySource(locations="classpath:application.properties")
-public class MatchingAppendingImporterSharedModeTest extends TiamatIntegrationTest {
+@TestPropertySource(locations = "classpath:application.properties")
+class MatchingAppendingImporterSharedModeTest extends TiamatIntegrationTest {
 
     @Autowired
     private TransactionalMatchingAppendingStopPlaceImporter importer;
 
-
     @Test
-    public void importSimpleStop() throws TiamatBusinessException {
+    void importSimpleStop() throws TiamatBusinessException {
 
         double longitude = 1.885889;
         double latitude = 48.695513;
         String importedId = "PROV1:StopPlace:stop1";
         String name = "stop1";
         String quayImportedId = "PROV1:Quay:quay1";
-        StopPlace stopPlace = createStopPlaceWithQuay(name, longitude,latitude,importedId,quayImportedId);
+        StopPlace stopPlace = createStopPlaceWithQuay(name, longitude, latitude, importedId, quayImportedId);
         stopPlace.setProvider("PROV1");
 
-        List<org.rutebanken.netex.model.StopPlace > matchedStopPlaces = new ArrayList<>();
+        List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
 
         AtomicInteger counter = new AtomicInteger();
-        ImportParams params= new ImportParams();
+        ImportParams params = new ImportParams();
         params.keepStopGeolocalisation = false;
-        importer.findAppendAndAdd(stopPlace,matchedStopPlaces,counter,params);
+        importer.findAppendAndAdd(stopPlace, matchedStopPlaces, counter, params);
 
 
         //StopPlace checks
         assertTrue(matchedStopPlaces.size() == 1);
         org.rutebanken.netex.model.StopPlace importedStopPlace = matchedStopPlaces.get(0);
-        assertEquals(name,importedStopPlace.getName().getValue());
-        assertEquals(importedStopPlace.getCentroid().getLocation().getLongitude().doubleValue(),longitude,0.0d, "Wrong longitude");
-        assertEquals(importedStopPlace.getCentroid().getLocation().getLatitude().doubleValue(),latitude,0.0d, "Wrong latitude");
+        assertEquals(name, importedStopPlace.getName().getValue());
+        assertEquals(importedStopPlace.getCentroid().getLocation().getLongitude().doubleValue(), longitude, 0.0d, "Wrong longitude");
+        assertEquals(importedStopPlace.getCentroid().getLocation().getLatitude().doubleValue(), latitude, 0.0d, "Wrong latitude");
         Optional<String> importedIdOpt = NetexMapper.getImportedId(importedStopPlace);
         assertTrue(importedIdOpt.isPresent());
-        assertEquals(importedId,importedIdOpt.get());
+        assertEquals(importedId, importedIdOpt.get());
 
         //Quay checks
         assertTrue(importedStopPlace.getQuays().getQuayRefOrQuay().size() == 1);
         org.rutebanken.netex.model.Quay quay1 = (org.rutebanken.netex.model.Quay) importedStopPlace.getQuays().getQuayRefOrQuay().get(0).getValue();
-        assertEquals(name,quay1.getName().getValue());
-        assertEquals(quay1.getCentroid().getLocation().getLongitude().doubleValue(),longitude,0.0d,"Wrong longitude");
-        assertEquals(quay1.getCentroid().getLocation().getLatitude().doubleValue(),latitude,0.0d, "Wrong latitude");
+        assertEquals(name, quay1.getName().getValue());
+        assertEquals(quay1.getCentroid().getLocation().getLongitude().doubleValue(), longitude, 0.0d, "Wrong longitude");
+        assertEquals(quay1.getCentroid().getLocation().getLatitude().doubleValue(), latitude, 0.0d, "Wrong latitude");
         Optional<String> quayImportedIdOpt = NetexMapper.getImportedId(quay1);
         assertTrue(quayImportedIdOpt.isPresent());
-        assertEquals(quayImportedId,quayImportedIdOpt.get());
+        assertEquals(quayImportedId, quayImportedIdOpt.get());
     }
 
-   // @Test
+    @Test
     //No longer used : stop place merge has been de activated
-    public void checkStopPlaceRecoveredFromAnotherProvider() throws TiamatBusinessException {
-        List<org.rutebanken.netex.model.StopPlace > matchedStopPlaces = new ArrayList<>();
+    @Disabled
+    void checkStopPlaceRecoveredFromAnotherProvider() throws TiamatBusinessException {
+        List<org.rutebanken.netex.model.StopPlace> matchedStopPlaces = new ArrayList<>();
         AtomicInteger counter = new AtomicInteger();
 
         //Import a first point on a first provider
@@ -102,11 +103,11 @@ public class MatchingAppendingImporterSharedModeTest extends TiamatIntegrationTe
         String importedId = "PROV1:StopPlace:stop1";
         String name = "stopName";
         String quayImportedId = "PROV1:Quay:quay1";
-        StopPlace stopPlace = createStopPlaceWithQuay(name, longitude,latitude,importedId,quayImportedId);
+        StopPlace stopPlace = createStopPlaceWithQuay(name, longitude, latitude, importedId, quayImportedId);
         stopPlace.setProvider("PROV1");
-        ImportParams params= new ImportParams();
+        ImportParams params = new ImportParams();
         params.keepStopGeolocalisation = false;
-        importer.findAppendAndAdd(stopPlace,matchedStopPlaces,counter,params);
+        importer.findAppendAndAdd(stopPlace, matchedStopPlaces, counter, params);
 
         assertTrue(matchedStopPlaces.size() == 1);
         org.rutebanken.netex.model.StopPlace importedStopPlaceOnProv1 = matchedStopPlaces.get(0);
@@ -117,25 +118,25 @@ public class MatchingAppendingImporterSharedModeTest extends TiamatIntegrationTe
         //Expected : on "shared" mode, TIAMAT must recover the point integrated previously on provider PROV1
         String importedIdPt2 = "PROV2:StopPlace:stop2";
         String quayImportedIdPt2 = "PROV2:Quay:quay2";
-        StopPlace stopPlacePt2 = createStopPlaceWithQuay(name, longitude,latitude,importedIdPt2,quayImportedIdPt2);
+        StopPlace stopPlacePt2 = createStopPlaceWithQuay(name, longitude, latitude, importedIdPt2, quayImportedIdPt2);
         stopPlacePt2.setProvider("PROV2");
-        importer.findAppendAndAdd(stopPlacePt2,matchedStopPlaces,counter,params);
+        importer.findAppendAndAdd(stopPlacePt2, matchedStopPlaces, counter, params);
 
         assertTrue(matchedStopPlaces.size() == 1);
         org.rutebanken.netex.model.StopPlace importedStopPlaceOnProv2 = matchedStopPlaces.get(0);
-        assertEquals(importedStopPlaceOnProv1.getId(),importedStopPlaceOnProv2.getId());
+        assertEquals(importedStopPlaceOnProv1.getId(), importedStopPlaceOnProv2.getId());
         Optional<String> stop2Opt = NetexMapper.getImportedId(importedStopPlaceOnProv2);
         assertTrue(stop2Opt.isPresent());
         //The new point must contain in "imported-id" value both values from point1 ID + point2 ID
-        assertEquals(importedId+","+importedIdPt2,stop2Opt.get());
+        assertEquals(importedId + "," + importedIdPt2, stop2Opt.get());
 
         assertTrue(importedStopPlaceOnProv2.getQuays().getQuayRefOrQuay().size() == 1);
         org.rutebanken.netex.model.Quay newQuay = (org.rutebanken.netex.model.Quay) importedStopPlaceOnProv2.getQuays().getQuayRefOrQuay().get(0).getValue();
-        assertEquals(newQuay.getCentroid().getLocation().getLongitude().doubleValue(),longitude,0.0d, "Wrong longitude");
-        assertEquals(newQuay.getCentroid().getLocation().getLatitude().doubleValue(),latitude,0.0d,"Wrong latitude");
+        assertEquals(newQuay.getCentroid().getLocation().getLongitude().doubleValue(), longitude, 0.0d, "Wrong longitude");
+        assertEquals(newQuay.getCentroid().getLocation().getLatitude().doubleValue(), latitude, 0.0d, "Wrong latitude");
         Optional<String> newQuayImportedIdOpt = NetexMapper.getImportedId(newQuay);
         assertTrue(newQuayImportedIdOpt.isPresent());
-        assertEquals(quayImportedId+","+quayImportedIdPt2,newQuayImportedIdOpt.get());
+        assertEquals(quayImportedId + "," + quayImportedIdPt2, newQuayImportedIdOpt.get());
     }
 
     private StopPlace createStopPlaceWithQuay(String name, double longitude, double latitude, String stopPlaceId, String quayId) {
@@ -150,7 +151,7 @@ public class MatchingAppendingImporterSharedModeTest extends TiamatIntegrationTe
         stopPlace.setName(new EmbeddableMultilingualString(name, "FR"));
         stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
         Value value = new Value(importedId);
-        stopPlace.getKeyValues().put(NetexIdMapper.ORIGINAL_ID_KEY,value);
+        stopPlace.getKeyValues().put(NetexIdMapper.ORIGINAL_ID_KEY, value);
         return stopPlace;
     }
 
@@ -159,10 +160,10 @@ public class MatchingAppendingImporterSharedModeTest extends TiamatIntegrationTe
         quay.setName(new EmbeddableMultilingualString(name, "FR"));
         quay.setCentroid(createPoint(longitude, latitude));
         Value value = new Value(importedId);
-        quay.getKeyValues().put(NetexIdMapper.ORIGINAL_ID_KEY,value);
+        quay.getKeyValues().put(NetexIdMapper.ORIGINAL_ID_KEY, value);
 
         Value importedNameValue = new Value(name);
-        quay.getKeyValues().put(NetexIdMapper.ORIGINAL_NAME_KEY,importedNameValue);
+        quay.getKeyValues().put(NetexIdMapper.ORIGINAL_NAME_KEY, importedNameValue);
         return quay;
     }
 

@@ -1,34 +1,26 @@
 package org.rutebanken.tiamat.rest.stopPlacesNetex;
 
-import io.restassured.http.ContentType;
-
 import org.entur.gbfs.http.GBFSHttpClient;
 import org.entur.gbfs.mapper.GBFSMapper;
 import org.entur.gbfs.validation.GbfsValidator;
 import org.junit.jupiter.api.Test;
-
-import org.rutebanken.tiamat.TiamatIntegrationTest;
+import org.rutebanken.tiamat.PostgresTestContainer;
 import org.rutebanken.tiamat.TiamatTestApplication;
 import org.rutebanken.tiamat.security.RolesChecker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
-
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
-
-
-
 
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = TiamatTestApplication.class)
@@ -36,26 +28,30 @@ import static org.mockito.Mockito.when;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class EndpointTest {
 
-
+    @DynamicPropertySource
+    static void datasourceProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", PostgresTestContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", PostgresTestContainer.INSTANCE::getUsername);
+        registry.add("spring.datasource.password", PostgresTestContainer.INSTANCE::getPassword);
+    }
 
     @Autowired
     private WebTestClient webTestClient;
 
-
-    @MockBean
+    @MockitoBean
     private JwtDecoder jwtDecoder;
 
 
-    @MockBean
+    @MockitoBean
     private RolesChecker rolesChecker;
 
-    @MockBean
+    @MockitoBean
     public GBFSMapper gbfsMapper;
 
-    @MockBean
+    @MockitoBean
     public GbfsValidator gbfsValidator;
 
-    @MockBean
+    @MockitoBean
     public GBFSHttpClient gbfsHttpClient;
 
 

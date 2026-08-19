@@ -58,8 +58,6 @@ public class ImportPOIResource {
         PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
         List<DtoPointOfInterest> poiWithClassification = poiHelper.filterPoisWithClassificationOrShop(dtoPointOfInterest, null);
 
-        //poiHelper.clearPOIExceptShop();
-
         try {
             poiHelper.persistPointsOfInterest(poiWithClassification);
         } catch (Exception e) {

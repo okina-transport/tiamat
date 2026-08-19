@@ -266,8 +266,9 @@ class ParkingUpdater implements DataFetcher {
         }
 
         if (input.get(PARKING_PROPERTIES) != null) {
-            List<ParkingProperties> parkingPropertiesList = resolveParkingPropertiesList((List) input.get(PARKING_PROPERTIES));
-            int total_capacity = parkingPropertiesList.stream()
+            List<ParkingProperties> existingParkingProperties = updatedParking.getParkingProperties();
+            List<ParkingProperties> parkingPropertiesList = resolveParkingPropertiesList((List) input.get(PARKING_PROPERTIES), existingParkingProperties);
+            int totalCapacity = parkingPropertiesList.stream()
                     .map(ParkingProperties::getSpaces)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream)
@@ -295,17 +296,18 @@ class ParkingUpdater implements DataFetcher {
                     .mapToInt(space -> space.getNumberOfSpaces().intValue())
                     .sum();
 
-            if (newPmrCapacity > total_capacity) {
+            if (newPmrCapacity > totalCapacity) {
                 throw new IllegalArgumentException("La capacité PMR ne peut pas être supérieure à la capacité totale");
             }
 
-            if (newCarsharingCapacity > total_capacity) {
+            if (newCarsharingCapacity > totalCapacity) {
                 throw new IllegalArgumentException("La capacité autopartage ne peut pas être supérieure à la capacité totale");
             }
 
-            if (updatedParking.getParkingAreas() != null) {
+            List<ParkingArea> existingParkingAreasBeforePropertiesUpdate = updatedParking.getParkingAreas();
+            if (existingParkingAreasBeforePropertiesUpdate != null) {
                 List<ParkingArea> parkingAreaList = new ArrayList<>();
-                for (ParkingArea pa : updatedParking.getParkingAreas()) {
+                for (ParkingArea pa : existingParkingAreasBeforePropertiesUpdate) {
                     boolean toKeep = true;
                     if (pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARSHARE)) {
                         if (updatedParking.isCarsharingAvailable()) {
@@ -319,27 +321,38 @@ class ParkingUpdater implements DataFetcher {
                         if (!updatedParking.isCarpoolingAvailable()) {
                             toKeep = false;
                         }
-                    } else {
-                        pa.setTotalCapacity(BigInteger.valueOf(total_capacity));
+                    } else if (pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.NONE)) {
+                        pa.setTotalCapacity(BigInteger.valueOf(totalCapacity));
                     }
 
                     if (toKeep) {
                         parkingAreaList.add(versionCreator.createCopy(pa, ParkingArea.class));
                     }
                 }
+
+                if (!parkingAreasEqual(existingParkingAreasBeforePropertiesUpdate, parkingAreaList)) {
+                    isUpdated = true;
+                }
                 updatedParking.setParkingAreas(parkingAreaList);
             }
 
-            isUpdated = true;
+            if (!parkingPropertiesListsEqual(existingParkingProperties, parkingPropertiesList)) {
+                isUpdated = true;
+            }
             updatedParking.setParkingProperties(parkingPropertiesList);
 
-            if (total_capacity > 0) {
-                updatedParking.setTotalCapacity(BigInteger.valueOf(total_capacity));
+            if (totalCapacity > 0) {
+                BigInteger newTotalCapacity = BigInteger.valueOf(totalCapacity);
+                if (!newTotalCapacity.equals(updatedParking.getTotalCapacity())) {
+                    isUpdated = true;
+                }
+                updatedParking.setTotalCapacity(newTotalCapacity);
             }
         }
 
         if (input.get(PARKING_AREAS) != null) {
-            List<ParkingArea> parkingAreasList = resolveParkingAreasList((List) input.get(PARKING_AREAS), updatedParking.getParkingAreas());
+            List<ParkingArea> existingParkingAreas = updatedParking.getParkingAreas();
+            List<ParkingArea> parkingAreasList = resolveParkingAreasList((List) input.get(PARKING_AREAS), existingParkingAreas);
 
             int newNoneCapacity = parkingAreasList.stream()
                     .filter(pa -> pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.NONE))
@@ -373,8 +386,11 @@ class ParkingUpdater implements DataFetcher {
                 throw new IllegalArgumentException("La capacité du nombre de places réservées aux personnes handicapées ne peut pas être supérieure à la capacité totale");
             }
 
-            isUpdated = true;
-            updatedParking.setParkingAreas(parkingAreasList.stream().map(pa -> versionCreator.createCopy(pa, ParkingArea.class)).collect(Collectors.toList()));
+            List<ParkingArea> copiedParkingAreas = parkingAreasList.stream().map(pa -> versionCreator.createCopy(pa, ParkingArea.class)).collect(Collectors.toList());
+            if (!parkingAreasEqual(existingParkingAreas, copiedParkingAreas)) {
+                isUpdated = true;
+            }
+            updatedParking.setParkingAreas(copiedParkingAreas);
         }
 
         if (input.get(COVERED) != null) {
@@ -407,33 +423,50 @@ class ParkingUpdater implements DataFetcher {
         return isUpdated;
     }
 
-    private List<ParkingProperties> resolveParkingPropertiesList(List propertyList) {
+    private List<ParkingProperties> resolveParkingPropertiesList(List propertyList, List<ParkingProperties> existingParkingPropertiesList) {
         List<ParkingProperties> result = new ArrayList<>();
-        for (Object property : propertyList) {
-            result.add(resolveSingleParkingProperties((Map) property));
+        for (int i = 0; i < propertyList.size(); i++) {
+            ParkingProperties existing = existingParkingPropertiesList != null && i < existingParkingPropertiesList.size()
+                    ? existingParkingPropertiesList.get(i)
+                    : null;
+            result.add(resolveSingleParkingProperties((Map) propertyList.get(i), existing));
         }
 
         return result;
     }
 
-    private ParkingProperties resolveSingleParkingProperties(Map input) {
-        ParkingProperties p = new ParkingProperties();
-        p.setSpaces(resolveParkingCapacities((List) input.get(SPACES)));
+    private ParkingProperties resolveSingleParkingProperties(Map input, ParkingProperties existing) {
+        ParkingProperties p = existing != null ? versionCreator.createCopy(existing, ParkingProperties.class) : new ParkingProperties();
+        p.setSpaces(resolveParkingCapacities((List) input.get(SPACES), existing != null ? existing.getSpaces() : null));
         return p;
     }
 
-    private List<ParkingCapacity> resolveParkingCapacities(List input) {
+    private List<ParkingCapacity> resolveParkingCapacities(List input, List<ParkingCapacity> existingSpaces) {
         List<ParkingCapacity> result = new ArrayList<>();
+        List<ParkingCapacity> remainingExistingSpaces = existingSpaces != null ? new ArrayList<>(existingSpaces) : new ArrayList<>();
+
         for (Object property : input) {
-            result.add(resolveSingleParkingCapacity((Map) property));
+            result.add(resolveSingleParkingCapacity((Map) property, remainingExistingSpaces));
         }
+
+        remainingExistingSpaces.stream()
+                .map(s -> versionCreator.createCopy(s, ParkingCapacity.class))
+                .forEach(result::add);
 
         return result;
     }
 
-    private ParkingCapacity resolveSingleParkingCapacity(Map input) {
-        ParkingCapacity capacity = new ParkingCapacity();
-        capacity.setParkingUserType((ParkingUserEnumeration) input.get(PARKING_USER_TYPE));
+    private ParkingCapacity resolveSingleParkingCapacity(Map input, List<ParkingCapacity> remainingExistingSpaces) {
+        ParkingUserEnumeration parkingUserType = (ParkingUserEnumeration) input.get(PARKING_USER_TYPE);
+
+        ParkingCapacity existing = remainingExistingSpaces.stream()
+                .filter(s -> parkingUserType != null && parkingUserType.equals(s.getParkingUserType()))
+                .findFirst()
+                .orElse(null);
+        remainingExistingSpaces.remove(existing);
+
+        ParkingCapacity capacity = existing != null ? versionCreator.createCopy(existing, ParkingCapacity.class) : new ParkingCapacity();
+        capacity.setParkingUserType(parkingUserType);
         capacity.setParkingVehicleType((ParkingVehicleEnumeration) input.get(PARKING_VEHICLE_TYPE));
         capacity.setParkingStayType((ParkingStayEnumeration) input.get(PARKING_STAY_TYPE));
         capacity.setNumberOfSpaces((BigInteger) input.get(NUMBER_OF_SPACES));
@@ -447,15 +480,65 @@ class ParkingUpdater implements DataFetcher {
 
     private List<ParkingArea> resolveParkingAreasList(List list, List<ParkingArea> existingParkingAreas) {
         List<ParkingArea> result = new ArrayList<>();
+        Set<SpecificParkingAreaUsageEnumeration> newUsages = new HashSet<>();
         for (Object property : list) {
-            result.add(createParkingAreaFromInputParameters((Map) property));
+            ParkingArea newArea = createParkingAreaFromInputParameters((Map) property);
+            result.add(newArea);
+            newUsages.add(newArea.getSpecificParkingAreaUsage());
         }
 
         if (existingParkingAreas != null) {
-            result.addAll(existingParkingAreas.stream().filter(pa -> !pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.CARPOOL)).collect(Collectors.toList()));
+            result.addAll(existingParkingAreas.stream().filter(pa -> !newUsages.contains(pa.getSpecificParkingAreaUsage())).collect(Collectors.toList()));
         }
 
         return result;
+    }
+
+    private boolean parkingPropertiesListsEqual(List<ParkingProperties> before, List<ParkingProperties> after) {
+        List<ParkingProperties> safeBefore = Collections.emptyList();
+        if (before != null) {
+            safeBefore = before;
+        }
+        if (safeBefore.size() != after.size()) {
+            return false;
+        }
+        for (int i = 0; i < after.size(); i++) {
+            if (!parkingCapacitiesEqual(safeBefore.get(i).getSpaces(), after.get(i).getSpaces())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean parkingCapacitiesEqual(List<ParkingCapacity> before, List<ParkingCapacity> after) {
+        return toComparableCapacities(before).equals(toComparableCapacities(after));
+    }
+
+    private List<String> toComparableCapacities(List<ParkingCapacity> spaces) {
+        if (spaces == null) {
+            return Collections.emptyList();
+        }
+        return spaces.stream()
+                .map(c -> c.getParkingUserType() + "|" + c.getParkingVehicleType() + "|"
+                        + c.getParkingStayType() + "|" + c.getNumberOfSpaces() + "|"
+                        + c.getNumberOfSpacesWithRechargePoint() + "|" + c.getNumberOfCarsharingSpaces())
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    private boolean parkingAreasEqual(List<ParkingArea> before, List<ParkingArea> after) {
+        return toComparableAreas(before)
+                .equals(toComparableAreas(after));
+    }
+
+    private List<String> toComparableAreas(List<ParkingArea> areas) {
+        if (areas == null) {
+            return Collections.emptyList();
+        }
+        return areas.stream()
+                .map(a -> a.getNetexId() + "|" + a.getSpecificParkingAreaUsage() + "|" + a.getTotalCapacity())
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     private ParkingArea createParkingAreaFromInputParameters(Map inputParams) {

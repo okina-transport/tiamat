@@ -22,15 +22,12 @@ import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 import org.springframework.test.annotation.DirtiesContext;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.rutebanken.tiamat.model.StopTypeEnumeration.AIRPORT;
-import static org.rutebanken.tiamat.model.StopTypeEnumeration.ONSTREET_BUS;
-import static org.rutebanken.tiamat.model.StopTypeEnumeration.TRAM_STATION;
+import static org.rutebanken.tiamat.model.StopTypeEnumeration.*;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StopPlaceTypeFilterTest {

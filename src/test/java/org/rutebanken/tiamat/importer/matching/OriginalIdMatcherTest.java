@@ -27,13 +27,13 @@ import java.util.HashMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-public class OriginalIdMatcherTest {
+class OriginalIdMatcherTest {
 
-    private NetexIdHelper netexIdHelper = new NetexIdHelper(new ValidPrefixList("NSR", new HashMap<>()));
+    private final NetexIdHelper netexIdHelper = new NetexIdHelper(new ValidPrefixList("NSR", new HashMap<>()));
     private final OriginalIdMatcher originalIdMatcher = new OriginalIdMatcher(netexIdHelper);
 
     @Test
-    public void matchesOnOriginalId() throws Exception {
+    void matchesOnOriginalId() {
         DataManagedObjectStructure dataManagedObject = new Quay();
         dataManagedObject.getOriginalIds().add("RUT:Quay:0124");
 
@@ -44,7 +44,7 @@ public class OriginalIdMatcherTest {
     }
 
     @Test
-    public void handleLongValues() throws Exception {
+    void handleLongValues() {
         DataManagedObjectStructure dataManagedObject = new Quay();
         dataManagedObject.getOriginalIds().add("RUT:Quay:0124000000000000");
 

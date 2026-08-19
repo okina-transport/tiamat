@@ -18,14 +18,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 @Transactional
-//Dirties context is used to clear H2 database before each test
-//@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-public class POIImportTest extends TiamatIntegrationTest {
+class POIImportTest extends TiamatIntegrationTest {
 
     @Autowired
     public ImportPOIResource importResource;
@@ -36,68 +33,65 @@ public class POIImportTest extends TiamatIntegrationTest {
     @Autowired
     private PointOfInterestClassificationRepository poiClassRepository;
 
-
-
     @Test
-    public void testSemiColonFile() throws IOException {
+    void testSemiColonFile() throws IOException {
         poiClassRepository.deleteAll();
         launchImportForFile("src/test/resources/manualImports/poi/poi_correct_file_semi_colon_sep.csv");
         checkCompleteFile();
     }
 
-   @Test
-    public void testCommaFile() throws IOException {
-       poiClassRepository.deleteAll();
+    @Test
+    void testCommaFile() throws IOException {
+        poiClassRepository.deleteAll();
         launchImportForFile("src/test/resources/manualImports/poi/poi_correct_file_comma_sep.csv");
         checkCompleteFile();
     }
 
     @Test
-    public void testDuplicateDetection() {
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/poi/poi_file_with_duplicates.csv") );
+    void testDuplicateDetection() {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/poi/poi_file_with_duplicates.csv"));
         String expectedMessage = "There are duplicated POI in your CSV File (With the same ID & Name)";
         String actualMessage = exception.getMessage();
         assertTrue(actualMessage.contains(expectedMessage));
     }
 
-   @Test
-    public void testPOIWithoutID() {
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/poi/poi_file_without_id.csv") );
+    @Test
+    void testPOIWithoutID() {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/poi/poi_file_without_id.csv"));
         String expectedMessage = "ID is required in all POI";
         String actualMessage = exception.getMessage();
         assertTrue(actualMessage.contains(expectedMessage));
     }
 
     @Test
-    public void testPOIWithoutName() {
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/poi/poi_file_without_name.csv") );
+    void testPOIWithoutName() {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/poi/poi_file_without_name.csv"));
         String expectedMessage = "NAME is required for POI ";
         String actualMessage = exception.getMessage();
         assertTrue(actualMessage.contains(expectedMessage));
     }
 
     @Test
-    public void testPOIWithoutLongitude() {
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/poi/poi_file_without_longitude.csv") );
+    void testPOIWithoutLongitude() {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/poi/poi_file_without_longitude.csv"));
         String expectedMessage = "longitude is required for POI";
         String actualMessage = exception.getMessage();
         assertTrue(actualMessage.contains(expectedMessage));
     }
 
     @Test
-    public void testPOIWithoutLatitude() {
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/poi/poi_file_without_latitude.csv") );
+    void testPOIWithoutLatitude() {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/poi/poi_file_without_latitude.csv"));
         String expectedMessage = "latitude is required for POI";
         String actualMessage = exception.getMessage();
         assertTrue(actualMessage.contains(expectedMessage));
     }
 
 
-
     /**
      * Launch a manual import of the file given as parameter
-     * @param fileName
-     * the file to import
+     *
+     * @param fileName the file to import
      * @throws IOException
      */
     private void launchImportForFile(String fileName) throws IOException {
@@ -111,26 +105,27 @@ public class POIImportTest extends TiamatIntegrationTest {
     /**
      * Checks if the file has been imported without error (by counting persisted entities)
      */
-    private void checkCompleteFile(){
+    private void checkCompleteFile() {
 
         List<PointOfInterest> persistedPOI = poiRepository.findAllAndInitialize();
-        Assertions.assertEquals(86,persistedPOI.size(), "Wrong number of persisted POI in DB");
+        Assertions.assertEquals(86, persistedPOI.size(), "Wrong number of persisted POI in DB");
 
         persistedPOI.forEach(this::checkPersistedPOI);
 
         List<PointOfInterestClassification> persistedClassifications = poiClassRepository.findAll();
-        Assertions.assertEquals(22,persistedClassifications.size(), "Wrong number of persisted classifications in DB");
+        Assertions.assertEquals(22, persistedClassifications.size(), "Wrong number of persisted classifications in DB");
     }
 
 
     /**
      * Perform some checks on the persisted entities
-     * @param poi
+     *
+     * @param poi persisted entity to check
      */
-    private void checkPersistedPOI(PointOfInterest poi){
+    private void checkPersistedPOI(PointOfInterest poi) {
         Hibernate.initialize(poi.getClassifications());
-        assertTrue(poi.getClassifications().size() > 0, "POI must have a classification");
-        assertTrue(poi.getPointOfInterestFacilitySet() == null, "non-shop POI must not have a facility set");
+        assertFalse(poi.getClassifications().isEmpty(), "POI must have a classification");
+        assertNull(poi.getPointOfInterestFacilitySet(), "non-shop POI must not have a facility set");
     }
 
 }

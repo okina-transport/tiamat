@@ -16,6 +16,7 @@
 package org.rutebanken.tiamat.versioning.save;
 
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.model.*;
@@ -31,6 +32,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
 
@@ -88,16 +92,29 @@ public class ParkingVersionedSaverService {
 
         newVersion.setValidBetween(null);
         versionIncrementor.initiateOrIncrement(newVersion);
-        if (newVersion.getParkingAreas() != null) {
+        Map<String, ParkingProperties> incrementedParkingPropertiesByNetexId = new HashMap<>();
+
+        if (CollectionUtils.isNotEmpty(newVersion.getParkingProperties())) {
+            newVersion.setParkingProperties(newVersion.getParkingProperties().stream()
+                    .map(parkingProperties -> incrementSharedParkingProperties(parkingProperties, incrementedParkingPropertiesByNetexId))
+                    .collect(Collectors.toList()));
+        }
+
+        if (CollectionUtils.isNotEmpty(newVersion.getParkingAreas())) {
             for (ParkingArea pa : newVersion.getParkingAreas()) {
                 versionIncrementor.initiateOrIncrement(pa);
+                pa.setParkingProperties(incrementSharedParkingProperties(pa.getParkingProperties(), incrementedParkingPropertiesByNetexId));
             }
         }
 
-        if(newVersion.getEquipmentPlaces() != null) {
+        if (CollectionUtils.isNotEmpty(newVersion.getEquipmentPlaces())) {
             for (EquipmentPlace ep : newVersion.getEquipmentPlaces()) {
                 versionIncrementor.initiateOrIncrement(ep);
             }
+        }
+
+        if (newVersion.getPlaceEquipments() != null) {
+            versionIncrementor.initiateOrIncrementPlaceEquipment(newVersion.getPlaceEquipments());
         }
 
         newVersion.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
@@ -106,10 +123,34 @@ public class ParkingVersionedSaverService {
         }
         result = parkingRepository.save(newVersion);
 
+
         logger.info("Saved parking {}, version {}, name {}", result.getNetexId(), result.getVersion(), result.getName());
 
         metricsService.registerEntitySaved(newVersion.getClass());
         return result;
+    }
+
+    private ParkingProperties incrementSharedParkingProperties(ParkingProperties parkingProperties, Map<String, ParkingProperties> incrementedParkingPropertiesByNetexId) {
+        if (parkingProperties == null) {
+            return null;
+        }
+
+        String netexId = parkingProperties.getNetexId();
+        if (netexId != null && incrementedParkingPropertiesByNetexId.containsKey(netexId)) {
+            return incrementedParkingPropertiesByNetexId.get(netexId);
+        }
+
+        if (CollectionUtils.isNotEmpty(parkingProperties.getSpaces())) {
+            for (ParkingCapacity parkingSpace : parkingProperties.getSpaces()) {
+                versionIncrementor.initiateOrIncrement(parkingSpace);
+            }
+        }
+        versionIncrementor.initiateOrIncrement(parkingProperties);
+
+        if (netexId != null) {
+            incrementedParkingPropertiesByNetexId.put(netexId, parkingProperties);
+        }
+        return parkingProperties;
     }
 
     /**

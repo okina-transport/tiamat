@@ -120,6 +120,12 @@ public class MdmService {
             }
         }
 
+        if (StringUtils.isBlank(stopIdentifier.getOriginalId())) {
+            String generatedImportedId = UUID.randomUUID().toString();
+            stopIdentifier.setOriginalId(generatedImportedId);
+            incomingStopPlace.getOriginalIds().add(generatedImportedId);
+        }
+
         if (incomingStopPlace.getNetexId() != null) {
             stopIdentifier.setSuperId(Long.valueOf(incomingStopPlace.getNetexId().split(":")[2]));
         }
@@ -140,7 +146,7 @@ public class MdmService {
 
             if (CollectionUtils.isNotEmpty(spImportedIds)) {
                 String[] importedIdParts = spImportedIds.getFirst().split(":");
-                if (importedIdParts.length > 0) {
+                if (importedIdParts.length == 3) {
                     incomingStopPlace.setProvider(StringUtils.lowerCase(importedIdParts[0]));
                     return importedIdParts[0];
                 }
@@ -161,6 +167,12 @@ public class MdmService {
             } else {
                 quayIdentifier.setOriginalId(originalId);
             }
+        }
+
+        if (StringUtils.isBlank(quayIdentifier.getOriginalId())) {
+            String generatedImportedId = UUID.randomUUID().toString();
+            quayIdentifier.setOriginalId(generatedImportedId);
+            quay.getOriginalIds().add(generatedImportedId);
         }
 
         if (quay.getNetexId() != null) {
@@ -601,7 +613,9 @@ public class MdmService {
      */
     private Optional<Long> getMdmIdFromResponse(String originalId, List<OkinaIdentifier> mdmIdentifiers) {
         for (OkinaIdentifier mdmIdentifier : mdmIdentifiers) {
-            if (mdmIdentifier.getOriginalId().equals(originalId.split(":")[2])) {
+            String[] identifierParts = originalId.split(":");
+            if (identifierParts.length == 3 && mdmIdentifier.getOriginalId().equals(identifierParts[2])
+            || identifierParts.length == 1 && mdmIdentifier.getOriginalId().equals(identifierParts[0])) {
                 return Optional.of(mdmIdentifier.getSuperId());
             }
         }
@@ -610,7 +624,9 @@ public class MdmService {
 
     private void fillMdmId(StopPlace incomingStopPlace, List<OkinaIdentifier> mdmIdentifiers) {
         for (OkinaIdentifier mdmIdentifier : mdmIdentifiers) {
-            if (incomingStopPlace.getOriginalIds().contains(mdmIdentifier.getDataset() + STOP_PLACE_QUALIFIER + mdmIdentifier.getOriginalId())) {
+            if (incomingStopPlace.getOriginalIds().contains(mdmIdentifier.getDataset() + STOP_PLACE_QUALIFIER + mdmIdentifier.getOriginalId())
+                    || incomingStopPlace.getOriginalIds().contains(mdmIdentifier.getOriginalId())
+            ) {
                 incomingStopPlace.setNetexId(validNetexPrefix + STOP_PLACE_QUALIFIER + mdmIdentifier.getSuperId());
             }
         }

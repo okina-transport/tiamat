@@ -22,7 +22,9 @@ public class VehicleSharingParkingAreaConverter extends BidirectionalConverter<P
         }
         VehicleSharingParkingArea vehicleSharingParkingArea = new VehicleSharingParkingArea();
         vehicleSharingParkingArea.setId(parkingArea.getNetexId());
-        vehicleSharingParkingArea.setName(new MultilingualString().withValue(parkingArea.getName().getValue()).withLang(parkingArea.getName().getLang()));
+        if (parkingArea.getName() != null ) {
+            vehicleSharingParkingArea.setName(new MultilingualString().withValue(parkingArea.getName().getValue()).withLang(parkingArea.getName().getLang()));
+        }
         vehicleSharingParkingArea.setMaximumHeight(parkingArea.getMaximumHeight());
         vehicleSharingParkingArea.setPublicUse(parkingArea.getPublicUse() != null ? PublicUseEnumeration.fromValue(parkingArea.getPublicUse().value()) : PublicUseEnumeration.ALL);
         vehicleSharingParkingArea.setVersion(String.valueOf(parkingArea.getVersion()));

@@ -291,7 +291,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
         }
     }
 
-    private Set<org.rutebanken.tiamat.model.StopPlace> foundStopPlacesFromMDM(org.rutebanken.tiamat.model.StopPlace incomingStopPlace) {
+    private Set<org.rutebanken.tiamat.model.StopPlace> foundStopPlacesFromMDM(org.rutebanken.tiamat.model.StopPlace incomingStopPlace) throws TiamatBusinessException {
         Set<org.rutebanken.tiamat.model.StopPlace> results = new HashSet<>();
         Optional<Long> stopPlaceOpt = mdmService.getExistingStopPlaceMdmIds(incomingStopPlace);
         if (stopPlaceOpt.isPresent()) {

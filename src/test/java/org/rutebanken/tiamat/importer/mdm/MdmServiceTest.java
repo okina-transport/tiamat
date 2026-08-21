@@ -26,6 +26,7 @@ import org.rutebanken.tiamat.client.mdm.MdmClient;
 import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.config.TiamatProperties;
 import org.rutebanken.tiamat.model.StopPlace;
+import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -51,7 +52,7 @@ class MdmServiceTest {
     private ArgumentCaptor<OkinaIdentifier> okinaIdentifierCaptor;
 
     @Test
-    void getProvider_stopPlaceHasProvider_usesItUppercased() {
+    void getProvider_stopPlaceHasProvider_usesItUppercased() throws TiamatBusinessException {
         StopPlace stopPlace = new StopPlace();
         stopPlace.setNetexId("MOBIITI:StopPlace:1");
         stopPlace.setProvider("prov1");
@@ -64,7 +65,7 @@ class MdmServiceTest {
     }
 
     @Test
-    void getProvider_noProviderButImportedIdKeyValue_extractsDatasetFromImportedId() {
+    void getProvider_noProviderButImportedIdKeyValue_extractsDatasetFromImportedId() throws TiamatBusinessException {
         StopPlace stopPlace = new StopPlace();
         stopPlace.setNetexId("MOBIITI:StopPlace:1");
         stopPlace.getOrCreateValues("imported-id").add("PROV2:StopPlace:123");
@@ -77,7 +78,7 @@ class MdmServiceTest {
     }
 
     @Test
-    void getProvider_noProviderAndNoImportedId_fallsBackToDefaultProvider() {
+    void getProvider_noProviderAndNoImportedId_fallsBackToDefaultProvider() throws TiamatBusinessException {
         StopPlace stopPlace = new StopPlace();
         stopPlace.setNetexId("MOBIITI:StopPlace:1");
 

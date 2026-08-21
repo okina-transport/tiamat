@@ -201,7 +201,7 @@ class StopPlaceUpdater implements DataFetcher {
                     } else {
                         loggingService.logStopPlaceCreation(user, updatedStopPlace);
                     }
-
+                    mdmService.fillImportedIds(List.of(updatedStopPlace));
                     return updatedStopPlace;
                 }
             }

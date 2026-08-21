@@ -8,6 +8,7 @@ import org.rutebanken.tiamat.config.TiamatProperties;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.NetexUtils;
 
+import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -105,7 +106,7 @@ public class MdmService {
         return quayIdentifiers;
     }
 
-    private static OkinaIdentifier buildInputStopIdentifier(StopPlace incomingStopPlace) {
+    private static OkinaIdentifier buildInputStopIdentifier(StopPlace incomingStopPlace) throws TiamatBusinessException {
         OkinaIdentifier stopIdentifier = new OkinaIdentifier();
 
 
@@ -126,7 +127,7 @@ public class MdmService {
         return stopIdentifier;
     }
 
-    private static String getProvider(StopPlace incomingStopPlace) {
+    private static String getProvider(StopPlace incomingStopPlace) throws TiamatBusinessException {
         if (StringUtils.isNotEmpty(incomingStopPlace.getProvider())){
             return incomingStopPlace.getProvider().toUpperCase();
         }
@@ -146,8 +147,7 @@ public class MdmService {
                 }
             }
         }
-        incomingStopPlace.setProvider(DEFAULT_PROVIDER);
-        return DEFAULT_PROVIDER;
+        throw new TiamatBusinessException(400, "Missing provider");
     }
 
     private static OkinaIdentifier buildInputQuayIdentifier(String dataset, Quay quay) {
@@ -291,7 +291,7 @@ public class MdmService {
      * @param incomingStopPlace incoming stop place
      * @return stop place superId if stop place id is found, null otherwise (wrapped in Optional)
      */
-    public Optional<Long> getExistingStopPlaceMdmIds(StopPlace incomingStopPlace) {
+    public Optional<Long> getExistingStopPlaceMdmIds(StopPlace incomingStopPlace) throws TiamatBusinessException {
         OkinaIdentifier stopIdentifier = buildInputStopIdentifier(incomingStopPlace);
         OkinaIdentifier stopPlaceMdmData = mdmClient.getStopPlaceIdentifiersByOriginalId(stopIdentifier);
         return stopPlaceMdmData != null ? Optional.of(stopPlaceMdmData.getSuperId()) : Optional.empty();

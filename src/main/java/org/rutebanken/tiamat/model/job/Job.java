@@ -21,6 +21,7 @@ import jakarta.persistence.*;
 import jakarta.xml.bind.annotation.XmlEnum;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
+import org.rutebanken.tiamat.dtoassembling.dto.MergeMode;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.importer.ImportParams;
 
@@ -74,6 +75,15 @@ public class Job {
     private String userName;
 
     private Boolean isLugCompleted;
+
+    private Integer totalCount;
+
+    private Integer remainingCount;
+
+    private String provider;
+
+    @Enumerated(EnumType.STRING)
+    private MergeMode mergeMode;
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
@@ -228,6 +238,38 @@ public class Job {
 
     public void setLugCompleted(Boolean lugCompleted) {
         isLugCompleted = lugCompleted;
+    }
+
+    public Integer getTotalCount() {
+        return totalCount;
+    }
+
+    public void setTotalCount(Integer totalCount) {
+        this.totalCount = totalCount;
+    }
+
+    public Integer getRemainingCount() {
+        return remainingCount;
+    }
+
+    public void setRemainingCount(Integer remainingCount) {
+        this.remainingCount = remainingCount;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+
+    public MergeMode getMergeMode() {
+        return mergeMode;
+    }
+
+    public void setMergeMode(MergeMode mergeMode) {
+        this.mergeMode = mergeMode;
     }
 
     @XmlType

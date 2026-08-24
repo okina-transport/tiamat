@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.repository;
 
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
+import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.model.job.JobType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -30,6 +31,8 @@ public interface JobRepository extends PagingAndSortingRepository<Job, Long>, Jo
         JpaSpecificationExecutor<Job> {
 
     List<Job> findByTypesAndAction(List<JobType> types, JobAction jobAction);
+
+    List<Job> findByTypeAndStatus(JobType type, JobStatus status);
 
     @Query("select j from Job j left join fetch j.operators where j.id in :ids order by j.started desc")
     List<Job> findJobsWithOperatorsFetching(List<Long> ids);

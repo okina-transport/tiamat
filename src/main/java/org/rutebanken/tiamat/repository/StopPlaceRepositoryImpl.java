@@ -30,6 +30,8 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
+import org.rutebanken.tiamat.dtoassembling.dto.MergeMode;
+import org.rutebanken.tiamat.dtoassembling.dto.StopPlaceMergeCandidatePairDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.geo.GeometryTransformer;
 import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
@@ -720,7 +722,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
     public List<StopPlace> getStopPlaceInitializedForExport(Set<Long> stopPlacePrimaryIds) {
 
-        Set<String> stopPlacePrimaryIdStrings = stopPlacePrimaryIds.stream().map(lvalue -> String.valueOf(lvalue)).collect(Collectors.toSet());
+        Set<String> stopPlacePrimaryIdStrings = stopPlacePrimaryIds.stream().map(String::valueOf).collect(Collectors.toSet());
         String joinedStopPlaceDbIds = String.join(",", stopPlacePrimaryIdStrings);
         StringBuilder sql = new StringBuilder("SELECT s FROM StopPlace s WHERE s.id IN(");
         sql.append(joinedStopPlaceDbIds);
@@ -1520,5 +1522,84 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         return results.isEmpty() ? null : results.get(0);
     }
 
+    @Override
+    public Page<StopPlaceMergeCandidatePairDto> findMergeableStopPlaces(MergeMode mode, String provider, Pageable pageable) {
+        String providerFilter = mode == MergeMode.SAME_PROVIDER ? " AND s1.provider = s2.provider " : "";
+
+        boolean scopedToProvider = provider != null && !provider.isBlank();
+        String providerScopeFilter = "";
+        if (scopedToProvider) {
+            providerScopeFilter = mode == MergeMode.SAME_PROVIDER
+                    ? " AND s1.provider = :provider "
+                    : " AND (s1.provider = :provider OR s2.provider = :provider) ";
+        }
+
+        String queryString = """
+                WITH latest_stop_point_reference AS (
+                  SELECT netex_id, MAX(version) AS max_version
+                  FROM stop_place
+                  GROUP BY netex_id
+                ),
+                valid_stops AS (
+                  SELECT s.id, s.netex_id, s.name_value, s.centroid, s.transport_mode, s.provider
+                  FROM stop_place s
+                  JOIN latest_stop_point_reference lspr ON s.netex_id = lspr.netex_id AND s.version = lspr.max_version
+                  LEFT JOIN stop_place p ON s.parent_site_ref = p.netex_id AND s.parent_site_ref_version = CAST(p.version as text)
+                  WHERE s.parent_stop_place = false
+                    AND ((p.netex_id IS NOT NULL AND (p.from_date IS NULL OR p.from_date <= :pointInTime) AND (p.to_date IS NULL OR p.to_date > :pointInTime))
+                          OR (p.netex_id IS NULL AND (s.from_date IS NULL OR s.from_date <= :pointInTime) AND (s.to_date IS NULL OR s.to_date > :pointInTime)))
+                ),
+                candidates AS (
+                  SELECT s1.netex_id AS netex_id_1, s1.name_value AS name_1, ST_X(s1.centroid) AS lon_1, ST_Y(s1.centroid) AS lat_1, s1.transport_mode AS mode_1, s1.provider AS provider_1,
+                         s2.netex_id AS netex_id_2, s2.name_value AS name_2, ST_X(s2.centroid) AS lon_2, ST_Y(s2.centroid) AS lat_2, s2.transport_mode AS mode_2, s2.provider AS provider_2
+                  FROM valid_stops s1
+                  JOIN valid_stops s2
+                    ON s1.id < s2.id
+                    AND s1.netex_id <> s2.netex_id
+                    AND s1.transport_mode = s2.transport_mode
+                    %s
+                    %s
+                    AND round(CAST(ST_X(s1.centroid) AS numeric), 5) = round(CAST(ST_X(s2.centroid) AS numeric), 5)
+                    AND round(CAST(ST_Y(s1.centroid) AS numeric), 5) = round(CAST(ST_Y(s2.centroid) AS numeric), 5)
+
+                  UNION
+
+                  SELECT s1.netex_id AS netex_id_1, s1.name_value AS name_1, ST_X(s1.centroid) AS lon_1, ST_Y(s1.centroid) AS lat_1, s1.transport_mode AS mode_1, s1.provider AS provider_1,
+                         s2.netex_id AS netex_id_2, s2.name_value AS name_2, ST_X(s2.centroid) AS lon_2, ST_Y(s2.centroid) AS lat_2, s2.transport_mode AS mode_2, s2.provider AS provider_2
+                  FROM valid_stops s1
+                  JOIN valid_stops s2
+                    ON s1.id < s2.id
+                    AND s1.netex_id <> s2.netex_id
+                    AND s1.transport_mode = s2.transport_mode
+                    %s
+                    %s
+                    AND lower(trim(s1.name_value)) = lower(trim(s2.name_value))
+                  WHERE ST_DWithin(CAST(s1.centroid AS geography), CAST(s2.centroid AS geography), :nearbyThresholdMeters)
+                )
+                SELECT * FROM candidates
+                ORDER BY provider_1, netex_id_1, netex_id_2, lon_1, lat_1, lon_2, lat_2
+                """.formatted(providerFilter, providerScopeFilter, providerFilter, providerScopeFilter);
+
+        logger.debug("finding mergeable stop places with query: {}", queryString);
+
+        Query query = entityManager.createNativeQuery(queryString)
+                .setParameter("pointInTime", Date.from(Instant.now()))
+                .setParameter("nearbyThresholdMeters", 100.0);
+
+        if (scopedToProvider) {
+            query.setParameter("provider", provider);
+        }
+
+        query.setFirstResult(Math.toIntExact(pageable.getOffset()));
+        query.setMaxResults(pageable.getPageSize());
+
+        List<Object[]> rows = query.getResultList();
+
+        List<StopPlaceMergeCandidatePairDto> pairs = rows.stream()
+                .map(StopPlaceMergeCandidatePairDto::new)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(pairs, pageable, pairs.size());
+    }
 }
 

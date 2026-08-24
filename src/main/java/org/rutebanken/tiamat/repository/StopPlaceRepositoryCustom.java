@@ -18,6 +18,8 @@ package org.rutebanken.tiamat.repository;
 import org.locationtech.jts.geom.Envelope;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
+import org.rutebanken.tiamat.dtoassembling.dto.MergeMode;
+import org.rutebanken.tiamat.dtoassembling.dto.StopPlaceMergeCandidatePairDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.model.Quay;
@@ -75,6 +77,8 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
     Page<StopPlace> findStopPlace(ExportParams exportParams);
 
     Page<StopPlace> findStopPlacesWithEffectiveChangeInPeriod(ChangedStopPlaceSearch search);
+
+    Page<StopPlaceMergeCandidatePairDto> findMergeableStopPlaces(MergeMode mode, String provider, Pageable pageable);
 
     List<StopPlace> findAll(List<String> stopPlacesNetexIds);
 

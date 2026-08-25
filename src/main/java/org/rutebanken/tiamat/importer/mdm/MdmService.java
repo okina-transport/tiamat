@@ -3,11 +3,18 @@ package org.rutebanken.tiamat.importer.mdm;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.rutebanken.tiamat.client.mdm.*;
+import org.rutebanken.tiamat.client.mdm.IdentifierToCheck;
+import org.rutebanken.tiamat.client.mdm.MdmClient;
+import org.rutebanken.tiamat.client.mdm.MergeIdentifier;
+import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
+import org.rutebanken.tiamat.client.mdm.ParkingIdentifier;
 import org.rutebanken.tiamat.config.TiamatProperties;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.Organisation;
+import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.PointOfInterest;
+import org.rutebanken.tiamat.model.Quay;
+import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.NetexUtils;
-
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +23,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class MdmService {
@@ -24,7 +37,6 @@ public class MdmService {
     private static final Logger logger = LoggerFactory.getLogger(MdmService.class);
     private static final String STOP_PLACE_QUALIFIER = ":StopPlace:";
     private static final String QUAY_QUALIFIER = ":Quay:";
-    private static final String DEFAULT_PROVIDER = "technique";
 
     private final MdmClient mdmClient;
 
@@ -464,6 +476,8 @@ public class MdmService {
         List<OkinaIdentifier> quayMdmData = getQuaysIdentifiers(incomingStopPlace);
         if (CollectionUtils.isNotEmpty(quayMdmData)) {
             mdmClient.updateQuaysImportedIds(quayMdmData);
+            List<OkinaIdentifier> upToDateQuayIdentifiers = mdmClient.getQuayIdentifiersByOriginalId(quayMdmData);
+            fillMdmId(incomingStopPlace.getQuays(), upToDateQuayIdentifiers);
         }
     }
 

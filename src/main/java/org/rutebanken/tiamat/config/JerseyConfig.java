@@ -25,7 +25,7 @@ import org.rutebanken.tiamat.rest.delete.DeleteRessource;
 import org.rutebanken.tiamat.rest.dto.DtoJbvCodeMappingResource;
 import org.rutebanken.tiamat.rest.dto.DtoQuayResource;
 import org.rutebanken.tiamat.rest.dto.DtoStopPlaceResource;
-import org.rutebanken.tiamat.rest.dto.MergeableStopPlacesResource;
+import org.rutebanken.tiamat.rest.merge.MergeableStopPlacesResource;
 import org.rutebanken.tiamat.rest.exception.*;
 import org.rutebanken.tiamat.rest.graphql.GraphQLResource;
 import org.rutebanken.tiamat.rest.health.HealthResource;

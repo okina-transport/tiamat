@@ -140,11 +140,11 @@ public class MdmService {
     }
 
     private static String getProvider(StopPlace incomingStopPlace) throws TiamatBusinessException {
-        if (StringUtils.isNotEmpty(incomingStopPlace.getProvider())){
+        if (StringUtils.isNotEmpty(incomingStopPlace.getProvider())) {
             return incomingStopPlace.getProvider().toUpperCase();
         }
 
-        if (MapUtils.isNotEmpty(incomingStopPlace.getKeyValues())){
+        if (MapUtils.isNotEmpty(incomingStopPlace.getKeyValues())) {
             List<String> spImportedIds = incomingStopPlace.getKeyValues().entrySet()
                     .stream().filter(entry -> entry.getKey().equals("imported-id"))
                     .map(Map.Entry::getValue)
@@ -185,33 +185,33 @@ public class MdmService {
         return tiamatProperties.isMdmEnabled();
     }
 
-    public void deleteStopPlaceAndQuayIdsByDataset(String datasetId){
-            mdmClient.deleteStopPlacesByDataset(datasetId);
-            mdmClient.deleteQuaysByDataset(datasetId);
+    public void deleteStopPlaceAndQuayIdsByDataset(String datasetId) {
+        mdmClient.deleteStopPlacesByDataset(datasetId);
+        mdmClient.deleteQuaysByDataset(datasetId);
     }
 
-    public void deleteStopPlaceBySuperId(String superId){
+    public void deleteStopPlaceBySuperId(String superId) {
         mdmClient.deleteStopPlaceBySuperId(superId);
     }
 
-    public void deleteQuaysBySuperId(String superId){
+    public void deleteQuaysBySuperId(String superId) {
         mdmClient.deleteQuaysBySuperId(superId);
     }
 
-    public void deletePoisBySuperId(String superId){
+    public void deletePoisBySuperId(String superId) {
         mdmClient.deletePoisBySuperId(superId);
     }
 
-    public void deleteParkingsBySuperId(String superId){
+    public void deleteParkingsBySuperId(String superId) {
         mdmClient.deleteParkingsBySuperId(superId);
     }
 
 
-    public void deleteAllPoiIds(){
+    public void deleteAllPoiIds() {
         mdmClient.deleteAllPoisIds();
     }
 
-    public void deleteAllParkingIds(){
+    public void deleteAllParkingIds() {
         mdmClient.deleteAllParkingIds();
     }
 
@@ -250,7 +250,7 @@ public class MdmService {
     }
 
 
-    public void fillImportedIdsInNetexStopPlace( org.rutebanken.netex.model.StopPlace netexStopPlace, String datasetId) {
+    public void fillImportedIdsInNetexStopPlace(org.rutebanken.netex.model.StopPlace netexStopPlace, String datasetId) {
         if (netexStopPlace == null || !tiamatProperties.isMdmEnabled() || isImportedIdAlreadyDefinedForDataset(netexStopPlace, datasetId)) {
             return;
         }
@@ -260,7 +260,7 @@ public class MdmService {
         List<OkinaIdentifier> stopPlacesMdmData = mdmClient.getStopPlaceIdentifiers(List.of(stopIdentifier));
 
         for (OkinaIdentifier okinaIdentifier : stopPlacesMdmData) {
-            if (datasetId.equals(okinaIdentifier.getDataset())){
+            if (datasetId.equals(okinaIdentifier.getDataset())) {
                 String completeOriginalId = okinaIdentifier.getDataset() + STOP_PLACE_QUALIFIER + okinaIdentifier.getOriginalId();
                 NetexUtils.addImportedId(netexStopPlace, completeOriginalId);
             }
@@ -278,7 +278,7 @@ public class MdmService {
             Long quayNetexId = getIdentifierFromNetexId(quay.getId());
 
             for (OkinaIdentifier quayMdm : quaysMdmData) {
-                if (quayMdm.getSuperId().equals(quayNetexId) && datasetId.equals(quayMdm.getDataset())){
+                if (quayMdm.getSuperId().equals(quayNetexId) && datasetId.equals(quayMdm.getDataset())) {
                     String importedId = quayMdm.getDataset() + QUAY_QUALIFIER + quayMdm.getOriginalId();
                     NetexUtils.addImportedId(quay, importedId);
                 }
@@ -288,7 +288,7 @@ public class MdmService {
 
     private boolean isImportedIdAlreadyDefinedForDataset(org.rutebanken.netex.model.StopPlace netexStopPlace, String datasetId) {
 
-        if (netexStopPlace.getKeyList() == null || CollectionUtils.isEmpty(netexStopPlace.getKeyList().getKeyValue())){
+        if (netexStopPlace.getKeyList() == null || CollectionUtils.isEmpty(netexStopPlace.getKeyList().getKeyValue())) {
             return false;
         }
 
@@ -309,7 +309,7 @@ public class MdmService {
         return stopPlaceMdmData != null ? Optional.of(stopPlaceMdmData.getSuperId()) : Optional.empty();
     }
 
-    public Set<Long> getStopPlaceIdsByProvider(String provider){
+    public Set<Long> getStopPlaceIdsByProvider(String provider) {
         return mdmClient.getStopPlaceIdentifiersByDataset(provider);
     }
 
@@ -550,7 +550,7 @@ public class MdmService {
      */
     public void fillOriginalId(Parking parking) {
         List<ParkingIdentifier> mdmData = mdmClient.getParkingIdentifiers(List.of(parking.getNetexId()));
-        if(!mdmData.isEmpty()) {
+        if (!mdmData.isEmpty()) {
             parking.getOriginalIds().add(mdmData.getFirst().getOriginalId());
         }
     }
@@ -601,6 +601,10 @@ public class MdmService {
 
     private void fillMdmId(Set<Quay> quays, List<OkinaIdentifier> mdmIdentifiers) {
         for (Quay quay : quays) {
+            if (CollectionUtils.isEmpty(quay.getOriginalIds())){
+                continue;
+            }
+
             Optional<Long> mdmOpt = getMdmIdFromResponse(quay.getOriginalIds().iterator().next(), mdmIdentifiers);
             mdmOpt.ifPresent(superId -> quay.setNetexId(validNetexPrefix + QUAY_QUALIFIER + superId));
         }

@@ -15,16 +15,19 @@
 
 package org.rutebanken.tiamat.service.stopplace;
 
+import com.google.gson.Gson;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
+import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
+import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.ValidBetween;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.service.Preconditions;
-import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.rutebanken.tiamat.versioning.VersionCreator;
+import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +47,19 @@ import static org.rutebanken.tiamat.versioning.save.DefaultVersionedSaverService
 public class MultiModalStopPlaceEditor {
 
     private static final Logger logger = LoggerFactory.getLogger(MultiModalStopPlaceEditor.class);
+    private static final Gson GSON = new Gson();
+    private static final String METADATA_ADD_TO_MMSP_TEMPLATE = """
+            {
+                "parentStopPlaceId": "%s",
+                "childStopPlaceIdsToAdd": %s
+            }
+            """;
+    private static final String METADATA_REMOVE_FROM_MMSP_TEMPLATE = """
+            {
+                "parentStopPlaceId": "%s",
+                "childStopPlaceIdsToRemove": %s
+            }
+            """;
 
     @Autowired
     private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
@@ -59,6 +75,12 @@ public class MultiModalStopPlaceEditor {
 
     @Autowired
     private VersionCreator versionCreator;
+
+    @Autowired
+    private UsernameFetcher usernameFetcher;
+
+    @Autowired
+    private LoggingService loggingService;
 
     public StopPlace createMultiModalParentStopPlace(List<String> childStopPlaceIds, EmbeddableMultilingualString name) {
         return createMultiModalParentStopPlace(childStopPlaceIds, name, null, null, null);
@@ -93,6 +115,9 @@ public class MultiModalStopPlaceEditor {
 
             terminatePreviousVersionsOfChildren(futureChildStopPlaces, terminationDate);
             stopPlaceRepository.saveAll(futureChildStopPlaces);
+
+            String user = usernameFetcher.getUserNameForAuthenticatedUser();
+            loggingService.logMultiModalSPCreation(user, parentStopPlace);
 
             return stopPlaceVersionedSaverService.saveNewVersion(null, parentStopPlace, fromDate);
         });
@@ -145,6 +170,10 @@ public class MultiModalStopPlaceEditor {
             stopPlaceRepository.saveAll(futureChildStopPlaces);
 
             parentStopPlaceCopy.getChildren().addAll(childCopies);
+
+            String user = usernameFetcher.getUserNameForAuthenticatedUser();
+            loggingService.logMultiModalSPUpdate(user, parentStopPlace, parentStopPlaceCopy, METADATA_ADD_TO_MMSP_TEMPLATE.formatted(parentStopPlaceId, GSON.toJson(childStopPlaceIds)));
+
             return stopPlaceVersionedSaverService.saveNewVersion(parentStopPlace, parentStopPlaceCopy, fromDate);
         });
     }
@@ -184,6 +213,9 @@ public class MultiModalStopPlaceEditor {
             });
 
             parentStopPlaceCopy.getChildren().removeIf(childStopPlace -> childStopPlaceIds.contains(childStopPlace.getNetexId()));
+
+            String user = usernameFetcher.getUserNameForAuthenticatedUser();
+            loggingService.logMultiModalSPUpdate(user, parentStopPlace, parentStopPlaceCopy, METADATA_REMOVE_FROM_MMSP_TEMPLATE.formatted(parentStopPlaceId, GSON.toJson(childStopPlaceIds)));
 
             return stopPlaceVersionedSaverService.saveNewVersion(parentStopPlace, parentStopPlaceCopy, now);
         });
@@ -230,12 +262,16 @@ public class MultiModalStopPlaceEditor {
             List<StopPlace> stopPlaces = getAllVersionsOfStopPlace(parentStopPlaceCopy.getNetexId());
             stopPlaceRepository.deleteStopPlaceChildrenByParent(stopPlaces);
             stopPlaceRepository.deleteAll(stopPlaces);
+
+            String user = usernameFetcher.getUserNameForAuthenticatedUser();
+            loggingService.logMultiModalSPDeletion(user, parentStopPlace);
+
             return true;
         });
     }
 
     private void verifyChildrenIdsNotNullOrEmpty(List<String> childStopPlaceIds) {
-        if(childStopPlaceIds == null || childStopPlaceIds.isEmpty()) {
+        if (childStopPlaceIds == null || childStopPlaceIds.isEmpty()) {
             throw new IllegalArgumentException("The list of child stop place IDs cannot be empty.");
         }
     }
@@ -261,13 +297,13 @@ public class MultiModalStopPlaceEditor {
     }
 
     private void validateNoParentSiteRef(StopPlace potentialNewChild) {
-        if(potentialNewChild.getParentSiteRef() != null && potentialNewChild.getParentSiteRef().getRef() != null) {
+        if (potentialNewChild.getParentSiteRef() != null && potentialNewChild.getParentSiteRef().getRef() != null) {
             throw new IllegalArgumentException("The stop place " + potentialNewChild.getNetexId() + " version " + potentialNewChild.getVersion() + " does already have parent site ref");
         }
     }
 
     private void validateNotParentStopPlace(StopPlace potentialNewChild) {
-        if(potentialNewChild.isParentStopPlace()) {
+        if (potentialNewChild.isParentStopPlace()) {
             throw new IllegalArgumentException("The stop place " + potentialNewChild.getNetexId() + " version " + potentialNewChild.getVersion() + " is already a parent stop place");
         }
     }
@@ -280,7 +316,7 @@ public class MultiModalStopPlaceEditor {
                 throw new RuntimeException("The potential child stop place " + potentialNewChild.getNetexId()
                         + " version " + potentialNewChild.getVersion()
                         + " is not currently valid: from date = " + potentialNewChild.getValidBetween().getFromDate()
-                        + " expected to be after "+fromDate);
+                        + " expected to be after " + fromDate);
             }
             if (potentialNewChild.getValidBetween().getToDate() != null && potentialNewChild.getValidBetween().getToDate().isBefore(fromDate)) {
                 throw new RuntimeException("The stop place " + potentialNewChild.getNetexId()
@@ -292,7 +328,7 @@ public class MultiModalStopPlaceEditor {
 
     private void terminatePreviousVersionsOfChildren(List<StopPlace> childStopPlaces, Instant terminationDate) {
         childStopPlaces.forEach(futureChildStopPlace -> {
-            if(futureChildStopPlace.getValidBetween() == null) {
+            if (futureChildStopPlace.getValidBetween() == null) {
                 futureChildStopPlace.setValidBetween(new ValidBetween(terminationDate.minusSeconds(1), terminationDate));
             } else {
                 futureChildStopPlace.getValidBetween().setToDate(terminationDate);
@@ -302,7 +338,7 @@ public class MultiModalStopPlaceEditor {
 
     private Instant resolveFromDateOrNow(ValidBetween validBetween) {
 
-        if(validBetween != null && validBetween.getFromDate() != null) {
+        if (validBetween != null && validBetween.getFromDate() != null) {
             return validBetween.getFromDate();
         } else {
             return Instant.now();

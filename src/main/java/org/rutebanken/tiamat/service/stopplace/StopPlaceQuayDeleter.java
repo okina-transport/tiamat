@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.service.stopplace;
 
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -62,10 +63,15 @@ public class StopPlaceQuayDeleter {
     @Autowired
     private StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
 
+    @Autowired
+    private LoggingService loggingService;
+
     public StopPlace deleteQuay(String stopPlaceNetexId, String quayNetexId, String versionComment) {
 
         return mutateLock.executeInLock(() -> {
-            logger.warn("{} is deleting quay {} from stop place {} with comment {}", usernameFetcher.getUserNameForAuthenticatedUser(), quayNetexId, stopPlaceNetexId, versionComment);
+            String user = usernameFetcher.getUserNameForAuthenticatedUser();
+
+            logger.warn("{} is deleting quay {} from stop place {} with comment {}", user, quayNetexId, stopPlaceNetexId, versionComment);
 
             stopPlaceQuayDeleterToChouette.delete(quayNetexId);
 
@@ -92,6 +98,8 @@ public class StopPlaceQuayDeleter {
                 stopPlaceCopies.getCopiedEntity().setVersionComment(versionComment);
             }
 
+            loggingService.logStopPlaceQuayDeletion(user, optionalQuay.get());
+            loggingService.logStopPlaceUpdate(user, stopPlaceCopies.getExistingEntity(), stopPlaceCopies.getCopiedEntity());
 
             if (stopPlaceCopies.hasParent()) {
                 logger.info("Saving parent stop place {}. Returning parent of child: {}", stopPlaceCopies.getCopiedParent().getNetexId(), stopPlace.getNetexId());

@@ -15,7 +15,8 @@
 
 package org.rutebanken.tiamat.service.stopplace;
 
-import org.apache.commons.lang3.text.WordUtils;
+import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.AlternativeName;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
@@ -41,25 +42,22 @@ import java.util.Set;
 public class StopPlaceRenamer {
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceRenamer.class);
-
     @Autowired
     StopPlaceRepository stopPlaceRepository;
-
+    @Autowired
+    private LoggingService loggingService;
     @Autowired
     private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
-
     @Autowired
     private AlternativeNameUpdater alternativeNameUpdater;
-
     @Autowired
     private MutateLock mutateLock;
-
     @Autowired
     private VersionCreator versionCreator;
-
     @Autowired
     private Renamer renamer;
-
+    @Autowired
+    private UsernameFetcher usernameFetcher;
 
     /**
      * Update stop places with Modalis recommendations
@@ -71,6 +69,8 @@ public class StopPlaceRenamer {
     public Set<StopPlace> checkAllAndRename(boolean shouldSave) {
 
         return mutateLock.executeInLock(() -> {
+
+            loggingService.logStopPlaceRename(usernameFetcher.getUserNameForAuthenticatedUser());
 
             Set<StopPlace> lastVersionStopPlaces = new HashSet<>();
             Set<StopPlace> updatedStopPlaces = new HashSet<>();

@@ -2,7 +2,11 @@ package org.rutebanken.tiamat.rest.poi;
 
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.general.ImportJobWorker;
 import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
 import org.rutebanken.tiamat.general.PointOfInterestCSVHelper;
@@ -16,9 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
@@ -38,11 +39,14 @@ public class ImportPOIResource {
     private final PointOfInterestCSVHelper poiHelper;
     private final JobRepository jobRepository;
     private final ImportJobWorkerBuilder importJobWorkerBuilder;
+    private final LoggingService loggingService;
 
-    public ImportPOIResource(PointOfInterestCSVHelper poiHelper, JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder) {
+    public ImportPOIResource(PointOfInterestCSVHelper poiHelper, JobRepository jobRepository,
+                             ImportJobWorkerBuilder importJobWorkerBuilder, LoggingService loggingService) {
         this.poiHelper = poiHelper;
         this.jobRepository = jobRepository;
         this.importJobWorkerBuilder = importJobWorkerBuilder;
+        this.loggingService = loggingService;
     }
 
     @POST
@@ -52,6 +56,8 @@ public class ImportPOIResource {
     public Response importPOIFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
 
         logger.info("Import POI par " + user + " du fichier " + fileName);
+        loggingService.logPoiCsvImport(user, fileName);
+
         poiHelper.clearClassificationCache();
 
         List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
@@ -90,6 +96,7 @@ public class ImportPOIResource {
     @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)
     public Response importAsyncPOIFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
+        loggingService.logPoiCsvImport(user, fileName);
         Job job = new Job();
         job.setFileName(fileName);
         job.setType(JobType.CSV_POI);

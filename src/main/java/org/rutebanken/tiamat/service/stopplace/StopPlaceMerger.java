@@ -16,6 +16,8 @@
 package org.rutebanken.tiamat.service.stopplace;
 
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
+import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -47,13 +49,11 @@ import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.MERGED_ID
 @Service
 public class StopPlaceMerger {
 
-    private static final Logger logger = LoggerFactory.getLogger(StopPlaceMerger.class);
-
     /**
      * Properties to ignore on merge.
      */
     public static final String[] IGNORE_PROPERTIES_ON_MERGE = {"keyValues", "placeEquipments", "accessibilityAssessment", "tariffZones", "alternativeNames", "transportMode", "airSubmode", "busSubmode", "funicularSubmode", "metroSubmode", "tramSubmode", "telecabinSubmode", "railSubmode", "waterSubmode"};
-
+    private static final Logger logger = LoggerFactory.getLogger(StopPlaceMerger.class);
     @Autowired
     private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
 
@@ -81,11 +81,19 @@ public class StopPlaceMerger {
     @Autowired
     private VersionCreator versionCreator;
 
+    @Autowired
+    private UsernameFetcher usernameFetcher;
+
+    @Autowired
+    private LoggingService loggingService;
 
     public StopPlace mergeStopPlaces(String fromStopPlaceId, String toStopPlaceId, String fromVersionComment, String toVersionComment, boolean isDryRun) {
 
         return mutateLock.executeInLock(() -> {
             logger.info("About to merge stop place {} into stop place {} with from comment {} and to comment {} ", fromStopPlaceId, toStopPlaceId, fromVersionComment, toVersionComment);
+
+            String user = usernameFetcher.getUserNameForAuthenticatedUser();
+            loggingService.logStopPlaceMerge(user, fromStopPlaceId, toStopPlaceId);
 
             StopPlace fromStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(fromStopPlaceId);
             StopPlace toStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(toStopPlaceId);

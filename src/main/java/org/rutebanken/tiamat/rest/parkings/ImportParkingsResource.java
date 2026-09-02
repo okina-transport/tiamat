@@ -1,7 +1,11 @@
 package org.rutebanken.tiamat.rest.parkings;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.general.ImportJobWorker;
 import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
 import org.rutebanken.tiamat.general.ParkingsCSVHelper;
@@ -19,10 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,12 +43,15 @@ public class ImportParkingsResource {
     private final ParkingsImportedService parkingsImportedService;
     private final JobRepository jobRepository;
     private final ImportJobWorkerBuilder importJobWorkerBuilder;
+    private final LoggingService loggingService;
 
     @Autowired
-    ImportParkingsResource(ParkingsImportedService parkingsImportedService, JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder) {
+    ImportParkingsResource(ParkingsImportedService parkingsImportedService, JobRepository jobRepository,
+                           ImportJobWorkerBuilder importJobWorkerBuilder, LoggingService loggingService) {
         this.parkingsImportedService = parkingsImportedService;
         this.jobRepository = jobRepository;
         this.importJobWorkerBuilder = importJobWorkerBuilder;
+        this.loggingService = loggingService;
     }
 
     @POST
@@ -58,6 +61,7 @@ public class ImportParkingsResource {
     public Response importParkingsCsvFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user,
                                           @FormDataParam("parking_type") String parkingTypeParam, @FormDataParam("parking_layout") String parkingLayoutParam,
                                           @FormDataParam("park_and_ride_detection") Boolean parkAndRideDetection) throws IOException, IllegalArgumentException {
+        loggingService.logParkingCsvImport(user, fileName);
         try {
             logger.info("Import Parkings par {} du fichier {}", user, fileName);
             ParkingLayoutEnumeration parkingLayoutEnumeration = ParkingLayoutEnumeration.fromValue(parkingLayoutParam);
@@ -99,6 +103,7 @@ public class ImportParkingsResource {
                                                @FormDataParam("parking_type") String parkingTypeParam, @FormDataParam("parking_layout") String parkingLayoutParam,
                                                @FormDataParam("park_and_ride_detection") Boolean parkAndRideDetection) throws IOException {
         logger.info("Import Parkings par {} du fichier {}", user, fileName);
+        loggingService.logParkingCsvImport(user, fileName);
 
         Job job = new Job();
         job.setFileName(fileName);

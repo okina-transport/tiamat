@@ -15,14 +15,16 @@
 
 package org.rutebanken.tiamat.service.stopplace;
 
+import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.geo.StopPlaceCentroidComputer;
+import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.lock.MutateLock;
-import org.rutebanken.tiamat.versioning.util.CopiedEntity;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
+import org.rutebanken.tiamat.versioning.util.CopiedEntity;
 import org.rutebanken.tiamat.versioning.util.StopPlaceCopyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +33,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -62,6 +63,12 @@ public class StopPlaceQuayMover {
     @Autowired
     private MutateLock mutateLock;
 
+    @Autowired
+    private UsernameFetcher usernameFetcher;
+
+    @Autowired
+    private LoggingService loggingService;
+
     public StopPlace moveQuays(List<String> quayIds, String destinationStopPlaceId, String fromVersionComment, String toVersionComment) {
 
         return mutateLock.executeInLock(() -> {
@@ -77,6 +84,8 @@ public class StopPlaceQuayMover {
             Set<Quay> quaysToMove = removeQuaysFromStop(sourceStopPlace, fromVersionComment, quayIds, now);
 
             StopPlace response = addQuaysToDestinationStop(destinationStopPlaceId, quaysToMove, toVersionComment, now);
+
+            loggingService.logStopPlaceQuayMove(usernameFetcher.getUserNameForAuthenticatedUser(), quayIds, destinationStopPlaceId, fromVersionComment, toVersionComment);
 
             logger.info("Moved quays: {} from stop {} to {}", quayIds, sourceStopPlace.getNetexId(), response.getNetexId());
             return response;

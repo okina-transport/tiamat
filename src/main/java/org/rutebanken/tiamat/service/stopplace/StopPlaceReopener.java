@@ -16,11 +16,12 @@
 package org.rutebanken.tiamat.service.stopplace;
 
 import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
+import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.lock.MutateLock;
-import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.rutebanken.tiamat.versioning.VersionCreator;
+import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,10 +47,18 @@ public class StopPlaceReopener {
     @Autowired
     private VersionCreator versionCreator;
 
+    @Autowired
+    private LoggingService loggingService;
+
     public StopPlace reopenStopPlace(String stopPlaceId, String versionComment) {
 
         return mutateLock.executeInLock(() -> {
-            logger.info("User {} is reopening stop place {} with comment {}", usernameFetcher.getUserNameForAuthenticatedUser(), stopPlaceId, versionComment);
+            String user = usernameFetcher.getUserNameForAuthenticatedUser();
+
+            logger.info("User {} is reopening stop place {} with comment {}", user, stopPlaceId, versionComment);
+
+            loggingService.logStopPlaceReopen(user, stopPlaceId,
+                    versionComment);
 
             StopPlace stopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(stopPlaceId);
 

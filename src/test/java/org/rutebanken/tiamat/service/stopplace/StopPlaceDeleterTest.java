@@ -18,10 +18,11 @@ package org.rutebanken.tiamat.service.stopplace;
 import org.junit.jupiter.api.Test;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
-import org.rutebanken.tiamat.changelog.EntityChangedListener;
+import org.rutebanken.tiamat.changelog.LoggingService;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
+import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
-import org.rutebanken.tiamat.lock.MutateLock;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.Arrays;
@@ -29,25 +30,24 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
-
 import static org.mockito.Mockito.*;
+
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class StopPlaceDeleterTest {
 
+    private final StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette = mock(StopPlaceQuayDeleterToChouette.class);
     private StopPlaceRepository stopPlaceRepository = mock(StopPlaceRepository.class);
-
-    private EntityChangedListener entityChangedListener = mock(EntityChangedListener.class);
     private ReflectionAuthorizationService authorizationService = mock(ReflectionAuthorizationService.class);
     private UsernameFetcher usernameFetcher = mock(UsernameFetcher.class);
+    private MdmService mdmServiceMock = mock(MdmService.class);
+    private LoggingService loggingService = mock(LoggingService.class);
     private MutateLock mutateLock = new MutateLock(null) {
         @Override
         public <T> T executeInLock(Supplier<T> supplier) {
             return supplier.get();
         }
     };
-    private final StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette = mock(StopPlaceQuayDeleterToChouette.class);
-
-    private StopPlaceDeleter stopPlaceDeleter = new StopPlaceDeleter(stopPlaceRepository, entityChangedListener, authorizationService, usernameFetcher, mutateLock, stopPlaceQuayDeleterToChouette);
+    private StopPlaceDeleter stopPlaceDeleter = new StopPlaceDeleter(stopPlaceRepository, authorizationService, usernameFetcher, mutateLock, stopPlaceQuayDeleterToChouette, mdmServiceMock, loggingService);
 
     @Test
     public void doNotDeleteParent() {
@@ -77,6 +77,7 @@ public class StopPlaceDeleterTest {
         assertThat(deleted).isTrue();
 
         verify(stopPlaceRepository, times(1)).deleteAll(anyList());
+        verify(mdmServiceMock, times(1)).deleteStopPlaceBySuperId(anyString());
     }
 
 }

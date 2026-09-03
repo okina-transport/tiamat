@@ -23,6 +23,7 @@ import org.rutebanken.tiamat.dtoassembling.dto.BoundingBoxDto;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.rest.graphql.GraphQLNames;
+import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,8 +85,11 @@ class ParkingFetcher implements DataFetcher {
                 parkingPage = new PageImpl<>(parkingList, pageable, 1L);
             } else {
                 logger.info("Finding first parking by netexid {} and highest version", parkingId);
-                parkingList.add(parkingRepository.findFirstByNetexIdOrderByVersionDesc(parkingId));
-                parkingPage = new PageImpl<>(parkingList, pageable, 1L);
+                Parking foundParking = parkingRepository.findFirstByNetexIdOrderByVersionDesc(parkingId);
+                parkingList.add(foundParking);
+                List<Parking> copiedList = parkingRepository.createCopyAndFillImportedIdsFromMDM(parkingList);
+
+                parkingPage = new PageImpl<>(copiedList, pageable, 1L);
             }
         } else if (stopPlaceId != null) {
             logger.info("Finding parkings by stop place netexid {}", stopPlaceId);

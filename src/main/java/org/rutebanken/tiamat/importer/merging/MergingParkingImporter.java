@@ -18,13 +18,13 @@ package org.rutebanken.tiamat.importer.merging;
 import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.importer.finder.NearbyParkingFinder;
 import org.rutebanken.tiamat.importer.finder.ParkingFromOriginalIdFinder;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
-import org.rutebanken.tiamat.repository.AccessibilityAssessmentRepository;
-import org.rutebanken.tiamat.repository.ParkingRepository;
+import org.rutebanken.tiamat.repository.*;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
-import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.*;
+import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,6 +70,8 @@ public class MergingParkingImporter {
 
     private final ParkingRepository parkingRepository;
 
+    private final MdmService mdmService;
+
     @Autowired
     public MergingParkingImporter(ParkingFromOriginalIdFinder parkingFromOriginalIdFinder,
                                   NearbyParkingFinder nearbyParkingFinder,
@@ -77,12 +79,14 @@ public class MergingParkingImporter {
                                   NetexMapper netexMapper,
                                   ParkingVersionedSaverService parkingVersionedSaverService,
                                   ParkingPropertiesVersionedSaverService parkingPropertiesVersionedSaverService,
-                                  AccessibilityVersionedSaverService accessibilityVersionedSaverService,
                                   ParkingAreasVersionedSaverService parkingAreasVersionedSaverService,
                                   ParkingPlaceEquipmentsVersionedSaverService parkingPlaceEquipmentsVersionedSaverService,
                                   ParkingInstalledEquipmentsVersionedSaverService parkingInstalledEquipmentsVersionedSaverService, ParkingEntranceVersionedSaverService parkingEntranceVersionedSaverService,
                                   VersionCreator versionCreator,
-                                  MergingUtils mergingUtils, AccessibilityAssessmentRepository accessibilityAssessmentRepository, ParkingBaysVersionedSaverService parkingBaysVersionedSaverService, ParkingRepository parkingRepository) {
+                                  MergingUtils mergingUtils,
+                                  ParkingBaysVersionedSaverService parkingBaysVersionedSaverService,
+                                  ParkingRepository parkingRepository,
+                                  MdmService mdmService) {
         this.parkingFromOriginalIdFinder = parkingFromOriginalIdFinder;
         this.nearbyParkingFinder = nearbyParkingFinder;
         this.referenceResolver = referenceResolver;
@@ -97,6 +101,7 @@ public class MergingParkingImporter {
         this.mergingUtils = mergingUtils;
         this.parkingBaysVersionedSaverService = parkingBaysVersionedSaverService;
         this.parkingRepository = parkingRepository;
+        this.mdmService = mdmService;
     }
 
     /**
@@ -116,8 +121,12 @@ public class MergingParkingImporter {
             throw new RuntimeException("Transaction with required "
                     + "TransactionSynchronizationManager.isActualTransactionActive(): " + TransactionSynchronizationManager.isActualTransactionActive());
         }
-
-        return netexMapper.mapToNetexModel(importParkingWithoutNetexMapping(parking));
+        Parking importedParking = importParkingWithoutNetexMapping(parking);
+        Parking copiedParking = versionCreator.createCopy(importedParking, Parking.class);
+        if (copiedParking != null) {
+            mdmService.fillOriginalId(copiedParking);
+        }
+        return netexMapper.mapToNetexModel(copiedParking);
     }
 
     public Parking importParkingWithoutNetexMapping(Parking newParking) {
@@ -271,8 +280,8 @@ public class MergingParkingImporter {
         }
 
         boolean equipmentChanged = false;
-        List<InstalledEquipment_VersionStructure> copyEquipments = new ArrayList<>();
         if (incomingParking.getPlaceEquipments() != null &&
+                copyParking.getPlaceEquipments() != null &&
                 (!new HashSet<>(copyParking.getPlaceEquipments().getInstalledEquipment()).containsAll(incomingParking.getPlaceEquipments().getInstalledEquipment()) ||
                 !new HashSet<>(incomingParking.getPlaceEquipments().getInstalledEquipment()).containsAll(copyParking.getPlaceEquipments().getInstalledEquipment()))) {
 
@@ -301,6 +310,35 @@ public class MergingParkingImporter {
         logger.debug("No changes. Returning existing parking {}", existingParking);
         return existingParking;
 
+    }
+
+    private void checkInstalledEquipmentOwner(InstalledEquipment_VersionStructure cycleStorageEquipment, Set<String> incommingParkingImportedIds) {
+
+        if (CollectionUtils.isEmpty(incommingParkingImportedIds)){
+            return;
+        }
+
+        Optional<String> incomingParkingIdOpt = incommingParkingImportedIds.stream()
+                .filter(id -> id.split(":").length > 2)
+                .findFirst();
+
+        if (incomingParkingIdOpt.isEmpty()){
+            return;
+        }
+        String incomingParkingId = incomingParkingIdOpt.get();
+
+
+        Set<String> existingParkingsRelatedToPlaceEquipment = parkingRepository.findNetexIdsByPlaceEquipmentId(cycleStorageEquipment.getNetexId());
+        if (CollectionUtils.isNotEmpty(existingParkingsRelatedToPlaceEquipment)){
+            for (String existingParking : existingParkingsRelatedToPlaceEquipment) {
+                if (!existingParking.equals(incomingParkingId)){
+                    logger.error("PlaceEquipment/Parking mismatch");
+                    logger.error("PlaceEquipment:{}", cycleStorageEquipment.getNetexId());
+                    logger.error("associated to parking in DB:{}", existingParking);
+                    logger.error("associated to parking in File:{}", incomingParkingId);
+                }
+            }
+        }
     }
 
     private boolean updatePostalAddress(Parking copyParking, Parking incomingParking) {
@@ -342,35 +380,6 @@ public class MergingParkingImporter {
         nearbyParkingFinder.update(parking);
         logger.info("Saved parking {}", parking);
         return parking;
-    }
-
-    private void checkInstalledEquipmentOwner(InstalledEquipment_VersionStructure cycleStorageEquipment, Set<String> incommingParkingImportedIds) {
-
-        if (CollectionUtils.isEmpty(incommingParkingImportedIds)){
-            return;
-        }
-
-        Optional<String> incomingParkingIdOpt = incommingParkingImportedIds.stream()
-                .filter(id -> id.split(":").length > 2)
-                .findFirst();
-
-        if (incomingParkingIdOpt.isEmpty()){
-            return;
-        }
-        String incomingParkingId = incomingParkingIdOpt.get();
-
-
-        Set<String> existingParkingsRelatedToPlaceEquipment = parkingRepository.findNetexIdsByPlaceEquipmentId(cycleStorageEquipment.getNetexId());
-        if (CollectionUtils.isNotEmpty(existingParkingsRelatedToPlaceEquipment)){
-            for (String existingParking : existingParkingsRelatedToPlaceEquipment) {
-                if (!existingParking.equals(incomingParkingId)){
-                    logger.error("PlaceEquipment/Parking mismatch");
-                    logger.error("PlaceEquipment:{}", cycleStorageEquipment.getNetexId());
-                    logger.error("associated to parking in DB: {}",existingParking);
-                    logger.error("associated to parking in File:{}",incomingParkingId);
-                }
-            }
-        }
     }
 
 

@@ -34,6 +34,8 @@ package org.rutebanken.tiamat.service.parking;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.EntityChangedListener;
+import org.rutebanken.tiamat.changelog.LoggingService;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.DataManagedObjectStructure;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -44,7 +46,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -57,25 +58,25 @@ public class ParkingDeleter {
     private static final Logger logger = LoggerFactory.getLogger(ParkingDeleter.class);
 
     private final EntityChangedListener entityChangedListener;
-
     private final ReflectionAuthorizationService authorizationService;
-
     private final UsernameFetcher usernameFetcher;
-
-    private ParkingRepository parkingRepository;
-
-    private ReferenceResolver referenceResolver;
+    private final ParkingRepository parkingRepository;
+    private final ReferenceResolver referenceResolver;
+    private final MdmService mdmService;
+    private final LoggingService loggingService;
 
     @Autowired
     public ParkingDeleter(ParkingRepository parkingRepository,
                           EntityChangedListener entityChangedListener,
                           ReflectionAuthorizationService authorizationService,
-                          UsernameFetcher usernameFetcher, ReferenceResolver referenceResolver) {
+                          UsernameFetcher usernameFetcher, ReferenceResolver referenceResolver, MdmService mdmService, LoggingService loggingService) {
         this.parkingRepository = parkingRepository;
         this.entityChangedListener = entityChangedListener;
         this.authorizationService = authorizationService;
         this.usernameFetcher = usernameFetcher;
         this.referenceResolver = referenceResolver;
+        this.mdmService = mdmService;
+        this.loggingService = loggingService;
     }
 
     public boolean deleteParking(String parkingId) {
@@ -85,20 +86,25 @@ public class ParkingDeleter {
 
         List<Parking> parkings = parkingRepository.findByNetexId(parkingId);
 
-        if(parkings.isEmpty()) {
+        if (parkings.isEmpty()) {
             throw new IllegalArgumentException("Cannot find parking to delete from ID: " + parkingId);
         }
 
-        for(Parking parking : parkings) {
-            if(parking.getParentSiteRef() != null) {
+        for (Parking parking : parkings) {
+            if (parking.getParentSiteRef() != null) {
                 DataManagedObjectStructure resolved = referenceResolver.resolve(parking.getParentSiteRef());
-                if(resolved instanceof StopPlace) {
-                    authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(resolved));
+                if (resolved instanceof StopPlace) {
+                    authorizationService.assertAuthorized(ROLE_EDIT_STOPS, List.of(resolved));
                 }
             }
         }
 
+        for (Parking parking : parkings) {
+            loggingService.logParkingDeletion(usernameForAuthenticatedUser, parking);
+        }
+
         parkingRepository.deleteAll(parkings);
+        mdmService.deleteParkingsBySuperId(parkingId);
         notifyDeleted(parkings);
 
         logger.warn("All versions ({}) of parking {} deleted by user {}", parkings.size(), parkingId, usernameForAuthenticatedUser);

@@ -15,10 +15,10 @@
 
 package org.rutebanken.tiamat.importer.merging;
 
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,29 +32,29 @@ import static java.util.stream.Collectors.toList;
  */
 @Component
 @Transactional
-public class TransactionalMergingPointOfInterestssImporter {
+public class TransactionalMergingPointOfInterestsImporter {
 
-    private static final Logger logger = LoggerFactory.getLogger(TransactionalMergingPointOfInterestssImporter.class);
+    private static final Logger logger = LoggerFactory.getLogger(TransactionalMergingPointOfInterestsImporter.class);
 
     private final MergingPointOfInterestImporter mergingPointOfInterestImporter;
 
-    @Autowired
-    public TransactionalMergingPointOfInterestssImporter(MergingPointOfInterestImporter mergingPointOfInterestImporter) {
+    private final MdmService mdmService;
+
+    public TransactionalMergingPointOfInterestsImporter(MergingPointOfInterestImporter mergingPointOfInterestImporter,
+                                                        MdmService mdmService) {
         this.mergingPointOfInterestImporter = mergingPointOfInterestImporter;
+        this.mdmService = mdmService;
     }
 
 
     public Collection<org.rutebanken.netex.model.PointOfInterest> importPointOfInterests(List<PointOfInterest> pointOfInterests, AtomicInteger created) {
+        mdmService.createOrUpdateExistingIdentifiers(pointOfInterests);
         List<org.rutebanken.netex.model.PointOfInterest> createdPointOfInterests = pointOfInterests
                 .stream()
                 .filter(Objects::nonNull)
                 .map(pointOfInterest -> {
                     org.rutebanken.netex.model.PointOfInterest importedPointOfInterest;
-                    try {
-                        importedPointOfInterest = mergingPointOfInterestImporter.importPointOfInterest(pointOfInterest);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Could not import stop place " + pointOfInterest, e);
-                    }
+                    importedPointOfInterest = mergingPointOfInterestImporter.importPointOfInterest(pointOfInterest);
                     created.incrementAndGet();
                     return importedPointOfInterest;
                 })

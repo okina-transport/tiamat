@@ -1,12 +1,23 @@
 package org.rutebanken.tiamat.general;
 
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.rutebanken.tiamat.importer.ImporterUtils;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
+import org.rutebanken.tiamat.model.AccessibilityAssessment;
+import org.rutebanken.tiamat.model.AccessibilityLimitation;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
+import org.rutebanken.tiamat.model.PointOfInterest;
+import org.rutebanken.tiamat.model.PointOfInterestClassification;
+import org.rutebanken.tiamat.model.PointOfInterestFacilitySet;
+import org.rutebanken.tiamat.model.TicketingFacilityEnumeration;
+import org.rutebanken.tiamat.model.TicketingServiceFacilityEnumeration;
 import org.rutebanken.tiamat.model.csv.PointOfInterestCsvHeader;
 import org.rutebanken.tiamat.model.job.AnalyzeImportError;
 import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
@@ -21,13 +32,20 @@ import org.rutebanken.tiamat.versioning.save.PointOfInterestVersionedSaverServic
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -37,19 +55,16 @@ import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_
 public class PointOfInterestCSVHelper {
 
     public static final Logger logger = LoggerFactory.getLogger(PointOfInterestCSVHelper.class);
-    public final static String SHOP_CLASSIFICATION_NAME = "shop";
-    public final static String AMENITY_CLASSIFICATION_NAME = "amenity";
-    public final static String BUILDING_CLASSIFICATION_NAME = "building";
-    public final static String HISTORIC_CLASSIFICATION_NAME = "historic";
-    public final static String LANDUSE_CLASSIFICATION_NAME = "landuse";
-    public final static String LEISURE_CLASSIFICATION_NAME = "leisure";
-    public final static String TOURISM_CLASSIFICATION_NAME = "tourism";
-    public final static String OFFICE_CLASSIFICATION_NAME = "office";
-
-    private final static Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
-
+    public static final String SHOP_CLASSIFICATION_NAME = "shop";
+    public static final String AMENITY_CLASSIFICATION_NAME = "amenity";
+    public static final String BUILDING_CLASSIFICATION_NAME = "building";
+    public static final String HISTORIC_CLASSIFICATION_NAME = "historic";
+    public static final String LANDUSE_CLASSIFICATION_NAME = "landuse";
+    public static final String LEISURE_CLASSIFICATION_NAME = "leisure";
+    public static final String TOURISM_CLASSIFICATION_NAME = "tourism";
+    public static final String OFFICE_CLASSIFICATION_NAME = "office";
+    private static final Pattern patternXlongYlat = Pattern.compile("^-?([0-9]*)\\.{1}\\d{1,20}");
     private static final List<String> EXPECTED_HEADERS = PointOfInterestCsvHeader.headerNames();
-
     // up to 2 additional free-form "key=value" tag columns are allowed after the mandatory headers
     private static final int MAX_COLUMNS = EXPECTED_HEADERS.size() + 2;
 
@@ -74,12 +89,17 @@ public class PointOfInterestCSVHelper {
     @Autowired
     private VersionCreator versionCreator;
 
+    @Value("${netex.validPrefix:MOBIITI}")
+    String validNetexPrefix;
+
+    @Autowired
+    private MdmService mdmService;
 
     //Cache to store parent classifications
-    private Map<String, PointOfInterestClassification> parentClassificationCache = new HashMap<>();
+    private final Map<String, PointOfInterestClassification> parentClassificationCache = new HashMap<>();
 
     //Cache to store child classifications
-    private Map<String, Map<String, PointOfInterestClassification>> childClassificationCache = new HashMap<>();
+    private final Map<String, Map<String, PointOfInterestClassification>> childClassificationCache = new HashMap<>();
 
 
     /**
@@ -136,7 +156,7 @@ public class PointOfInterestCSVHelper {
         List<DtoPointOfInterest> filteredPOI = dtoPointOfInterest.stream()
                 .filter(poi -> (
                         StringUtils.isNotEmpty(poi.getAmenity()) ||  StringUtils.isNotEmpty(poi.getBuilding()) || StringUtils.isNotEmpty(poi.getHistoric())
-                        ||  StringUtils.isNotEmpty(poi.getLanduse()) ||  StringUtils.isNotEmpty(poi.getLeisure())
+                        || StringUtils.isNotEmpty(poi.getLanduse()) || StringUtils.isNotEmpty(poi.getLeisure())
                         ||  StringUtils.isNotEmpty(poi.getTourism()) ||StringUtils.isNotEmpty(poi.getOffice())
                     ) || StringUtils.isNotEmpty(poi.getShop())
                 )
@@ -146,9 +166,25 @@ public class PointOfInterestCSVHelper {
             String message = "Warning about job " + job.getId() + ". At least one of the following fields: amenity, building, historic, landuse, leisure, tourism or office is mandatory";
             logger.warn("{}.\nImport job was {}", message, job);
             job.setMessage(message);
+    }
+        return filteredPOI;
+    }
+
+    public void checkShops(List<DtoPointOfInterest> dtoPointOfInterest) {
+        List<DtoPointOfInterest> nonShopPOI = dtoPointOfInterest.stream()
+                .filter(poi -> StringUtils.isEmpty(poi.getShop()))
+                .collect(Collectors.toList());
+
+        String nonShopString = nonShopPOI.stream()
+                .map(DtoPointOfInterest::getId)
+                .collect(Collectors.joining(","));
+
+        if (!nonShopPOI.isEmpty()) {
+            String errorMsg = "Non shops POIs have been found in shop import:" + nonShopString;
+            logger.error(errorMsg);
+            throw new IllegalArgumentException(errorMsg);
         }
 
-        return filteredPOI;
     }
 
     /**
@@ -187,7 +223,7 @@ public class PointOfInterestCSVHelper {
                 .map(poi -> poi.getId() + poi.getName())
                 .collect(Collectors.toList());
 
-        Set listWithoutDuplicatedValues = new HashSet(compositeKey);
+        Set<String> listWithoutDuplicatedValues = new HashSet<>(compositeKey);
 
         if (compositeKey.size() > listWithoutDuplicatedValues.size())
             throw new IllegalArgumentException("There are duplicated POI in your CSV File (With the same ID & Name)");
@@ -228,8 +264,8 @@ public class PointOfInterestCSVHelper {
             if (poiInBdd != null && poiInBdd.getNetexId() != null) {
                 PointOfInterest updatedPoi = versionCreator.createCopy(poiInBdd, PointOfInterest.class);
                 if (populatePOI(updatedPoi, pointOfInterest)) {
-                    updatedPoi.getAccessibilityAssessment().getLimitations().forEach(limitation -> limitation.setVersion(limitation.getVersion()+1));
-                    updatedPoi.getAccessibilityAssessment().setVersion(updatedPoi.getAccessibilityAssessment().getVersion()+1);
+                    updatedPoi.getAccessibilityAssessment().getLimitations().forEach(limitation -> limitation.setVersion(limitation.getVersion() + 1));
+                    updatedPoi.getAccessibilityAssessment().setVersion(updatedPoi.getAccessibilityAssessment().getVersion() + 1);
                     poiVersionedSaverService.saveNewVersion(updatedPoi);
                 }
             } else {
@@ -240,20 +276,16 @@ public class PointOfInterestCSVHelper {
     }
 
     private PointOfInterest retrievePOIinBDD(PointOfInterest pointOfInterest) {
-
-        Set<String> originalidsToSearch = new HashSet<>();
-        if (pointOfInterest.getKeyValues().get(ORIGINAL_ID_KEY) != null) {
-            pointOfInterest.getKeyValues().get(ORIGINAL_ID_KEY).getItems().forEach(originalidsToSearch::add);
+        OkinaIdentifier existingId = mdmService.getExistingPoiMdmIds(pointOfInterest);
+        if (existingId == null) {
+            return null;
         }
-
-        String foundPOINetexId = pointOfInterestRepo.findFirstByKeyValues(ORIGINAL_ID_KEY, originalidsToSearch);
-        if (foundPOINetexId != null) {
-            PointOfInterest foundPOI = pointOfInterestRepo.findFirstByNetexIdOrderByVersionDescAndInitialize(foundPOINetexId);
-            if (foundPOI.getCentroid().equalsExact(pointOfInterest.getCentroid(), 0.0001)) {
-                return foundPOI;
-            }
+        PointOfInterest existingPoi = pointOfInterestRepo.findFirstByNetexIdOrderByVersionDescAndInitialize(validNetexPrefix + ":PointOfInterest:" + existingId.getSuperId());
+        if (existingPoi != null && existingPoi.getCentroid().equalsExact(pointOfInterest.getCentroid(), 0.0001)) {
+            return existingPoi;
         }
         return null;
+
     }
 
     private boolean populatePOI(PointOfInterest existingPOI, PointOfInterest newPOI) {
@@ -293,7 +325,7 @@ public class PointOfInterestCSVHelper {
             updated = true;
         }
 
-        if(newPOI.getOperator() != null){
+        if (newPOI.getOperator() != null) {
             existingPOI.setOperator(newPOI.getOperator());
             updated = true;
         }
@@ -315,24 +347,23 @@ public class PointOfInterestCSVHelper {
         newPointOfInterest.setName(new EmbeddableMultilingualString(dtoPoiCSV.getName(), "FR"));
         newPointOfInterest.setCentroid(ImporterUtils.createPoint(Double.parseDouble(dtoPoiCSV.getLongitude()), Double.parseDouble(dtoPoiCSV.getLatitude())));
         try {
-            logger.info("Geocode data recovering for POI : " + dtoPoiCSV.getId());
+            logger.info("Geocode data recovering for POI : {}", dtoPoiCSV.getId());
             DtoGeocode geocodeData = ImporterUtils.getGeocodeDataByReverseGeocoding(Double.parseDouble(dtoPoiCSV.getLongitude()), Double.parseDouble(dtoPoiCSV.getLatitude()));
             newPointOfInterest.setInseeCode(geocodeData.getCityCode());
             newPointOfInterest.setPostalCode(StringUtils.isEmpty(dtoPoiCSV.getPostCode()) ? geocodeData.getPostCode() : dtoPoiCSV.getPostCode());
             newPointOfInterest.setCity(dtoPoiCSV.getCity().isEmpty() ? geocodeData.getCity() : dtoPoiCSV.getCity());
-            if(StringUtils.isNotEmpty(dtoPoiCSV.getStreet())){
+            if (StringUtils.isNotEmpty(dtoPoiCSV.getStreet())) {
                 StringBuilder address = new StringBuilder();
-                if(StringUtils.isNotEmpty(dtoPoiCSV.getHouseNumber())){
+                if (StringUtils.isNotEmpty(dtoPoiCSV.getHouseNumber())) {
                     address.append(dtoPoiCSV.getHouseNumber()).append(" ");
                 }
                 address.append(dtoPoiCSV.getStreet());
                 newPointOfInterest.setAddress(address.toString());
-            }
-            else{
+            } else {
                 newPointOfInterest.setAddress(geocodeData.getAddress());
             }
         } catch (Exception e) {
-            logger.error("Unable to get zip code for poi:" + dtoPoiCSV.getId());
+            logger.error("Unable to get zip code for poi: {}", dtoPoiCSV.getId());
         }
 
         PointOfInterestClassification classification = getChildClassification(dtoPoiCSV);
@@ -344,7 +375,7 @@ public class PointOfInterestCSVHelper {
             newPointOfInterest.setPointOfInterestFacilitySet(facilitySet);
         }
 
-        if (dtoPoiCSV.getTags().size() > 0) {
+        if (MapUtils.isNotEmpty(dtoPoiCSV.getTags())) {
             for (Map.Entry<String, String> tagEntry : dtoPoiCSV.getTags().entrySet()) {
                 newPointOfInterest.getOrCreateValues(tagEntry.getKey()).add(tagEntry.getValue());
             }
@@ -370,7 +401,7 @@ public class PointOfInterestCSVHelper {
         accessibilityAssessment.getLimitations().add(accessibilityLimitation);
         newPointOfInterest.setAccessibilityAssessment(accessibilityAssessment);
 
-        if(StringUtils.isNotEmpty(dtoPoiCSV.getOperator())){
+        if (StringUtils.isNotEmpty(dtoPoiCSV.getOperator())) {
             newPointOfInterest.setOperator(dtoPoiCSV.getOperator());
         }
 

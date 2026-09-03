@@ -22,6 +22,7 @@ import org.rutebanken.tiamat.diff.TiamatObjectDiffer;
 import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
 import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByQuayOriginalIdFinder;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
@@ -105,6 +106,9 @@ public class StopPlaceVersionedSaverService {
 
     @Autowired
     private MetricsService metricsService;
+
+    @Autowired
+    private MdmService mdmService;
 
     public StopPlace saveNewVersion(StopPlace existingVersion, StopPlace newVersion, Instant defaultValidFrom) {
         return saveNewVersion(existingVersion, newVersion, defaultValidFrom, new HashSet<>(), true);
@@ -212,15 +216,17 @@ public class StopPlaceVersionedSaverService {
                 tariffZonesLookupService.populateTariffZone(child);
             });
 
-            stopPlaceRepository.saveAll(newVersion.getChildren());
+            for (StopPlace child : newVersion.getChildren()) {
+                stopPlaceRepository.removeImportedIdAndSave(child);
+            }
             if (logger.isDebugEnabled()) {
                 logger.debug("Saved children: {}", newVersion.getChildren().stream()
                                                            .map(sp -> "{id:" + sp.getId() + " netexId:" + sp.getNetexId() + " version:" + sp.getVersion() + "}")
                                                            .collect(Collectors.toList()));
             }
         }
-
-        newVersion = stopPlaceRepository.save(newVersion);
+        mdmService.generateIdentifier(newVersion);
+        newVersion = stopPlaceRepository.removeImportedIdAndSave(newVersion);
         logger.debug("Saved stop place with id: {} and childs {}", newVersion.getId(), newVersion.getChildren().stream().map(ch -> ch.getId()).collect(toList()));
 
         updateParentSiteRefsForChildren(newVersion);

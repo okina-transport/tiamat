@@ -16,6 +16,9 @@
 package org.rutebanken.tiamat.service.stopplace;
 
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
+import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -32,7 +35,6 @@ import org.rutebanken.tiamat.versioning.util.CopiedEntity;
 import org.rutebanken.tiamat.versioning.util.StopPlaceCopyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -47,45 +49,47 @@ import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.MERGED_ID
 @Service
 public class StopPlaceMerger {
 
-    private static final Logger logger = LoggerFactory.getLogger(StopPlaceMerger.class);
-
     /**
      * Properties to ignore on merge.
      */
     public static final String[] IGNORE_PROPERTIES_ON_MERGE = {"keyValues", "placeEquipments", "accessibilityAssessment", "tariffZones", "alternativeNames", "transportMode", "airSubmode", "busSubmode", "funicularSubmode", "metroSubmode", "tramSubmode", "telecabinSubmode", "railSubmode", "waterSubmode"};
+    private static final Logger logger = LoggerFactory.getLogger(StopPlaceMerger.class);
+    private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceRepository stopPlaceRepository;
+    private final ReflectionAuthorizationService authorizationService;
+    private final KeyValuesMerger keyValuesMerger;
+    private final PlaceEquipmentMerger placeEquipmentMerger;
+    private final AlternativeNamesMerger alternativeNamesMerger;
+    private final StopPlaceCopyHelper stopPlaceCopyHelper;
+    private final MutateLock mutateLock;
+    private final VersionCreator versionCreator;
+    private final MdmService mdmService;
+    private final UsernameFetcher usernameFetcher;
+    private final LoggingService loggingService;
 
-    @Autowired
-    private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
-
-    @Autowired
-    private StopPlaceRepository stopPlaceRepository;
-
-    @Autowired
-    private ReflectionAuthorizationService authorizationService;
-
-    @Autowired
-    private KeyValuesMerger keyValuesMerger;
-
-    @Autowired
-    private PlaceEquipmentMerger placeEquipmentMerger;
-
-    @Autowired
-    private AlternativeNamesMerger alternativeNamesMerger;
-
-    @Autowired
-    private StopPlaceCopyHelper stopPlaceCopyHelper;
-
-    @Autowired
-    private MutateLock mutateLock;
-
-    @Autowired
-    private VersionCreator versionCreator;
+    public StopPlaceMerger(StopPlaceVersionedSaverService stopPlaceVersionedSaverService, StopPlaceRepository stopPlaceRepository, ReflectionAuthorizationService authorizationService, KeyValuesMerger keyValuesMerger, PlaceEquipmentMerger placeEquipmentMerger, AlternativeNamesMerger alternativeNamesMerger, StopPlaceCopyHelper stopPlaceCopyHelper, MutateLock mutateLock, VersionCreator versionCreator, MdmService mdmService, UsernameFetcher usernameFetcher, LoggingService loggingService) {
+        this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.authorizationService = authorizationService;
+        this.keyValuesMerger = keyValuesMerger;
+        this.placeEquipmentMerger = placeEquipmentMerger;
+        this.alternativeNamesMerger = alternativeNamesMerger;
+        this.stopPlaceCopyHelper = stopPlaceCopyHelper;
+        this.mutateLock = mutateLock;
+        this.versionCreator = versionCreator;
+        this.mdmService = mdmService;
+        this.usernameFetcher = usernameFetcher;
+        this.loggingService = loggingService;
+    }
 
 
     public StopPlace mergeStopPlaces(String fromStopPlaceId, String toStopPlaceId, String fromVersionComment, String toVersionComment, boolean isDryRun) {
 
         return mutateLock.executeInLock(() -> {
             logger.info("About to merge stop place {} into stop place {} with from comment {} and to comment {} ", fromStopPlaceId, toStopPlaceId, fromVersionComment, toVersionComment);
+
+            String user = usernameFetcher.getUserNameForAuthenticatedUser();
+            loggingService.logStopPlaceMerge(user, fromStopPlaceId, toStopPlaceId);
 
             StopPlace fromStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(fromStopPlaceId);
             StopPlace toStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(toStopPlaceId);
@@ -143,7 +147,7 @@ public class StopPlaceMerger {
         if (fromStopPlaceToTerminate.getKeyValues() != null) {
             keyValuesMerger.mergeKeyValues(fromStopPlaceToTerminate.getKeyValues(), mergedStopPlace.getKeyValues());
         }
-
+        mdmService.mergeStopIdentifier(fromStopPlaceToTerminate.getNetexId(), mergedStopPlace.getNetexId());
         mergedStopPlace.getOrCreateValues(MERGED_ID_KEY).add(fromStopPlaceToTerminate.getNetexId());
 
         if (fromStopPlaceToTerminate.getPlaceEquipments() != null) {

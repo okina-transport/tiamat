@@ -13,12 +13,15 @@ import org.hibernate.query.NativeQuery;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.geo.GeometryTransformer;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.model.PointOfInterestClassification;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
 import org.rutebanken.tiamat.rest.dto.DTOClusterMarker;
+import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +35,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,6 +62,12 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
 
     @Value("${cluster.marker.maximum.distance:10000}")
     protected long maximumDistance;
+
+    @Autowired
+    private VersionCreator versionCreator;
+
+    @Autowired
+    private MdmService mdmService;
 
     private static final Logger logger = LoggerFactory.getLogger(ParkingRepositoryImpl.class);
 
@@ -347,7 +357,41 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
         query.setFirstResult(Math.toIntExact(pageable.getOffset()));
         query.setMaxResults(pageable.getPageSize());
         List<PointOfInterest> pointsOfInterest = query.getResultList();
+        pointsOfInterest = createCopyAndFillImportedIdsFromMDM(pointsOfInterest);
+
         return new PageImpl<>(pointsOfInterest, pageable, pointsOfInterest.size());
+    }
+
+    public List<PointOfInterest> createCopyAndFillImportedIdsFromMDM(List<PointOfInterest> pointsOfInterest) {
+        List<PointOfInterest> pointsOfInterestCopy = new ArrayList<>();
+        Set<Long> superIds = new HashSet<>();
+
+        if (pointsOfInterest.isEmpty()){
+            return new ArrayList<>();
+        }
+
+
+        for (PointOfInterest pointOfInterest : pointsOfInterest) {
+            pointsOfInterestCopy.add(versionCreator.createCopy(pointOfInterest, PointOfInterest.class));
+            superIds.add(Long.valueOf(pointOfInterest.getNetexId().split(":")[2]));
+        }
+
+
+
+        List<OkinaIdentifier> mdmIds = mdmService.getAllPoisFromSuperId(superIds);
+
+        for (PointOfInterest pointOfInterest : pointsOfInterestCopy) {
+
+            Long superId = Long.valueOf(pointOfInterest.getNetexId().split(":")[2]);
+            String originalId = mdmIds.stream()
+                                    .filter(mdmId -> mdmId.getSuperId().equals(superId))
+                                    .map(OkinaIdentifier::getOriginalId)
+                                    .findFirst().orElse(null);
+            pointOfInterest.getOriginalIds().add(originalId);
+        }
+
+
+        return pointsOfInterestCopy;
     }
 
     @Override
@@ -386,7 +430,8 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
                 }
             }
         }
-        return new PageImpl<>(pointsOfInterests, pageable, pointsOfInterests.size());
+        List<PointOfInterest> copiedItems = createCopyAndFillImportedIdsFromMDM(pointsOfInterests);
+        return new PageImpl<>(copiedItems, pageable, copiedItems.size());
     }
 
     private void initializeClassification(PointOfInterestClassification classification){

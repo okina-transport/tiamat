@@ -31,17 +31,11 @@ import org.rutebanken.tiamat.netex.NetexUtils;
 import java.math.BigInteger;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import static org.rutebanken.tiamat.netex.id.NetexIdHelper.*;
-import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 
 public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.model.Parking> {
 
     private static final ObjectFactory netexObjectFactory = new ObjectFactory();
-
-    private static final Pattern patternStreetNumber = Pattern.compile("^(\\d+)\\s*(.*)$");
 
     private final String superId;
 
@@ -61,55 +55,6 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
         }
     }
 
-    private void mapAddress(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking) {
-        if (tiamatParking.getInsee() != null || tiamatParking.getAddress() != null) {
-            PostalAddress netexPostalAddress = new PostalAddress();
-            netexPostalAddress.setId(superId + ":PostalAddress:" + UUID.randomUUID());
-            netexPostalAddress.setVersion("any");
-            if (tiamatParking.getAddress() != null) {
-                // Expression régulière pour capturer les premiers chiffres au début de l'adresse
-                Matcher matcher = patternStreetNumber.matcher(tiamatParking.getAddress());
-
-                if (matcher.matches()) {
-                    netexPostalAddress.setHouseNumber(matcher.group(1));
-                    netexPostalAddress.setStreet(new MultilingualString().withValue(matcher.group(2)));
-                } else {
-                    netexPostalAddress.setStreet(new MultilingualString().withValue(tiamatParking.getAddress()));
-                }
-            }
-            if (tiamatParking.getInsee() != null) {
-                netexPostalAddress.setPostalRegion(tiamatParking.getInsee());
-            }
-
-            if (tiamatParking.getPostalAddress() != null){
-                org.rutebanken.tiamat.model.PostalAddress tiamatPostalAddress = tiamatParking.getPostalAddress();
-                if (StringUtils.isNotBlank(tiamatPostalAddress.getTown())){
-                    MultilingualString townMultiling = new MultilingualString();
-                    townMultiling.setValue(tiamatPostalAddress.getTown());
-                    netexPostalAddress.setTown(townMultiling);
-                }
-
-                if (StringUtils.isNotEmpty(tiamatPostalAddress.getStreet())){
-                    MultilingualString streetMultiLing = new MultilingualString();
-                    streetMultiLing.setValue(tiamatPostalAddress.getStreet());
-                    netexPostalAddress.setStreet(streetMultiLing);
-                }
-
-                if (StringUtils.isNotEmpty(tiamatPostalAddress.getPostCode())) {
-                    netexPostalAddress.setPostCode(tiamatPostalAddress.getPostCode());
-                }
-            }
-            netexParking.setPostalAddress(netexPostalAddress);
-        }
-    }
-
-    private static String getParkingSuperId(org.rutebanken.tiamat.model.Parking parking) {
-        if (StringUtils.isNotBlank(parking.getNetexId()) && parking.getNetexId().split(":").length == 3){
-            return parking.getNetexId().split(":")[0];
-        }
-        return "MOBIITI";
-    }
-
     private static void mapPaymentMethodBtoA(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking) {
         netexParking.getPaymentMethods().clear();
         if (CollectionUtils.isNotEmpty(tiamatParking.getParkingPaymentMethods())) {
@@ -125,6 +70,119 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
             for (var enumeration : netexParking.getPaymentMethods()) {
                 tiamatParking.getParkingPaymentMethods().add(org.rutebanken.tiamat.model.PaymentMethodEnumeration.fromValue(enumeration.value()));
             }
+        }
+    }
+
+    private static void mapVehicleEntrancesMethodAtoB(Parking netexParking, org.rutebanken.tiamat.model.Parking tiamatParking) {
+        if (netexParking.getVehicleEntrances() != null &&
+                CollectionUtils.isNotEmpty(netexParking.getVehicleEntrances().getParkingEntranceForVehiclesRefOrParkingEntranceForVehicles())) {
+
+            List<ParkingEntrance> tiamatEntrances = new ArrayList<>();
+
+            for (Object entranceObj : netexParking.getVehicleEntrances().getParkingEntranceForVehiclesRefOrParkingEntranceForVehicles()) {
+                // Le contenu peut être un JAXBElement ou l'objet directement selon le unmarshaller
+                ParkingEntranceForVehicles netexEntrance = null;
+                if (entranceObj instanceof JAXBElement<?> jaxb) {
+                    netexEntrance = (ParkingEntranceForVehicles) jaxb.getValue();
+                } else if (entranceObj instanceof ParkingEntranceForVehicles p) {
+                    netexEntrance = p;
+                }
+
+                if (netexEntrance != null) {
+                    ParkingEntrance tiamatEnt = new ParkingEntrance();
+                    tiamatEnt.setNetexId(netexEntrance.getId());
+
+                    if (netexEntrance.getName() != null) {
+                        tiamatEnt.setName(new EmbeddableMultilingualString(netexEntrance.getName().getValue()));
+                    }
+
+                    if (netexEntrance.getCentroid() != null && netexEntrance.getCentroid().getLocation() != null) {
+                        LocationStructure structure = netexEntrance.getCentroid().getLocation();
+                        tiamatEnt.setLongitude(structure.getLongitude());
+                        tiamatEnt.setLatitude(structure.getLatitude());
+                    }
+                    tiamatEntrances.add(tiamatEnt);
+                }
+            }
+            tiamatParking.setVehicleEntrances(tiamatEntrances);
+        }
+    }
+
+    private static void mapCentroidFromFirstVehicleEntranceMethodAtoB(Parking netexParking,
+                                                                      org.rutebanken.tiamat.model.Parking tiamatParking) {
+        if (netexParking == null || netexParking.getVehicleEntrances() == null) {
+            return;
+        }
+
+        List<Object> entrances = netexParking.getVehicleEntrances()
+                .getParkingEntranceForVehiclesRefOrParkingEntranceForVehicles();
+        if (entrances == null || entrances.isEmpty()) {
+            return;
+        }
+
+        Object firstObj = entrances.getFirst();
+        ParkingEntranceForVehicles firstEntrance = null;
+
+        if (firstObj instanceof JAXBElement<?>) {
+            firstEntrance = (ParkingEntranceForVehicles) ((JAXBElement<?>) firstObj).getValue();
+        } else if (firstObj instanceof ParkingEntranceForVehicles parkingEntranceForVehicles) {
+            firstEntrance = parkingEntranceForVehicles;
+        }
+
+        if (firstEntrance != null
+                && firstEntrance.getCentroid() != null
+                && firstEntrance.getCentroid().getLocation() != null) {
+
+            LocationStructure loc = firstEntrance.getCentroid().getLocation();
+            double lon = 0.0;
+            double lat = 0.0;
+
+            if (loc.getLongitude() != null) {
+                lon = Double.parseDouble(String.valueOf(loc.getLongitude()));
+            }
+            if (loc.getLatitude() != null) {
+                lat = Double.parseDouble(String.valueOf(loc.getLatitude()));
+            }
+
+
+            tiamatParking.setCentroid(ImporterUtils.createPoint(lon, lat));
+        }
+    }
+
+    private void mapAddress(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking) {
+        if (tiamatParking.getInsee() != null || tiamatParking.getAddress() != null) {
+            PostalAddress netexPostalAddress = new PostalAddress();
+            netexPostalAddress.setId(superId + ":PostalAddress:" + UUID.randomUUID());
+            netexPostalAddress.setVersion("any");
+            if (StringUtils.isNotBlank(tiamatParking.getAddress())) {
+                MultilingualString addressLine1 = new MultilingualString();
+                addressLine1.setValue(tiamatParking.getAddress());
+                addressLine1.setLang("fr");
+                netexPostalAddress.setAddressLine1(addressLine1);
+            }
+            if (tiamatParking.getInsee() != null) {
+                netexPostalAddress.setPostalRegion(tiamatParking.getInsee());
+            }
+
+            if (tiamatParking.getPostalAddress() != null) {
+                org.rutebanken.tiamat.model.PostalAddress tiamatPostalAddress = tiamatParking.getPostalAddress();
+                if (StringUtils.isNotBlank(tiamatPostalAddress.getTown())) {
+                    MultilingualString townMultiling = new MultilingualString();
+                    townMultiling.setValue(tiamatPostalAddress.getTown());
+                    netexPostalAddress.setTown(townMultiling);
+                }
+
+                if (StringUtils.isNotEmpty(tiamatPostalAddress.getStreet())) {
+                    MultilingualString streetMultiLing = new MultilingualString();
+                    streetMultiLing.setValue(tiamatPostalAddress.getStreet());
+                    netexPostalAddress.setStreet(streetMultiLing);
+                }
+
+                if (StringUtils.isNotBlank(tiamatPostalAddress.getPostCode())) {
+                    netexPostalAddress.setPostCode(tiamatPostalAddress.getPostCode());
+                }
+            }
+            netexParking.setPostalAddress(netexPostalAddress);
         }
     }
 
@@ -150,7 +208,7 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
 
         if (netexParking.getPostalAddress() != null) {
             tiamatParking.setInsee(netexParking.getPostalAddress().getPostalRegion());
-            if (StringUtils.isNotEmpty(netexParking.getPostalAddress().getPostCode())) {
+            if (StringUtils.isNotBlank(netexParking.getPostalAddress().getPostCode())) {
                 tiamatParking.getPostalAddress().setPostCode(netexParking.getPostalAddress().getPostCode());
             }
         }
@@ -161,10 +219,10 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
             for (Object validityCondEltObj : netexParking.getValidityConditions().getValidityConditionRefOrValidBetweenOrValidityCondition_()) {
 
                 if (validityCondEltObj instanceof JAXBElement<?> jaxb && jaxb.getValue() instanceof AvailabilityCondition netexAvailCond) {
-                        org.rutebanken.tiamat.model.AvailabilityCondition tiamatAvailCondition = new org.rutebanken.tiamat.model.AvailabilityCondition();
-                        tiamatAvailCondition.setAvailable(netexAvailCond.isIsAvailable());
-                        mapDayTypes(tiamatAvailCondition, netexAvailCond);
-                        tiamatAvailabilityConditions.add(tiamatAvailCondition);
+                    org.rutebanken.tiamat.model.AvailabilityCondition tiamatAvailCondition = new org.rutebanken.tiamat.model.AvailabilityCondition();
+                    tiamatAvailCondition.setAvailable(netexAvailCond.isIsAvailable());
+                    mapDayTypes(tiamatAvailCondition, netexAvailCond);
+                    tiamatAvailabilityConditions.add(tiamatAvailCondition);
                 }
             }
         }
@@ -244,21 +302,19 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
         super.mapBtoA(tiamatParking, netexParking, context);
         NetexUtils.fillTypeOfKey(netexParking);
 
-        String originalId =
-                tiamatParking.getKeyValues().get(ORIGINAL_ID_KEY).getItems().stream().findFirst().orElseThrow();
+        netexParking.setId(tiamatParking.getNetexId());
 
-        if (PARKING_ID_PATTERN.matcher(originalId).matches()) {
-            netexParking.setId(originalId);
-        } else if (PARKING_PAN_ID_PATTERN.matcher(originalId).matches()) {
-            netexParking.setId(panParkingIdToNetexParkingId(originalId));
-        } else {
-            netexParking.setId(otherParkingIdToNetexParkingId(originalId, tiamatParking.getInsee()));
+        if (tiamatParking.getPlaceEquipments() != null &&
+                tiamatParking.getPlaceEquipments().getInstalledEquipment() != null &&
+                tiamatParking.getPlaceEquipments().getInstalledEquipment().isEmpty()) {
+            tiamatParking.setPlaceEquipments(null);
+            netexParking.setPlaceEquipments(null);
         }
 
         mapPaymentMethodBtoA(tiamatParking, netexParking);
         mapVehicleEntrancesMethodBtoA(tiamatParking, netexParking);
 
-        if (StringUtils.isNotEmpty(tiamatParking.getParkingTypeRef())) {
+        if (StringUtils.isNotBlank(tiamatParking.getParkingTypeRef())) {
             TypeOfParkingRefStructure typeOfParkingRefStructure = new TypeOfParkingRefStructure();
             typeOfParkingRefStructure.withRef(tiamatParking.getParkingTypeRef());
             typeOfParkingRefStructure.withVersion("any");
@@ -321,7 +377,7 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
 
     private void mapValidityConditions(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking) {
 
-        if ( CollectionUtils.isEmpty(tiamatParking.getAvailabilityConditions())) {
+        if (CollectionUtils.isEmpty(tiamatParking.getAvailabilityConditions())) {
             return;
         }
 
@@ -399,41 +455,6 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
 
     }
 
-    private static void mapVehicleEntrancesMethodAtoB(Parking netexParking, org.rutebanken.tiamat.model.Parking tiamatParking) {
-        if (netexParking.getVehicleEntrances() != null &&
-                CollectionUtils.isNotEmpty(netexParking.getVehicleEntrances().getParkingEntranceForVehiclesRefOrParkingEntranceForVehicles())) {
-
-            List<ParkingEntrance> tiamatEntrances = new ArrayList<>();
-
-            for (Object entranceObj : netexParking.getVehicleEntrances().getParkingEntranceForVehiclesRefOrParkingEntranceForVehicles()) {
-                // Le contenu peut être un JAXBElement ou l'objet directement selon le unmarshaller
-                ParkingEntranceForVehicles netexEntrance = null;
-                if (entranceObj instanceof JAXBElement<?> jaxb) {
-                    netexEntrance = (ParkingEntranceForVehicles) jaxb.getValue();
-                } else if (entranceObj instanceof ParkingEntranceForVehicles p) {
-                    netexEntrance = p;
-                }
-
-                if (netexEntrance != null) {
-                    ParkingEntrance tiamatEnt = new ParkingEntrance();
-                    tiamatEnt.setNetexId(netexEntrance.getId());
-
-                    if (netexEntrance.getName() != null) {
-                        tiamatEnt.setName(new EmbeddableMultilingualString(netexEntrance.getName().getValue()));
-                    }
-
-                    if (netexEntrance.getCentroid() != null && netexEntrance.getCentroid().getLocation() != null) {
-                        LocationStructure structure = netexEntrance.getCentroid().getLocation();
-                        tiamatEnt.setLongitude(structure.getLongitude());
-                        tiamatEnt.setLatitude(structure.getLatitude());
-                    }
-                    tiamatEntrances.add(tiamatEnt);
-                }
-            }
-            tiamatParking.setVehicleEntrances(tiamatEntrances);
-        }
-    }
-
     private void mapVehicleEntrancesMethodBtoA(org.rutebanken.tiamat.model.Parking tiamatParking, Parking netexParking) {
         if (CollectionUtils.isEmpty(tiamatParking.getVehicleEntrances())) {
             return;
@@ -468,46 +489,5 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
         }
 
         netexParking.setVehicleEntrances(entrancesRel);
-    }
-
-    private static void mapCentroidFromFirstVehicleEntranceMethodAtoB(Parking netexParking,
-                                                            org.rutebanken.tiamat.model.Parking tiamatParking) {
-        if (netexParking == null || netexParking.getVehicleEntrances() == null) {
-            return;
-        }
-
-        List<Object> entrances = netexParking.getVehicleEntrances()
-                .getParkingEntranceForVehiclesRefOrParkingEntranceForVehicles();
-        if (entrances == null || entrances.isEmpty()) {
-            return;
-        }
-
-        Object firstObj = entrances.getFirst();
-        ParkingEntranceForVehicles firstEntrance = null;
-
-        if (firstObj instanceof JAXBElement<?>) {
-            firstEntrance = (ParkingEntranceForVehicles) ((JAXBElement<?>) firstObj).getValue();
-        } else if (firstObj instanceof ParkingEntranceForVehicles) {
-            firstEntrance = (ParkingEntranceForVehicles) firstObj;
-        }
-
-        if (firstEntrance != null
-                && firstEntrance.getCentroid() != null
-                && firstEntrance.getCentroid().getLocation() != null) {
-
-            LocationStructure loc = firstEntrance.getCentroid().getLocation();
-            double lon = 0.0;
-            double lat = 0.0;
-
-            if (loc.getLongitude() != null) {
-                lon = Double.parseDouble(String.valueOf(loc.getLongitude()));
-            }
-            if (loc.getLatitude() != null) {
-                lat = Double.parseDouble(String.valueOf(loc.getLatitude()));
-            }
-
-
-            tiamatParking.setCentroid(ImporterUtils.createPoint(lon, lat));
-        }
     }
 }

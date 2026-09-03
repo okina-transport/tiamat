@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.repository;
 
 import com.google.common.collect.Sets;
 import jakarta.persistence.*;
+import org.apache.commons.collections4.CollectionUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
@@ -32,7 +33,9 @@ import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.geo.GeometryTransformer;
+import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.Quay;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
@@ -55,6 +58,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -78,6 +82,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
     @Value("${cluster.marker.maximum.distance:20000}")
     protected long maximumDistance;
+
+    @Autowired
+    private MdmService mdmService;
 
     /**
      * Part of SQL that checks that either the stop place named as *s* or the parent named *p* is valid at the point in time.
@@ -145,6 +152,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
     @Value("${stopPlace.sharing.policy}")
     protected StopPlaceSharingPolicy sharingPolicy;
+
+    @Value("${netex.validPrefix:MOBIITI}")
+    String validNetexPrefix;
 
     /**
      * Find nearby stop places that are valid 'now', specifying a bounding box.
@@ -720,7 +730,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
     public List<StopPlace> getStopPlaceInitializedForExport(Set<Long> stopPlacePrimaryIds) {
 
-        Set<String> stopPlacePrimaryIdStrings = stopPlacePrimaryIds.stream().map(lvalue -> String.valueOf(lvalue)).collect(Collectors.toSet());
+        Set<String> stopPlacePrimaryIdStrings = stopPlacePrimaryIds.stream().map(String::valueOf).collect(Collectors.toSet());
         String joinedStopPlaceDbIds = String.join(",", stopPlacePrimaryIdStrings);
         StringBuilder sql = new StringBuilder("SELECT s FROM StopPlace s WHERE s.id IN(");
         sql.append(joinedStopPlaceDbIds);
@@ -807,28 +817,54 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void initExportJobTable(Provider provider, Long exportJobId){
 
-        Map<String, Object> parameters = new HashMap<>();
+        String queryStr;
+        Set<Long> stopPlaceSuperIds = new HashSet<>();
+        boolean isProviderSet = provider != null && provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName);
+
+        if (isProviderSet) {
 
 
-        String queryStr = " INSERT INTO job_id_list \n" +
-                "           SELECT :exportJobId,s.id as stop_id FROM stop_place s where s.id in  \n" +
-                "                 ( SELECT max(s1.id) FROM stop_place s1 ";
+            stopPlaceSuperIds = mdmService.getStopPlaceIdsByProvider(provider.getChouetteInfo().getReferential().toLowerCase());
 
-        if (provider != null && provider.getChouetteInfo().getReferential() != null && !provider.getChouetteInfo().getReferential().equals(administrationSpaceName)){
-            queryStr = queryStr + " JOIN stop_place_key_values spkv ON spkv.stop_place_id = s1.id\n" +
-                    "            JOIN value_items vi ON spkv.key_values_id = vi.value_id\n" +
-                    "            WHERE LOWER(vi.items) LIKE concat(:providerName, ':%') \n";
-            parameters.put("providerName",  provider.getChouetteInfo().getReferential().toLowerCase());
+            queryStr = """
+                    INSERT INTO job_id_list
+                    SELECT :exportJobId, s.id as stop_id
+                    FROM stop_place s
+                    where s.id in
+                          (SELECT max(s1.id)
+                           FROM stop_place s1   
+                           WHERE CAST(SPLIT_PART(netex_id, ':',3) AS BIGINT) in :superIdList
+                           group by s1.netex_id)
+                      AND (s.from_date <= :pointInTime OR s.from_date IS NULL)
+                      AND (s.to_date >= :pointInTime OR s.to_date IS NULL)
+                      and s.parent_stop_place = false
+                    """;
+        }else{
+
+            queryStr = """
+                    INSERT INTO job_id_list
+                    SELECT :exportJobId, s.id as stop_id
+                    FROM stop_place s
+                    where s.id in
+                          (SELECT max(s1.id)
+                           FROM stop_place s1                                    
+                           group by s1.netex_id)
+                      AND (s.from_date <= :pointInTime OR s.from_date IS NULL)
+                      AND (s.to_date >= :pointInTime OR s.to_date IS NULL)
+                      and s.parent_stop_place = false
+                    """;
+
+
+
         }
 
-        queryStr = queryStr + "  group by s1.netex_id  ) " +
-                "                     AND  (s.from_date <= :pointInTime OR  s.from_date IS NULL) \n" +
-                "                     AND (   s.to_date >= :pointInTime  OR s.to_date IS NULL) \n" +
-                "                        and s.parent_stop_place = false  ";
-
+        Map<String, Object> parameters = new HashMap<>();
+        if (isProviderSet) {
+            parameters.put("superIdList", stopPlaceSuperIds);
+        }
 
         parameters.put("exportJobId", exportJobId);
-        parameters.put("pointInTime", Date.from(Instant.now()));
+        parameters.put("pointInTime", LocalDateTime.now());
 
         Session session = entityManager.unwrap(Session.class);
         NativeQuery query = session.createNativeQuery(queryStr);
@@ -1214,15 +1250,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         // this will get entry with higher version when there is multiple entries with same netex_id
         String sql = """
             SELECT
-                DISTINCT ON (sp.netex_id) vi.items as original_id, sp.netex_id, sp.name_value
+                DISTINCT ON (sp.netex_id)  sp.netex_id, sp.name_value
             FROM
-               stop_place sp
-            INNER JOIN
-                stop_place_key_values spkv ON sp.id = spkv.stop_place_id
-            INNER JOIN
-                value_items vi ON vi.value_id = spkv.key_values_id
-            WHERE 
-                spkv.key_values_key = 'imported-id'
+               stop_place sp      
             ORDER BY 
                 sp.netex_id, sp.version DESC;
             """;
@@ -1233,9 +1263,37 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         List<Object[]> result = nativeQuery.getResultList();
 
         List<JbvCodeMappingDto> mappingResult = new ArrayList<>();
+        Map<Long, String> netexIdAndName = new HashMap<>();
+
+
         for (Object[] row : result) {
-            mappingResult.add(new JbvCodeMappingDto(row[0].toString(), null, row[1].toString(), row[2].toString()));
+            netexIdAndName.put(Long.valueOf(row[0].toString().split(":")[2]), row[1].toString());
+           // mappingResult.add(new JbvCodeMappingDto(row[0].toString(), null, row[1].toString(), row[2].toString()));
         }
+
+        Set<Long> stopPlaceSuperIds = new HashSet<>(netexIdAndName.keySet());
+        if (stopPlaceSuperIds.isEmpty()){
+            return new ArrayList<>();
+        }
+        List<OkinaIdentifier> mdmIds = mdmService.getAllStopPlacesFromSuperId(stopPlaceSuperIds);
+        for (Map.Entry<Long, String> netexAndNameEntry : netexIdAndName.entrySet()) {
+            Long netexId = netexAndNameEntry.getKey();
+
+            List<OkinaIdentifier> filteredIdsFromMdm = mdmIds.stream()
+                    .filter(okinaId -> okinaId.getSuperId().equals(netexId))
+                    .toList();
+
+            if (filteredIdsFromMdm.isEmpty()){
+                continue;
+            }
+
+            for (OkinaIdentifier okinaIdentifier : filteredIdsFromMdm) {
+                JbvCodeMappingDto newMapping = new JbvCodeMappingDto(okinaIdentifier.getDataset() + ":StopPlace:" + okinaIdentifier.getOriginalId(), null, validNetexPrefix + ":StopPlace:" + netexId, netexAndNameEntry.getValue());
+                mappingResult.add(newMapping);
+            }
+        }
+
+
 
         return mappingResult;
     }
@@ -1426,6 +1484,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
             Hibernate.initialize(stopPlace.getAccessibilityAssessment().getLimitations());
         }
         Hibernate.initialize(stopPlace.getAlternativeNames());
+        Hibernate.initialize(stopPlace.getAlternativeTexts());
         Hibernate.initialize(stopPlace.getPolygon());
         Hibernate.initialize(stopPlace.getTariffZones());
         Hibernate.initialize(stopPlace.getPlaceEquipments());
@@ -1441,12 +1500,19 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         if (stopPlace.getPlaceEquipments() != null){
             Hibernate.initialize(stopPlace.getPlaceEquipments().getInstalledEquipment());
         }
+        Hibernate.initialize(stopPlace.getOriginalIds());
 
+        stopPlace.getChildren().forEach(item -> {
+            Hibernate.initialize(item.getKeyValues());
+            Hibernate.initialize(item.getOriginalIds());
+        });
 
         stopPlace.getQuays().forEach(quay->{
             Hibernate.initialize(quay.getKeyValues());
+            Hibernate.initialize(quay.getOriginalIds());
             quay.getKeyValues().values().forEach(value -> Hibernate.initialize(value.getItems()));
             Hibernate.initialize(quay.getAlternativeNames());
+            Hibernate.initialize(quay.getAlternativeTexts());
             Hibernate.initialize(quay.getPolygon());
             Hibernate.initialize(quay.getPlaceEquipments());
             if (quay.getPlaceEquipments() != null){
@@ -1518,6 +1584,19 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
                 .getResultList();
         results.forEach(this::initializeStopPlace);
         return results.isEmpty() ? null : results.get(0);
+    }
+
+
+    public StopPlace removeImportedIdAndSave(StopPlace stopPlace){
+
+        stopPlace.getKeyValues().remove(ORIGINAL_ID_KEY);
+
+        if (CollectionUtils.isNotEmpty(stopPlace.getQuays())){
+            for (Quay quay : stopPlace.getQuays()) {
+                quay.getKeyValues().remove(ORIGINAL_ID_KEY);
+            }
+        }
+        return entityManager.merge(stopPlace);
     }
 
 }

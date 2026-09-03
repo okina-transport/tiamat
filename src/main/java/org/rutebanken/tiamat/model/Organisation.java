@@ -1,25 +1,13 @@
 package org.rutebanken.tiamat.model;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import jakarta.persistence.*;
-import java.time.Instant;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
-public class Organisation {
-    @Id
-    @GeneratedValue(generator = "sequence_per_table_generator")
-    private Long id;
-
-    private String netexId;
-
-    @UpdateTimestamp
-    private Instant changed;
-
-    @CreationTimestamp
-    private Instant created;
+public class Organisation extends DataManagedObjectStructure {
 
     private String name;
 
@@ -52,37 +40,8 @@ public class Organisation {
     @OneToMany(mappedBy="organisation")
     private Set<Parking> parkings;
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getNetexId() {
-        return netexId;
-    }
-
-    public void setNetexId(String netexId) {
-        this.netexId = netexId;
-    }
-
-    public Instant getChanged() {
-        return changed;
-    }
-
-    public void setChanged(Instant changed) {
-        this.changed = changed;
-    }
-
-    public Instant getCreated() {
-        return created;
-    }
-
-    public void setCreated(Instant created) {
-        this.created = created;
-    }
+    @Transient
+    protected String originalId;
 
     public String getName() {
         return name;
@@ -195,4 +154,62 @@ public class Organisation {
     public void setTimezone(String timezone) {
         this.timezone = timezone;
     }
+
+    public String getOriginalId() {
+        return originalId;
+    }
+
+    public void setOriginalId(String originalId) {
+        this.originalId = originalId;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name,
+                shortName,
+                type,
+                operator,
+                organisationUrl,
+                purchaseUrl,
+                phoneNumber,
+                email,
+                androidStoreUri,
+                androidDiscoveryUri,
+                iosStoreUri,
+                iosDiscoveryUri,
+                language,
+                timezone);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        Organisation other = (Organisation) obj;
+        return new EqualsBuilder()
+                .append(name, other.name)
+                .append(shortName, other.shortName)
+                .append(operator, other.operator)
+                .append(organisationUrl, other.organisationUrl)
+                .append(purchaseUrl, other.purchaseUrl)
+                .append(phoneNumber, other.phoneNumber)
+                .append(email, other.email)
+                .append(androidStoreUri, other.androidStoreUri)
+                .append(androidStoreUri, other.androidStoreUri)
+                .append(androidDiscoveryUri, other.androidDiscoveryUri)
+                .append(iosStoreUri, other.iosStoreUri)
+                .append(iosDiscoveryUri, other.iosDiscoveryUri)
+                .append(language, other.language)
+                .append(timezone, other.timezone)
+                .isEquals();
+    }
+
 }

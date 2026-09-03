@@ -20,8 +20,11 @@ import graphql.schema.DataFetchingEnvironment;
 import io.micrometer.core.instrument.util.StringUtils;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
+import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.rutebanken.tiamat.importer.ImporterUtils;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.PointOfInterestClassificationRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestFacilitySetRepository;
@@ -33,7 +36,6 @@ import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.PointOfInterestVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,32 +52,33 @@ class PointOfInterestUpdater implements DataFetcher {
 
     private static final Logger logger = LoggerFactory.getLogger(PointOfInterestUpdater.class);
 
-    @Autowired
-    private PointOfInterestRepository pointOfInterestRepository;
+    private final PointOfInterestRepository pointOfInterestRepository;
+    private final PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService;
+    private final PointOfInterestClassificationRepository pointOfInterestClassificationRepository;
+    private final PointOfInterestFacilitySetRepository pointOfInterestFacilitySetRepository;
+    private final GeometryMapper geometryMapper;
+    private final ReflectionAuthorizationService authorizationService;
+    private final ValidBetweenMapper validBetweenMapper;
+    private final VersionCreator versionCreator;
+    private final GroupOfEntitiesMapper groupOfEntitiesMapper;
+    private final MdmService mdmService;
+    private final LoggingService loggingService;
+    private final UsernameFetcher usernameFetcher;
 
-    @Autowired
-    private PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService;
-
-    @Autowired
-    private PointOfInterestClassificationRepository pointOfInterestClassificationRepository;
-
-    @Autowired
-    private PointOfInterestFacilitySetRepository pointOfInterestFacilitySetRepository;
-
-    @Autowired
-    private GeometryMapper geometryMapper;
-
-    @Autowired
-    private ReflectionAuthorizationService authorizationService;
-
-    @Autowired
-    private ValidBetweenMapper validBetweenMapper;
-
-    @Autowired
-    private VersionCreator versionCreator;
-
-    @Autowired
-    private GroupOfEntitiesMapper groupOfEntitiesMapper;
+    public PointOfInterestUpdater(PointOfInterestRepository pointOfInterestRepository, PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService, PointOfInterestClassificationRepository pointOfInterestClassificationRepository, PointOfInterestFacilitySetRepository pointOfInterestFacilitySetRepository, GeometryMapper geometryMapper, ReflectionAuthorizationService authorizationService, ValidBetweenMapper validBetweenMapper, VersionCreator versionCreator, GroupOfEntitiesMapper groupOfEntitiesMapper, MdmService mdmService, LoggingService loggingService, UsernameFetcher usernameFetcher) {
+        this.pointOfInterestRepository = pointOfInterestRepository;
+        this.pointOfInterestVersionedSaverService = pointOfInterestVersionedSaverService;
+        this.pointOfInterestClassificationRepository = pointOfInterestClassificationRepository;
+        this.pointOfInterestFacilitySetRepository = pointOfInterestFacilitySetRepository;
+        this.geometryMapper = geometryMapper;
+        this.authorizationService = authorizationService;
+        this.validBetweenMapper = validBetweenMapper;
+        this.versionCreator = versionCreator;
+        this.groupOfEntitiesMapper = groupOfEntitiesMapper;
+        this.mdmService = mdmService;
+        this.loggingService = loggingService;
+        this.usernameFetcher = usernameFetcher;
+    }
 
 
     @Override
@@ -85,13 +88,13 @@ class PointOfInterestUpdater implements DataFetcher {
         List<PointOfInterest> pointsOfInterest = null;
         if (input != null) {
             pointsOfInterest = input.stream()
-             .map(this::createOrUpdatePointOfInterest)
-            .collect(Collectors.toList());
+                    .map(this::createOrUpdatePointOfInterest)
+                    .collect(Collectors.toList());
         }
         return pointsOfInterest;
     }
 
-    private PointOfInterest createOrUpdatePointOfInterest(Map input){
+    private PointOfInterest createOrUpdatePointOfInterest(Map input) {
         PointOfInterest updatedPointOfInterest;
         PointOfInterest existingVersion = null;
         String id = (String) input.get(ID);
@@ -111,18 +114,34 @@ class PointOfInterestUpdater implements DataFetcher {
             updatedPointOfInterest = new PointOfInterest();
         }
 
+        String user = usernameFetcher.getUserNameForAuthenticatedUser();
+
         boolean isUpdated = populatePointOfInterest(input, updatedPointOfInterest);
         if (isUpdated) {
             authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(existingVersion, updatedPointOfInterest));
 
             logger.info("Saving new version of point of interest {}", updatedPointOfInterest);
+            mdmService.updateImportedIds(updatedPointOfInterest);
             updatedPointOfInterest = pointOfInterestVersionedSaverService.saveNewVersion(updatedPointOfInterest);
+
+            logPOI(existingVersion, user, updatedPointOfInterest);
 
             return updatedPointOfInterest;
         } else {
             logger.info("No changes - Point Of Interest [id = {}] NOT updated", id);
         }
+
+        logPOI(existingVersion, user, updatedPointOfInterest);
+
         return existingVersion;
+    }
+
+    private void logPOI(PointOfInterest existingVersion, String user, PointOfInterest updatedPointOfInterest) {
+        if (existingVersion != null) {
+            loggingService.logPOIUpdate(user, existingVersion, updatedPointOfInterest);
+        } else {
+            loggingService.logPOICreation(user, updatedPointOfInterest);
+        }
     }
 
     private boolean populatePointOfInterest(Map input, PointOfInterest updatedPointOfInterest) {
@@ -143,7 +162,7 @@ class PointOfInterestUpdater implements DataFetcher {
                     updatedPointOfInterest.setAddress(dtoGeocode.getAddress());
                 }
 
-                if (StringUtils.isNotEmpty(dtoGeocode.getCity()))  {
+                if (StringUtils.isNotEmpty(dtoGeocode.getCity())) {
                     updatedPointOfInterest.setCity(dtoGeocode.getCity());
                 }
 
@@ -151,7 +170,7 @@ class PointOfInterestUpdater implements DataFetcher {
                     updatedPointOfInterest.setPostalCode(dtoGeocode.getPostCode());
                 }
 
-                if (StringUtils.isNotEmpty(dtoGeocode.getCityCode())){
+                if (StringUtils.isNotEmpty(dtoGeocode.getCityCode())) {
                     updatedPointOfInterest.setInseeCode(dtoGeocode.getCityCode());
                 }
             } catch (Exception e) {
@@ -171,7 +190,7 @@ class PointOfInterestUpdater implements DataFetcher {
         if (input.get(POI_FACILITY_SET) != null) {
             Map facilitySet = (Map) input.get(POI_FACILITY_SET);
 
-            if (facilitySet.containsKey("ticketingFacility")){
+            if (facilitySet.containsKey("ticketingFacility")) {
                 TicketingFacilityEnumeration ticketingFacility = (TicketingFacilityEnumeration) facilitySet.get("ticketingFacility");
                 TicketingServiceFacilityEnumeration ticketingServiceFacility = (TicketingServiceFacilityEnumeration) facilitySet.get("ticketingServiceFacility");
                 PointOfInterestFacilitySet existingFacilitySet = pointOfInterestFacilitySetRepository.findFirstByNetexIdOrderByVersionDesc(updatedPointOfInterest.getPointOfInterestFacilitySet().getNetexId());
@@ -204,7 +223,7 @@ class PointOfInterestUpdater implements DataFetcher {
         }
 
         if (input.get(POI_OPENING_HOURS) != null) {
-            PointOfInterestOpeningHours pointOfInterestOpeningHours = mapPointOfInterestExistingHours((Map) input.get("pointOfInterestOpeningHours"),(String) input.get("id"));
+            PointOfInterestOpeningHours pointOfInterestOpeningHours = mapPointOfInterestExistingHours((Map) input.get("pointOfInterestOpeningHours"), (String) input.get("id"));
             updatedPointOfInterest.setPointOfInterestOpeningHours(pointOfInterestOpeningHours);
             isUpdated = true;
         }
@@ -226,14 +245,14 @@ class PointOfInterestUpdater implements DataFetcher {
                     dayType.setDays(DayOfWeekEnumeration.fromValue(entry.getKey()));
                     String day = dayType.getDays().value();
                     dayType.setNetexId("FR:DayType:" + day + "_" + poiNetexId);
-                    Map<?,?> value = (Map<?, ?>) entry.getValue();
-                    if(value.get("facility").equals("Journée")){
+                    Map<?, ?> value = (Map<?, ?>) entry.getValue();
+                    if (value.get("facility").equals("Journée")) {
                         TimeBand timeBand = new TimeBand();
                         timeBand.setEndTime(LocalTime.parse((CharSequence) value.get("endTime")));
                         timeBand.setStartTime(LocalTime.parse((CharSequence) value.get("startTime")));
                         timeBand.setNetexId(createTimeBandId(day, "", poiNetexId));
                         timeBands.add(timeBand);
-                    } else if(value.get("facility").equals("Demi journée")){
+                    } else if (value.get("facility").equals("Demi journée")) {
                         TimeBand timeBand = new TimeBand();
                         timeBand.setEndTime(LocalTime.parse((CharSequence) value.get("endTimeAm")));
                         timeBand.setStartTime(LocalTime.parse((CharSequence) value.get("startTimeAm")));
@@ -253,7 +272,7 @@ class PointOfInterestUpdater implements DataFetcher {
         return pointOfInterestOpeningHours;
     }
 
-    private String createTimeBandId(String day, String suffix, String poiNetexId){
+    private String createTimeBandId(String day, String suffix, String poiNetexId) {
         return "FR:TimeBand:" + day + suffix + "_" + poiNetexId;
     }
 }

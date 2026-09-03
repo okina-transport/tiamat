@@ -359,7 +359,7 @@ public class AsyncPublicationDeliveryExporter {
         if (StringUtils.equals(tiamatExportDestination, "gcs") || StringUtils.equals(tiamatExportDestination, "both")){
             poiFileList.addAll(blobStoreService.listPointsOfInterestInBlob(providerName, maxNbResults));
         }
-
+        poiFileList.sort(Comparator.comparing(ExportFileSummary::getStartDate).reversed());
         return poiFileList;
     }
 
@@ -373,7 +373,7 @@ public class AsyncPublicationDeliveryExporter {
         if (StringUtils.equals(tiamatExportDestination, "gcs") || StringUtils.equals(tiamatExportDestination, "both")){
             parkingsFileList.addAll(blobStoreService.listParkingsInBlob(providerName, maxNbResults));
         }
-
+        parkingsFileList.sort(Comparator.comparing(ExportFileSummary::getStartDate).reversed());
         return parkingsFileList;
     }
 

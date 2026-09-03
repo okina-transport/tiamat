@@ -29,6 +29,7 @@ import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.domain.ChouetteInfo;
 import org.rutebanken.tiamat.domain.Provider;
+import org.rutebanken.tiamat.client.mdm.MdmClient;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.netex.id.GeneratedIdState;
 import org.rutebanken.tiamat.repository.CacheProviderRepository;
@@ -161,6 +162,9 @@ public abstract class TiamatIntegrationTest {
 
     @Autowired
     protected ReflectionAuthorizationService reflectionAuthorizationService;
+
+    @MockitoBean
+    protected MdmClient mdmClient;
 
     @MockitoBean
     public GBFSMapper gbfsMapper;

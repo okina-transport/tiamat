@@ -19,10 +19,12 @@ package org.rutebanken.tiamat.versioning.save;
 import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
+import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.VersionIncrementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +62,12 @@ public class ParkingVersionedSaverService {
     private MetricsService metricsService;
 
     @Autowired
+    private MdmService mdmService;
+
+    @Autowired
+    private VersionCreator versionCreator;
+
+    @Autowired
     private ReflectionAuthorizationService reflectionAuthorizationService;
 
     public Parking saveNewVersion(Parking newVersion) {
@@ -67,66 +75,66 @@ public class ParkingVersionedSaverService {
 //        Preconditions.checkArgument(newVersion.getParentSiteRef() != null, "Parent site ref cannot be null for parking");
 
         Parking existing = parkingRepository.findFirstByNetexIdOrderByVersionDesc(newVersion.getNetexId());
-
-        if(newVersion.getParentSiteRef() != null){
+        Parking newVersionNotEqualsToExisting = versionCreator.createCopy(newVersion, Parking.class);
+        if (newVersion.getParentSiteRef() != null) {
             resolveAndAuthorizeParkingSiteRef(newVersion);
         }
 
         Parking result;
         if (existing != null) {
             logger.trace("existing: {}", existing);
-            logger.trace("new: {}", newVersion);
+            logger.trace("new: {}", newVersionNotEqualsToExisting);
 
             if(existing.getParentSiteRef() != null) {
                 resolveAndAuthorizeParkingSiteRef(existing);
             }
-            newVersion.setCreated(existing.getCreated());
-            newVersion.setChanged(Instant.now());
-            newVersion.setVersion(existing.getVersion());
+            newVersionNotEqualsToExisting.setCreated(existing.getCreated());
+            newVersionNotEqualsToExisting.setChanged(Instant.now());
+            newVersionNotEqualsToExisting.setVersion(existing.getVersion());
 
             parkingRepository.delete(existing);
+
         } else {
-            newVersion.setCreated(Instant.now());
+            mdmService.generateIdentifier(newVersionNotEqualsToExisting);
+            newVersionNotEqualsToExisting.setCreated(Instant.now());
         }
 
-
-        newVersion.setValidBetween(null);
-        versionIncrementor.initiateOrIncrement(newVersion);
+        newVersionNotEqualsToExisting.setValidBetween(null);
+        versionIncrementor.initiateOrIncrement(newVersionNotEqualsToExisting);
         Map<String, ParkingProperties> incrementedParkingPropertiesByNetexId = new HashMap<>();
 
-        if (CollectionUtils.isNotEmpty(newVersion.getParkingProperties())) {
-            newVersion.setParkingProperties(newVersion.getParkingProperties().stream()
+        if (CollectionUtils.isNotEmpty(newVersionNotEqualsToExisting.getParkingProperties())) {
+            newVersionNotEqualsToExisting.setParkingProperties(newVersionNotEqualsToExisting.getParkingProperties().stream()
                     .map(parkingProperties -> incrementSharedParkingProperties(parkingProperties, incrementedParkingPropertiesByNetexId))
                     .collect(Collectors.toList()));
         }
 
-        if (CollectionUtils.isNotEmpty(newVersion.getParkingAreas())) {
-            for (ParkingArea pa : newVersion.getParkingAreas()) {
+        if (CollectionUtils.isNotEmpty(newVersionNotEqualsToExisting.getParkingAreas())) {
+            for (ParkingArea pa : newVersionNotEqualsToExisting.getParkingAreas()) {
                 versionIncrementor.initiateOrIncrement(pa);
                 pa.setParkingProperties(incrementSharedParkingProperties(pa.getParkingProperties(), incrementedParkingPropertiesByNetexId));
             }
         }
 
-        if (CollectionUtils.isNotEmpty(newVersion.getEquipmentPlaces())) {
-            for (EquipmentPlace ep : newVersion.getEquipmentPlaces()) {
+        if (CollectionUtils.isNotEmpty(newVersionNotEqualsToExisting.getEquipmentPlaces())) {
+            for (EquipmentPlace ep : newVersionNotEqualsToExisting.getEquipmentPlaces()) {
                 versionIncrementor.initiateOrIncrement(ep);
             }
         }
 
-        if (newVersion.getPlaceEquipments() != null) {
-            versionIncrementor.initiateOrIncrementPlaceEquipment(newVersion.getPlaceEquipments());
+        if (newVersionNotEqualsToExisting.getPlaceEquipments() != null) {
+            versionIncrementor.initiateOrIncrementPlaceEquipment(newVersionNotEqualsToExisting.getPlaceEquipments());
         }
 
-        newVersion.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
-        if (newVersion.getPostalAddress() != null){
-            newVersion.getPostalAddress().setId(null);
+        newVersionNotEqualsToExisting.setChangedBy(usernameFetcher.getUserNameForAuthenticatedUser());
+        if (newVersionNotEqualsToExisting.getPostalAddress() != null){
+            newVersionNotEqualsToExisting.getPostalAddress().setId(null);
         }
-        result = parkingRepository.save(newVersion);
-
+        result = parkingRepository.save(newVersionNotEqualsToExisting);
 
         logger.info("Saved parking {}, version {}, name {}", result.getNetexId(), result.getVersion(), result.getName());
 
-        metricsService.registerEntitySaved(newVersion.getClass());
+        metricsService.registerEntitySaved(newVersionNotEqualsToExisting.getClass());
         return result;
     }
 

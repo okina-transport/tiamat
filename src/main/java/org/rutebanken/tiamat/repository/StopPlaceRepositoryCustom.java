@@ -134,4 +134,6 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     StopPlace findByNetexIdByVersionAndInitialize(String netexId, Long version);
 
+    StopPlace removeImportedIdAndSave(StopPlace stopPlace);
+
 }

@@ -75,6 +75,10 @@ public class Job {
 
     private Boolean isLugCompleted;
 
+    private Integer totalCount;
+
+    private Integer remainingCount;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
             name = "job_operators",
@@ -228,6 +232,22 @@ public class Job {
 
     public void setLugCompleted(Boolean lugCompleted) {
         isLugCompleted = lugCompleted;
+    }
+
+    public Integer getTotalCount() {
+        return totalCount;
+    }
+
+    public void setTotalCount(Integer totalCount) {
+        this.totalCount = totalCount;
+    }
+
+    public Integer getRemainingCount() {
+        return remainingCount;
+    }
+
+    public void setRemainingCount(Integer remainingCount) {
+        this.remainingCount = remainingCount;
     }
 
     @XmlType

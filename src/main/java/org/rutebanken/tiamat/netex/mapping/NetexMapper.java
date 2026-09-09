@@ -563,20 +563,20 @@ public class NetexMapper {
     public void parseToSetPlaceEquipments(org.rutebanken.netex.model.Parking netexParking, org.rutebanken.tiamat.model.Parking parking) {
         PlaceEquipment placeEquipment = new PlaceEquipment();
 
+        if (netexParking.getPlaceEquipments() != null) {
+            placeEquipment.setNetexId(netexParking.getPlaceEquipments().getId());
+        }
+
         for (JAXBElement<?> parkingEquipmentElement : netexParking.getPlaceEquipments().getInstalledEquipmentRefOrInstalledEquipment()) {
             if (parkingEquipmentElement.getValue() instanceof CycleStorageEquipment equipment) {
                 org.rutebanken.tiamat.model.CycleStorageEquipment cycleStorageEquipment = mapToNetexModel(equipment);
 
-                if (netexParking.getPlaceEquipments() != null)
-                    cycleStorageEquipment.setNetexId(netexParking.getPlaceEquipments().getId());
                 if (equipment.getNumberOfSpaces() != null)
                     cycleStorageEquipment.setNumberOfSpaces(equipment.getNumberOfSpaces());
                 if (equipment.getCycleStorageType() != null)
                     cycleStorageEquipment.setCycleStorageType(org.rutebanken.tiamat.model.CycleStorageEnumeration.fromValue(equipment.getCycleStorageType().value()));
 
-                placeEquipment.setNetexId(null);
                 placeEquipment.getInstalledEquipment().add(cycleStorageEquipment);
-                parking.setPlaceEquipments(placeEquipment);
             }
         }
         parking.setPlaceEquipments(placeEquipment);

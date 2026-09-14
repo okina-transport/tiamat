@@ -216,9 +216,10 @@ public class StopPlaceVersionedSaverService {
                 tariffZonesLookupService.populateTariffZone(child);
             });
 
-            for (StopPlace child : newVersion.getChildren()) {
-                stopPlaceRepository.removeImportedIdAndSave(child);
-            }
+            Set<StopPlace> savedChildren = newVersion.getChildren().stream()
+                    .map(stopPlaceRepository::removeImportedIdAndSave)
+                    .collect(Collectors.toSet());
+            newVersion.setChildren(savedChildren);
             if (logger.isDebugEnabled()) {
                 logger.debug("Saved children: {}", newVersion.getChildren().stream()
                                                            .map(sp -> "{id:" + sp.getId() + " netexId:" + sp.getNetexId() + " version:" + sp.getVersion() + "}")

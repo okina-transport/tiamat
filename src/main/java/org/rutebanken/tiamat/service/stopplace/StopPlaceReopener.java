@@ -47,9 +47,6 @@ public class StopPlaceReopener {
         this.loggingService = loggingService;
     }
 
-    @Autowired
-    private LoggingService loggingService;
-
     public StopPlace reopenStopPlace(String stopPlaceId, String versionComment) {
 
         return mutateLock.executeInLock(() -> {

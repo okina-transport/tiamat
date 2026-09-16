@@ -61,9 +61,6 @@ public class StopPlaceQuayDeleter {
         this.loggingService = loggingService;
     }
 
-    @Autowired
-    private LoggingService loggingService;
-
     public StopPlace deleteQuay(String stopPlaceNetexId, String quayNetexId, String versionComment) {
 
         return mutateLock.executeInLock(() -> {

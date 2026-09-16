@@ -64,12 +64,6 @@ public class StopPlaceQuayMover {
         this.loggingService = loggingService;
     }
 
-    @Autowired
-    private UsernameFetcher usernameFetcher;
-
-    @Autowired
-    private LoggingService loggingService;
-
     public StopPlace moveQuays(List<String> quayIds, String destinationStopPlaceId, String fromVersionComment, String toVersionComment) {
 
         return mutateLock.executeInLock(() -> {

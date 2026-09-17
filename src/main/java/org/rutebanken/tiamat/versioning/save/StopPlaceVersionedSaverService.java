@@ -53,12 +53,9 @@ import static org.rutebanken.tiamat.versioning.save.DefaultVersionedSaverService
 @Service
 public class StopPlaceVersionedSaverService {
 
-    private static final Logger logger = LoggerFactory.getLogger(StopPlaceVersionedSaverService.class);
-
     public static final int ADJACENT_STOP_PLACE_MAX_DISTANCE_IN_METERS = 30;
-
     public static final InterchangeWeightingEnumeration DEFAULT_WEIGHTING = InterchangeWeightingEnumeration.INTERCHANGE_ALLOWED;
-
+    private static final Logger logger = LoggerFactory.getLogger(StopPlaceVersionedSaverService.class);
     @Autowired
     private ZoneDistanceChecker zoneDistanceChecker;
 
@@ -157,7 +154,7 @@ public class StopPlaceVersionedSaverService {
             newVersion.setTariffZones(newVersion.getTariffZones().stream()
                     .map(tariffZoneRef -> {
                         TariffZone tariffZone = tariffZoneRepository.findFirstByNetexIdOrderByVersionDesc(tariffZoneRef.getRef());
-                        if(tariffZone == null){
+                        if (tariffZone == null) {
                             tariffZone = resolve(tariffZoneRef);
                         }
                         if (tariffZone == null) {
@@ -174,7 +171,7 @@ public class StopPlaceVersionedSaverService {
 
         Instant changed = Instant.now();
 
-        if(optimizeAccessibilityAssessmentsStopPlace){
+        if (optimizeAccessibilityAssessmentsStopPlace) {
             logger.debug("Rearrange accessibility assessments for: {}", newVersion);
             accessibilityAssessmentOptimizer.optimizeAccessibilityAssessmentsStopPlace(newVersion);
         }
@@ -216,13 +213,14 @@ public class StopPlaceVersionedSaverService {
                 tariffZonesLookupService.populateTariffZone(child);
             });
 
-            for (StopPlace child : newVersion.getChildren()) {
-                stopPlaceRepository.removeImportedIdAndSave(child);
-            }
+            Set<StopPlace> savedChildren = newVersion.getChildren().stream()
+                    .map(stopPlaceRepository::removeImportedIdAndSave)
+                    .collect(Collectors.toSet());
+            newVersion.setChildren(savedChildren);
             if (logger.isDebugEnabled()) {
                 logger.debug("Saved children: {}", newVersion.getChildren().stream()
-                                                           .map(sp -> "{id:" + sp.getId() + " netexId:" + sp.getNetexId() + " version:" + sp.getVersion() + "}")
-                                                           .collect(Collectors.toList()));
+                        .map(sp -> "{id:" + sp.getId() + " netexId:" + sp.getNetexId() + " version:" + sp.getVersion() + "}")
+                        .collect(Collectors.toList()));
             }
         }
         mdmService.generateIdentifier(newVersion);
@@ -251,8 +249,8 @@ public class StopPlaceVersionedSaverService {
     }
 
 
-    private void updateValidBetweenInChildren(StopPlace stopPlace, ValidBetween validBetween){
-        if (stopPlace.getChildren() == null){
+    private void updateValidBetweenInChildren(StopPlace stopPlace, ValidBetween validBetween) {
+        if (stopPlace.getChildren() == null) {
             return;
         }
 
@@ -261,14 +259,14 @@ public class StopPlaceVersionedSaverService {
         }
     }
 
-    private void terminateChild(StopPlace stopPlaceToTerminate, Instant terminationInstant ){
-        if (stopPlaceToTerminate.getChildren() != null){
+    private void terminateChild(StopPlace stopPlaceToTerminate, Instant terminationInstant) {
+        if (stopPlaceToTerminate.getChildren() != null) {
 
             for (StopPlace child : stopPlaceToTerminate.getChildren()) {
                 ValidBetween validBetween;
-                if (child.getValidBetween() != null){
+                if (child.getValidBetween() != null) {
                     validBetween = child.getValidBetween();
-                }else{
+                } else {
                     validBetween = new ValidBetween();
                     validBetween.setFromDate(terminationInstant.minusMillis(MILLIS_BETWEEN_VERSIONS));
                     child.setValidBetween(validBetween);
@@ -280,7 +278,7 @@ public class StopPlaceVersionedSaverService {
 
     private void validateAdjacentSites(StopPlace newVersion) {
         if (newVersion.getAdjacentSites() != null) {
-                logger.info("Validating adjacent sites for {} {}", newVersion.getNetexId(), newVersion.getName());
+            logger.info("Validating adjacent sites for {} {}", newVersion.getNetexId(), newVersion.getName());
             for (SiteRefStructure siteRefStructure : newVersion.getAdjacentSites()) {
 
                 if (newVersion.getNetexId() != null && (newVersion.getNetexId().equals(siteRefStructure.getRef()))) {

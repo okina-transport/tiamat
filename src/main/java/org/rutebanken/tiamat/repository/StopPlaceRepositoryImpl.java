@@ -31,6 +31,7 @@ import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.MergeMode;
+import org.rutebanken.tiamat.dtoassembling.dto.StopPlaceMergeCandidateDto;
 import org.rutebanken.tiamat.dtoassembling.dto.StopPlaceMergeCandidatePairDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.geo.GeometryTransformer;
@@ -1605,7 +1606,21 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         List<Object[]> rows = query.getResultList();
 
         List<StopPlaceMergeCandidatePairDto> pairs = rows.stream()
-                .map(StopPlaceMergeCandidatePairDto::new)
+                .map(row -> new StopPlaceMergeCandidatePairDto(
+                        new StopPlaceMergeCandidateDto(
+                                (String) row[0],
+                                (String) row[1],
+                                row[2] != null ? ((Number) row[2]).doubleValue() : null,
+                                row[3] != null ? ((Number) row[3]).doubleValue() : null,
+                                (String) row[4],
+                                (String) row[5]),
+                        new StopPlaceMergeCandidateDto(
+                                (String) row[6],
+                                (String) row[7],
+                                row[8] != null ? ((Number) row[8]).doubleValue() : null,
+                                row[9] != null ? ((Number) row[9]).doubleValue() : null,
+                                (String) row[10],
+                                (String) row[11])))
                 .collect(Collectors.toList());
 
         return new PageImpl<>(pairs, pageable, pairs.size());

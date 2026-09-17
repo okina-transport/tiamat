@@ -21,6 +21,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 @Entity
 public class PointOfInterestClassification
@@ -57,4 +59,31 @@ public class PointOfInterestClassification
         this.active = active;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+
+        PointOfInterestClassification person = (PointOfInterestClassification) obj;
+        return new EqualsBuilder()
+                .append(name, person.name)
+                .append(osm, person.osm)
+                .append(active, person.active)
+                .append(parent, person.parent)
+                .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+                .append(name)
+                .append(osm)
+                .append(active)
+                .append(parent)
+                .toHashCode();
+    }
 }

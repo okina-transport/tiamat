@@ -18,10 +18,14 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 import com.google.common.base.Preconditions;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.locationtech.jts.geom.Point;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.LoggingService;
+import org.rutebanken.tiamat.importer.ImporterUtils;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.rest.graphql.mappers.GeometryMapper;
@@ -31,12 +35,21 @@ import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
@@ -48,32 +61,29 @@ class ParkingUpdater implements DataFetcher {
 
     private static final Logger logger = LoggerFactory.getLogger(ParkingUpdater.class);
 
-    @Autowired
-    private ParkingRepository parkingRepository;
+    private final ParkingRepository parkingRepository;
+    private final ParkingVersionedSaverService parkingVersionedSaverService;
+    private final GeometryMapper geometryMapper;
+    private final ReflectionAuthorizationService authorizationService;
+    private final ValidBetweenMapper validBetweenMapper;
+    private final VersionCreator versionCreator;
+    private final GroupOfEntitiesMapper groupOfEntitiesMapper;
+    private final MdmService mdmService;
+    private final UsernameFetcher usernameFetcher;
+    private final LoggingService loggingService;
 
-    @Autowired
-    private ParkingVersionedSaverService parkingVersionedSaverService;
-
-    @Autowired
-    private GeometryMapper geometryMapper;
-
-    @Autowired
-    private ReflectionAuthorizationService authorizationService;
-
-    @Autowired
-    private ValidBetweenMapper validBetweenMapper;
-
-    @Autowired
-    private VersionCreator versionCreator;
-
-    @Autowired
-    private GroupOfEntitiesMapper groupOfEntitiesMapper;
-
-    @Autowired
-    private UsernameFetcher usernameFetcher;
-
-    @Autowired
-    private LoggingService loggingService;
+    public ParkingUpdater(ParkingRepository parkingRepository, ParkingVersionedSaverService parkingVersionedSaverService, GeometryMapper geometryMapper, ReflectionAuthorizationService authorizationService, ValidBetweenMapper validBetweenMapper, VersionCreator versionCreator, GroupOfEntitiesMapper groupOfEntitiesMapper, MdmService mdmService, UsernameFetcher usernameFetcher, LoggingService loggingService) {
+        this.parkingRepository = parkingRepository;
+        this.parkingVersionedSaverService = parkingVersionedSaverService;
+        this.geometryMapper = geometryMapper;
+        this.authorizationService = authorizationService;
+        this.validBetweenMapper = validBetweenMapper;
+        this.versionCreator = versionCreator;
+        this.groupOfEntitiesMapper = groupOfEntitiesMapper;
+        this.mdmService = mdmService;
+        this.usernameFetcher = usernameFetcher;
+        this.loggingService = loggingService;
+    }
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
@@ -111,6 +121,7 @@ class ParkingUpdater implements DataFetcher {
             authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(existingVersion, updatedParking));
 
             logger.info("Saving new version of parking {}", updatedParking);
+            mdmService.updateImportedIds(updatedParking);
             updatedParking = parkingVersionedSaverService.saveNewVersion(updatedParking);
 
             logParking(existingVersion, user, updatedParking);
@@ -142,8 +153,19 @@ class ParkingUpdater implements DataFetcher {
 
         if (input.get(GEOMETRY) != null) {
             Point geoJsonPoint = geometryMapper.createGeoJsonPoint((Map) input.get(GEOMETRY));
-            isUpdated = isUpdated || (!geoJsonPoint.equals(updatedParking.getCentroid()));
-            updatedParking.setCentroid(geoJsonPoint);
+            if (!geoJsonPoint.equals(updatedParking.getCentroid())) {
+                isUpdated = true;
+                updatedParking.setCentroid(geoJsonPoint);
+                // parking INSEE is required and might be updated when centroid is updated
+                Optional<String> insee =
+                        ImporterUtils.getInseeFromLatLng(updatedParking.getCentroid().getX(),
+                                updatedParking.getCentroid().getY());
+                if (insee.isEmpty()) {
+                    throw new IllegalArgumentException("La récupération du code INSEE du parking a échoué");
+                } else {
+                    updatedParking.setInsee(insee.get());
+                }
+            }
         }
 
         if (input.get(PARENT_SITE_REF) != null) {
@@ -393,7 +415,20 @@ class ParkingUpdater implements DataFetcher {
             updatedParking.setTypeOfParkingRef(parkingTypeOfParkingRef.value());
         }
 
-        isUpdated = isUpdated | groupOfEntitiesMapper.populate(input, updatedParking);
+        if (groupOfEntitiesMapper.populate(input, updatedParking)) {
+            isUpdated = true;
+        }
+
+        // originalId and operator are required for parking to be created in MDM
+        if (CollectionUtils.isEmpty(updatedParking.getOriginalIds())) {
+            isUpdated = true;
+            updatedParking.getOriginalIds().add(UUID.randomUUID().toString());
+        }
+
+        if (StringUtils.isBlank(updatedParking.getOperator())) {
+            isUpdated = true;
+            updatedParking.setOperator("technique");
+        }
 
         return isUpdated;
     }
@@ -518,7 +553,7 @@ class ParkingUpdater implements DataFetcher {
 
     private ParkingArea createParkingAreaFromInputParameters(Map inputParams) {
         ParkingArea newParkingArea = new ParkingArea();
-        if (inputParams.get("specificParkingAreaUsage") != null) {
+        if (inputParams.get("specificParkingAreaUsage") != null){
             newParkingArea.setSpecificParkingAreaUsage((SpecificParkingAreaUsageEnumeration) inputParams.get("specificParkingAreaUsage"));
         }
         newParkingArea.setTotalCapacity((BigInteger) inputParams.get(TOTAL_CAPACITY));

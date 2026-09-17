@@ -35,6 +35,7 @@ import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.EntityChangedListener;
 import org.rutebanken.tiamat.changelog.LoggingService;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.DataManagedObjectStructure;
 import org.rutebanken.tiamat.model.EntityInVersionStructure;
 import org.rutebanken.tiamat.model.PointOfInterest;
@@ -60,6 +61,7 @@ public class PointOfInterestDeleter {
     private final EntityChangedListener entityChangedListener;
     private final ReflectionAuthorizationService authorizationService;
     private final UsernameFetcher usernameFetcher;
+    private final MdmService mdmService;
     private final LoggingService loggingService;
     private final PointOfInterestRepository pointOfInterestRepository;
     private final ReferenceResolver referenceResolver;
@@ -68,12 +70,13 @@ public class PointOfInterestDeleter {
     public PointOfInterestDeleter(PointOfInterestRepository pointOfInterestRepository,
                                   EntityChangedListener entityChangedListener,
                                   ReflectionAuthorizationService authorizationService,
-                                  UsernameFetcher usernameFetcher, ReferenceResolver referenceResolver, LoggingService loggingService) {
+                                  UsernameFetcher usernameFetcher, ReferenceResolver referenceResolver, MdmService mdmService, LoggingService loggingService) {
         this.pointOfInterestRepository = pointOfInterestRepository;
         this.entityChangedListener = entityChangedListener;
         this.authorizationService = authorizationService;
         this.usernameFetcher = usernameFetcher;
         this.referenceResolver = referenceResolver;
+        this.mdmService = mdmService;
         this.loggingService = loggingService;
     }
 
@@ -104,6 +107,7 @@ public class PointOfInterestDeleter {
 
         pointOfInterestRepository.deleteAll(pointsOfInterest);
         notifyDeleted(pointsOfInterest);
+        mdmService.deletePoisBySuperId(pointOfInterestId);
 
         logger.warn("All versions ({}) of point of interest {} deleted by user {}", pointsOfInterest.size(), pointOfInterestId, usernameForAuthenticatedUser);
 

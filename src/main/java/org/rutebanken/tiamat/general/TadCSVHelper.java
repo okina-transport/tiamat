@@ -89,12 +89,12 @@ public class TadCSVHelper {
      * @param tadList
      * @throws IllegalArgumentException
      */
-    public static void checkDuplicatedTads(List<DtoTadStop> tadList) throws IllegalArgumentException {
+    public void checkDuplicatedTads(List<DtoTadStop> tadList) throws IllegalArgumentException {
         List<String> compositeKey = tadList.stream()
                 .map(poi -> poi.getStopId() + poi.getStopName())
                 .collect(Collectors.toList());
 
-        Set listWithoutDuplicatedValues = new HashSet(compositeKey);
+        Set<String> listWithoutDuplicatedValues = new HashSet<>(compositeKey);
 
         if (compositeKey.size() > listWithoutDuplicatedValues.size())
             throw new IllegalArgumentException("There are duplicated TAD in your CSV File (With the same ID & Name)");

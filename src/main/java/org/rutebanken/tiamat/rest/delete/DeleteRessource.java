@@ -8,10 +8,10 @@ import jakarta.ws.rs.core.Response;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.service.delete.DeleteService;
-import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Component;
 
 
-@Controller
+@Component
 @Path("/deleteall")
 public class DeleteRessource {
 

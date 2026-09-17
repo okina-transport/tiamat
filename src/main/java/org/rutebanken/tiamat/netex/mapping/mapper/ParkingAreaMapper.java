@@ -72,7 +72,7 @@ public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.P
         netexParkingArea.setId(StringUtils.appendIfMissing(tiamatParkingArea.getNetexId(), ":LOC"));
 
         netexParkingArea.setPublicUse(tiamatParkingArea.getPublicUse() != null ? PublicUseEnumeration.fromValue(tiamatParkingArea.getPublicUse().value()) : PublicUseEnumeration.ALL);
-        netexParkingArea.withRest(netexObjectFactory.createParkingArea_VersionStructureTotalCapacity(tiamatParkingArea.getTotalCapacity()));
+        netexParkingArea.withRest(netexObjectFactory.createParkingArea_VersionStructureTotalCapacity(tiamatParkingArea.getTotalCapacity() == null ? BigInteger.ZERO : tiamatParkingArea.getTotalCapacity()));
 
         if (tiamatParkingArea.getBays() != null && !tiamatParkingArea.getBays().isEmpty()) {
             ParkingBays_RelStructure parkingBaysRelStructure = new ParkingBays_RelStructure();

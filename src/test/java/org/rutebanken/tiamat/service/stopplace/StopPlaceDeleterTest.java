@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.LoggingService;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
@@ -38,6 +39,7 @@ public class StopPlaceDeleterTest {
     private StopPlaceRepository stopPlaceRepository = mock(StopPlaceRepository.class);
     private ReflectionAuthorizationService authorizationService = mock(ReflectionAuthorizationService.class);
     private UsernameFetcher usernameFetcher = mock(UsernameFetcher.class);
+    private MdmService mdmServiceMock = mock(MdmService.class);
     private LoggingService loggingService = mock(LoggingService.class);
     private MutateLock mutateLock = new MutateLock(null) {
         @Override
@@ -45,7 +47,7 @@ public class StopPlaceDeleterTest {
             return supplier.get();
         }
     };
-    private StopPlaceDeleter stopPlaceDeleter = new StopPlaceDeleter(stopPlaceRepository, authorizationService, usernameFetcher, mutateLock, stopPlaceQuayDeleterToChouette, loggingService);
+    private StopPlaceDeleter stopPlaceDeleter = new StopPlaceDeleter(stopPlaceRepository, authorizationService, usernameFetcher, mutateLock, stopPlaceQuayDeleterToChouette, mdmServiceMock, loggingService);
 
     @Test
     public void doNotDeleteParent() {
@@ -75,6 +77,7 @@ public class StopPlaceDeleterTest {
         assertThat(deleted).isTrue();
 
         verify(stopPlaceRepository, times(1)).deleteAll(anyList());
+        verify(mdmServiceMock, times(1)).deleteStopPlaceBySuperId(anyString());
     }
 
 }

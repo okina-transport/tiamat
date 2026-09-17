@@ -42,13 +42,11 @@ import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
-import org.xml.sax.SAXException;
 
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
-import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -56,12 +54,16 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import static org.mockito.Mockito.when;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class NetexFranceComplianceTest extends TiamatIntegrationTest {
@@ -217,6 +219,7 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
 
     private void initData(){
         final int numberOfStopPlaces = StopPlaceSearch.DEFAULT_PAGE_SIZE;
+        Set<Long> mdmIds = new HashSet<>();
         for (int i = 0; i < numberOfStopPlaces; i++) {
             StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("stop place number " + i));
             stopPlace.setVersion(1L);
@@ -241,8 +244,9 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
             stopPlace.getQuays().add(quay);
 
             stopPlaceRepository.save(stopPlace);
-
+            mdmIds.add((long) i);
         }
+        when(mdmClient.getStopPlaceIdentifiersByDataset("test")).thenReturn(mdmIds);
         stopPlaceRepository.flush();
     }
 
@@ -289,7 +293,7 @@ public class NetexFranceComplianceTest extends TiamatIntegrationTest {
         }
     }
 
-    public PublicationDeliveryStructure unmarshal(String path) throws JAXBException, XMLStreamException, IOException, SAXException {
+    public PublicationDeliveryStructure unmarshal(String path) throws JAXBException {
         JAXBContext jaxbContext = JAXBContext.newInstance(ObjectFactory.class);
 
         Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();

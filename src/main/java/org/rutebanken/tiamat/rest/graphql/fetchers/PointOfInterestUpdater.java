@@ -24,6 +24,7 @@ import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.LoggingService;
 import org.rutebanken.tiamat.externalapis.DtoGeocode;
 import org.rutebanken.tiamat.importer.ImporterUtils;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.PointOfInterestClassificationRepository;
 import org.rutebanken.tiamat.repository.PointOfInterestFacilitySetRepository;
@@ -35,7 +36,6 @@ import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.PointOfInterestVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,28 +51,35 @@ import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
 class PointOfInterestUpdater implements DataFetcher {
 
     private static final Logger logger = LoggerFactory.getLogger(PointOfInterestUpdater.class);
-    @Autowired
-    private PointOfInterestRepository pointOfInterestRepository;
-    @Autowired
-    private PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService;
-    @Autowired
-    private PointOfInterestClassificationRepository pointOfInterestClassificationRepository;
-    @Autowired
-    private PointOfInterestFacilitySetRepository pointOfInterestFacilitySetRepository;
-    @Autowired
-    private GeometryMapper geometryMapper;
-    @Autowired
-    private ReflectionAuthorizationService authorizationService;
-    @Autowired
-    private ValidBetweenMapper validBetweenMapper;
-    @Autowired
-    private VersionCreator versionCreator;
-    @Autowired
-    private GroupOfEntitiesMapper groupOfEntitiesMapper;
-    @Autowired
-    private LoggingService loggingService;
-    @Autowired
-    private UsernameFetcher usernameFetcher;
+
+    private final PointOfInterestRepository pointOfInterestRepository;
+    private final PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService;
+    private final PointOfInterestClassificationRepository pointOfInterestClassificationRepository;
+    private final PointOfInterestFacilitySetRepository pointOfInterestFacilitySetRepository;
+    private final GeometryMapper geometryMapper;
+    private final ReflectionAuthorizationService authorizationService;
+    private final ValidBetweenMapper validBetweenMapper;
+    private final VersionCreator versionCreator;
+    private final GroupOfEntitiesMapper groupOfEntitiesMapper;
+    private final MdmService mdmService;
+    private final LoggingService loggingService;
+    private final UsernameFetcher usernameFetcher;
+
+    public PointOfInterestUpdater(PointOfInterestRepository pointOfInterestRepository, PointOfInterestVersionedSaverService pointOfInterestVersionedSaverService, PointOfInterestClassificationRepository pointOfInterestClassificationRepository, PointOfInterestFacilitySetRepository pointOfInterestFacilitySetRepository, GeometryMapper geometryMapper, ReflectionAuthorizationService authorizationService, ValidBetweenMapper validBetweenMapper, VersionCreator versionCreator, GroupOfEntitiesMapper groupOfEntitiesMapper, MdmService mdmService, LoggingService loggingService, UsernameFetcher usernameFetcher) {
+        this.pointOfInterestRepository = pointOfInterestRepository;
+        this.pointOfInterestVersionedSaverService = pointOfInterestVersionedSaverService;
+        this.pointOfInterestClassificationRepository = pointOfInterestClassificationRepository;
+        this.pointOfInterestFacilitySetRepository = pointOfInterestFacilitySetRepository;
+        this.geometryMapper = geometryMapper;
+        this.authorizationService = authorizationService;
+        this.validBetweenMapper = validBetweenMapper;
+        this.versionCreator = versionCreator;
+        this.groupOfEntitiesMapper = groupOfEntitiesMapper;
+        this.mdmService = mdmService;
+        this.loggingService = loggingService;
+        this.usernameFetcher = usernameFetcher;
+    }
+
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
@@ -114,6 +121,7 @@ class PointOfInterestUpdater implements DataFetcher {
             authorizationService.assertAuthorized(ROLE_EDIT_STOPS, Arrays.asList(existingVersion, updatedPointOfInterest));
 
             logger.info("Saving new version of point of interest {}", updatedPointOfInterest);
+            mdmService.updateImportedIds(updatedPointOfInterest);
             updatedPointOfInterest = pointOfInterestVersionedSaverService.saveNewVersion(updatedPointOfInterest);
 
             logPOI(existingVersion, user, updatedPointOfInterest);

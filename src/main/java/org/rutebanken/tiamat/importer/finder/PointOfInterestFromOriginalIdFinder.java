@@ -17,6 +17,8 @@ package org.rutebanken.tiamat.importer.finder;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.slf4j.Logger;
@@ -43,11 +45,19 @@ public class PointOfInterestFromOriginalIdFinder implements PointOfInterestFinde
 
     private Cache<String, Optional<String>> keyValueCache;
 
+    private MdmService mdmService;
+
+    @Value("${netex.validPrefix:MOBIITI}")
+    String validNetexPrefix;
+
+
     public PointOfInterestFromOriginalIdFinder(PointOfInterestRepository pointOfInterestRepository,
+                                               MdmService mdmService,
                                                @Value("${parkingFromOriginalIdFinderCache.maxSize:50000}") int maximumSize,
                                                @Value("${parkingFromOriginalIdFinderCache.expiresAfter:30}") int expiresAfter,
                                                @Value("${parkingFromOriginalIdFinderCache.expiresAfterTimeUnit:DAYS}") TimeUnit expiresAfterTimeUnit) {
         this.pointOfInterestRepository = pointOfInterestRepository;
+        this.mdmService = mdmService;
         keyValueCache = CacheBuilder.newBuilder()
                 .maximumSize(maximumSize)
                 .expireAfterWrite(expiresAfter, expiresAfterTimeUnit)
@@ -82,18 +92,11 @@ public class PointOfInterestFromOriginalIdFinder implements PointOfInterestFinde
 
     private PointOfInterest findByKeyValue(Set<String> originalIds) {
         for(String originalId : originalIds) {
-            String cacheKey = keyValKey(ORIGINAL_ID_KEY, originalId);
-            Optional<String> matchingPointOfInterestNetexId = keyValueCache.getIfPresent(cacheKey);
-            if(matchingPointOfInterestNetexId != null && matchingPointOfInterestNetexId.isPresent()) {
-                logger.debug("Cache match. Key {}, point of interest id: {}", cacheKey, matchingPointOfInterestNetexId.get());
-                return pointOfInterestRepository.findFirstByNetexIdOrderByVersionDesc(matchingPointOfInterestNetexId.get());
-            }
-        }
 
-        // No cache match
-        String pointOfInterestNetexId = pointOfInterestRepository.findFirstByKeyValues(ORIGINAL_ID_KEY, originalIds);
-        if(pointOfInterestNetexId != null) {
-            return pointOfInterestRepository.findFirstByNetexIdOrderByVersionDesc(pointOfInterestNetexId);
+            OkinaIdentifier existingId = mdmService.getExistingPoiMdmIdsFromImportedId(originalId);
+            if(existingId != null) {
+                return pointOfInterestRepository.findFirstByNetexIdOrderByVersionDescAndInitialize(validNetexPrefix + ":PointOfInterest:" + existingId.getSuperId());
+            }
         }
         return null;
     }

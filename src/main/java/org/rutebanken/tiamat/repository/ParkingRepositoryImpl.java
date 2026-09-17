@@ -27,11 +27,14 @@ import org.hibernate.query.NativeQuery;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.rutebanken.tiamat.client.mdm.ParkingIdentifier;
 import org.rutebanken.tiamat.geo.GeometryTransformer;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
 import org.rutebanken.tiamat.rest.dto.DTOClusterMarker;
+import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +69,10 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
 
     @Value("${cluster.marker.maximum.distance:10000}")
     protected long maximumDistance;
+    @Autowired
+    private MdmService mdmService;
+    @Autowired
+    private VersionCreator versionCreator;
 
     /**
      * Find parking's netex ID by key value
@@ -260,6 +267,7 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         query.setFirstResult(Math.toIntExact(pageable.getOffset()));
         query.setMaxResults(pageable.getPageSize());
         List<Parking> parkings = query.getResultList();
+        parkings = createCopyAndFillImportedIdsFromMDM(parkings);
         return new PageImpl<>(parkings, pageable, parkings.size());
     }
 
@@ -321,9 +329,48 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         }
 
         return Optional.of(results.get(0));
-
     }
 
+    @Override
+    public Set<String> findNetexIdsByPlaceEquipmentId(String placeEquipmentNetexId) {
+        String sql = "SELECT DISTINCT p.netex_id " +
+                "FROM parking p " +
+                "INNER JOIN installed_equipment_version_structure iev " +
+                "ON iev.id = p.place_equipments_id " +
+                "WHERE iev.netex_id = :placeEquipmentNetexId";
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("placeEquipmentNetexId", placeEquipmentNetexId);
+
+        List<String> results = query.getResultList();
+        return new HashSet<>(results);
+    }
+
+    @Override
+    public List<Parking> createCopyAndFillImportedIdsFromMDM(List<Parking> parkings){
+        List<Parking> results = new ArrayList<>();
+        if (parkings.isEmpty()){
+            return new ArrayList<>();
+        }
+
+        Set<String> superIds = new HashSet<>();
+        for (Parking parking : parkings) {
+            results.add(versionCreator.createCopy(parking, Parking.class));
+            superIds.add(parking.getNetexId());
+        }
+
+        List<ParkingIdentifier> mdmIds = mdmService.getAllParkingsFromSuperId(superIds);
+
+        for (Parking parking : results) {
+            String originalId = mdmIds.stream()
+                    .filter(mdmId -> mdmId.getSuperId().equals(parking.getNetexId()))
+                    .map(ParkingIdentifier::getOriginalId)
+                    .findFirst().orElse(null);
+            parking.getOriginalIds().add(originalId);
+        }
+
+        return results;
+    }
 
     @Override
     public List<String> findByStopPlaceNetexId(String netexStopPlaceId) {
@@ -566,20 +613,5 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
         Query q = entityManager.createNativeQuery(sql, Parking.class);
 
         return (List<Parking>) q.getResultList();
-    }
-
-    @Override
-    public Set<String> findNetexIdsByPlaceEquipmentId(String placeEquipmentNetexId) {
-        String sql = "SELECT DISTINCT p.netex_id " +
-                "FROM parking p " +
-                "INNER JOIN installed_equipment_version_structure iev " +
-                "ON iev.id = p.place_equipments_id " +
-                "WHERE iev.netex_id = :placeEquipmentNetexId";
-
-        Query query = entityManager.createNativeQuery(sql);
-        query.setParameter("placeEquipmentNetexId", placeEquipmentNetexId);
-
-        List<String> results = query.getResultList();
-        return new HashSet<>(results);
     }
 }

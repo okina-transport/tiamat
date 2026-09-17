@@ -35,6 +35,7 @@ import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.EntityChangedListener;
 import org.rutebanken.tiamat.changelog.LoggingService;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.DataManagedObjectStructure;
 import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.StopPlace;
@@ -57,24 +58,24 @@ public class ParkingDeleter {
     private static final Logger logger = LoggerFactory.getLogger(ParkingDeleter.class);
 
     private final EntityChangedListener entityChangedListener;
-
     private final ReflectionAuthorizationService authorizationService;
-
     private final UsernameFetcher usernameFetcher;
     private final ParkingRepository parkingRepository;
     private final ReferenceResolver referenceResolver;
+    private final MdmService mdmService;
     private final LoggingService loggingService;
 
     @Autowired
     public ParkingDeleter(ParkingRepository parkingRepository,
                           EntityChangedListener entityChangedListener,
                           ReflectionAuthorizationService authorizationService,
-                          UsernameFetcher usernameFetcher, ReferenceResolver referenceResolver, LoggingService loggingService) {
+                          UsernameFetcher usernameFetcher, ReferenceResolver referenceResolver, MdmService mdmService, LoggingService loggingService) {
         this.parkingRepository = parkingRepository;
         this.entityChangedListener = entityChangedListener;
         this.authorizationService = authorizationService;
         this.usernameFetcher = usernameFetcher;
         this.referenceResolver = referenceResolver;
+        this.mdmService = mdmService;
         this.loggingService = loggingService;
     }
 
@@ -103,6 +104,7 @@ public class ParkingDeleter {
         }
 
         parkingRepository.deleteAll(parkings);
+        mdmService.deleteParkingsBySuperId(parkingId);
         notifyDeleted(parkings);
 
         logger.warn("All versions ({}) of parking {} deleted by user {}", parkings.size(), parkingId, usernameForAuthenticatedUser);

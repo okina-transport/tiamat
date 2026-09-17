@@ -63,7 +63,7 @@ public class StopPlacesImportHandler {
 
     public void handleStopPlacesGeneralFrame(List<org.rutebanken.netex.model.StopPlace> tiamatStopPlaces, ImportParams importParams,
                                              List<JAXBElement<? extends EntityStructure>> members, AtomicInteger atomicInteger,
-                                             List<org.rutebanken.tiamat.model.Quay> quaysParsed, Boolean containsMobiitiIds) {
+                                             List<org.rutebanken.tiamat.model.Quay> quaysParsed, boolean containsMobiitiIds) {
         List<StopPlace> stopPlacesParsed = mapStopPlacesToTiamatModel(tiamatStopPlaces, quaysParsed);
         // on trie la liste des stopplaces pour commencer l'enregistrement en bdd par les parents
         stopPlacesParsed.sort(Comparator.comparing(stopPlace -> !stopPlace.isParentStopPlace()));

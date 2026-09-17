@@ -49,7 +49,7 @@ public class TransactionalMergingStopPlacesImporter {
     public Collection<org.rutebanken.netex.model.StopPlace> importStopPlaces(
             List<StopPlace> stopPlaces,
             AtomicInteger stopPlacesCreated,
-            Boolean containsMobiitiIds,
+            boolean containsMobiitiIds,
             boolean recomputeStopPlacesLocation) {
 
         List<org.rutebanken.netex.model.StopPlace> createdStopPlaces = new ArrayList<>();

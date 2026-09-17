@@ -16,19 +16,17 @@
 package org.rutebanken.tiamat.netex.mapping;
 
 import org.junit.jupiter.api.Disabled;
-import org.locationtech.jts.geom.Coordinate;
-import ma.glasnost.orika.MappingContext;
-
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Coordinate;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.model.AccessibilityAssessment;
 import org.rutebanken.tiamat.model.AccessibilityLimitation;
 import org.rutebanken.tiamat.model.AddressablePlaceRefStructure;
 import org.rutebanken.tiamat.model.AlternativeName;
 import org.rutebanken.tiamat.model.CountryRef;
-import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.model.GroupOfStopPlaces;
 import org.rutebanken.tiamat.model.IanaCountryTldEnumeration;
 import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
@@ -41,7 +39,6 @@ import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopPlacesInFrame_RelStructure;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.TopographicPlaceRefStructure;
-import org.rutebanken.tiamat.netex.mapping.mapper.QuayMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 
@@ -50,12 +47,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-public class NetexMapperTest extends TiamatIntegrationTest {
+class NetexMapperTest extends TiamatIntegrationTest {
 
     private static final ObjectFactory netexObjectFactory = new ObjectFactory();
 
@@ -63,7 +58,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     private NetexMapper netexMapper;
 
     @Test
-    public void mapKeyValuesToInternalList() throws Exception {
+    void mapKeyValuesToInternalList() {
 
 
         org.rutebanken.netex.model.StopPlace stopPlace = new org.rutebanken.netex.model.StopPlace()
@@ -86,7 +81,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
 
 
     @Test
-    public void mapSiteFrameToNetexModel() throws Exception {
+    void mapSiteFrameToNetexModel() {
         org.rutebanken.tiamat.model.SiteFrame sourceSiteFrame = new org.rutebanken.tiamat.model.SiteFrame();
 
         StopPlacesInFrame_RelStructure stopPlacesInFrame_relStructure = new StopPlacesInFrame_RelStructure();
@@ -105,7 +100,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void mapSiteFrameToInternalModel() throws Exception {
+    void mapSiteFrameToInternalModel() {
         org.rutebanken.netex.model.SiteFrame netexSiteFrame = new org.rutebanken.netex.model.SiteFrame();
 
         org.rutebanken.netex.model.StopPlacesInFrame_RelStructure stopPlacesInFrame_relStructure = new org.rutebanken.netex.model.StopPlacesInFrame_RelStructure();
@@ -128,7 +123,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void mapGroupOfStopPlacesToNetex() throws Exception {
+    void mapGroupOfStopPlacesToNetex() {
 
         StopPlace stopPlace = new StopPlace();
         stopPlace.setNetexId("NSR:StopPlace:1");
@@ -142,14 +137,12 @@ public class NetexMapperTest extends TiamatIntegrationTest {
         groupOfStopPlaces.setCreated(Instant.now());
         groupOfStopPlaces.setChanged(Instant.now());
         groupOfStopPlaces.setName(new EmbeddableMultilingualString("oh my gosp"));
-        groupOfStopPlaces.setCentroid(geometryFactory.createPoint(new Coordinate(16,17)));
+        groupOfStopPlaces.setCentroid(geometryFactory.createPoint(new Coordinate(16, 17)));
 
         AlternativeName alternativeName = new AlternativeName();
         alternativeName.setName(new EmbeddableMultilingualString("alternative name alias"));
         alternativeName.setNameType(NameTypeEnumeration.ALIAS);
         groupOfStopPlaces.getAlternativeNames().add(alternativeName);
-
-
 
 
         org.rutebanken.netex.model.GroupOfStopPlaces netexGroupOfStopPlaces = netexMapper.getFacade().map(groupOfStopPlaces, org.rutebanken.netex.model.GroupOfStopPlaces.class);
@@ -174,8 +167,8 @@ public class NetexMapperTest extends TiamatIntegrationTest {
                 .isNotNull()
                 .isNotEmpty()
                 .extracting(spRef -> spRef.getValue().getRef())
-                    .as("reference to stop place id")
-                    .containsOnly(stopPlace.getNetexId());
+                .as("reference to stop place id")
+                .containsOnly(stopPlace.getNetexId());
 
         assertThat(netexGroupOfStopPlaces.getChanged()).as("changed").isNotNull();
         assertThat(netexGroupOfStopPlaces.getVersion()).as("version").isEqualTo(String.valueOf(groupOfStopPlaces.getVersion()));
@@ -183,7 +176,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
 
 
     @Test
-    public void mapStopPlaceWithNameAndTopographicPlaceRefToNetex() throws Exception {
+    void mapStopPlaceWithNameAndTopographicPlaceRefToNetex() {
         StopPlace stopPlace = new StopPlace();
         stopPlace.setNetexId("stopplacenetexid");
         stopPlace.setName(new EmbeddableMultilingualString("name", "en"));
@@ -205,7 +198,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void mapStopPlaceToInternalWithId() throws Exception {
+    void mapStopPlaceToInternalWithId() {
         org.rutebanken.netex.model.StopPlace netexStopPlace = new org.rutebanken.netex.model.StopPlace();
         netexStopPlace.setId("NSR:StopPlace:1339");
 
@@ -216,7 +209,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void mapStopPlaceWithKeyValuesToNetex() throws Exception {
+    void mapStopPlaceWithKeyValuesToNetex() {
 
         StopPlace stopPlace = new StopPlace();
 
@@ -238,7 +231,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
      * But when the stop place already has key values, we should map them to tiamat's keyValues.
      */
     @Test
-    public void mapStopPlaceWithKeyValuesToTiamat() throws Exception {
+    void mapStopPlaceWithKeyValuesToTiamat() {
         String originalId = "OPP:StopArea:123";
         org.rutebanken.netex.model.StopPlace netexStopPlace = new org.rutebanken.netex.model.StopPlace()
                 .withKeyList(
@@ -254,7 +247,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void mapStopPlaceToInternalWithName() throws Exception {
+    void mapStopPlaceToInternalWithName() {
         org.rutebanken.netex.model.StopPlace netexStopPlace = new org.rutebanken.netex.model.StopPlace();
         org.rutebanken.netex.model.MultilingualString name = new org.rutebanken.netex.model.MultilingualString();
         name.setValue("stop place ");
@@ -270,7 +263,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void mapStopPlaceInternalIdToNetexId() {
+    void mapStopPlaceInternalIdToNetexId() {
         StopPlace tiamatStopPlace = new StopPlace();
         tiamatStopPlace.setNetexId("NSR:StopPlace:123456");
 
@@ -284,7 +277,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
      */
     @Disabled
     @Test
-    public void mapNetexQuayIdToInternal() {
+    void mapNetexQuayIdToInternal() {
         org.rutebanken.netex.model.Quay netexQuay = new org.rutebanken.netex.model.Quay();
 
         String netexId = "NSR:Quay:12345";
@@ -296,7 +289,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void mapInternalQuayIdToNetex() {
+    void mapInternalQuayIdToNetex() {
 
         org.rutebanken.tiamat.model.Quay tiamatQuay = new org.rutebanken.tiamat.model.Quay();
         String netexId = "NSR:Quay:" + 1234567;
@@ -308,14 +301,14 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void mapStopPlaceWithQuayToNetex() {
+    void mapStopPlaceWithQuayToNetex() {
         org.rutebanken.tiamat.model.StopPlace stopPlace = new StopPlace();
 
         String netexId = "NSR:Quay:" + 1234567;
         org.rutebanken.tiamat.model.Quay tiamatQuay = new org.rutebanken.tiamat.model.Quay();
         tiamatQuay.setNetexId(netexId);
-        tiamatQuay.setName(new EmbeddableMultilingualString("nom","fr"));
-        tiamatQuay.getKeyValues().put("imported-name",new Value("nom"));
+        tiamatQuay.setName(new EmbeddableMultilingualString("nom", "fr"));
+        tiamatQuay.getKeyValues().put("imported-name", new Value("nom"));
 
         stopPlace.getQuays().add(tiamatQuay);
 
@@ -332,7 +325,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void countryRefMappedToNetex() {
+    void countryRefMappedToNetex() {
         SiteFrame tiamatSiteFrame = new SiteFrame();
         TopographicPlace topographicPlace = new TopographicPlace();
 
@@ -360,7 +353,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void mapCountyRefsFromMunicipalitiesFromTiamatToNetex() {
+    void mapCountyRefsFromMunicipalitiesFromTiamatToNetex() {
         SiteFrame tiamatSiteFrame = new SiteFrame();
 
         CountryRef countryRef = new CountryRef();
@@ -397,7 +390,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void mapCountyRefsFromMunicipalitiesFromNetexToTiamat() {
+    void mapCountyRefsFromMunicipalitiesFromNetexToTiamat() {
         org.rutebanken.netex.model.SiteFrame netexSiteFrame = new org.rutebanken.netex.model.SiteFrame();
         netexSiteFrame.withTopographicPlaces(new TopographicPlacesInFrame_RelStructure());
 
@@ -451,7 +444,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
 
 
     @Test
-    public void mapStopPlaceWithAccessibilityAssessmentToTiamat() {
+    void mapStopPlaceWithAccessibilityAssessmentToTiamat() {
         org.rutebanken.netex.model.StopPlace netexStopPlace = new org.rutebanken.netex.model.StopPlace();
         netexStopPlace.setAccessibilityAssessment(createNetexAccessibilityAssessment());
 
@@ -483,7 +476,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void mapStopPlaceWithAccessibilityAssessmentToNetex() {
+    void mapStopPlaceWithAccessibilityAssessmentToNetex() {
         StopPlace tiamatStopPlace = new StopPlace();
         tiamatStopPlace.setAccessibilityAssessment(createAccessibilityAssessment());
 
@@ -499,7 +492,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void mapQuayAccessibilityAccessmentAssertNotNull() {
+    void mapQuayAccessibilityAccessmentAssertNotNull() {
         Quay quay = new Quay();
 
         AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
@@ -533,7 +526,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void accessibilityAssesmentIdToNetex() throws Exception {
+    void accessibilityAssesmentIdToNetex() {
         AccessibilityAssessment accessibilityAssessment = new AccessibilityAssessment();
         accessibilityAssessment.setNetexId("NSR:AccessibilityAssesment:123124");
 
@@ -550,7 +543,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void pathLinkToNetex() throws Exception {
+    void pathLinkToNetex() {
         PathLink pathLink = new PathLink(
                 new PathLinkEnd(new AddressablePlaceRefStructure("NSR:StopPlace:1", "1")),
                 new PathLinkEnd(new AddressablePlaceRefStructure("NSR:StopPlace:2", "1")));
@@ -571,7 +564,7 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
-    public void mapAdjacentSitesToNetex() throws Exception {
+    void mapAdjacentSitesToNetex() {
 
         StopPlace stopPlace = new StopPlace();
         stopPlace.getAdjacentSites().add(new SiteRefStructure("NSR:StopPlace:1"));
@@ -597,5 +590,78 @@ public class NetexMapperTest extends TiamatIntegrationTest {
         assertThat(
                 firstSiteRef.getRef())
                 .isEqualTo("NSR:StopPlace:1");
+    }
+
+    @Test
+    void mapStopPlaceWithAlternativeTextToTiamat() {
+        org.rutebanken.netex.model.StopPlace netexStopPlace = new org.rutebanken.netex.model.StopPlace();
+
+        org.rutebanken.netex.model.AlternativeText netexAlternativeText = new org.rutebanken.netex.model.AlternativeText();
+        netexAlternativeText.setText(new MultilingualString().withValue("Nom alternatif").withLang("fr"));
+        netexAlternativeText.setAttributeName("name");
+        netexAlternativeText.setUseForLanguage("fr");
+
+        netexStopPlace.setAlternativeTexts(
+                new AlternativeTexts_RelStructure().withAlternativeText(netexAlternativeText));
+
+        StopPlace tiamatStopPlace = netexMapper.mapToTiamatModel(netexStopPlace);
+
+        assertThat(tiamatStopPlace.getAlternativeTexts()).hasSize(1);
+        assertThat(tiamatStopPlace.getAlternativeTexts().get(0).getText().getValue()).isEqualTo("Nom alternatif");
+        assertThat(tiamatStopPlace.getAlternativeTexts().get(0).getText().getLang()).isEqualTo("fr");
+        assertThat(tiamatStopPlace.getAlternativeTexts().get(0).getAttributeName()).isEqualTo("name");
+        assertThat(tiamatStopPlace.getAlternativeTexts().get(0).getUseForLanguage()).isEqualTo("fr");
+    }
+
+    @Test
+    void mapStopPlaceWithAlternativeTextToNetex() {
+        StopPlace tiamatStopPlace = new StopPlace();
+
+        org.rutebanken.tiamat.model.AlternativeText alternativeText = new org.rutebanken.tiamat.model.AlternativeText();
+        alternativeText.setText(new EmbeddableMultilingualString("Nom alternatif", "fr"));
+        alternativeText.setAttributeName("name");
+        alternativeText.setUseForLanguage("fr");
+        tiamatStopPlace.getAlternativeTexts().add(alternativeText);
+
+        org.rutebanken.netex.model.StopPlace netexStopPlace = netexMapper.mapToNetexModel(tiamatStopPlace);
+
+        assertThat(netexStopPlace.getAlternativeTexts()).isNotNull();
+        assertThat(netexStopPlace.getAlternativeTexts().getAlternativeText()).hasSize(1);
+        assertThat(netexStopPlace.getAlternativeTexts().getAlternativeText().get(0).getText().getValue()).isEqualTo("Nom alternatif");
+        assertThat(netexStopPlace.getAlternativeTexts().getAlternativeText().get(0).getAttributeName()).isEqualTo("name");
+    }
+
+    @Test
+    void mapQuayWithAlternativeTextToTiamat() {
+        org.rutebanken.netex.model.Quay netexQuay = new org.rutebanken.netex.model.Quay();
+
+        org.rutebanken.netex.model.AlternativeText netexAlternativeText = new org.rutebanken.netex.model.AlternativeText();
+        netexAlternativeText.setText(new MultilingualString().withValue("Quai alternatif").withLang("fr"));
+        netexAlternativeText.setAttributeName("name");
+
+        netexQuay.setAlternativeTexts(
+                new AlternativeTexts_RelStructure().withAlternativeText(netexAlternativeText));
+
+        org.rutebanken.tiamat.model.Quay tiamatQuay = netexMapper.mapToTiamatModel(netexQuay);
+
+        assertThat(tiamatQuay.getAlternativeTexts()).hasSize(1);
+        assertThat(tiamatQuay.getAlternativeTexts().get(0).getText().getValue()).isEqualTo("Quai alternatif");
+        assertThat(tiamatQuay.getAlternativeTexts().get(0).getAttributeName()).isEqualTo("name");
+    }
+
+    @Test
+    void mapQuayWithAlternativeTextToNetex() {
+        org.rutebanken.tiamat.model.Quay tiamatQuay = new org.rutebanken.tiamat.model.Quay();
+
+        org.rutebanken.tiamat.model.AlternativeText alternativeText = new org.rutebanken.tiamat.model.AlternativeText();
+        alternativeText.setText(new EmbeddableMultilingualString("Quai alternatif", "fr"));
+        alternativeText.setAttributeName("name");
+        tiamatQuay.getAlternativeTexts().add(alternativeText);
+
+        org.rutebanken.netex.model.Quay netexQuay = netexMapper.mapToNetexModel(tiamatQuay);
+
+        assertThat(netexQuay.getAlternativeTexts()).isNotNull();
+        assertThat(netexQuay.getAlternativeTexts().getAlternativeText()).hasSize(1);
+        assertThat(netexQuay.getAlternativeTexts().getAlternativeText().get(0).getText().getValue()).isEqualTo("Quai alternatif");
     }
 }

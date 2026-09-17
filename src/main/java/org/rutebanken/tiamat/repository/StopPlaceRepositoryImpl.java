@@ -28,6 +28,7 @@ import org.hibernate.query.NativeQuery;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
 import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
@@ -36,7 +37,6 @@ import org.rutebanken.tiamat.dtoassembling.dto.StopPlaceMergeCandidateDto;
 import org.rutebanken.tiamat.dtoassembling.dto.StopPlaceMergeCandidatePairDto;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.geo.GeometryTransformer;
-import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.Quay;
@@ -77,6 +77,8 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceRepositoryImpl.class);
 
     private static final int SCROLL_FETCH_SIZE = 1000;
+
+    private static final double NAME_SIMILARITY_THRESHOLD = 0.6;
 
     private static BasicFormatterImpl basicFormatter = new BasicFormatterImpl();
 
@@ -360,6 +362,36 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         } catch (NoResultException e) {
             return null;
         }
+    }
+
+    /**
+     * Find netexIds of other stop places (or parent stop places, depending on {@code parentStopPlace}) within the
+     * given envelope whose name is similar to the given name, ordered by decreasing similarity.
+     * Used to identify stop places that are candidates for being merged/deduplicated.
+     */
+    @Override
+    public List<String> findStopPlacesWithSimilarNameNearby(Envelope envelope, String name, boolean parentStopPlace, String excludeNetexId) {
+        Geometry geometryFilter = geometryFactory.toGeometry(envelope);
+
+        String sql = "SELECT sub.netex_id FROM " +
+                "(SELECT DISTINCT s.netex_id AS netex_id, similarity(s.name_value, :name) AS sim FROM stop_place s " +
+                SQL_LEFT_JOIN_PARENT_STOP +
+                "WHERE ST_Within(s.centroid, :filter) = true " +
+                "AND s.netex_id != :excludeNetexId " +
+                "AND s.parent_stop_place = :parentStopPlace " +
+                "AND " + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME +
+                ") sub " +
+                "WHERE sub.sim > :similarityThreshold " +
+                "ORDER BY sub.sim DESC";
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("pointInTime", Date.from(Instant.now()));
+        query.setParameter("filter", geometryFilter);
+        query.setParameter("name", name);
+        query.setParameter("excludeNetexId", excludeNetexId);
+        query.setParameter("parentStopPlace", parentStopPlace);
+        query.setParameter("similarityThreshold", NAME_SIMILARITY_THRESHOLD);
+        return query.getResultList();
     }
 
     @Override

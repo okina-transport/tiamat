@@ -16,9 +16,7 @@
 package org.rutebanken.tiamat.rest.graphql.types;
 
 import graphql.schema.*;
-import org.rutebanken.tiamat.rest.graphql.fetchers.OtherTransportModesFetcher;
-import org.rutebanken.tiamat.rest.graphql.fetchers.StopPlaceTariffZoneFetcher;
-import org.rutebanken.tiamat.rest.graphql.fetchers.TagFetcher;
+import org.rutebanken.tiamat.rest.graphql.fetchers.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -29,8 +27,6 @@ import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.ALTERNATIVE_NAMES;
-import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.TARIFF_ZONES;
 import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.alternativeNameObjectType;
 import static org.rutebanken.tiamat.rest.graphql.types.CustomGraphQLTypes.otherTransportModes;
 
@@ -48,6 +44,12 @@ public class StopPlaceInterfaceCreator {
 
     @Autowired
     private OtherTransportModesFetcher otherTransportModesFetcher;
+
+    @Autowired
+    private StopPlaceInseeCodeFetcher stopPlaceInseeCodeFetcher;
+
+    @Autowired
+    private StopPlaceMergeIdFetcher stopPlaceMergeIdFetcher;
 
     public List<GraphQLFieldDefinition> createCommonInterfaceFields(GraphQLObjectType tariffZoneObjectType,
                                                               GraphQLObjectType topographicPlaceObjectType,
@@ -83,6 +85,16 @@ public class StopPlaceInterfaceCreator {
                 .name(OTHER_TRANSPORT_MODE)
                 .type(new GraphQLList(otherTransportModes))
                 .dataFetcher(otherTransportModesFetcher)
+                .build());
+        stopPlaceInterfaceFields.add(newFieldDefinition()
+                .name(INSEE_CODE)
+                .type(GraphQLString)
+                .dataFetcher(stopPlaceInseeCodeFetcher)
+                .build());
+        stopPlaceInterfaceFields.add(newFieldDefinition()
+                .name(MERGE_ID)
+                .type(GraphQLString)
+                .dataFetcher(stopPlaceMergeIdFetcher)
                 .build());
         return stopPlaceInterfaceFields;
     }

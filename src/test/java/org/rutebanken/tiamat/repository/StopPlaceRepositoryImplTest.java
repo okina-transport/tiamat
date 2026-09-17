@@ -415,6 +415,67 @@ class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
     }
 
     @Test
+    void findStopPlacesWithSimilarNameNearby() {
+        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyon"));
+        stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
+        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        stopPlaceRepository.save(stopPlace);
+
+        StopPlace nearbySimilarStopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyonn"));
+        nearbySimilarStopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500440, 59.875689)));
+        nearbySimilarStopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        stopPlaceRepository.save(nearbySimilarStopPlace);
+
+        Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
+
+        List<String> result = stopPlaceRepository.findStopPlacesWithSimilarNameNearby(
+                envelope, stopPlace.getName().getValue(), false, stopPlace.getNetexId());
+
+        assertThat(result).containsExactly(nearbySimilarStopPlace.getNetexId());
+    }
+
+    @Test
+    void findStopPlacesWithSimilarNameNearbyExcludesDifferentParentFlag() {
+        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyon"));
+        stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
+        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        stopPlaceRepository.save(stopPlace);
+
+        StopPlace nearbyParentStopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyon"));
+        nearbyParentStopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500440, 59.875689)));
+        nearbyParentStopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        nearbyParentStopPlace.setParentStopPlace(true);
+        stopPlaceRepository.save(nearbyParentStopPlace);
+
+        Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
+
+        List<String> result = stopPlaceRepository.findStopPlacesWithSimilarNameNearby(
+                envelope, stopPlace.getName().getValue(), false, stopPlace.getNetexId());
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void findStopPlacesWithSimilarNameNearbyNoMatchWhenNameIsDifferent() {
+        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyon"));
+        stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
+        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        stopPlaceRepository.save(stopPlace);
+
+        StopPlace nearbyDifferentlyNamedStopPlace = new StopPlace(new EmbeddableMultilingualString("Mairie"));
+        nearbyDifferentlyNamedStopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500440, 59.875689)));
+        nearbyDifferentlyNamedStopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        stopPlaceRepository.save(nearbyDifferentlyNamedStopPlace);
+
+        Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
+
+        List<String> result = stopPlaceRepository.findStopPlacesWithSimilarNameNearby(
+                envelope, stopPlace.getName().getValue(), false, stopPlace.getNetexId());
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     void findStopPlaceByMunicipalityAndTypeBusThenExpectNoResult() {
         String stopPlaceName = "Falsens plass";
         String municipalityName = "Gjøvik";

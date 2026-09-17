@@ -524,6 +524,7 @@ public class GraphQLNames {
     public static final String DAY_OF_THE_WEEK = "dayOfWeek";
     public static final String TIME_BAND = "timeBand";
     public static final String INSEE_CODE = "inseeCode";
+    public static final String MERGE_ID = "mergeId";
     public static final String ADDRESS = "address";
     public static final String CITY = "city";
     public static final String POSTAL_CODE = "postalCode";

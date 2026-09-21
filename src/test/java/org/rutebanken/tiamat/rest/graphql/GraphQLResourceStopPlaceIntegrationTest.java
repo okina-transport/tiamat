@@ -108,6 +108,172 @@ public class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLReso
     }
 
     @Test
+    public void retrieveInseeCodeAndMergeIdForMergeableStopPlaces() throws Exception {
+        Quay quay1 = new Quay();
+        quay1.setInseeCode("75056");
+        quay1.setCentroid(geometryFactory.createPoint(new Coordinate(2.3522, 48.8566)));
+        StopPlace stopPlace1 = new StopPlace(new EmbeddableMultilingualString("Place de la Mairie"));
+        stopPlace1.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlace1.setProvider("PROV1");
+        stopPlace1.setCentroid(geometryFactory.createPoint(new Coordinate(2.3522, 48.8566)));
+        stopPlace1.setQuays(new HashSet<>());
+        stopPlace1.getQuays().add(quay1);
+        stopPlaceRepository.save(stopPlace1);
+
+        Quay quay2 = new Quay();
+        quay2.setInseeCode("75056");
+        quay2.setCentroid(geometryFactory.createPoint(new Coordinate(2.35240, 48.85680)));
+        StopPlace stopPlace2 = new StopPlace(new EmbeddableMultilingualString(" place DE LA mairie "));
+        stopPlace2.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlace2.setProvider("PROV1");
+        stopPlace2.setCentroid(geometryFactory.createPoint(new Coordinate(2.35240, 48.85680)));
+        stopPlace2.setQuays(new HashSet<>());
+        stopPlace2.getQuays().add(quay2);
+        stopPlaceRepository.save(stopPlace2);
+
+        String graphQlJsonQuery = """
+                  {
+                  stopPlace: stopPlace (query:"%s", allVersions:true) {
+                            id
+                            name { value }
+                            ... on StopPlace {
+                                inseeCode
+                                mergeId
+                                provider
+                            }
+                        }
+                    }""".formatted(stopPlace1.getName().getValue());
+
+        var response = executeGraphqQLQueryOnly(graphQlJsonQuery)
+                .body("data.stopPlace.inseeCode", everyItem(equalTo("75056")))
+                .body("data.stopPlace.provider", everyItem(equalTo("PROV1")))
+                .extract();
+
+        String mergeId1 = response.jsonPath().getString("data.stopPlace[0].mergeId");
+        String mergeId2 = response.jsonPath().getString("data.stopPlace[1].mergeId");
+        assertThat(mergeId1).isNotBlank();
+        assertThat(mergeId2).isEqualTo(mergeId1);
+    }
+
+    @Test
+    public void retrieveMergeIdAcrossDifferentProviders() throws Exception {
+        StopPlace stopPlace1 = new StopPlace(new EmbeddableMultilingualString("Cité des Arts"));
+        stopPlace1.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlace1.setProvider("OLD_IMPORT");
+        stopPlace1.setCentroid(geometryFactory.createPoint(new Coordinate(2.3522, 48.8566)));
+        stopPlaceRepository.save(stopPlace1);
+
+        StopPlace stopPlace2 = new StopPlace(new EmbeddableMultilingualString("Cité des Arts"));
+        stopPlace2.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlace2.setProvider("NEW_IMPORT");
+        stopPlace2.setCentroid(geometryFactory.createPoint(new Coordinate(2.35225, 48.85665)));
+        stopPlaceRepository.save(stopPlace2);
+
+        String graphQlJsonQuery = """
+                  {
+                  stopPlace: stopPlace (query:"%s", allVersions:true) {
+                            id
+                            name { value }
+                            ... on StopPlace {
+                                mergeId
+                                provider
+                            }
+                        }
+                    }""".formatted(stopPlace1.getName().getValue());
+
+        var response = executeGraphqQLQueryOnly(graphQlJsonQuery)
+                .body("data.stopPlace[0].provider", equalTo("OLD_IMPORT"))
+                .body("data.stopPlace[1].provider", equalTo("NEW_IMPORT"))
+                .extract();
+
+        String mergeId1 = response.jsonPath().getString("data.stopPlace[0].mergeId");
+        String mergeId2 = response.jsonPath().getString("data.stopPlace[1].mergeId");
+        assertThat(mergeId1).isNotBlank();
+        assertThat(mergeId2).isEqualTo(mergeId1);
+    }
+
+    /**
+     * A matches B by name+distance, B matches C by exact centroid, but A and C do not match each other directly
+     * (different name, different centroid). All three must still share the same merge group number, since merge
+     * groups are computed as the connected components of the merge candidate graph, not just direct pairs.
+     */
+    @Test
+    public void mergeIdIsSharedAcrossTransitivelyConnectedStopPlaces() throws Exception {
+        StopPlace stopPlaceA = new StopPlace(new EmbeddableMultilingualString("Jaffelin"));
+        stopPlaceA.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlaceA.setProvider("PROV1");
+        stopPlaceA.setCentroid(geometryFactory.createPoint(new Coordinate(2.3522, 48.8566)));
+        stopPlaceRepository.save(stopPlaceA);
+
+        StopPlace stopPlaceB = new StopPlace(new EmbeddableMultilingualString("JAFFELIN"));
+        stopPlaceB.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlaceB.setProvider("PROV1");
+        stopPlaceB.setCentroid(geometryFactory.createPoint(new Coordinate(2.35235, 48.85675)));
+        stopPlaceRepository.save(stopPlaceB);
+
+        StopPlace stopPlaceC = new StopPlace(new EmbeddableMultilingualString("Autre Nom"));
+        stopPlaceC.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlaceC.setProvider("PROV2");
+        stopPlaceC.setCentroid(geometryFactory.createPoint(new Coordinate(2.35235, 48.85675)));
+        stopPlaceRepository.save(stopPlaceC);
+
+        String mergeIdA = fetchMergeId(stopPlaceA.getNetexId());
+        String mergeIdB = fetchMergeId(stopPlaceB.getNetexId());
+        String mergeIdC = fetchMergeId(stopPlaceC.getNetexId());
+
+        assertThat(mergeIdA).isNotBlank();
+        assertThat(mergeIdB).isEqualTo(mergeIdA);
+        assertThat(mergeIdC).isEqualTo(mergeIdA);
+    }
+
+    private String fetchMergeId(String netexId) throws Exception {
+        String graphQlJsonQuery = """
+                  {
+                  stopPlace: stopPlace (query:"%s", allVersions:true) {
+                            id
+                            ... on StopPlace {
+                                mergeId
+                            }
+                        }
+                    }""".formatted(netexId);
+
+        return executeGraphqQLQueryOnly(graphQlJsonQuery)
+                .extract()
+                .jsonPath()
+                .getString("data.stopPlace[0].mergeId");
+    }
+
+    @Test
+    public void filterStopPlacesByOrganisationName() throws Exception {
+        StopPlace stopPlace1 = new StopPlace(new EmbeddableMultilingualString("Filtrage Organisation"));
+        stopPlace1.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlace1.setProvider("PROV1");
+        stopPlace1.setCentroid(geometryFactory.createPoint(new Coordinate(2.3522, 48.8566)));
+        stopPlaceRepository.save(stopPlace1);
+
+        StopPlace stopPlace2 = new StopPlace(new EmbeddableMultilingualString("Filtrage Organisation"));
+        stopPlace2.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlace2.setProvider("PROV2");
+        stopPlace2.setCentroid(geometryFactory.createPoint(new Coordinate(3.3522, 49.8566)));
+        stopPlaceRepository.save(stopPlace2);
+
+        String graphQlJsonQuery = """
+                  {
+                  stopPlace: stopPlace (query:"%s", organisationName:"PROV1", allVersions:true) {
+                            id
+                            name { value }
+                            ... on StopPlace {
+                                provider
+                            }
+                        }
+                    }""".formatted(stopPlace1.getName().getValue());
+
+        executeGraphqQLQueryOnly(graphQlJsonQuery)
+                .body("data.stopPlace.size()", equalTo(1))
+                .body("data.stopPlace[0].provider", equalTo("PROV1"));
+    }
+
+    @Test
     public void mutateStopPlaceWithPlaceEquipmentOnQuay() {
 
         cleanTableTools.cleanInstalledEquipments();

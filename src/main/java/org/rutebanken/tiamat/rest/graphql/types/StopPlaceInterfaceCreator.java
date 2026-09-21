@@ -51,6 +51,9 @@ public class StopPlaceInterfaceCreator {
     @Autowired
     private StopPlaceMergeIdFetcher stopPlaceMergeIdFetcher;
 
+    @Autowired
+    private StopPlaceProviderFetcher stopPlaceProviderFetcher;
+
     public List<GraphQLFieldDefinition> createCommonInterfaceFields(GraphQLObjectType tariffZoneObjectType,
                                                               GraphQLObjectType topographicPlaceObjectType,
                                                               GraphQLObjectType validBetweenObjectType) {
@@ -95,6 +98,11 @@ public class StopPlaceInterfaceCreator {
                 .name(MERGE_ID)
                 .type(GraphQLString)
                 .dataFetcher(stopPlaceMergeIdFetcher)
+                .build());
+        stopPlaceInterfaceFields.add(newFieldDefinition()
+                .name(PROVIDER)
+                .type(GraphQLString)
+                .dataFetcher(stopPlaceProviderFetcher)
                 .build());
         return stopPlaceInterfaceFields;
     }

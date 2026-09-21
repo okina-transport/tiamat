@@ -35,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.util.Pair;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
@@ -415,62 +416,116 @@ class StopPlaceRepositoryImplTest extends TiamatIntegrationTest {
     }
 
     @Test
-    void findStopPlacesWithSimilarNameNearby() {
+    void findAllMergeableStopPlacePairsMatchesOnExactNameWithinDistance() {
         StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyon"));
         stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
-        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        stopPlace.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlace.setProvider("PROV1");
         stopPlaceRepository.save(stopPlace);
 
-        StopPlace nearbySimilarStopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyonn"));
-        nearbySimilarStopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500440, 59.875689)));
-        nearbySimilarStopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
-        stopPlaceRepository.save(nearbySimilarStopPlace);
+        StopPlace nearbySameNameStopPlace = new StopPlace(new EmbeddableMultilingualString(" gare DE lyon "));
+        nearbySameNameStopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500440, 59.875689)));
+        nearbySameNameStopPlace.setTransportMode(VehicleModeEnumeration.BUS);
+        nearbySameNameStopPlace.setProvider("PROV1");
+        stopPlaceRepository.save(nearbySameNameStopPlace);
 
-        Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
+        List<Pair<String, String>> result = stopPlaceRepository.findAllMergeableStopPlacePairs();
 
-        List<String> result = stopPlaceRepository.findStopPlacesWithSimilarNameNearby(
-                envelope, stopPlace.getName().getValue(), false, stopPlace.getNetexId());
-
-        assertThat(result).containsExactly(nearbySimilarStopPlace.getNetexId());
+        assertThat(result).containsExactly(Pair.of(stopPlace.getNetexId(), nearbySameNameStopPlace.getNetexId()));
     }
 
     @Test
-    void findStopPlacesWithSimilarNameNearbyExcludesDifferentParentFlag() {
+    void findAllMergeableStopPlacePairsMatchesOnExactCentroidEvenIfNameDiffers() {
         StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyon"));
         stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
-        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        stopPlace.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlace.setProvider("PROV1");
+        stopPlaceRepository.save(stopPlace);
+
+        StopPlace sameCentroidDifferentNameStopPlace = new StopPlace(new EmbeddableMultilingualString("Mairie"));
+        sameCentroidDifferentNameStopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
+        sameCentroidDifferentNameStopPlace.setTransportMode(VehicleModeEnumeration.BUS);
+        sameCentroidDifferentNameStopPlace.setProvider("PROV1");
+        stopPlaceRepository.save(sameCentroidDifferentNameStopPlace);
+
+        List<Pair<String, String>> result = stopPlaceRepository.findAllMergeableStopPlacePairs();
+
+        assertThat(result).containsExactly(Pair.of(stopPlace.getNetexId(), sameCentroidDifferentNameStopPlace.getNetexId()));
+    }
+
+    @Test
+    void findAllMergeableStopPlacePairsExcludesParentStopPlaces() {
+        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyon"));
+        stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
+        stopPlace.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlace.setProvider("PROV1");
         stopPlaceRepository.save(stopPlace);
 
         StopPlace nearbyParentStopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyon"));
         nearbyParentStopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500440, 59.875689)));
-        nearbyParentStopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        nearbyParentStopPlace.setTransportMode(VehicleModeEnumeration.BUS);
+        nearbyParentStopPlace.setProvider("PROV1");
         nearbyParentStopPlace.setParentStopPlace(true);
         stopPlaceRepository.save(nearbyParentStopPlace);
 
-        Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
-
-        List<String> result = stopPlaceRepository.findStopPlacesWithSimilarNameNearby(
-                envelope, stopPlace.getName().getValue(), false, stopPlace.getNetexId());
+        List<Pair<String, String>> result = stopPlaceRepository.findAllMergeableStopPlacePairs();
 
         assertThat(result).isEmpty();
     }
 
     @Test
-    void findStopPlacesWithSimilarNameNearbyNoMatchWhenNameIsDifferent() {
+    void findAllMergeableStopPlacePairsExcludesDifferentTransportMode() {
         StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyon"));
         stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
-        stopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        stopPlace.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlace.setProvider("PROV1");
+        stopPlaceRepository.save(stopPlace);
+
+        StopPlace nearbySameNameDifferentModeStopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyon"));
+        nearbySameNameDifferentModeStopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500440, 59.875689)));
+        nearbySameNameDifferentModeStopPlace.setTransportMode(VehicleModeEnumeration.RAIL);
+        nearbySameNameDifferentModeStopPlace.setProvider("PROV1");
+        stopPlaceRepository.save(nearbySameNameDifferentModeStopPlace);
+
+        List<Pair<String, String>> result = stopPlaceRepository.findAllMergeableStopPlacePairs();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void findAllMergeableStopPlacePairsMatchesAcrossDifferentProviders() {
+        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyon"));
+        stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
+        stopPlace.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlace.setProvider("PROV1");
+        stopPlaceRepository.save(stopPlace);
+
+        StopPlace nearbySameNameDifferentProviderStopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyon"));
+        nearbySameNameDifferentProviderStopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500440, 59.875689)));
+        nearbySameNameDifferentProviderStopPlace.setTransportMode(VehicleModeEnumeration.BUS);
+        nearbySameNameDifferentProviderStopPlace.setProvider("PROV2");
+        stopPlaceRepository.save(nearbySameNameDifferentProviderStopPlace);
+
+        List<Pair<String, String>> result = stopPlaceRepository.findAllMergeableStopPlacePairs();
+
+        assertThat(result).containsExactly(Pair.of(stopPlace.getNetexId(), nearbySameNameDifferentProviderStopPlace.getNetexId()));
+    }
+
+    @Test
+    void findAllMergeableStopPlacePairsNoMatchWhenNameDiffersAndCentroidDiffers() {
+        StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Gare de Lyon"));
+        stopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500430, 59.875679)));
+        stopPlace.setTransportMode(VehicleModeEnumeration.BUS);
+        stopPlace.setProvider("PROV1");
         stopPlaceRepository.save(stopPlace);
 
         StopPlace nearbyDifferentlyNamedStopPlace = new StopPlace(new EmbeddableMultilingualString("Mairie"));
         nearbyDifferentlyNamedStopPlace.setCentroid(geometryFactory.createPoint(new Coordinate(10.500440, 59.875689)));
-        nearbyDifferentlyNamedStopPlace.setStopPlaceType(StopTypeEnumeration.ONSTREET_BUS);
+        nearbyDifferentlyNamedStopPlace.setTransportMode(VehicleModeEnumeration.BUS);
+        nearbyDifferentlyNamedStopPlace.setProvider("PROV1");
         stopPlaceRepository.save(nearbyDifferentlyNamedStopPlace);
 
-        Envelope envelope = new Envelope(10.500340, 59.875649, 10.500699, 59.875924);
-
-        List<String> result = stopPlaceRepository.findStopPlacesWithSimilarNameNearby(
-                envelope, stopPlace.getName().getValue(), false, stopPlace.getNetexId());
+        List<Pair<String, String>> result = stopPlaceRepository.findAllMergeableStopPlacePairs();
 
         assertThat(result).isEmpty();
     }

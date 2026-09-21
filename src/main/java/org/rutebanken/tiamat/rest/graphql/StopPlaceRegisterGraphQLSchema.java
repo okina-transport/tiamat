@@ -140,6 +140,9 @@ public class StopPlaceRegisterGraphQLSchema {
     private StopPlaceMergeIdFetcher stopPlaceMergeIdFetcher;
 
     @Autowired
+    private StopPlaceProviderFetcher stopPlaceProviderFetcher;
+
+    @Autowired
     private TariffZoneObjectTypeCreator tariffZoneObjectTypeCreator;
 
     @Autowired
@@ -1201,6 +1204,8 @@ public class StopPlaceRegisterGraphQLSchema {
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_PARENT_STOPPLACE, INSEE_CODE, stopPlaceInseeCodeFetcher);
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_STOPPLACE, MERGE_ID, stopPlaceMergeIdFetcher);
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_PARENT_STOPPLACE, MERGE_ID, stopPlaceMergeIdFetcher);
+        registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_STOPPLACE, PROVIDER, stopPlaceProviderFetcher);
+        registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_PARENT_STOPPLACE, PROVIDER, stopPlaceProviderFetcher);
 
         dataFetcherGeometry(codeRegistryBuilder, OUTPUT_TYPE_STOPPLACE);
         dataFetcherGeometry(codeRegistryBuilder, OUTPUT_TYPE_PARENT_STOPPLACE);

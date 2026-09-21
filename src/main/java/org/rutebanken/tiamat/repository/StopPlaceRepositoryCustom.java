@@ -29,6 +29,7 @@ import org.rutebanken.tiamat.repository.search.ChangedStopPlaceSearch;
 import org.rutebanken.tiamat.rest.dto.DTOClusterMarker;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.util.Pair;
 
 import java.time.Instant;
 import java.util.Iterator;
@@ -52,7 +53,7 @@ public interface StopPlaceRepositoryCustom extends DataManagedObjectStructureRep
 
     List<String> findNearbyStopPlace(Envelope envelope, StopTypeEnumeration stopTypeEnumeration);
 
-    List<String> findStopPlacesWithSimilarNameNearby(Envelope envelope, String name, boolean parentStopPlace, String excludeNetexId);
+    List<Pair<String, String>> findAllMergeableStopPlacePairs();
 
     String findFirstByKeyValues(String key, Set<String> value);
 

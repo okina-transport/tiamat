@@ -15,27 +15,22 @@
 
 package org.rutebanken.tiamat.service.stopplace;
 
-import org.apache.commons.lang3.StringUtils;
-import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.geom.Geometry;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
- * Identifies stop places (or parent stop places) that are candidates for being merged, based on
- * their proximity and the similarity of their names, and derives a shared identifier for the group.
+ * Groups stop places that are candidates for being merged into numbered merge groups: same transport mode, and
+ * either an exact centroid match or an exact name match within the merge candidate distance threshold, regardless
+ * of provider (candidates can come from a different provider than the given stop place, e.g. duplicates left over
+ * from a re-import under a new provider). All stop places belonging to the same duplicate cluster - including
+ * duplicates only indirectly connected through another member of the cluster - share the same merge group number.
  */
 @Service
 public class StopPlaceMergeCandidateFinder {
-
-    // ~50m, consistent with the "nearby" distance used elsewhere for grouping stop places (NearbyStopPlaceQueryBuilder)
-    private static final double NEARBY_BUFFER_DEGREES = 0.000449166666667;
-
-    private static final String MERGE_ID_PREFIX = "MERGE-";
 
     private final StopPlaceRepository stopPlaceRepository;
 
@@ -43,29 +38,67 @@ public class StopPlaceMergeCandidateFinder {
         this.stopPlaceRepository = stopPlaceRepository;
     }
 
-    public String findMergeId(StopPlace stopPlace) {
-        if (stopPlace == null || !stopPlace.hasCoordinates() || stopPlace.getNetexId() == null) {
-            return null;
+    /**
+     * Computes the merge group number of every stop place currently involved in at least one duplicate, as the
+     * connected components of the merge candidate graph. Meant to be computed once and reused for every stop place
+     * resolved within the same request, since it scans the whole database.
+     */
+    public Map<String, String> computeMergeGroups() {
+        List<Pair<String, String>> edges = stopPlaceRepository.findAllMergeableStopPlacePairs();
+
+        Map<String, String> parentByNetexId = new HashMap<>();
+        for (Pair<String, String> edge : edges) {
+            parentByNetexId.putIfAbsent(edge.getFirst(), edge.getFirst());
+            parentByNetexId.putIfAbsent(edge.getSecond(), edge.getSecond());
+        }
+        for (Pair<String, String> edge : edges) {
+            union(parentByNetexId, edge.getFirst(), edge.getSecond());
         }
 
-        String name = stopPlace.getName() != null ? stopPlace.getName().getValue() : null;
-        if (StringUtils.isBlank(name)) {
-            return null;
+        Map<String, List<String>> clustersByRoot = new HashMap<>();
+        for (String netexId : parentByNetexId.keySet()) {
+            clustersByRoot.computeIfAbsent(find(parentByNetexId, netexId), root -> new ArrayList<>()).add(netexId);
         }
 
-        Geometry buffer = stopPlace.getCentroid().buffer(NEARBY_BUFFER_DEGREES);
-        Envelope envelope = buffer.getEnvelopeInternal();
+        List<List<String>> orderedClusters = new ArrayList<>(clustersByRoot.values());
+        orderedClusters.forEach(Collections::sort);
+        orderedClusters.sort(Comparator.comparing(cluster -> cluster.get(0)));
 
-        List<String> candidateNetexIds = stopPlaceRepository.findStopPlacesWithSimilarNameNearby(
-                envelope, name, stopPlace.isParentStopPlace(), stopPlace.getNetexId());
+        Map<String, String> mergeGroupByNetexId = new HashMap<>();
+        for (int i = 0; i < orderedClusters.size(); i++) {
+            String mergeGroup = String.valueOf(i + 1);
+            for (String netexId : orderedClusters.get(i)) {
+                mergeGroupByNetexId.put(netexId, mergeGroup);
+            }
+        }
+        return mergeGroupByNetexId;
+    }
 
-        if (candidateNetexIds == null || candidateNetexIds.isEmpty()) {
+    public String findMergeId(StopPlace stopPlace, Map<String, String> mergeGroups) {
+        if (stopPlace == null || stopPlace.getNetexId() == null) {
             return null;
         }
+        return mergeGroups.get(stopPlace.getNetexId());
+    }
 
-        TreeSet<String> group = new TreeSet<>(candidateNetexIds);
-        group.add(stopPlace.getNetexId());
+    private static String find(Map<String, String> parentByNetexId, String netexId) {
+        String root = netexId;
+        while (!parentByNetexId.get(root).equals(root)) {
+            root = parentByNetexId.get(root);
+        }
+        while (!parentByNetexId.get(netexId).equals(root)) {
+            String next = parentByNetexId.get(netexId);
+            parentByNetexId.put(netexId, root);
+            netexId = next;
+        }
+        return root;
+    }
 
-        return MERGE_ID_PREFIX + group.first();
+    private static void union(Map<String, String> parentByNetexId, String a, String b) {
+        String rootA = find(parentByNetexId, a);
+        String rootB = find(parentByNetexId, b);
+        if (!rootA.equals(rootB)) {
+            parentByNetexId.put(rootA, rootB);
+        }
     }
 }

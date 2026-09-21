@@ -30,11 +30,7 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
-import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
-import org.rutebanken.tiamat.dtoassembling.dto.MergeMode;
-import org.rutebanken.tiamat.dtoassembling.dto.StopPlaceMergeCandidateDto;
-import org.rutebanken.tiamat.dtoassembling.dto.StopPlaceMergeCandidatePairDto;
+import org.rutebanken.tiamat.dtoassembling.dto.*;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.geo.GeometryTransformer;
 import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
@@ -78,7 +74,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
     private static final int SCROLL_FETCH_SIZE = 1000;
 
-    private static final double NAME_SIMILARITY_THRESHOLD = 0.6;
+    private static final double MERGE_CANDIDATE_NEARBY_THRESHOLD_METERS = 100.0;
 
     private static BasicFormatterImpl basicFormatter = new BasicFormatterImpl();
 
@@ -365,33 +361,59 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     }
 
     /**
-     * Find netexIds of other stop places (or parent stop places, depending on {@code parentStopPlace}) within the
-     * given envelope whose name is similar to the given name, ordered by decreasing similarity.
-     * Used to identify stop places that are candidates for being merged/deduplicated.
+     * Find all pairs of netexIds of non-parent stop places that are candidates for being merged, using the exact
+     * same rules as {@link #findMergeableStopPlaces} in {@link org.rutebanken.tiamat.dtoassembling.dto.MergeMode#MULTI_PROVIDER}
+     * mode: same transport mode, and either an exact centroid match or an exact (case/whitespace insensitive) name
+     * match within {@link #MERGE_CANDIDATE_NEARBY_THRESHOLD_METERS} meters, regardless of provider. Used to derive
+     * merge groups by computing the connected components of the resulting graph.
      */
     @Override
-    public List<String> findStopPlacesWithSimilarNameNearby(Envelope envelope, String name, boolean parentStopPlace, String excludeNetexId) {
-        Geometry geometryFilter = geometryFactory.toGeometry(envelope);
+    @SuppressWarnings("unchecked")
+    public List<Pair<String, String>> findAllMergeableStopPlacePairs() {
+        String sql = """
+                WITH latest_stop_point_reference AS (
+                  SELECT netex_id, MAX(version) AS max_version
+                  FROM stop_place
+                  GROUP BY netex_id
+                ),
+                valid_stops AS (
+                  SELECT s.id, s.netex_id, s.name_value, s.centroid, s.transport_mode
+                  FROM stop_place s
+                  JOIN latest_stop_point_reference lspr ON s.netex_id = lspr.netex_id AND s.version = lspr.max_version
+                  LEFT JOIN stop_place p ON s.parent_site_ref = p.netex_id AND s.parent_site_ref_version = CAST(p.version as text)
+                  WHERE s.parent_stop_place = false
+                    AND ((p.netex_id IS NOT NULL AND (p.from_date IS NULL OR p.from_date <= :pointInTime) AND (p.to_date IS NULL OR p.to_date > :pointInTime))
+                          OR (p.netex_id IS NULL AND (s.from_date IS NULL OR s.from_date <= :pointInTime) AND (s.to_date IS NULL OR s.to_date > :pointInTime)))
+                )
+                SELECT s1.netex_id AS netex_id_1, s2.netex_id AS netex_id_2
+                FROM valid_stops s1
+                JOIN valid_stops s2
+                  ON s1.id < s2.id
+                  AND s1.netex_id <> s2.netex_id
+                  AND s1.transport_mode = s2.transport_mode
+                  AND round(CAST(ST_X(s1.centroid) AS numeric), 5) = round(CAST(ST_X(s2.centroid) AS numeric), 5)
+                  AND round(CAST(ST_Y(s1.centroid) AS numeric), 5) = round(CAST(ST_Y(s2.centroid) AS numeric), 5)
 
-        String sql = "SELECT sub.netex_id FROM " +
-                "(SELECT DISTINCT s.netex_id AS netex_id, similarity(s.name_value, :name) AS sim FROM stop_place s " +
-                SQL_LEFT_JOIN_PARENT_STOP +
-                "WHERE ST_Within(s.centroid, :filter) = true " +
-                "AND s.netex_id != :excludeNetexId " +
-                "AND s.parent_stop_place = :parentStopPlace " +
-                "AND " + SQL_STOP_PLACE_OR_PARENT_IS_VALID_AT_POINT_IN_TIME +
-                ") sub " +
-                "WHERE sub.sim > :similarityThreshold " +
-                "ORDER BY sub.sim DESC";
+                UNION
 
-        Query query = entityManager.createNativeQuery(sql);
-        query.setParameter("pointInTime", Date.from(Instant.now()));
-        query.setParameter("filter", geometryFilter);
-        query.setParameter("name", name);
-        query.setParameter("excludeNetexId", excludeNetexId);
-        query.setParameter("parentStopPlace", parentStopPlace);
-        query.setParameter("similarityThreshold", NAME_SIMILARITY_THRESHOLD);
-        return query.getResultList();
+                SELECT s1.netex_id AS netex_id_1, s2.netex_id AS netex_id_2
+                FROM valid_stops s1
+                JOIN valid_stops s2
+                  ON s1.id < s2.id
+                  AND s1.netex_id <> s2.netex_id
+                  AND s1.transport_mode = s2.transport_mode
+                  AND lower(trim(s1.name_value)) = lower(trim(s2.name_value))
+                WHERE ST_DWithin(CAST(s1.centroid AS geography), CAST(s2.centroid AS geography), :nearbyThresholdMeters)
+                """;
+
+        List<Object[]> rows = entityManager.createNativeQuery(sql)
+                .setParameter("pointInTime", Date.from(Instant.now()))
+                .setParameter("nearbyThresholdMeters", MERGE_CANDIDATE_NEARBY_THRESHOLD_METERS)
+                .getResultList();
+
+        return rows.stream()
+                .map(row -> Pair.of((String) row[0], (String) row[1]))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -1038,7 +1060,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         queryWithParams.getSecond().forEach(nativeQuery::setParameter);
         long firstResult = exportParams.getStopPlaceSearch().getPageable().getOffset();
         nativeQuery.setFirstResult(Math.toIntExact(firstResult));
-        List<StopPlace> stopPlaces = nativeQuery.setMaxResults(100).getResultList();
+        List<StopPlace> stopPlaces = nativeQuery.setMaxResults(exportParams.getStopPlaceSearch().getPageable().getPageSize()).getResultList();
         stopPlaces = keepLastVersions(stopPlaces, 10);
         return new PageImpl<>(stopPlaces, exportParams.getStopPlaceSearch().getPageable(), stopPlaces.size());
 
@@ -1692,7 +1714,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         Query query = entityManager.createNativeQuery(queryString)
                 .setParameter("pointInTime", Date.from(Instant.now()))
-                .setParameter("nearbyThresholdMeters", 100.0);
+                .setParameter("nearbyThresholdMeters", MERGE_CANDIDATE_NEARBY_THRESHOLD_METERS);
 
         if (scopedToProvider) {
             query.setParameter("provider", provider);

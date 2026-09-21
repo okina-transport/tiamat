@@ -362,7 +362,7 @@ public class GraphQLNames {
     public static final String QUAYS_WITH_MULTIPLE_PRODUCERS_DESCRIPTION = "Set to true to only return quays that have multiple producers";
 
     public static final String ORGANISATION_NAME = "organisationName";
-    public static final String ORGANISATION_NAME_DESCRIPTION = "argument to filter the nearby stop places by the organisation name";
+    public static final String ORGANISATION_NAME_DESCRIPTION = "argument to filter stop places by organisation (provider) name, either the nearby stop places or the main search results";
 
     public static final String DETECT_MULTI_MODAL_POINTS = "detectMultiModalPoints";
     public static final String DETECT_MULTI_MODAL_POINTS_DESCRIPTION = "Set to true only bus stations that have another different type of stop place arround";
@@ -525,6 +525,7 @@ public class GraphQLNames {
     public static final String TIME_BAND = "timeBand";
     public static final String INSEE_CODE = "inseeCode";
     public static final String MERGE_ID = "mergeId";
+    public static final String PROVIDER = "provider";
     public static final String ADDRESS = "address";
     public static final String CITY = "city";
     public static final String POSTAL_CODE = "postalCode";

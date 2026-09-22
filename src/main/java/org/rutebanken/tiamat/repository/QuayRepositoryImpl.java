@@ -326,7 +326,7 @@ public class QuayRepositoryImpl implements QuayRepositoryCustom {
                 " INNER JOIN quay_key_values qkv ON qref.q_id = qkv.quay_id AND qkv.key_values_key = 'imported-id'" +
                 " INNER JOIN quay q ON qref.q_id = q.id" +
                 " INNER JOIN value_items vi ON vi.value_id = qkv.key_values_id" +
-                " LEFT JOIN stop_place_quays spq ON spq.quays_id = qref.q_id" +
+                " INNER JOIN stop_place_quays spq ON spq.quays_id = qref.q_id" +
                 " LEFT JOIN stop_place s ON s.id = spq.stop_place_id";
 
         Query nativeQuery = entityManager.createNativeQuery(sql);

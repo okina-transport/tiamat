@@ -20,6 +20,7 @@ import com.google.common.collect.Sets;
 import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
+import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -130,6 +131,51 @@ public class QuayRepositoryImplTest extends TiamatIntegrationTest {
     @Test
     public void findKeyValueMappingsForQuayReturnsOnlyQuaysValidAtPointInTimeForMergedId() {
         testFindKeyValueMappingsForQuayReturnsOnlyQuaysValidInInterval(MERGED_ID_KEY);
+    }
+
+    @Test
+    public void findIdMappingsForQuayReturnsQuayAssociatedWithStopPlace() {
+
+        String importedIdPosix = "500";
+        String importedId = "XXX:Quay:" + importedIdPosix;
+
+        StopPlace stopPlace = new StopPlace();
+        stopPlace.setVersion(1L);
+
+        Quay quay = new Quay(new EmbeddableMultilingualString("Associated quay"));
+        quay.getOrCreateValues(ORIGINAL_ID_KEY).add(importedId);
+        stopPlace.getQuays().add(quay);
+
+        stopPlaceRepository.save(stopPlace);
+        quayRepository.flush();
+
+        List<JbvCodeMappingDto> mappings = quayRepository.findIdMappingsForQuay();
+
+        assertThat(mappings)
+                .extracting(dto -> dto.netexId)
+                .as("Quay associated with a stop place should be included in the mapping")
+                .contains(quay.getNetexId());
+    }
+
+    @Test
+    public void findIdMappingsForQuayExcludesQuayNotAssociatedWithAnyStopPlace() {
+
+        String importedIdPosix = "501";
+        String importedId = "XXX:Quay:" + importedIdPosix;
+
+        Quay orphanQuay = new Quay(new EmbeddableMultilingualString("Orphan quay"));
+        orphanQuay.getOrCreateValues(ORIGINAL_ID_KEY).add(importedId);
+        orphanQuay.setVersion(1L);
+
+        quayRepository.save(orphanQuay);
+        quayRepository.flush();
+
+        List<JbvCodeMappingDto> mappings = quayRepository.findIdMappingsForQuay();
+
+        assertThat(mappings)
+                .extracting(dto -> dto.netexId)
+                .as("Quay not associated with any stop place should not be included in the mapping (DATA-2197)")
+                .doesNotContain(orphanQuay.getNetexId());
     }
 
     @Test

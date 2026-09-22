@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.versioning.save;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.auth.StopPlaceAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.EntityChangedListener;
@@ -25,6 +26,7 @@ import org.rutebanken.tiamat.importer.finder.StopPlaceByQuayOriginalIdFinder;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.repository.TariffZoneRepository;
 import org.rutebanken.tiamat.service.TariffZonesLookupService;
@@ -61,6 +63,9 @@ public class StopPlaceVersionedSaverService {
 
     @Autowired
     private StopPlaceRepository stopPlaceRepository;
+
+    @Autowired
+    private QuayRepository quayRepository;
 
     @Autowired
     private TariffZoneRepository tariffZoneRepository;
@@ -224,6 +229,7 @@ public class StopPlaceVersionedSaverService {
             }
         }
         mdmService.generateIdentifier(newVersion);
+        increaseQuayVersions(newVersion);
         newVersion = stopPlaceRepository.removeImportedIdAndSave(newVersion);
         logger.debug("Saved stop place with id: {} and childs {}", newVersion.getId(), newVersion.getChildren().stream().map(ch -> ch.getId()).collect(toList()));
 
@@ -241,6 +247,24 @@ public class StopPlaceVersionedSaverService {
         entityChangedListener.onChange(newVersion);
 
         return newVersion;
+    }
+
+    private void increaseQuayVersions(StopPlace stopPlace) {
+
+        if (CollectionUtils.isEmpty(stopPlace.getQuays())){
+            return;
+        }
+
+        for (Quay quay : stopPlace.getQuays()) {
+            if (quay.getNetexId() == null){
+                continue;
+            }
+            String quayNetexId = quay.getNetexId();
+            Quay latestVersionInDB = quayRepository.findFirstByNetexIdOrderByVersionDesc(quayNetexId);
+            if (latestVersionInDB != null && latestVersionInDB.getVersion() == quay.getVersion()){
+                quay.setVersion(quay.getVersion() + 1);
+            }
+        }
     }
 
     private TariffZone resolve(TariffZoneRef tariffZoneRef) {

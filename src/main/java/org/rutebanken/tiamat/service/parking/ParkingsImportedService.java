@@ -5,18 +5,34 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.rutebanken.tiamat.client.mdm.ParkingIdentifier;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
-import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.AccessibilityAssessment;
+import org.rutebanken.tiamat.model.AccessibilityLimitation;
+import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
+import org.rutebanken.tiamat.model.Organisation;
+import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.ParkingArea;
+import org.rutebanken.tiamat.model.ParkingCapacity;
+import org.rutebanken.tiamat.model.ParkingPaymentProcessEnumeration;
+import org.rutebanken.tiamat.model.ParkingProperties;
+import org.rutebanken.tiamat.model.ParkingVehicleEnumeration;
 import org.rutebanken.tiamat.model.identification.IdentifiedEntity;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.ParkingPlaceEquipmentsRepository;
 import org.rutebanken.tiamat.repository.ParkingRepository;
+import org.rutebanken.tiamat.service.merge.PlaceEquipmentMerger;
 import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 
 @Service
@@ -233,24 +249,10 @@ public class ParkingsImportedService {
             isUpdated = true;
         }
 
-        boolean parkingAreasChanged = isAnyParkingAreaChangeFromCsv(inputParking.getParkingAreas(), databaseParking.getParkingAreas());
-        boolean parkingPropertiesChanged = anyParkingPropertyChangeFromCsv(inputParking.getParkingProperties(), databaseParking.getParkingProperties());
-
-        if (parkingAreasChanged || parkingPropertiesChanged) {
+        if (isAnyParkingAreaChangeFromCsv(inputParking.getParkingAreas(), databaseParking.getParkingAreas())) {
             databaseParking.getParkingAreas().clear();
             databaseParking.getParkingAreas().addAll(inputParking.getParkingAreas());
-            databaseParking.getParkingProperties().clear();
-            databaseParking.getParkingProperties().addAll(inputParking.getParkingProperties());
             isUpdated = true;
-
-            int totalCapacity = inputParking.getParkingProperties().stream()
-                    .map(ParkingProperties::getSpaces)
-                    .filter(Objects::nonNull)
-                    .flatMap(Collection::stream)
-                    .filter(space -> space.getNumberOfSpaces() != null)
-                    .mapToInt(space -> space.getNumberOfSpaces().intValue())
-                    .sum();
-            databaseParking.setTotalCapacity(BigInteger.valueOf(totalCapacity));
         }
 
         if (inputParking.getAccessibilityAssessment() != null &&
@@ -301,6 +303,20 @@ public class ParkingsImportedService {
                 !StringUtils.equals(inputParking.getAddress(), databaseParking.getAddress())) {
             databaseParking.setAddress(inputParking.getAddress());
             isUpdated = true;
+        }
+
+        if (anyParkingPropertyChangeFromCsv(inputParking.getParkingProperties(), databaseParking.getParkingProperties())) {
+            databaseParking.getParkingProperties().clear();
+            databaseParking.getParkingProperties().addAll(inputParking.getParkingProperties());
+            isUpdated = true;
+            int totalCapacity = inputParking.getParkingProperties().stream()
+                    .map(ParkingProperties::getSpaces)
+                    .filter(Objects::nonNull)
+                    .flatMap(Collection::stream)
+                    .filter(space -> space.getNumberOfSpaces() != null)
+                    .mapToInt(space -> space.getNumberOfSpaces().intValue())
+                    .sum();
+            databaseParking.setTotalCapacity(BigInteger.valueOf(totalCapacity));
         }
 
         if (inputParking.getOrganisation() != null &&

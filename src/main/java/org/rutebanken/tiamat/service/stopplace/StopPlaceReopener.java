@@ -24,7 +24,6 @@ import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -32,23 +31,21 @@ public class StopPlaceReopener {
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceReopener.class);
 
-    @Autowired
-    private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceRepository stopPlaceRepository;
+    private final UsernameFetcher usernameFetcher;
+    private final MutateLock mutateLock;
+    private final VersionCreator versionCreator;
+    private final LoggingService loggingService;
 
-    @Autowired
-    private StopPlaceRepository stopPlaceRepository;
-
-    @Autowired
-    private UsernameFetcher usernameFetcher;
-
-    @Autowired
-    private MutateLock mutateLock;
-
-    @Autowired
-    private VersionCreator versionCreator;
-
-    @Autowired
-    private LoggingService loggingService;
+    public StopPlaceReopener(StopPlaceVersionedSaverService stopPlaceVersionedSaverService, StopPlaceRepository stopPlaceRepository, UsernameFetcher usernameFetcher, MutateLock mutateLock, VersionCreator versionCreator, LoggingService loggingService) {
+        this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.usernameFetcher = usernameFetcher;
+        this.mutateLock = mutateLock;
+        this.versionCreator = versionCreator;
+        this.loggingService = loggingService;
+    }
 
     public StopPlace reopenStopPlace(String stopPlaceId, String versionComment) {
 
@@ -71,6 +68,7 @@ public class StopPlaceReopener {
 
                 return stopPlaceVersionedSaverService.saveNewVersion(stopPlace, nextVersionStopPlace);
             }
+
             return stopPlace;
         });
     }

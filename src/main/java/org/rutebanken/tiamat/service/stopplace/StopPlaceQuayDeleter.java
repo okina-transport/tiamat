@@ -28,7 +28,6 @@ import org.rutebanken.tiamat.versioning.util.CopiedEntity;
 import org.rutebanken.tiamat.versioning.util.StopPlaceCopyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -42,29 +41,25 @@ public class StopPlaceQuayDeleter {
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceQuayDeleter.class);
 
-    @Autowired
-    private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceRepository stopPlaceRepository;
+    private final ReflectionAuthorizationService authorizationService;
+    private final UsernameFetcher usernameFetcher;
+    private final StopPlaceCopyHelper stopPlaceCopyHelper;
+    private final MutateLock mutateLock;
+    private final StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
+    private final LoggingService loggingService;
 
-    @Autowired
-    private StopPlaceRepository stopPlaceRepository;
-
-    @Autowired
-    private ReflectionAuthorizationService authorizationService;
-
-    @Autowired
-    private UsernameFetcher usernameFetcher;
-
-    @Autowired
-    private StopPlaceCopyHelper stopPlaceCopyHelper;
-
-    @Autowired
-    private MutateLock mutateLock;
-
-    @Autowired
-    private StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
-
-    @Autowired
-    private LoggingService loggingService;
+    public StopPlaceQuayDeleter(StopPlaceVersionedSaverService stopPlaceVersionedSaverService, StopPlaceRepository stopPlaceRepository, ReflectionAuthorizationService authorizationService, UsernameFetcher usernameFetcher, StopPlaceCopyHelper stopPlaceCopyHelper, MutateLock mutateLock, StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette, LoggingService loggingService) {
+        this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.authorizationService = authorizationService;
+        this.usernameFetcher = usernameFetcher;
+        this.stopPlaceCopyHelper = stopPlaceCopyHelper;
+        this.mutateLock = mutateLock;
+        this.stopPlaceQuayDeleterToChouette = stopPlaceQuayDeleterToChouette;
+        this.loggingService = loggingService;
+    }
 
     public StopPlace deleteQuay(String stopPlaceNetexId, String quayNetexId, String versionComment) {
 

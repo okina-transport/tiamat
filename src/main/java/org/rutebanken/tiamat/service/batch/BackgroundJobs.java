@@ -108,7 +108,7 @@ public class BackgroundJobs {
         query.getSingleResult();
         logger.info("Id generator table has been synchronized");
 
-        List<String> queueList = Arrays.asList("StopPlace", "AccessibilityLimitation", "Quay", "AccessibilityAssessment");
+        List<String> queueList = Arrays.asList("StopPlace", "AccessibilityLimitation", "Quay", "AccessibilityAssessment", "AlternativeName", "AlternativeText");
 
         for (String queueName : queueList) {
             BlockingQueue<Long> queue = hazelcastInstance.getQueue(queueName);

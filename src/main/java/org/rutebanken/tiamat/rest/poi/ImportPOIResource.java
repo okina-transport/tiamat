@@ -54,7 +54,6 @@ public class ImportPOIResource {
     @Consumes({MediaType.MULTIPART_FORM_DATA + "; charset=UTF-8"})
     @Produces(MediaType.APPLICATION_JSON)
     public Response importPOIFile(@FormDataParam("file") InputStream inputStream, @FormDataParam("file_name") String fileName, @FormDataParam("user") String user) throws IOException, IllegalArgumentException {
-
         logger.info("Import POI par " + user + " du fichier " + fileName);
         loggingService.logPoiCsvImport(user, fileName);
 

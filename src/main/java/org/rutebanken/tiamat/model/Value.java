@@ -34,7 +34,6 @@ public class Value implements Serializable {
     @GeneratedValue(generator = "sequence_per_table_generator")
     private long id;
 
-//    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @ElementCollection
     @CollectionTable(
             name = "value_items",

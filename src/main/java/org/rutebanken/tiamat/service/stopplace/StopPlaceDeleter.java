@@ -15,9 +15,11 @@
 
 package org.rutebanken.tiamat.service.stopplace;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.LoggingService;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.lock.MutateLock;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
@@ -42,15 +44,17 @@ public class StopPlaceDeleter {
     private final UsernameFetcher usernameFetcher;
     private final MutateLock mutateLock;
     private final StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
+    private final MdmService mdmService;
     private final LoggingService loggingService;
 
     @Autowired
-    public StopPlaceDeleter(StopPlaceRepository stopPlaceRepository, ReflectionAuthorizationService authorizationService, UsernameFetcher usernameFetcher, MutateLock mutateLock, StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette, LoggingService loggingService) {
+    public StopPlaceDeleter(StopPlaceRepository stopPlaceRepository, ReflectionAuthorizationService authorizationService, UsernameFetcher usernameFetcher, MutateLock mutateLock, StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette, MdmService mdmService, LoggingService loggingService) {
         this.stopPlaceRepository = stopPlaceRepository;
         this.authorizationService = authorizationService;
         this.usernameFetcher = usernameFetcher;
         this.mutateLock = mutateLock;
         this.stopPlaceQuayDeleterToChouette = stopPlaceQuayDeleterToChouette;
+        this.mdmService = mdmService;
         this.loggingService = loggingService;
     }
 
@@ -71,17 +75,31 @@ public class StopPlaceDeleter {
 
             authorizationService.assertAuthorized(ROLE_DELETE_STOPS, stopPlaces);
 
-            stopPlaceRepository.deleteStopPlaceChildrenByChildren(stopPlaces);
-            stopPlaceRepository.deleteAll(stopPlaces);
+            deleteIdsInMdm(lastVersionStopPlace);
 
             for (StopPlace stopPlace : stopPlaces) {
                 loggingService.logStopPlaceDeletion(usernameForAuthenticatedUser, stopPlace);
             }
 
+            stopPlaceRepository.deleteStopPlaceChildrenByChildren(stopPlaces);
+            stopPlaceRepository.deleteAll(stopPlaces);
+
+
             logger.warn("All versions ({}) of stop place {} deleted by user {}", stopPlaces.size(), stopPlaceNetexId, usernameForAuthenticatedUser);
 
             return true;
         });
+    }
+
+    private void deleteIdsInMdm(StopPlace stopPlaceToDelete) {
+        if (stopPlaceToDelete == null) {
+            return;
+        }
+
+        mdmService.deleteStopPlaceBySuperId(stopPlaceToDelete.getNetexId());
+        if (CollectionUtils.isNotEmpty(stopPlaceToDelete.getQuays())) {
+            stopPlaceToDelete.getQuays().forEach(quay -> mdmService.deleteQuaysBySuperId(quay.getNetexId()));
+        }
     }
 
     private List<StopPlace> getAllVersionsOfStopPlace(String stopPlaceId) {
@@ -94,4 +112,5 @@ public class StopPlaceDeleter {
 
         return stopPlaces;
     }
+
 }

@@ -35,6 +35,10 @@ public class Quay extends StopPlaceSpace_VersionStructure {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private final List<BoardingPosition> boardingPositions = new ArrayList<>();
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private final List<AlternativeText> alternativeTexts = new ArrayList<>();
+
     protected String publicCode;
 
     @Column(name = "insee_code")
@@ -79,6 +83,10 @@ public class Quay extends StopPlaceSpace_VersionStructure {
         return boardingPositions;
     }
 
+    public List<AlternativeText> getAlternativeTexts() {
+        return alternativeTexts;
+    }
+
     public String getInseeCode() { return inseeCode; }
 
     public void setInseeCode(String inseeCode) {
@@ -111,13 +119,19 @@ public class Quay extends StopPlaceSpace_VersionStructure {
                 && Objects.equals(this.centroid, other.centroid)
                 && Objects.equals(this.compassBearing, other.compassBearing)
                 && Objects.equals(this.publicCode, other.publicCode)
+                && areNetexIdNullOrEquals(this.getNetexId(), other.getNetexId())
                 && getOrCreateValues(NetexIdMapper.ORIGINAL_ID_KEY).containsAll(other.getOrCreateValues(NetexIdMapper.ORIGINAL_ID_KEY));
+    }
+
+    private boolean areNetexIdNullOrEquals(String netexId, String netexId1) {
+        return netexId == null || netexId1 == null || netexId.equals(netexId1);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(name, centroid,
                 compassBearing, publicCode,
+                netexId,
                 getOrCreateValues(NetexIdMapper.ORIGINAL_ID_KEY));
     }
 

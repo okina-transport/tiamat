@@ -19,14 +19,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.operation.TransformException;
+import org.rutebanken.tiamat.client.mdm.OkinaIdentifier;
 import org.rutebanken.tiamat.importer.ImportParams;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -58,19 +59,23 @@ public class QuayMerger {
 
     private final AlternativeNameMerger alternativeNameMerger;
 
-    @Autowired
-    public QuayMerger(AlternativeNameMerger alternativeNameMerger) {
-        this.alternativeNameMerger = alternativeNameMerger;
-    }
+    private final AlternativeTextMerger alternativeTextMerger;
 
+    private final MdmService mdmService;
+
+    private final KeyValueListAppender keyValueListAppender;
+
+    public QuayMerger(AlternativeNameMerger alternativeNameMerger, AlternativeTextMerger alternativeTextMerger, KeyValueListAppender keyValueListAppender,
+                MdmService mdmService) {
+        this.alternativeNameMerger = alternativeNameMerger;
+        this.alternativeTextMerger = alternativeTextMerger;
+        this.keyValueListAppender = keyValueListAppender;
+        this.mdmService = mdmService;
+    }
 
     public boolean mergeQuays(StopPlace newStopPlace, StopPlace existingStopPlace, boolean addNewQuays, ImportParams importParams) {
         return mergeQuays(newStopPlace, existingStopPlace, addNewQuays, false, importParams);
     }
-
-    @Autowired
-    private KeyValueListAppender keyValueListAppender;
-
 
     /**
      * Inspect quays from incoming AND matching stop place. If they do not exist from before, add them.
@@ -135,15 +140,13 @@ public class QuayMerger {
                 matchingQuay = Optional.empty();
             }
 
-            if (!matchingQuay.isPresent()) {
-                if (incomingQuay != null && incomingQuay.getNetexId() != null) {
-                    matchingQuay = result.stream()
-                            .filter(quay -> incomingQuay.getNetexId().equals(quay.getNetexId()))
-                            .findFirst();
-                }
+            if (matchingQuay.isEmpty() && incomingQuay != null && incomingQuay.getNetexId() != null) {
+                matchingQuay = result.stream()
+                        .filter(quay -> incomingQuay.getNetexId().equals(quay.getNetexId()))
+                        .findFirst();
             }
 
-            if (!matchingQuay.isPresent()) {
+            if (matchingQuay.isEmpty()) {
                 matchingQuay = findMatchOnOriginalId(incomingQuay, result);
             }
 
@@ -178,12 +181,39 @@ public class QuayMerger {
 
     private Optional<Quay> findMatchOnOriginalId(Quay incomingQuay, Set<Quay> result) {
         for (Quay alreadyAdded : result) {
-            for (String originalIdAlreadyExisting : alreadyAdded.getOriginalIds()) {
-                for (String newOriginalId : incomingQuay.getOriginalIds()) {
-                    if (newOriginalId.equals(originalIdAlreadyExisting)) {
-                        return Optional.of(alreadyAdded);
-                    }
+            if (mdmService.isMdmEnabled()) {
+                Optional<Quay> alreadySavedQuay = checkQuayImportedIdWithMdm(incomingQuay, alreadyAdded);
+                if (alreadySavedQuay.isPresent()) {
+                    return alreadySavedQuay;
                 }
+            } else {
+                Optional<Quay> alreadySavedQuay = checkQuayImportedId(incomingQuay, alreadyAdded);
+                if (alreadySavedQuay.isPresent()) {
+                    return alreadySavedQuay;
+                }
+            }
+
+        }
+        return Optional.empty();
+    }
+
+    private Optional<Quay> checkQuayImportedId(Quay incomingQuay, Quay alreadyAdded) {
+        for (String originalIdAlreadyExisting : alreadyAdded.getOriginalIds()) {
+            for (String newOriginalId : incomingQuay.getOriginalIds()) {
+                if (newOriginalId.equals(originalIdAlreadyExisting)) {
+                    return Optional.of(alreadyAdded);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private Optional<Quay> checkQuayImportedIdWithMdm(Quay incomingQuay, Quay alreadyAdded) {
+        List<OkinaIdentifier> allQuaysFromSuperId = mdmService.getAllQuaysFromSuperId(Collections.singleton(MdmService.getIdentifierFromNetexId(alreadyAdded.getNetexId())));
+        for (String newOriginalId : incomingQuay.getOriginalIds()) {
+            String value = MdmService.getOriginalIdFromTridentImportedId(newOriginalId);
+            if (allQuaysFromSuperId.stream().anyMatch(okinaIdentifier -> value.equals(okinaIdentifier.getOriginalId()))) {
+                return Optional.of(alreadyAdded);
             }
         }
         return Optional.empty();
@@ -232,7 +262,9 @@ public class QuayMerger {
 
         boolean updateAlternativeName = alternativeNameMerger.updateSiteElementAlternativeName(incomingQuay, alreadyAdded);
 
-        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || inseeCodeUpdated || urlUpdated || descUpdated || nameUpdated || keyValueExternalRefUpdated || accessibilityUpdated || keyValueFareZoneUpdated || updateAlternativeName) {
+        boolean alternativeTextsUpdated = alternativeTextMerger.updateAlternativeTexts(alreadyAdded.getAlternativeTexts(), incomingQuay.getAlternativeTexts());
+
+        if (idUpdated || changedByMerge || centroidUpdated || stopCodeUpdated || inseeCodeUpdated || urlUpdated || descUpdated || nameUpdated || keyValueExternalRefUpdated || accessibilityUpdated || keyValueFareZoneUpdated || updateAlternativeName || alternativeTextsUpdated) {
             logger.debug("Quay changed. idUpdated: {},  merged fields? {}, centroidUpdated: {}, stopCodesUpdated: {}, inseeCodeUpdated: {}, urlUpdated: {}, descUpdated:{}, nameUpdated:{}, keyValueExternalRefUpdated:{}, accessibilityUpdated:{}, keyValueFareZoneUpdated:{}. Quay: {}", idUpdated, changedByMerge, centroidUpdated, stopCodeUpdated, alreadyAdded, inseeCodeUpdated, urlUpdated, descUpdated, nameUpdated, keyValueExternalRefUpdated, accessibilityUpdated, keyValueFareZoneUpdated);
 
             alreadyAdded.setChanged(Instant.now());
@@ -244,16 +276,12 @@ public class QuayMerger {
         String alreadyDescription = null;
         String incomingDescription = null;
 
-        if (alreadyAdded.getDescription() != null) {
-            if (alreadyAdded.getDescription().getValue() != null) {
-                alreadyDescription = alreadyAdded.getDescription().getValue();
-            }
+        if (alreadyAdded.getDescription() != null && alreadyAdded.getDescription().getValue() != null) {
+            alreadyDescription = alreadyAdded.getDescription().getValue();
         }
 
-        if (incomingQuay.getDescription() != null) {
-            if (incomingQuay.getDescription().getValue() != null) {
-                incomingDescription = incomingQuay.getDescription().getValue();
-            }
+        if (incomingQuay.getDescription() != null && incomingQuay.getDescription().getValue() != null) {
+            incomingDescription = incomingQuay.getDescription().getValue();
         }
 
         if (!StringUtils.equals(alreadyDescription, incomingDescription) && incomingDescription != null) {

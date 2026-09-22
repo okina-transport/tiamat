@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.versioning.save;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.auth.StopPlaceAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.EntityChangedListener;
@@ -22,8 +23,10 @@ import org.rutebanken.tiamat.diff.TiamatObjectDiffer;
 import org.rutebanken.tiamat.geo.ZoneDistanceChecker;
 import org.rutebanken.tiamat.importer.finder.NearbyStopPlaceFinder;
 import org.rutebanken.tiamat.importer.finder.StopPlaceByQuayOriginalIdFinder;
+import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
+import org.rutebanken.tiamat.repository.QuayRepository;
 import org.rutebanken.tiamat.repository.StopPlaceRepository;
 import org.rutebanken.tiamat.repository.TariffZoneRepository;
 import org.rutebanken.tiamat.service.TariffZonesLookupService;
@@ -52,17 +55,17 @@ import static org.rutebanken.tiamat.versioning.save.DefaultVersionedSaverService
 @Service
 public class StopPlaceVersionedSaverService {
 
-    private static final Logger logger = LoggerFactory.getLogger(StopPlaceVersionedSaverService.class);
-
     public static final int ADJACENT_STOP_PLACE_MAX_DISTANCE_IN_METERS = 30;
-
     public static final InterchangeWeightingEnumeration DEFAULT_WEIGHTING = InterchangeWeightingEnumeration.INTERCHANGE_ALLOWED;
-
+    private static final Logger logger = LoggerFactory.getLogger(StopPlaceVersionedSaverService.class);
     @Autowired
     private ZoneDistanceChecker zoneDistanceChecker;
 
     @Autowired
     private StopPlaceRepository stopPlaceRepository;
+
+    @Autowired
+    private QuayRepository quayRepository;
 
     @Autowired
     private TariffZoneRepository tariffZoneRepository;
@@ -105,6 +108,9 @@ public class StopPlaceVersionedSaverService {
 
     @Autowired
     private MetricsService metricsService;
+
+    @Autowired
+    private MdmService mdmService;
 
     public StopPlace saveNewVersion(StopPlace existingVersion, StopPlace newVersion, Instant defaultValidFrom) {
         return saveNewVersion(existingVersion, newVersion, defaultValidFrom, new HashSet<>(), true);
@@ -153,7 +159,7 @@ public class StopPlaceVersionedSaverService {
             newVersion.setTariffZones(newVersion.getTariffZones().stream()
                     .map(tariffZoneRef -> {
                         TariffZone tariffZone = tariffZoneRepository.findFirstByNetexIdOrderByVersionDesc(tariffZoneRef.getRef());
-                        if(tariffZone == null){
+                        if (tariffZone == null) {
                             tariffZone = resolve(tariffZoneRef);
                         }
                         if (tariffZone == null) {
@@ -170,7 +176,7 @@ public class StopPlaceVersionedSaverService {
 
         Instant changed = Instant.now();
 
-        if(optimizeAccessibilityAssessmentsStopPlace){
+        if (optimizeAccessibilityAssessmentsStopPlace) {
             logger.debug("Rearrange accessibility assessments for: {}", newVersion);
             accessibilityAssessmentOptimizer.optimizeAccessibilityAssessmentsStopPlace(newVersion);
         }
@@ -212,15 +218,19 @@ public class StopPlaceVersionedSaverService {
                 tariffZonesLookupService.populateTariffZone(child);
             });
 
-            stopPlaceRepository.saveAll(newVersion.getChildren());
+            Set<StopPlace> savedChildren = newVersion.getChildren().stream()
+                    .map(stopPlaceRepository::removeImportedIdAndSave)
+                    .collect(Collectors.toSet());
+            newVersion.setChildren(savedChildren);
             if (logger.isDebugEnabled()) {
                 logger.debug("Saved children: {}", newVersion.getChildren().stream()
-                                                           .map(sp -> "{id:" + sp.getId() + " netexId:" + sp.getNetexId() + " version:" + sp.getVersion() + "}")
-                                                           .collect(Collectors.toList()));
+                        .map(sp -> "{id:" + sp.getId() + " netexId:" + sp.getNetexId() + " version:" + sp.getVersion() + "}")
+                        .collect(Collectors.toList()));
             }
         }
-
-        newVersion = stopPlaceRepository.save(newVersion);
+        mdmService.generateIdentifier(newVersion);
+        increaseQuayVersions(newVersion);
+        newVersion = stopPlaceRepository.removeImportedIdAndSave(newVersion);
         logger.debug("Saved stop place with id: {} and childs {}", newVersion.getId(), newVersion.getChildren().stream().map(ch -> ch.getId()).collect(toList()));
 
         updateParentSiteRefsForChildren(newVersion);
@@ -239,14 +249,32 @@ public class StopPlaceVersionedSaverService {
         return newVersion;
     }
 
+    private void increaseQuayVersions(StopPlace stopPlace) {
+
+        if (CollectionUtils.isEmpty(stopPlace.getQuays())){
+            return;
+        }
+
+        for (Quay quay : stopPlace.getQuays()) {
+            if (quay.getNetexId() == null){
+                continue;
+            }
+            String quayNetexId = quay.getNetexId();
+            Quay latestVersionInDB = quayRepository.findFirstByNetexIdOrderByVersionDesc(quayNetexId);
+            if (latestVersionInDB != null && latestVersionInDB.getVersion() == quay.getVersion()){
+                quay.setVersion(quay.getVersion() + 1);
+            }
+        }
+    }
+
     private TariffZone resolve(TariffZoneRef tariffZoneRef) {
         String netexId = tariffZoneRepository.findFirstByKeyValue(NetexIdMapper.FARE_ZONE, tariffZoneRef.getRef());
         return tariffZoneRef.getRef() != null ? tariffZoneRepository.findFirstByNetexIdOrderByVersionDesc(netexId) : null;
     }
 
 
-    private void updateValidBetweenInChildren(StopPlace stopPlace, ValidBetween validBetween){
-        if (stopPlace.getChildren() == null){
+    private void updateValidBetweenInChildren(StopPlace stopPlace, ValidBetween validBetween) {
+        if (stopPlace.getChildren() == null) {
             return;
         }
 
@@ -255,14 +283,14 @@ public class StopPlaceVersionedSaverService {
         }
     }
 
-    private void terminateChild(StopPlace stopPlaceToTerminate, Instant terminationInstant ){
-        if (stopPlaceToTerminate.getChildren() != null){
+    private void terminateChild(StopPlace stopPlaceToTerminate, Instant terminationInstant) {
+        if (stopPlaceToTerminate.getChildren() != null) {
 
             for (StopPlace child : stopPlaceToTerminate.getChildren()) {
                 ValidBetween validBetween;
-                if (child.getValidBetween() != null){
+                if (child.getValidBetween() != null) {
                     validBetween = child.getValidBetween();
-                }else{
+                } else {
                     validBetween = new ValidBetween();
                     validBetween.setFromDate(terminationInstant.minusMillis(MILLIS_BETWEEN_VERSIONS));
                     child.setValidBetween(validBetween);
@@ -274,7 +302,7 @@ public class StopPlaceVersionedSaverService {
 
     private void validateAdjacentSites(StopPlace newVersion) {
         if (newVersion.getAdjacentSites() != null) {
-                logger.info("Validating adjacent sites for {} {}", newVersion.getNetexId(), newVersion.getName());
+            logger.info("Validating adjacent sites for {} {}", newVersion.getNetexId(), newVersion.getName());
             for (SiteRefStructure siteRefStructure : newVersion.getAdjacentSites()) {
 
                 if (newVersion.getNetexId() != null && (newVersion.getNetexId().equals(siteRefStructure.getRef()))) {

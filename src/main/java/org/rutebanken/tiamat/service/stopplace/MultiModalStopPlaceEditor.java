@@ -30,7 +30,6 @@ import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,27 +59,23 @@ public class MultiModalStopPlaceEditor {
                 "childStopPlaceIdsToRemove": %s
             }
             """;
+    private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceRepository stopPlaceRepository;
+    private final ReflectionAuthorizationService authorizationService;
+    private final MutateLock mutateLock;
+    private final VersionCreator versionCreator;
+    private final UsernameFetcher usernameFetcher;
+    private final LoggingService loggingService;
 
-    @Autowired
-    private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
-
-    @Autowired
-    private StopPlaceRepository stopPlaceRepository;
-
-    @Autowired
-    private ReflectionAuthorizationService authorizationService;
-
-    @Autowired
-    private MutateLock mutateLock;
-
-    @Autowired
-    private VersionCreator versionCreator;
-
-    @Autowired
-    private UsernameFetcher usernameFetcher;
-
-    @Autowired
-    private LoggingService loggingService;
+    public MultiModalStopPlaceEditor(StopPlaceVersionedSaverService stopPlaceVersionedSaverService, StopPlaceRepository stopPlaceRepository, ReflectionAuthorizationService authorizationService, MutateLock mutateLock, VersionCreator versionCreator, UsernameFetcher usernameFetcher, LoggingService loggingService) {
+        this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.authorizationService = authorizationService;
+        this.mutateLock = mutateLock;
+        this.versionCreator = versionCreator;
+        this.usernameFetcher = usernameFetcher;
+        this.loggingService = loggingService;
+    }
 
     public StopPlace createMultiModalParentStopPlace(List<String> childStopPlaceIds, EmbeddableMultilingualString name) {
         return createMultiModalParentStopPlace(childStopPlaceIds, name, null, null, null);
@@ -148,8 +143,8 @@ public class MultiModalStopPlaceEditor {
             List<String> alreadyAdded = childStopPlaceIds
                     .stream()
                     .filter(child -> parentStopPlace.getChildren() != null
-                            && parentStopPlace.getChildren().stream()
-                            .anyMatch(existingChild -> child.equals(existingChild.getNetexId())))
+                                     && parentStopPlace.getChildren().stream()
+                                             .anyMatch(existingChild -> child.equals(existingChild.getNetexId())))
                     .collect(toList());
 
             if (!alreadyAdded.isEmpty()) {
@@ -314,14 +309,14 @@ public class MultiModalStopPlaceEditor {
 
             if (potentialNewChild.getValidBetween().getFromDate() != null && potentialNewChild.getValidBetween().getFromDate().isAfter(fromDate)) {
                 throw new RuntimeException("The potential child stop place " + potentialNewChild.getNetexId()
-                        + " version " + potentialNewChild.getVersion()
-                        + " is not currently valid: from date = " + potentialNewChild.getValidBetween().getFromDate()
-                        + " expected to be after " + fromDate);
+                                           + " version " + potentialNewChild.getVersion()
+                                           + " is not currently valid: from date = " + potentialNewChild.getValidBetween().getFromDate()
+                                           + " expected to be after " + fromDate);
             }
             if (potentialNewChild.getValidBetween().getToDate() != null && potentialNewChild.getValidBetween().getToDate().isBefore(fromDate)) {
                 throw new RuntimeException("The stop place " + potentialNewChild.getNetexId()
-                        + " version " + potentialNewChild.getVersion()
-                        + " is not currently valid: to date = " + potentialNewChild.getValidBetween().getToDate());
+                                           + " version " + potentialNewChild.getVersion()
+                                           + " is not currently valid: to date = " + potentialNewChild.getValidBetween().getToDate());
             }
         }
     }

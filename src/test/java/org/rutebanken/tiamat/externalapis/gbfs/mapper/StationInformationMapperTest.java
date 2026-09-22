@@ -12,7 +12,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class StationInformationMapperTest {
+class StationInformationMapperTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -107,21 +107,21 @@ public class StationInformationMapperTest {
             }
             """;
 
-    private final StationInformationMapper tested = new StationInformationMapper("MOBIITI");
+    private final StationInformationMapper tested = new StationInformationMapper();
 
     @Test
-    public void test_toParking_whenInputIsValid_shouldMapCorrectly() throws JsonProcessingException {
+    void test_toParking_whenInputIsValid_shouldMapCorrectly() throws JsonProcessingException {
         // Arrange
         GBFSStationInformation gbfsStationInformation = MAPPER.readValue(RAW_GBFS_STATION_INFORMATION_JSON, GBFSStationInformation.class);
         GBFSVehicleTypes gbfsVehicleTypes = MAPPER.readValue(RAW_GBFS_V_TYPES, GBFSVehicleTypes.class);
         Organisation organisation = new Organisation();
 
         // Act
-        Parking output = tested.toParking(organisation, gbfsStationInformation.getData().getStations().get(0), gbfsVehicleTypes, ParkingTypeEnumeration.CYCLE_RENTAL, SpecificParkingAreaUsageEnumeration.PEDAL_CYCLE);
+        Parking output = tested.toParking(organisation, gbfsStationInformation.getData().getStations().getFirst(), gbfsVehicleTypes, ParkingTypeEnumeration.CYCLE_RENTAL, SpecificParkingAreaUsageEnumeration.PEDAL_CYCLE);
 
         // Assert
         assertNotNull(output);
-        assertEquals("MOBIITI:PARKING:CAL##3A##Station##3A##stn_bE8SHEQRa5rnLSuzpqoxJs", output.getNetexId());
+        assertNull(output.getNetexId());
         assertEquals("CAL:Station:stn_bE8SHEQRa5rnLSuzpqoxJs", output.getOriginalId());
         assertEquals("Lac des Nauves", output.getName().getValue());
         assertEquals("fr", output.getName().getLang());
@@ -145,14 +145,15 @@ public class StationInformationMapperTest {
         assertEquals(organisation, output.getOrganisation());
         assertEquals(ParkingTypeEnumeration.CYCLE_RENTAL, output.getParkingType());
         assertEquals(1, output.getParkingProperties().size());
-        ParkingProperties parkingProperties = output.getParkingProperties().get(0);
+        ParkingProperties parkingProperties = output.getParkingProperties().getFirst();
         assertEquals(2, parkingProperties.getSpaces().size());
-        ParkingCapacity parkingCapacity = parkingProperties.getSpaces().get(0);
+        ParkingCapacity parkingCapacity = parkingProperties.getSpaces().getFirst();
         assertEquals(BigInteger.valueOf(10), parkingCapacity.getNumberOfSpaces());
         assertEquals(ParkingVehicleEnumeration.MOTOR_SCOOTER, parkingCapacity.getParkingVehicleType());
-        ParkingCapacity parkingCapacity2 = parkingProperties.getSpaces().get(0);
+        ParkingCapacity parkingCapacity2 = parkingProperties.getSpaces().getFirst();
         assertEquals(BigInteger.valueOf(10), parkingCapacity2.getNumberOfSpaces());
         assertEquals(ParkingVehicleEnumeration.MOTOR_SCOOTER, parkingCapacity2.getParkingVehicleType());
+        assertEquals("technique", output.getOperator());
     }
 
     @Test

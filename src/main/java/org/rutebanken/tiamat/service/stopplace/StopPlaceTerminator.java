@@ -26,7 +26,6 @@ import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -36,26 +35,23 @@ public class StopPlaceTerminator {
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceTerminator.class);
 
-    @Autowired
-    private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final StopPlaceRepository stopPlaceRepository;
+    private final UsernameFetcher usernameFetcher;
+    private final MutateLock mutateLock;
+    private final StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
+    private final VersionCreator versionCreator;
+    private final LoggingService loggingService;
 
-    @Autowired
-    private StopPlaceRepository stopPlaceRepository;
-
-    @Autowired
-    private UsernameFetcher usernameFetcher;
-
-    @Autowired
-    private MutateLock mutateLock;
-
-    @Autowired
-    private StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette;
-
-    @Autowired
-    private VersionCreator versionCreator;
-
-    @Autowired
-    private LoggingService loggingService;
+    public StopPlaceTerminator(StopPlaceVersionedSaverService stopPlaceVersionedSaverService, StopPlaceRepository stopPlaceRepository, UsernameFetcher usernameFetcher, MutateLock mutateLock, StopPlaceQuayDeleterToChouette stopPlaceQuayDeleterToChouette, VersionCreator versionCreator, LoggingService loggingService) {
+        this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.usernameFetcher = usernameFetcher;
+        this.mutateLock = mutateLock;
+        this.stopPlaceQuayDeleterToChouette = stopPlaceQuayDeleterToChouette;
+        this.versionCreator = versionCreator;
+        this.loggingService = loggingService;
+    }
 
     public StopPlace terminateStopPlace(String stopPlaceNetexId, Instant suggestedTimeOfTermination, String versionComment, ModificationEnumeration modificationEnumeration) {
 
@@ -63,7 +59,7 @@ public class StopPlaceTerminator {
             String user = usernameFetcher.getUserNameForAuthenticatedUser();
 
             loggingService.logStopPlaceTermination(user, stopPlaceNetexId, suggestedTimeOfTermination, versionComment, modificationEnumeration);
-
+            
             stopPlaceQuayDeleterToChouette.delete(stopPlaceNetexId);
 
             Instant now = Instant.now();

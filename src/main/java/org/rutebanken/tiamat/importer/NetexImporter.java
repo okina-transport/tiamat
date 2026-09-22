@@ -73,13 +73,12 @@ public class NetexImporter {
         this.publicationDeliveryValidator = publicationDeliveryValidator;
     }
 
-    public void importProcessTest(PublicationDeliveryStructure publicationDeliveryStructure, Boolean containsMobiitiIds) throws BindException {
+    public void importProcessTest(PublicationDeliveryStructure publicationDeliveryStructure, boolean containsMobiitiIds) throws BindException {
         importProcess(publicationDeliveryStructure, new ImportParams(), containsMobiitiIds);
     }
 
 
-    @SuppressWarnings("unchecked")
-    public void importProcess(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams, Boolean containsMobiitiIds) throws BindException {
+    public void importProcess(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams, boolean containsMobiitiIds) throws BindException {
 
         if (publicationDeliveryStructure.getDataObjects() == null) {
             String responseMessage = "Received publication delivery but it does not contain any data objects.";
@@ -182,7 +181,7 @@ public class NetexImporter {
         pointOfInterestsImportHandler.handlePointOfInterests(netexSiteFrame, importParams, atomicInteger, responseSiteFrame, generalOrganisations, responsibilitySets);
     }
 
-    private void generalFrameProcess(List<JAXBElement<? extends EntityStructure>> members, ImportParams importParams, AtomicInteger atomicInteger, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets, Boolean containsMobiitiIds) {
+    private void generalFrameProcess(List<JAXBElement<? extends EntityStructure>> members, ImportParams importParams, AtomicInteger atomicInteger, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets, boolean containsMobiitiIds) {
         if (!members.isEmpty()) {
             if (members.stream().anyMatch(mem -> mem.getValue() instanceof Parking)) {
                 parkingsImport(importParams, atomicInteger, members, generalOrganisations, responsibilitySets);
@@ -192,7 +191,7 @@ public class NetexImporter {
         }
     }
 
-    private void stopPlaceAndQuayImport(ImportParams importParams, AtomicInteger atomicInteger, List<JAXBElement<? extends EntityStructure>> members, Boolean containsMobiitiIds) {
+    private void stopPlaceAndQuayImport(ImportParams importParams, AtomicInteger atomicInteger, List<JAXBElement<? extends EntityStructure>> members, boolean containsMobiitiIds) {
         // Récupération de tous les quay présents dans le netex
         List<Quay> tiamatQuays = members.stream()
                 .filter(member -> member.getValue() instanceof Quay)

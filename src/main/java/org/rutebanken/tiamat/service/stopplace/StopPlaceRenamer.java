@@ -29,7 +29,6 @@ import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.StopPlaceVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,22 +41,27 @@ import java.util.Set;
 public class StopPlaceRenamer {
 
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceRenamer.class);
-    @Autowired
-    StopPlaceRepository stopPlaceRepository;
-    @Autowired
-    private LoggingService loggingService;
-    @Autowired
-    private StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
-    @Autowired
-    private AlternativeNameUpdater alternativeNameUpdater;
-    @Autowired
-    private MutateLock mutateLock;
-    @Autowired
-    private VersionCreator versionCreator;
-    @Autowired
-    private Renamer renamer;
-    @Autowired
-    private UsernameFetcher usernameFetcher;
+
+    private final StopPlaceRepository stopPlaceRepository;
+    private final StopPlaceVersionedSaverService stopPlaceVersionedSaverService;
+    private final AlternativeNameUpdater alternativeNameUpdater;
+    private final MutateLock mutateLock;
+    private final VersionCreator versionCreator;
+    private final Renamer renamer;
+    private final UsernameFetcher usernameFetcher;
+    private final LoggingService loggingService;
+
+    public StopPlaceRenamer(StopPlaceRepository stopPlaceRepository, StopPlaceVersionedSaverService stopPlaceVersionedSaverService, AlternativeNameUpdater alternativeNameUpdater, MutateLock mutateLock, VersionCreator versionCreator, Renamer renamer, UsernameFetcher usernameFetcher, LoggingService loggingService) {
+        this.stopPlaceRepository = stopPlaceRepository;
+        this.stopPlaceVersionedSaverService = stopPlaceVersionedSaverService;
+        this.alternativeNameUpdater = alternativeNameUpdater;
+        this.mutateLock = mutateLock;
+        this.versionCreator = versionCreator;
+        this.renamer = renamer;
+        this.usernameFetcher = usernameFetcher;
+        this.loggingService = loggingService;
+    }
+
 
     /**
      * Update stop places with Modalis recommendations

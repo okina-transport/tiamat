@@ -418,6 +418,15 @@ public class MdmService {
         return mdmClient.getParkingIdentifiers(superIds.stream().toList());
     }
 
+    public Optional<OkinaIdentifier> getQuayMdmId(String datasetId, Quay quay){
+        List<OkinaIdentifier> mdmIdent = getExistingQuaysMdmIds(datasetId, Set.of(quay));
+        if (CollectionUtils.isNotEmpty(mdmIdent)){
+            return Optional.of(mdmIdent.getFirst());
+        }else{
+            return Optional.empty();
+        }
+    }
+
     public List<OkinaIdentifier> getExistingQuaysMdmIds(String datasetId, Set<Quay> quays) {
 
         List<OkinaIdentifier> quayIdentifiers = new ArrayList<>();

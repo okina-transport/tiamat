@@ -263,10 +263,12 @@ public class StopPlaceVersionedSaverService {
             }
             String quayNetexId = quay.getNetexId();
             Quay latestVersionInDB = quayRepository.findFirstByNetexIdOrderByVersionDesc(quayNetexId);
-            if (latestVersionInDB != null && latestVersionInDB.getVersion() == quay.getVersion()){
-                quay.setVersion(quay.getVersion() + 1);
+            if (latestVersionInDB != null ) {
+                quay.setVersion(latestVersionInDB.getVersion() + 1);
             }
+
         }
+
     }
 
     private TariffZone resolve(TariffZoneRef tariffZoneRef) {

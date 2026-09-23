@@ -57,6 +57,9 @@ public class QuayMerger {
     @Value("${quayMerger.maxCompassBearingDifference:60}")
     private int maxCompassBearingDifference = 60;
 
+    @Value("${netex.validPrefix:MOBIITI}")
+    private String superIdPrefix;
+
     private final AlternativeNameMerger alternativeNameMerger;
 
     private final AlternativeTextMerger alternativeTextMerger;
@@ -158,6 +161,10 @@ public class QuayMerger {
                 result.add(incomingQuay);
                 incomingQuay.setCreated(Instant.now());
                 incomingQuay.setChanged(Instant.now());
+                Optional<OkinaIdentifier> mdmIdentOpt = mdmService.getQuayMdmId(importParams.providerCode.toUpperCase(), incomingQuay);
+                mdmIdentOpt.ifPresent(mdmIdent -> {
+                    incomingQuay.setNetexId(superIdPrefix + ":Quay:" + mdmIdent.getSuperId());
+                });
                 addedQuaysCounter.incrementAndGet();
             } else {
                 logger.warn("No match for quay belonging to stop place {}. Quay: {}. Full incoming quay toString: {}. Was looking in list of quays for match: {}",

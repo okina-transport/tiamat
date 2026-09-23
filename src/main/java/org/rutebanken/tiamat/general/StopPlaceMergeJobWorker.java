@@ -81,7 +81,9 @@ public class StopPlaceMergeJobWorker implements Runnable {
         while (netexIdRef.containsKey(root)) {
             root = netexIdRef.get(root);
         }
-        netexIdRef.put(id, root);
+        if (!root.equals(id)) {
+            netexIdRef.put(id, root);
+        }
         return root;
     }
 }

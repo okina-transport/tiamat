@@ -24,12 +24,11 @@ import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportData;
 import org.rutebanken.tiamat.model.gbfs.GbfsParkingImportParams;
 import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
-import org.rutebanken.tiamat.repository.OrganisationRepository;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
+import org.rutebanken.tiamat.service.parking.OrganisationsImportedService;
 import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -49,17 +48,15 @@ public class GbfsParkingImporter {
     private final GBFSHttpClient gbfsHttpClient;
     private final GBFSMapper gbfsMapper; // maps gbfs v2 to v3 and vice versa
     private final GbfsValidator gbfsValidator;
-    private final OrganisationRepository organisationRepository;
+    private final OrganisationsImportedService organisationsImportedService;
     private final ParkingsImportedService parkingsImportedService;
-    private final String superIdPrefix;
 
-    public GbfsParkingImporter(GBFSHttpClient gbfsHttpClient, GBFSMapper gbfsMapper, GbfsValidator gbfsValidator, OrganisationRepository organisationRepository, ParkingsImportedService parkingsImportedService, @Value("${netex.validPrefix:NSR}") String superIdPrefix) {
+    public GbfsParkingImporter(GBFSHttpClient gbfsHttpClient, GBFSMapper gbfsMapper, GbfsValidator gbfsValidator, OrganisationsImportedService organisationsImportedService, ParkingsImportedService parkingsImportedService) {
         this.gbfsHttpClient = gbfsHttpClient;
         this.gbfsMapper = gbfsMapper;
         this.gbfsValidator = gbfsValidator;
-        this.organisationRepository = organisationRepository;
+        this.organisationsImportedService = organisationsImportedService;
         this.parkingsImportedService = parkingsImportedService;
-        this.superIdPrefix = superIdPrefix;
     }
 
     /**
@@ -258,12 +255,10 @@ public class GbfsParkingImporter {
      */
     public void importProcess(GbfsParkingImportParams params) throws TiamatBusinessException {
         GbfsParkingImportData data = this.getGBFSParkingImportData(params.getGlobalUrl());
-        SystemInformationMapper systemInformationMapper = new SystemInformationMapper(this.superIdPrefix);
-        Organisation organisation = systemInformationMapper.toOrganisation(data.systemInformation());
-        Optional<org.rutebanken.tiamat.model.Organisation> optionalOrganisation = organisationRepository.findByName(organisation.getName());
-        optionalOrganisation.ifPresent(value -> organisation.setId(value.getId()));
-        organisationRepository.save(organisation);
-        StationInformationMapper stationInformationMapper = new StationInformationMapper(this.superIdPrefix);
+        SystemInformationMapper systemInformationMapper = new SystemInformationMapper();
+        Organisation organisation = organisationsImportedService.createOrUpdateOrganisation(
+                systemInformationMapper.toOrganisation(data.systemInformation()));
+        StationInformationMapper stationInformationMapper = new StationInformationMapper();
         List<Parking> parkings = data.stationInformation().getData().getStations().stream()
                 .map(gbfsStation -> stationInformationMapper.toParking(organisation, gbfsStation, data.vehicleTypes(), params.getParkingType(), params.getParkingAreaType()))
                 .toList();

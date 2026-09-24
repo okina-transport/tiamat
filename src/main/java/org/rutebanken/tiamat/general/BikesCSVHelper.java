@@ -214,7 +214,7 @@ public class BikesCSVHelper {
 
             Parking parking = new Parking();
 
-            parking.setVersion(1L);
+            parking.setOriginalId(bikeParkingDto.getIdLocal());
 
             parking.setDescription(new EmbeddableMultilingualString(bikeParkingDto.getCommentaires()));
             if (bikeParkingDto.getName() != null && !bikeParkingDto.getName().isEmpty()) {

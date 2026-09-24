@@ -104,6 +104,29 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
     }
 
     @Override
+    public String findFirstByKeyValuesAndOrganisation(String key, Set<String> values, Long organisationId) {
+
+        Query query = entityManager.createNativeQuery("SELECT p.netex_id " +
+                "FROM parking p " +
+                "INNER JOIN parking_key_values pkv " +
+                "ON pkv.parking_id = p.id " +
+                "INNER JOIN value_items v " +
+                "ON pkv.key_values_id = v.value_id " +
+                "WHERE pkv.key_values_key = :key " +
+                "AND v.items IN ( :values ) " +
+                "AND p.organisation_id = :organisationId " +
+                "AND p.version = (SELECT MAX(pv.version) FROM parking pv WHERE pv.netex_id = p.netex_id)");
+
+        query.setParameter("key", key);
+        query.setParameter("values", values);
+        query.setParameter("organisationId", organisationId);
+
+        @SuppressWarnings("unchecked")
+        List<String> results = query.getResultList();
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    @Override
     public Set<Long> scrollParkings() {
         Iterator<Parking> ip = scrollParkings(getParkings());
         Set<Long> result = new HashSet<>();

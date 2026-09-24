@@ -35,9 +35,7 @@ import org.rutebanken.tiamat.rest.dto.DtoPointOfInterest;
 import org.rutebanken.tiamat.rest.exception.TiamatBusinessException;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.rutebanken.tiamat.service.batch.MissingInseeCodeService;
-import org.rutebanken.tiamat.service.parking.BikeParkingsImportedService;
 import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
-import org.rutebanken.tiamat.service.parking.RentalBikeParkingsImportedService;
 import org.rutebanken.tiamat.validator.NetexValidationErrorClassifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,8 +64,6 @@ public class ImportJobWorker implements Runnable {
     private final PointOfInterestCSVHelper poiHelper;
     private final NetexImporter netexImporter;
     private final ParkingsImportedService parkingsImportedService;
-    private final BikeParkingsImportedService bikeParkingsImportedService;
-    private final RentalBikeParkingsImportedService rentalBikeparkingsImportedService;
     private final MissingInseeCodeService missingInseeCodeService;
     private final GbfsParkingImporter gbfsParkingImporter;
     private final Messages messages;
@@ -85,15 +81,13 @@ public class ImportJobWorker implements Runnable {
     private GbfsParkingImportParams gbfsParkingImportParams;
 
     protected ImportJobWorker(Job job, JobRepository jobRepository,
-                              PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, PointOfInterestCSVHelper poiHelper, NetexImporter netexImporter, ParkingsImportedService parkingsImportedService, BikeParkingsImportedService bikeParkingsImportedService, RentalBikeParkingsImportedService rentalBikeparkingsImportedService, MissingInseeCodeService missingInseeCodeService, GbfsParkingImporter gbfsParkingImporter, Messages messages) {
+                              PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, PointOfInterestCSVHelper poiHelper, NetexImporter netexImporter, ParkingsImportedService parkingsImportedService, MissingInseeCodeService missingInseeCodeService, GbfsParkingImporter gbfsParkingImporter, Messages messages) {
         this.job = job;
         this.jobRepository = jobRepository;
         this.publicationDeliveryUnmarshaller = publicationDeliveryUnmarshaller;
         this.poiHelper = poiHelper;
         this.netexImporter = netexImporter;
         this.parkingsImportedService = parkingsImportedService;
-        this.bikeParkingsImportedService = bikeParkingsImportedService;
-        this.rentalBikeparkingsImportedService = rentalBikeparkingsImportedService;
         this.missingInseeCodeService = missingInseeCodeService;
         this.gbfsParkingImporter = gbfsParkingImporter;
         this.messages = messages;
@@ -179,14 +173,14 @@ public class ImportJobWorker implements Runnable {
         List<DtoBikeParking> dtoParkingCSV = BikesCSVHelper.parseDocument(inputStream);
         BikesCSVHelper.checkDuplicatedBikeParkings(dtoParkingCSV);
         List<Parking> parkings = BikesCSVHelper.mapFromDtoToEntityParking(dtoParkingCSV, true);
-        rentalBikeparkingsImportedService.createOrUpdateParkings(parkings);
+        parkingsImportedService.createOrUpdateParkings(parkings);
     }
 
     private void launchCSVBikeParkingImport() throws IOException {
         List<DtoBikeParking> dtoBikeParkingsCSV = BikesCSVHelper.parseDocument(inputStream);
         BikesCSVHelper.checkDuplicatedBikeParkings(dtoBikeParkingsCSV);
         List<Parking> bikeParkings = BikesCSVHelper.mapFromDtoToEntityParking(dtoBikeParkingsCSV, false);
-        bikeParkingsImportedService.createBikeParkings(bikeParkings);
+        parkingsImportedService.createOrUpdateParkings(bikeParkings);
     }
 
     private void launchCSVParkingImport() throws IOException {

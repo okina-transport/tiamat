@@ -31,6 +31,8 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
 
     String findFirstByKeyValues(String key, Set<String> value);
 
+    String findFirstByKeyValuesAndOrganisation(String key, Set<String> values, Long organisationId);
+
     Iterator<Parking> scrollParkings(Set<Long> stopPlaceIds);
 
     int countResult(Set<Long> stopPlaceIds);

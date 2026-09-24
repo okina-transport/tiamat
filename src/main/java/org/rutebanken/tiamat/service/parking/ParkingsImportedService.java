@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -22,6 +23,9 @@ import java.util.function.Supplier;
 @Service
 @Transactional
 public class ParkingsImportedService {
+
+    private static final String ID_LOCAL = "id_local";
+    private static final String ID_OSM = "id_osm";
 
     private final ParkingRepository parkingRepository;
     private final NetexIdMapper netexIdMapper;
@@ -66,8 +70,19 @@ public class ParkingsImportedService {
     }
 
     private Parking retrieveParkingInBDD(Parking parking) {
-        String parkingNetexId = parkingRepository.findFirstByKeyValues(NetexIdMapper.ORIGINAL_ID_KEY,
-                Set.of(parking.getOriginalId()));
+        // Bike parkings (CSV) : identified by id_local / id_osm
+        Value idLocalValue = parking.getKeyValues().get(ID_LOCAL);
+        if (idLocalValue != null && !idLocalValue.getItems().isEmpty()) {
+            Value idOsmValue = parking.getKeyValues().get(ID_OSM);
+            String idOsm = idOsmValue != null ? idOsmValue.getItems().stream().findFirst().orElse(null) : null;
+            return parkingRepository.findByIdLocAndOsm(idLocalValue.getItems().iterator().next(), idOsm).orElse(null);
+        }
+
+        // Parkings with an organisation (GBFS) : the original id is only unique within the organisation
+        String parkingNetexId = parking.getOrganisation() != null && parking.getOrganisation().getId() != null ?
+                parkingRepository.findFirstByKeyValuesAndOrganisation(NetexIdMapper.ORIGINAL_ID_KEY,
+                        Set.of(parking.getOriginalId()), parking.getOrganisation().getId()) :
+                parkingRepository.findFirstByKeyValues(NetexIdMapper.ORIGINAL_ID_KEY, Set.of(parking.getOriginalId()));
         if (StringUtils.isNotBlank(parkingNetexId)) {
             Parking foundParking = parkingRepository.findFirstByNetexIdOrderByVersionDesc(parkingNetexId);
             if (areAtTheSamePlace(foundParking, parking)) {
@@ -203,16 +218,14 @@ public class ParkingsImportedService {
                     .mapToInt(space -> space.getNumberOfSpaces().intValue())
                     .sum();
             isUpdated = true;
-            updatedParking.getParkingProperties().clear();
-            updatedParking.getParkingProperties().addAll(parkingPropertiesList);
+            updatedParking.setParkingProperties(new ArrayList<>(parkingPropertiesList));
             if (total_capacity > 0) {
                 updatedParking.setTotalCapacity(BigInteger.valueOf(total_capacity));
             }
         }
 
         if (existingParking.getParkingAreas() != null) {
-            updatedParking.getParkingAreas().clear();
-            updatedParking.getParkingAreas().addAll(existingParking.getParkingAreas());
+            updatedParking.setParkingAreas(new ArrayList<>(existingParking.getParkingAreas()));
             isUpdated = true;
         }
 
@@ -241,6 +254,18 @@ public class ParkingsImportedService {
 
         if (existingParking.getOperator() != null) {
             updatedParking.setOperator(existingParking.getOperator());
+            isUpdated = true;
+        }
+
+        if (existingParking.getOrganisation() != null) {
+            updatedParking.setOrganisation(existingParking.getOrganisation());
+            isUpdated = true;
+        }
+
+        // Place equipments are replaced by the incoming ones : the previous ones are removed
+        // with the previous parking version (cascade) when saving the new version
+        if (existingParking.getPlaceEquipments() != null) {
+            updatedParking.setPlaceEquipments(existingParking.getPlaceEquipments());
             isUpdated = true;
         }
 

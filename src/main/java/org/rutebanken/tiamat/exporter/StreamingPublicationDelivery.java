@@ -35,6 +35,8 @@ import org.rutebanken.tiamat.model.VehicleModeEnumeration;
 import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.netex.NetexConstants;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
+import org.rutebanken.tiamat.netex.id.NetexIdHelper;
+import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -802,8 +804,10 @@ public class StreamingPublicationDelivery {
                     }
                     completeParkingUrl(np, organisation);
                     np.setBookingUrl(organisation.getPurchaseUrl());
-                    if (tp.getInsee() != null) {
-                        np.setId("FR:" + tp.getInsee() + ":Parking:" + tp.getNetexId().replace("MOBIITI:PARKING:", "") + ":LOC");
+                    if (NetexIdHelper.PARKING_ID_PATTERN.matcher(tp.getNetexId()).matches()) {
+                        np.setId(tp.getNetexId());
+                    } else if (tp.getInsee() != null) {
+                        np.setId("FR:" + tp.getInsee() + ":Parking:" + toGbfsParkingLocalId(tp) + ":LOC");
                     }
                 }
                 if (CollectionUtils.isNotEmpty(tp.getTransportTypes())) {
@@ -870,6 +874,19 @@ public class StreamingPublicationDelivery {
         } else {
             logger.info("No parkings to export");
         }
+    }
+
+    /**
+     * Local part of the exported id of a GBFS parking : the GBFS station id (imported-id), ':' being escaped.
+     * Falls back on the legacy netex id (PREFIX:PARKING:stationId) when the imported-id is missing.
+     */
+    private String toGbfsParkingLocalId(org.rutebanken.tiamat.model.Parking tp) {
+        return Optional.ofNullable(tp.getKeyValues().get(NetexIdMapper.ORIGINAL_ID_KEY)).stream()
+                .flatMap(value -> value.getItems().stream())
+                .filter(StringUtils::isNotBlank)
+                .findFirst()
+                .map(originalId -> originalId.replace(":", "##3A##"))
+                .orElseGet(() -> tp.getNetexId().replace(this.superIdPrefix + ":PARKING:", ""));
     }
 
     private void completeParkingUrl(Parking np, org.rutebanken.tiamat.model.Organisation organisation) {

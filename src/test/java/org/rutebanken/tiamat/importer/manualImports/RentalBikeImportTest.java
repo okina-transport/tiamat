@@ -5,6 +5,7 @@ package org.rutebanken.tiamat.importer.manualImports;
 import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.rest.parkings.ImportRentalBikeResource;
@@ -44,6 +45,13 @@ public class RentalBikeImportTest extends TiamatIntegrationTest {
 
     @Test
     public void testCommaFile() throws IOException {
+        launchImportForFile("src/test/resources/manualImports/rentalBikes/rental_bikes_correct_sep_comma.csv");
+        checkCompleteFile();
+    }
+
+    @Test
+    public void testReimportSameFile() throws IOException {
+        launchImportForFile("src/test/resources/manualImports/rentalBikes/rental_bikes_correct_sep_comma.csv");
         launchImportForFile("src/test/resources/manualImports/rentalBikes/rental_bikes_correct_sep_comma.csv");
         checkCompleteFile();
     }
@@ -115,6 +123,8 @@ public class RentalBikeImportTest extends TiamatIntegrationTest {
      */
     private void checkPersistedEnt(Parking bikeParking){
         assertEquals(ParkingTypeEnumeration.CYCLE_RENTAL,bikeParking.getParkingType(), "Wrong parking type for bike import");
+        assertTrue(NetexIdHelper.PARKING_ID_PATTERN.matcher(bikeParking.getNetexId()).matches(),
+                "Netex id should be in french NeTEx format : " + bikeParking.getNetexId());
     }
 
 }

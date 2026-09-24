@@ -19,7 +19,7 @@ import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
-import org.rutebanken.tiamat.service.parking.BikeParkingsImportedService;
+import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -39,13 +39,13 @@ public class ImportBikeParkingsResource {
     private static final Logger logger = LoggerFactory.getLogger(ImportBikeParkingsResource.class);
     private static final ExecutorService importService = Executors.newFixedThreadPool(3, new ThreadFactoryBuilder()
             .setNameFormat("import-%d").build());
-    private final BikeParkingsImportedService bikeParkingsImportedService;
+    private final ParkingsImportedService parkingsImportedService;
     private final JobRepository jobRepository;
     private final ImportJobWorkerBuilder importJobWorkerBuilder;
     private final LoggingService loggingService;
 
-    ImportBikeParkingsResource(BikeParkingsImportedService bikeParkingsImportedService, JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder, LoggingService loggingService) {
-        this.bikeParkingsImportedService = bikeParkingsImportedService;
+    ImportBikeParkingsResource(ParkingsImportedService parkingsImportedService, JobRepository jobRepository, ImportJobWorkerBuilder importJobWorkerBuilder, LoggingService loggingService) {
+        this.parkingsImportedService = parkingsImportedService;
         this.jobRepository = jobRepository;
         this.importJobWorkerBuilder = importJobWorkerBuilder;
         this.loggingService = loggingService;
@@ -62,7 +62,7 @@ public class ImportBikeParkingsResource {
             List<DtoBikeParking> dtoBikeParkingsCSV = BikesCSVHelper.parseDocument(inputStream);
             BikesCSVHelper.checkDuplicatedBikeParkings(dtoBikeParkingsCSV);
             List<Parking> bikeParkings = BikesCSVHelper.mapFromDtoToEntityParking(dtoBikeParkingsCSV, false);
-            bikeParkingsImportedService.createBikeParkings(bikeParkings);
+            parkingsImportedService.createOrUpdateParkings(bikeParkings);
             return Response.status(200).build();
 
         } catch (IOException e) {

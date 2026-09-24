@@ -10,9 +10,7 @@ import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.rest.netex.publicationdelivery.PublicationDeliveryUnmarshaller;
 import org.rutebanken.tiamat.rest.utils.StreamUtils;
 import org.rutebanken.tiamat.service.batch.MissingInseeCodeService;
-import org.rutebanken.tiamat.service.parking.BikeParkingsImportedService;
 import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
-import org.rutebanken.tiamat.service.parking.RentalBikeParkingsImportedService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
@@ -31,21 +29,17 @@ public class ImportJobWorkerBuilder {
     private final PointOfInterestCSVHelper poiHelper;
     private final NetexImporter netexImporter;
     private final ParkingsImportedService parkingsImportedService;
-    private final BikeParkingsImportedService bikeParkingsImportedService;
-    private final RentalBikeParkingsImportedService rentalBikeparkingsImportedService;
     private final MissingInseeCodeService missingInseeCodeService;
     private final GbfsParkingImporter gbfsParkingImporter;
     private final Messages messages;
     private ImportJobWorker importJobWorker;
 
-    public ImportJobWorkerBuilder(JobRepository jobRepository, PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, PointOfInterestCSVHelper poiHelper, NetexImporter netexImporter, ParkingsImportedService parkingsImportedService, BikeParkingsImportedService bikeParkingsImportedService, RentalBikeParkingsImportedService rentalBikeparkingsImportedService, MissingInseeCodeService missingInseeCodeService, GbfsParkingImporter gbfsParkingImporter, Messages messages) {
+    public ImportJobWorkerBuilder(JobRepository jobRepository, PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, PointOfInterestCSVHelper poiHelper, NetexImporter netexImporter, ParkingsImportedService parkingsImportedService, MissingInseeCodeService missingInseeCodeService, GbfsParkingImporter gbfsParkingImporter, Messages messages) {
         this.jobRepository = jobRepository;
         this.publicationDeliveryUnmarshaller = publicationDeliveryUnmarshaller;
         this.poiHelper = poiHelper;
         this.netexImporter = netexImporter;
         this.parkingsImportedService = parkingsImportedService;
-        this.bikeParkingsImportedService = bikeParkingsImportedService;
-        this.rentalBikeparkingsImportedService = rentalBikeparkingsImportedService;
         this.missingInseeCodeService = missingInseeCodeService;
         this.gbfsParkingImporter = gbfsParkingImporter;
         this.messages = messages;
@@ -59,8 +53,6 @@ public class ImportJobWorkerBuilder {
                 this.poiHelper,
                 this.netexImporter,
                 this.parkingsImportedService,
-                this.bikeParkingsImportedService,
-                this.rentalBikeparkingsImportedService,
                 this.missingInseeCodeService,
                 this.gbfsParkingImporter,
                 this.messages);

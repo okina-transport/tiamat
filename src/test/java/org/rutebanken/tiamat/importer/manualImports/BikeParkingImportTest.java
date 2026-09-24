@@ -50,6 +50,13 @@ public class BikeParkingImportTest extends TiamatIntegrationTest {
     }
 
     @Test
+    public void testReimportSameFile() throws IOException {
+        launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_correct_sep_comma.csv");
+        launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_correct_sep_comma.csv");
+        checkCompleteFile();
+    }
+
+    @Test
     public void testDuplicateDetection() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> launchImportForFile("src/test/resources/manualImports/bikeParkings/bike_parkings_with_duplicates.csv"));
         String expectedMessage = "There are duplicated bike parkings in your CSV File 'With the same ID'. Duplicates:";

@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.validator;
 
+import jakarta.xml.bind.JAXBElement;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -36,59 +37,81 @@ public class PublicationDeliveryValidator implements Validator {
     public void validate(@NotNull Object target, @NotNull Errors errors) {
         var publicationDelivery = (PublicationDeliveryStructure) target;
         errors.pushNestedPath("dataObjects");
-        for (int i = 0; i < publicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame().size(); i++) {
-            var frame = publicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame().get(i);
-            errors.pushNestedPath(String.format("compositeFrameOrCommonFrame[%d].value", i));
+        try {
+            var frames = publicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame();
+            for (int i = 0; i < frames.size(); i++) {
+                validateFrame(frames.get(i), i, errors);
+            }
+        } finally {
+            errors.popNestedPath(); // dataObjects
+        }
+    }
+
+    private void validateFrame(JAXBElement<? extends Common_VersionFrameStructure> frame, int index, @NotNull Errors errors) {
+        errors.pushNestedPath(String.format("compositeFrameOrCommonFrame[%d].value", index));
+        try {
             if (frame.getValue() instanceof GeneralFrame generalFrame) {
-                if (generalFrame.getMembers() == null || CollectionUtils.isEmpty(generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity())) {
-                    continue;
-                }
-                errors.pushNestedPath("members");
-                if (generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity().stream().noneMatch(e -> e.getValue() instanceof Parking)) {
-                    continue;
-                }
-                if (generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity().stream().noneMatch(e -> e.getValue() instanceof TypeOfFrame)) {
-                    errors.rejectValue("", VALIDATION_TOF_REQUIRED, new Object[]{generalFrame.getId()}, null);
-                }
-                Set<String> parkingTopLevelIds = new HashSet<>();
-                Map<String, List<String>> parentToChildrenParking = new HashMap<>();
-                for (int j = 0; j < generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity().size(); j++) {
-                    var entity =
-                            generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity().get(j);
-                    errors.pushNestedPath(String.format("generalFrameMemberOrDataManagedObjectOrEntity_Entity[%d]" +
-                            ".value", j));
-                    if (entity.getValue() instanceof Parking parking) {
-                        if (parking.getParentZoneRef() != null) {
-                            parentToChildrenParking.computeIfAbsent(parking.getParentZoneRef().getRef(), k -> new ArrayList<>()).add(parking.getId());
-                        } else {
-                            // parking has no ParentZoneRef, it may be top level of a multilevel parking
-                            parkingTopLevelIds.add(parking.getId());
-                        }
-                        parkingValidator.validate(parking, errors);
-                    } else if (entity.getValue() instanceof GeneralOrganisation || entity.getValue() instanceof Organisation) {
-                        rejectIfEmptyOrWhitespace(errors, "companyNumber", VALIDATION_COMPANY_NUMBER_REQUIRED,
-                                new Object[]{entity.getValue().getId()});
-                    } else if (entity.getValue() instanceof SiteComponent_VersionStructure siteComponent) {
-                        rejectIfEmptyOrWhitespace(errors, "siteRef.ref", VALIDATION_SITE_REF_REQUIRED,
-                                new Object[]{siteComponent.getSiteRef()});
-                    } else if (entity.getValue() instanceof TypeOfFrame tof) {
-                        validateTypeOfFrame(tof, errors);
-                    }
-                    errors.popNestedPath();
-                }
-                for (String parkingTopLevelId : parkingTopLevelIds) {
-                    // initial depth is 1
-                    if (getParkingDepth(parkingTopLevelId, parentToChildrenParking, 1) > MAXIMUM_PARKING_DEPTH) {
-                        errors.rejectValue("", VALIDATION_MAXIMUM_PARKING_DEPTH_EXCEEDED, new Object[]{parkingTopLevelId, MAXIMUM_PARKING_DEPTH}, null);
-                    }
-                }
-                errors.popNestedPath(); // members
+                validateGeneralFrame(generalFrame, errors);
             } else if (frame.getValue() instanceof SiteFrame siteFrame) {
                 validatePointsOfInterest(siteFrame, errors);
             }
+        } finally {
             errors.popNestedPath(); // compositeFrameOrCommonFrame[i].value
         }
-        errors.popNestedPath(); // dataObjects
+    }
+
+    private void validateGeneralFrame(@NotNull GeneralFrame generalFrame, @NotNull Errors errors) {
+        if (generalFrame.getMembers() == null || CollectionUtils.isEmpty(generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity())) {
+            return;
+        }
+        errors.pushNestedPath("members");
+        try {
+            var members = generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity();
+            if (members.stream().noneMatch(e -> e.getValue() instanceof Parking)) {
+                return;
+            }
+            if (members.stream().noneMatch(e -> e.getValue() instanceof TypeOfFrame)) {
+                errors.rejectValue("", VALIDATION_TOF_REQUIRED, new Object[]{generalFrame.getId()}, null);
+            }
+            validateGeneralFrameMembers(members, errors);
+        } finally {
+            errors.popNestedPath(); // members
+        }
+    }
+
+    private void validateGeneralFrameMembers(List<JAXBElement<? extends EntityStructure>> members, @NotNull Errors errors) {
+        Set<String> parkingTopLevelIds = new HashSet<>();
+        Map<String, List<String>> parentToChildrenParking = new HashMap<>();
+        for (int j = 0; j < members.size(); j++) {
+            var entity = members.get(j);
+            errors.pushNestedPath(String.format("generalFrameMemberOrDataManagedObjectOrEntity_Entity[%d].value", j));
+            try {
+                if (entity.getValue() instanceof Parking parking) {
+                    if (parking.getParentZoneRef() != null) {
+                        parentToChildrenParking.computeIfAbsent(parking.getParentZoneRef().getRef(), k -> new ArrayList<>()).add(parking.getId());
+                    } else {
+                        // parking has no ParentZoneRef, it may be top level of a multilevel parking
+                        parkingTopLevelIds.add(parking.getId());
+                    }
+                    parkingValidator.validate(parking, errors);
+                } else if (entity.getValue() instanceof GeneralOrganisation || entity.getValue() instanceof Organisation) {
+                    rejectIfEmptyOrWhitespace(errors, "companyNumber", VALIDATION_COMPANY_NUMBER_REQUIRED,
+                            new Object[]{entity.getValue().getId()});
+                } else if (entity.getValue() instanceof SiteComponent_VersionStructure siteComponent) {
+                    rejectIfEmptyOrWhitespace(errors, "siteRef.ref", VALIDATION_SITE_REF_REQUIRED,
+                            new Object[]{siteComponent.getSiteRef()});
+                } else if (entity.getValue() instanceof TypeOfFrame tof) {
+                    validateTypeOfFrame(tof, errors);
+                }
+            } finally {
+                errors.popNestedPath();
+            }
+        }
+        for (String parkingTopLevelId : parkingTopLevelIds) {
+            if (getParkingDepth(parkingTopLevelId, parentToChildrenParking, 1) > MAXIMUM_PARKING_DEPTH) {
+                errors.rejectValue("", VALIDATION_MAXIMUM_PARKING_DEPTH_EXCEEDED, new Object[]{parkingTopLevelId, MAXIMUM_PARKING_DEPTH}, null);
+            }
+        }
     }
 
     private void validatePointsOfInterest(@NotNull SiteFrame siteFrame, @NotNull Errors errors) {
@@ -96,13 +119,19 @@ public class PublicationDeliveryValidator implements Validator {
             return;
         }
         errors.pushNestedPath("pointsOfInterest");
-        var pointsOfInterest = siteFrame.getPointsOfInterest().getPointOfInterest();
-        for (int i = 0; i < pointsOfInterest.size(); i++) {
-            errors.pushNestedPath(String.format("pointOfInterest[%d]", i));
-            pointOfInterestValidator.validate(pointsOfInterest.get(i), errors);
+        try {
+            var pointsOfInterest = siteFrame.getPointsOfInterest().getPointOfInterest();
+            for (int i = 0; i < pointsOfInterest.size(); i++) {
+                errors.pushNestedPath(String.format("pointOfInterest[%d]", i));
+                try {
+                    pointOfInterestValidator.validate(pointsOfInterest.get(i), errors);
+                } finally {
+                    errors.popNestedPath();
+                }
+            }
+        } finally {
             errors.popNestedPath();
         }
-        errors.popNestedPath();
     }
 
     /**

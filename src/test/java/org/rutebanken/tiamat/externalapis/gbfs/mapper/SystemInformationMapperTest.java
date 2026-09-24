@@ -7,6 +7,7 @@ import org.mobilitydata.gbfs.v3_0.system_information.GBFSSystemInformation;
 import org.rutebanken.tiamat.model.Organisation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class SystemInformationMapperTest {
 
@@ -82,7 +83,7 @@ public class SystemInformationMapperTest {
               }
             }""";
 
-    private final SystemInformationMapper tested = new SystemInformationMapper("ALTID");
+    private final SystemInformationMapper tested = new SystemInformationMapper();
 
     @Test
     public void test_toOrganisation_whenInputGBFSIsValid_thenShouldConvertProperly() throws JsonProcessingException {
@@ -93,7 +94,8 @@ public class SystemInformationMapperTest {
         Organisation output = tested.toOrganisation(si);
 
         // Assert
-        assertEquals("ALTID:Organisation:nantes", output.getNetexId());
+        assertNull(output.getNetexId());
+        assertEquals("nantes", output.getOriginalId());
         assertEquals("fr", output.getLanguage());
         assertEquals("NANTES - Naolib", output.getName());
         assertEquals("Naolib", output.getShortName());

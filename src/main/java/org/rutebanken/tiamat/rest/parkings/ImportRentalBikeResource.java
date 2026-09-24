@@ -20,7 +20,7 @@ import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.rutebanken.tiamat.rest.dto.DtoBikeParking;
-import org.rutebanken.tiamat.service.parking.RentalBikeParkingsImportedService;
+import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -40,13 +40,13 @@ public class ImportRentalBikeResource {
             .setNameFormat("import-%d").build());
     private static final Logger logger = LoggerFactory.getLogger(ImportRentalBikeResource.class);
     private final JobRepository jobRepository;
-    private final RentalBikeParkingsImportedService rentalBikeparkingsImportedService;
+    private final ParkingsImportedService parkingsImportedService;
     private final ImportJobWorkerBuilder importJobWorkerBuilder;
     private final LoggingService loggingService;
 
-    public ImportRentalBikeResource(JobRepository jobRepository, RentalBikeParkingsImportedService rentalBikeparkingsImportedService, ImportJobWorkerBuilder importJobWorkerBuilder, LoggingService loggingService) {
+    public ImportRentalBikeResource(JobRepository jobRepository, ParkingsImportedService parkingsImportedService, ImportJobWorkerBuilder importJobWorkerBuilder, LoggingService loggingService) {
         this.jobRepository = jobRepository;
-        this.rentalBikeparkingsImportedService = rentalBikeparkingsImportedService;
+        this.parkingsImportedService = parkingsImportedService;
         this.importJobWorkerBuilder = importJobWorkerBuilder;
         this.loggingService = loggingService;
     }
@@ -61,7 +61,7 @@ public class ImportRentalBikeResource {
         List<DtoBikeParking> dtoParkingCSV = BikesCSVHelper.parseDocument(inputStream);
         BikesCSVHelper.checkDuplicatedBikeParkings(dtoParkingCSV);
         List<Parking> parkings = BikesCSVHelper.mapFromDtoToEntityParking(dtoParkingCSV, true);
-        rentalBikeparkingsImportedService.createOrUpdateParkings(parkings);
+        parkingsImportedService.createOrUpdateParkings(parkings);
         return Response.status(200).build();
     }
 

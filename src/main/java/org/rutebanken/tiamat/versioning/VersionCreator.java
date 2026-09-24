@@ -71,6 +71,10 @@ public class VersionCreator {
         mapperFactory.getConverterFactory()
                 .registerConverter(new PassThroughConverter(Point.class));
 
+        // Organisation is a reference shared between parkings : keep the same (persisted) instance instead of a copy
+        mapperFactory.getConverterFactory()
+                .registerConverter(new PassThroughConverter(Organisation.class));
+
         mapperFactory.getConverterFactory()
                 .registerConverter(new CustomConverter<Instant, Instant>() {
                     @Override

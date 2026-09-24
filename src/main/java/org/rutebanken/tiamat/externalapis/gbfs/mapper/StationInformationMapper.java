@@ -24,12 +24,6 @@ public class StationInformationMapper {
 
     private static final Logger logger = LoggerFactory.getLogger(StationInformationMapper.class);
     private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
-    private final String superIdPrefix;
-
-    public StationInformationMapper(String superIdPrefix) {
-        this.superIdPrefix = superIdPrefix;
-    }
-
     private static List<ParkingProperties> toParkingProperties(GBFSStation gbfsStation, GBFSVehicleTypes gbfsVehicleTypes) {
         if (CollectionUtils.isEmpty(gbfsStation.getVehicleTypesCapacity())) {
             return Collections.emptyList();
@@ -91,10 +85,6 @@ public class StationInformationMapper {
             case SCOOTER -> ParkingVehicleEnumeration.MOTOR_SCOOTER;
             default -> ParkingVehicleEnumeration.UNDEFINED;
         };
-    }
-
-    private @NotNull String toNetexId(GBFSStation gbfsStation) {
-        return superIdPrefix + ":PARKING:" + gbfsStation.getStationId().replace(":", "##3A##");
     }
 
     private static @NotNull EmbeddableMultilingualString toParkingName(GBFSStation gbfsStation) {
@@ -171,7 +161,7 @@ public class StationInformationMapper {
                     centroid.getCoordinate().y);
             return dtoGeocode.getCityCode();
         } catch (Exception e) {
-            logger.error("Error retrieving INSEE code for parking: {}", toNetexId(station), e);
+            logger.error("Error retrieving INSEE code for parking: {}", station.getStationId(), e);
             return StringUtils.EMPTY;
         }
     }
@@ -180,7 +170,6 @@ public class StationInformationMapper {
                              GBFSVehicleTypes gbfsVehicleTypes, ParkingTypeEnumeration parkingType,
                              SpecificParkingAreaUsageEnumeration parkingAreaType) {
         Parking parking = new Parking();
-        parking.setNetexId(toNetexId(gbfsStation));
         parking.setOriginalId(gbfsStation.getStationId());
         parking.setName(toParkingName(gbfsStation));
         parking.setShortName(toShortName(gbfsStation));

@@ -17,9 +17,12 @@ package org.rutebanken.tiamat.versioning.save;
 
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService;
+import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
@@ -62,6 +65,9 @@ public class ParkingVersionedSaverService {
     @Autowired
     private ReflectionAuthorizationService reflectionAuthorizationService;
 
+    @Autowired
+    private GaplessIdGeneratorService gaplessIdGeneratorService;
+
     public Parking saveNewVersion(Parking newVersion) {
 
 //        Preconditions.checkArgument(newVersion.getParentSiteRef() != null, "Parent site ref cannot be null for parking");
@@ -86,6 +92,7 @@ public class ParkingVersionedSaverService {
 
             parkingRepository.delete(existing);
         } else {
+            generateParkingNetexId(newVersion);
             newVersion.setCreated(Instant.now());
         }
 
@@ -128,6 +135,22 @@ public class ParkingVersionedSaverService {
 
         metricsService.registerEntitySaved(newVersion.getClass());
         return result;
+    }
+
+    /**
+     * New parking without netex id : generates an id with the french NeTEx format FR:insee:Parking:number:LOC.
+     * Without valid insee code, the netex id is left empty and the default Tiamat id will be generated.
+     */
+    private void generateParkingNetexId(Parking parking) {
+        if (parking.getNetexId() != null) {
+            return;
+        }
+        if (StringUtils.isBlank(parking.getInsee()) || !parking.getInsee().matches(NetexIdHelper.CITY_INSEE_CODE_RE)) {
+            logger.warn("No valid insee code for new parking {}, default netex id will be generated", parking.getName());
+            return;
+        }
+        long id = gaplessIdGeneratorService.getNextIdForEntity(Parking.class.getSimpleName());
+        parking.setNetexId(String.format("FR:%s:Parking:%d:LOC", parking.getInsee(), id));
     }
 
     private ParkingProperties incrementSharedParkingProperties(ParkingProperties parkingProperties, Map<String, ParkingProperties> incrementedParkingPropertiesByNetexId) {

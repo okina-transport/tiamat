@@ -28,11 +28,7 @@ import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.domain.Provider;
-import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
-import org.rutebanken.tiamat.dtoassembling.dto.JbvCodeMappingDto;
-import org.rutebanken.tiamat.dtoassembling.dto.MergeMode;
-import org.rutebanken.tiamat.dtoassembling.dto.StopPlaceMergeCandidateDto;
-import org.rutebanken.tiamat.dtoassembling.dto.StopPlaceMergeCandidatePairDto;
+import org.rutebanken.tiamat.dtoassembling.dto.*;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.geo.GeometryTransformer;
 import org.rutebanken.tiamat.importer.StopPlaceSharingPolicy;
@@ -73,6 +69,8 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
     private static final Logger logger = LoggerFactory.getLogger(StopPlaceRepositoryImpl.class);
 
     private static final int SCROLL_FETCH_SIZE = 1000;
+
+    private static final double MERGE_CANDIDATE_NEARBY_THRESHOLD_METERS = 100.0;
 
     private static BasicFormatterImpl basicFormatter = new BasicFormatterImpl();
 
@@ -970,7 +968,9 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
         queryWithParams.getSecond().forEach(nativeQuery::setParameter);
         long firstResult = exportParams.getStopPlaceSearch().getPageable().getOffset();
         nativeQuery.setFirstResult(Math.toIntExact(firstResult));
+//        List<StopPlace> stopPlaces = nativeQuery.setMaxResults(exportParams.getStopPlaceSearch().getPageable().getPageSize()).getResultList();
         List<StopPlace> stopPlaces = nativeQuery.setMaxResults(100).getResultList();
+
         stopPlaces = keepLastVersions(stopPlaces, 10);
         return new PageImpl<>(stopPlaces, exportParams.getStopPlaceSearch().getPageable(), stopPlaces.size());
 
@@ -1594,7 +1594,7 @@ public class StopPlaceRepositoryImpl implements StopPlaceRepositoryCustom {
 
         Query query = entityManager.createNativeQuery(queryString)
                 .setParameter("pointInTime", Date.from(Instant.now()))
-                .setParameter("nearbyThresholdMeters", 100.0);
+                .setParameter("nearbyThresholdMeters", MERGE_CANDIDATE_NEARBY_THRESHOLD_METERS);
 
         if (scopedToProvider) {
             query.setParameter("provider", provider);

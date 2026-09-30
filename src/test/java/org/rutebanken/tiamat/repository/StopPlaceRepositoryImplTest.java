@@ -16,12 +16,10 @@
 package org.rutebanken.tiamat.repository;
 
 import com.google.common.collect.Sets;
-
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Envelope;
-import org.assertj.core.api.Assertions;
-
-import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.domain.Provider;
 import org.rutebanken.tiamat.dtoassembling.dto.IdMappingDto;
@@ -42,14 +40,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.rutebanken.tiamat.exporter.params.ExportParams.newExportParamsBuilder;
 import static org.rutebanken.tiamat.exporter.params.StopPlaceSearch.newStopPlaceSearchBuilder;

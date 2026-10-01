@@ -11,6 +11,9 @@ import java.util.Optional;
 @Repository
 public interface OrganisationRepository extends JpaRepository<Organisation, Long>, EntityInVersionRepository<Organisation> {
 
+    Optional<Organisation> findByName(String name);
+
+    Optional<Organisation> findFirstByNameOrderByIdAsc(String name);
     Optional<Organisation> findFirstByName(String name);
 
     @Query(value = "SELECT o.netex_id " +

@@ -17,6 +17,8 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.rutebanken.helper.organisation.RoleAssignment;
 import org.rutebanken.helper.organisation.RoleAssignmentExtractor;
 import org.rutebanken.tiamat.auth.StopPlaceAuthorizationService;
@@ -25,7 +27,6 @@ import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
 import org.rutebanken.tiamat.importer.mdm.MdmService;
 import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.tag.Tag;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
@@ -45,8 +46,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.time.Instant;
@@ -112,6 +111,8 @@ class StopPlaceFetcher implements DataFetcher {
         this.mdmService = mdmService;
     }
 
+    @Override
+    @Transactional
     public Object get(DataFetchingEnvironment environment) {
         List<StopPlace> stopPlaces = getDataFromDB(environment);
 
@@ -119,38 +120,11 @@ class StopPlaceFetcher implements DataFetcher {
         // we need to copy stop place to new objects(unhandled by hibernate) to avoid auto-persist of imported-ids
         List<StopPlace> copiedStopPlaces = getStopPlaceCopyWithMdmId(stopPlaces);
 
-
-        boolean onlyMonomodalStopplaces = false;
-        if (environment.getArgument(ONLY_MONOMODAL_STOPPLACES) != null) {
-            onlyMonomodalStopplaces = environment.getArgument(ONLY_MONOMODAL_STOPPLACES);
-        }
-
-        boolean nearbyStopPlaceSearch = false;
-        if (environment.getArgument(NEARBY_STOP_PLACES) != null) {
-            nearbyStopPlaceSearch = environment.getArgument(NEARBY_STOP_PLACES);
-        }
-
-        boolean stopPlacesWithoutQuaySearch = false;
-        if (environment.getArgument(STOP_PLACES_WITHOUT_QUAY) != null) {
-            stopPlacesWithoutQuaySearch = environment.getArgument(STOP_PLACES_WITHOUT_QUAY);
-        }
-
-        boolean stopPlacesWithMultipleProducersSearch = false;
-        if (environment.getArgument(STOP_PLACES_WITH_MULTIPLE_PRODUCERS) != null) {
-            stopPlacesWithMultipleProducersSearch = environment.getArgument(STOP_PLACES_WITH_MULTIPLE_PRODUCERS);
-        }
-
-        boolean quaysWithMultipleProducersSearch = false;
-        if (environment.getArgument(QUAYS_WITH_MULTIPLE_PRODUCERS) != null) {
-            quaysWithMultipleProducersSearch = environment.getArgument(QUAYS_WITH_MULTIPLE_PRODUCERS);
-        }
-
-
         //By default stop should resolve parent stops
-        if (nearbyStopPlaceSearch || onlyMonomodalStopplaces || stopPlacesWithoutQuaySearch || stopPlacesWithMultipleProducersSearch || quaysWithMultipleProducersSearch) {
+        if (!StopPlaceSearchArgumentsMapper.shouldResolveParents(environment.getArguments())) {
             return getStopPlaces(environment, copiedStopPlaces, stopPlaces.size());
         } else {
-            List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParents(copiedStopPlaces, KEEP_CHILDREN);
+            List<StopPlace> parentsResolved = parentStopPlacesFetcher.resolveParentsByBatch(copiedStopPlaces, KEEP_CHILDREN);
             return getStopPlaces(environment, getStopPlaceCopyWithMdmId(parentsResolved), parentsResolved.size());
         }
     }
@@ -195,34 +169,9 @@ class StopPlaceFetcher implements DataFetcher {
         String key = environment.getArgument(KEY);
         List<String> values = environment.getArgument(VALUES);
 
-        Boolean allVersions = setIfNonNull(environment, ALL_VERSIONS, stopPlaceSearchBuilder::setAllVersions);
-        setIfNonNull(environment, WITHOUT_LOCATION_ONLY, stopPlaceSearchBuilder::setWithoutLocationOnly);
-        setIfNonNull(environment, WITHOUT_QUAYS_ONLY, stopPlaceSearchBuilder::setWithoutQuaysOnly);
-        setIfNonNull(environment, WITH_DUPLICATED_QUAY_IMPORTED_IDS, stopPlaceSearchBuilder::setWithDuplicatedQuayImportedIds);
-        setIfNonNull(environment, WITH_NEARBY_SIMILAR_DUPLICATES, stopPlaceSearchBuilder::setWithNearbySimilarDuplicates);
-        setIfNonNull(environment, STOP_PLACES_WITHOUT_QUAY, stopPlaceSearchBuilder::setStopPlacesWithoutQuay);
-        setIfNonNull(environment, NEARBY_STOP_PLACES, stopPlaceSearchBuilder::setNearbyStopPlaces);
-        setIfNonNull(environment, NEARBY_RADIUS, stopPlaceSearchBuilder::setNearbyRadius);
-        setIfNonNull(environment, ORGANISATION_NAME, stopPlaceSearchBuilder::setOrganisationName);
-        setIfNonNull(environment, WITH_DISTANT_QUAYS, stopPlaceSearchBuilder::setWithDistantQuays);
-        setIfNonNull(environment, DETECT_MULTI_MODAL_POINTS, stopPlaceSearchBuilder::setDetectMultiModalPoints);
-        setIfNonNull(environment, HAS_PARKING, stopPlaceSearchBuilder::setHasParking);
-        setIfNonNull(environment, WITH_TAGS, stopPlaceSearchBuilder::setWithTags);
-        setIfNonNull(environment, STOP_PLACES_WITH_MULTIPLE_PRODUCERS, stopPlaceSearchBuilder::setStopPlacesWithMultipleProducers);
-        setIfNonNull(environment, QUAYS_WITH_MULTIPLE_PRODUCERS, stopPlaceSearchBuilder::setQuaysWithMultipleProducers);
-
-
-        Instant pointInTime;
-        if (environment.getArgument(POINT_IN_TIME) != null) {
-            pointInTime = environment.getArgument(POINT_IN_TIME);
-        } else {
-            pointInTime = null;
-        }
-
-        if (environment.getArgument(VERSION_VALIDITY_ARG) != null) {
-            ExportParams.VersionValidity versionValidity = ExportParams.VersionValidity.valueOf(ExportParams.VersionValidity.class, environment.getArgument(VERSION_VALIDITY_ARG));
-            stopPlaceSearchBuilder.setVersionValidity(versionValidity);
-        }
+        Map<String, Object> arguments = environment.getArguments();
+        Boolean allVersions = StopPlaceSearchArgumentsMapper.applySearchFlags(arguments, stopPlaceSearchBuilder);
+        Instant pointInTime = StopPlaceSearchArgumentsMapper.getPointInTime(arguments);
 
         if (netexId != null && !netexId.isEmpty()) {
 
@@ -262,54 +211,7 @@ class StopPlaceFetcher implements DataFetcher {
                 }
             } else {
 
-                if (allVersions == null || !allVersions) {
-                    //If requesting all versions - POINT_IN_TIME is irrelevant
-                    stopPlaceSearchBuilder.setPointInTime(pointInTime);
-                }
-
-                List<StopTypeEnumeration> stopTypes = environment.getArgument(STOP_PLACE_TYPE);
-                if (stopTypes != null && !stopTypes.isEmpty()) {
-                    stopPlaceSearchBuilder.setStopTypeEnumerations(stopTypes.stream()
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList())
-                    );
-                }
-
-                List<String> countryRef = environment.getArgument(COUNTRY_REF);
-                if (countryRef != null && !countryRef.isEmpty()) {
-                    exportParamsBuilder.setCountryReferences(
-                            countryRef.stream()
-                                    .filter(countryRefValue -> countryRefValue != null && !countryRefValue.isEmpty())
-                                    .collect(Collectors.toList())
-                    );
-                }
-
-                List<String> countyRef = environment.getArgument(COUNTY_REF);
-                if (countyRef != null && !countyRef.isEmpty()) {
-                    exportParamsBuilder.setCountyReferences(
-                            countyRef.stream()
-                                    .filter(countyRefValue -> countyRefValue != null && !countyRefValue.isEmpty())
-                                    .collect(Collectors.toList())
-                    );
-                }
-
-                List<String> municipalityRef = environment.getArgument(MUNICIPALITY_REF);
-                if (municipalityRef != null && !municipalityRef.isEmpty()) {
-                    exportParamsBuilder.setMunicipalityReferences(
-                            municipalityRef.stream()
-                                    .filter(municipalityRefValue -> municipalityRefValue != null && !municipalityRefValue.isEmpty())
-                                    .collect(Collectors.toList())
-                    );
-                }
-
-                if (environment.getArgument(SEARCH_WITH_CODE_SPACE) != null) {
-                    String code = environment.getArgument(SEARCH_WITH_CODE_SPACE);
-                    exportParamsBuilder.setCodeSpace(code.toLowerCase());
-                }
-
-                setIfNonNull(environment, TAGS, stopPlaceSearchBuilder::setTags);
-
-                stopPlaceSearchBuilder.setQuery(environment.getArgument(QUERY));
+                StopPlaceSearchArgumentsMapper.applyStandardFilters(arguments, allVersions, pointInTime, exportParamsBuilder, stopPlaceSearchBuilder);
             }
 
             if (environment.getArgument(LONGITUDE_MIN) != null) {
@@ -340,11 +242,11 @@ class StopPlaceFetcher implements DataFetcher {
                 stopPlacesPage = stopPlaceRepository.findStopPlace(exportParamsBuilder.setStopPlaceSearch(stopPlaceSearchBuilder.build()).build());
             }
         }
+
         List<StopPlace> results = stopPlacesPage.getContent();
         results.forEach(stopPlaceRepository::initializeStopPlace);
         return getStopPlaceCopyWithMdmId(results);
     }
-
 
     protected void fetchTags(List<StopPlace> stopPlaceCollection) {
         if (!CollectionUtils.isEmpty(stopPlaceCollection)) {

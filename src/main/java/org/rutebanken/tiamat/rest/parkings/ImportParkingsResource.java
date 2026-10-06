@@ -10,6 +10,7 @@ import org.rutebanken.tiamat.general.ImportJobWorker;
 import org.rutebanken.tiamat.general.ImportJobWorkerBuilder;
 import org.rutebanken.tiamat.general.ParkingsCSVHelper;
 import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.ParkingIdEntity;
 import org.rutebanken.tiamat.model.ParkingLayoutEnumeration;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.model.job.Job;
@@ -17,6 +18,7 @@ import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.model.job.JobType;
 import org.rutebanken.tiamat.repository.JobRepository;
+import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.rest.dto.DtoParking;
 import org.rutebanken.tiamat.service.parking.ParkingsImportedService;
 import org.slf4j.Logger;
@@ -44,14 +46,17 @@ public class ImportParkingsResource {
     private final JobRepository jobRepository;
     private final ImportJobWorkerBuilder importJobWorkerBuilder;
     private final LoggingService loggingService;
+    private final ParkingRepository parkingRepository;
 
     @Autowired
     ImportParkingsResource(ParkingsImportedService parkingsImportedService, JobRepository jobRepository,
-                           ImportJobWorkerBuilder importJobWorkerBuilder, LoggingService loggingService) {
+                           ImportJobWorkerBuilder importJobWorkerBuilder, LoggingService loggingService,
+                           ParkingRepository parkingRepository) {
         this.parkingsImportedService = parkingsImportedService;
         this.jobRepository = jobRepository;
         this.importJobWorkerBuilder = importJobWorkerBuilder;
         this.loggingService = loggingService;
+        this.parkingRepository = parkingRepository;
     }
 
     @POST
@@ -123,5 +128,22 @@ public class ImportParkingsResource {
         importService.submit(importJobWorker);
 
         return Response.status(200).build();
+    }
+
+    @GET
+    @Path("/byOperator")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getParkingIdsByOperator(@QueryParam("operator") String operator) {
+        logger.info("Récupération des ids de parkings pour l'operator {}", operator);
+        if (operator == null || operator.isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("operator parameter is required").build();
+        }
+        try {
+            List<ParkingIdEntity> parkingIds = parkingRepository.findParkingIdsByOperator(operator);
+            return Response.ok(parkingIds).build();
+        } catch (Exception e) {
+            logger.error("Error while getting parking ids for operator {}", operator, e);
+        }
+        return Response.status(500).build();
     }
 }

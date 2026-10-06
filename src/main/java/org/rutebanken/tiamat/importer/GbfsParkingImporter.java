@@ -256,8 +256,10 @@ public class GbfsParkingImporter {
     public void importProcess(GbfsParkingImportParams params) throws TiamatBusinessException {
         GbfsParkingImportData data = this.getGBFSParkingImportData(params.getGlobalUrl());
         SystemInformationMapper systemInformationMapper = new SystemInformationMapper();
-        Organisation organisation = organisationsImportedService.createOrUpdateOrganisation(
-                systemInformationMapper.toOrganisation(data.systemInformation()));
+        Organisation incomingOrganisation = systemInformationMapper.toOrganisation(data.systemInformation());
+        Organisation organisation = organisationsImportedService.createOrUpdateOrganisation(incomingOrganisation);
+        // originalId is transient : it is lost when the organisation is reloaded from the database
+        organisation.setOriginalId(incomingOrganisation.getOriginalId());
         StationInformationMapper stationInformationMapper = new StationInformationMapper();
         List<Parking> parkings = data.stationInformation().getData().getStations().stream()
                 .map(gbfsStation -> stationInformationMapper.toParking(organisation, gbfsStation, data.vehicleTypes(), params.getParkingType(), params.getParkingAreaType()))

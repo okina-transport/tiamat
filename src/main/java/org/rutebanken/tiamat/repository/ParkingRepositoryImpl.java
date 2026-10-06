@@ -28,6 +28,7 @@ import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.rutebanken.tiamat.geo.GeometryTransformer;
+import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.iterator.ScrollableResultIterator;
 import org.rutebanken.tiamat.repository.search.SearchHelper;
@@ -604,5 +605,28 @@ public class ParkingRepositoryImpl implements ParkingRepositoryCustom {
 
         List<String> results = query.getResultList();
         return new HashSet<>(results);
+    }
+
+    @Override
+    public List<ParkingIdEntity> findParkingIdsByOperator(String operator) {
+        String sql = "SELECT p.operator, v.items, p.netex_id " +
+                "FROM parking p " +
+                "INNER JOIN parking_key_values pkv " +
+                "ON pkv.parking_id = p.id " +
+                "INNER JOIN value_items v " +
+                "ON pkv.key_values_id = v.value_id " +
+                "WHERE pkv.key_values_key = :key " +
+                "AND p.operator = :operator " +
+                "AND p.version = (SELECT MAX(pv.version) FROM parking pv WHERE pv.netex_id = p.netex_id)";
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("key", ORIGINAL_ID_KEY);
+        query.setParameter("operator", operator);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+        return results.stream()
+                .map(row -> new ParkingIdEntity((String) row[0], (String) row[1], (String) row[2]))
+                .collect(Collectors.toList());
     }
 }

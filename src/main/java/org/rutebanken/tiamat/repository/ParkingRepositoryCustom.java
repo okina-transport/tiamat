@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.repository;
 
 import org.locationtech.jts.geom.Envelope;
 import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.ParkingIdEntity;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.rest.dto.DTOClusterMarker;
 import org.springframework.data.domain.Page;
@@ -69,5 +70,7 @@ public interface ParkingRepositoryCustom extends DataManagedObjectStructureRepos
     List<Parking> getAllParkingsWithoutInsee();
 
     Set<String> findNetexIdsByPlaceEquipmentId(String placeEquipmentNetexId);
+
+    List<ParkingIdEntity> findParkingIdsByOperator(String operator);
 }
 

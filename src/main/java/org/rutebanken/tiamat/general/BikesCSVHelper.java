@@ -345,6 +345,12 @@ public class BikesCSVHelper {
             Set<String> existingGestionnaire = parking.getOrCreateValues("gestionnaire");
             existingGestionnaire.add(bikeParkingDto.getGestionnaire());
 
+            if (StringUtils.isNotBlank(bikeParkingDto.getGestionnaire())) {
+                parking.setOperator(bikeParkingDto.getGestionnaire().trim());
+            } else if (StringUtils.isNotBlank(bikeParkingDto.getProprietaire())) {
+                parking.setOperator(bikeParkingDto.getProprietaire().trim());
+            }
+
             Set<String> existingDateMaj = parking.getOrCreateValues("date_maj");
             existingDateMaj.add(bikeParkingDto.getDateMaj());
 

@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 public class ParkingsCSVHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(ParkingsCSVHelper.class);
+    public static final String DEFAULT_OPERATOR = "technique";
     private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
     private static final Pattern patternXlongYlat = Pattern.compile("^-?(\\d*)\\.\\d{1,20}");
     private static final List<String> EXPECTED_HEADERS = ParkingCsvHeader.headerNames();
@@ -373,7 +374,7 @@ public class ParkingsCSVHelper {
             }
 
             if (StringUtils.isBlank(parking.getOperator())) {
-                parking.setOperator("technique");
+                parking.setOperator(DEFAULT_OPERATOR);
             } else {
                 logger.warn("Undefind parking operator for parking {}", parking.getOriginalId());
             }

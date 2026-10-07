@@ -2,6 +2,7 @@ package org.rutebanken.tiamat.service.parking;
 
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
+import org.rutebanken.tiamat.general.ParkingsCSVHelper;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.ParkingRepository;
@@ -11,11 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -26,28 +23,33 @@ public class ParkingsImportedService {
 
     private static final String ID_LOCAL = "id_local";
     private static final String ID_OSM = "id_osm";
+    private static final String OPERATOR_ORGANISATION_TYPE = "operator";
 
     private final ParkingRepository parkingRepository;
     private final NetexIdMapper netexIdMapper;
     private final ParkingVersionedSaverService parkingVersionedSaverService;
     private final VersionCreator versionCreator;
+    private final OrganisationsImportedService organisationsImportedService;
 
     @Autowired
-    ParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, VersionCreator versionCreator) {
+    ParkingsImportedService(ParkingRepository parkingRepository, NetexIdMapper netexIdMapper, ParkingVersionedSaverService parkingVersionedSaverService, VersionCreator versionCreator, OrganisationsImportedService organisationsImportedService) {
         this.parkingRepository = parkingRepository;
         this.netexIdMapper = netexIdMapper;
         this.parkingVersionedSaverService = parkingVersionedSaverService;
         this.versionCreator = versionCreator;
+        this.organisationsImportedService = organisationsImportedService;
     }
 
     public void createOrUpdateParkings(List<Parking> parkingsToSave) {
 
         Parking updatedParking;
+        Map<String, Organisation> operatorOrganisations = new HashMap<>();
 
         for (Parking parkingToSave : parkingsToSave) {
             boolean founded = false;
 
             Parking parkingInBDD = retrieveParkingInBDD(parkingToSave);
+            attachOperatorOrganisation(parkingToSave, operatorOrganisations);
 
             if (parkingInBDD != null && parkingInBDD.getNetexId() != null) {
                 founded = true;
@@ -67,6 +69,20 @@ public class ParkingsImportedService {
                 parkingVersionedSaverService.saveNewVersion(parkingToSave);
             }
         }
+    }
+
+    private void attachOperatorOrganisation(Parking parking, Map<String, Organisation> operatorOrganisations) {
+        String operatorName = StringUtils.trimToNull(parking.getOperator());
+        if (parking.getOrganisation() != null || operatorName == null || ParkingsCSVHelper.DEFAULT_OPERATOR.equals(operatorName)) {
+            return;
+        }
+        parking.setOrganisation(operatorOrganisations.computeIfAbsent(operatorName, name -> {
+            Organisation organisation = new Organisation();
+            organisation.setName(name);
+            organisation.setOperator(name);
+            organisation.setType(OPERATOR_ORGANISATION_TYPE);
+            return organisationsImportedService.createOrUpdateOrganisation(organisation);
+        }));
     }
 
     private Parking retrieveParkingInBDD(Parking parking) {

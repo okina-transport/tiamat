@@ -15,16 +15,16 @@ import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
 import org.rutebanken.tiamat.model.SiteElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 public class ImporterUtils {
 
@@ -33,99 +33,78 @@ public class ImporterUtils {
     private static final String OKINA_ENDPOINT = "https://api.adresse.okina.fr/reverse?lon=%s&lat=%s";
     private static final String DATA_GOUV_ENDPOINT = "https://api-adresse.data.gouv.fr/reverse/?lat=%s&lon=%s";
     private static final String GEO_API_GOUV_ENDPOINT = "https://geo.api.gouv.fr/communes?lat=%s&lon=%s&fields=nom,code,codesPostaux&format=json";
+    private static final String GEO_API_GOUV_ARRONDISSEMENT_ENDPOINT = GEO_API_GOUV_ENDPOINT + "&type=arrondissement-municipal";
+
+    /** Paris, Lyon, Marseille : Okina returns the code of the arrondissement, geo.api.gouv returns the one of the commune by default */
+    private static final Set<String> COMMUNES_WITH_ARRONDISSEMENTS = Set.of("75056", "69123", "13055");
 
     private static final GeometryFactory geometryFactory = new GeometryFactory();
 
+    /** INSEE code : 5 digits, or 2A/2B followed by 3 digits for Corsica */
+    private static final Pattern INSEE_CODE_PATTERN = Pattern.compile("\\d{5}|2[AB]\\d{3}");
+
+    /**
+     * Shared, with timeouts so that an API not responding does not block imports and batches : a point can need up to
+     * 4 sequential calls when Okina does not return everything, some of them made synchronously from GraphQL. Package-private for tests
+     */
+    static final RestTemplate restTemplate = createRestTemplate();
+
+    private static RestTemplate createRestTemplate() {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(Duration.ofSeconds(2));
+        requestFactory.setReadTimeout(Duration.ofSeconds(4));
+        return new RestTemplate(requestFactory);
+    }
+
     public static Optional<String> getInseeFromLatLng(double x, double y) {
-        Optional<String> inseeOpt = getInseeFromOkinaAPI(x, y);
-        return inseeOpt.isPresent() ? inseeOpt : getInseeFromGovAPI(x,y);
+        return getInseeFromAddressAPI(OKINA_ENDPOINT, x, y)
+                .or(() -> getInseeFromAddressAPI(DATA_GOUV_ENDPOINT, y, x))
+                .or(() -> getCommuneFromGeoApiGouv(x, y)
+                        .map(commune -> commune.optString("code"))
+                        .filter(ImporterUtils::isInseeCode));
     }
 
     public static DtoGeocode getGeocodeDataByReverseGeocoding(double x, double y) {
-        DtoGeocode dtoGeocode = getGeocodeDataFromOkinaAPI(x, y);
-        getGeocodeDataFromDataGouvAPI(x, y, dtoGeocode);
-        getGeocodeDataFromGeoGouvAPI(x, y, dtoGeocode);
+        DtoGeocode dtoGeocode = new DtoGeocode();
+        getFirstFeatureProperties(String.format(OKINA_ENDPOINT, x, y), true)
+                .ifPresent(properties -> fillGeocodeData(dtoGeocode, properties));
+        if (isComplete(dtoGeocode)) {
+            return dtoGeocode;
+        }
+        getFirstFeatureProperties(String.format(DATA_GOUV_ENDPOINT, y, x), true)
+                .ifPresent(properties -> fillGeocodeData(dtoGeocode, properties));
+        // geo.api.gouv knows the commune even far from any address (fields, mountains), but has neither address nor street
+        if (StringUtils.isEmpty(dtoGeocode.getCityCode()) || StringUtils.isEmpty(dtoGeocode.getPostCode())) {
+            getCommuneFromGeoApiGouv(x, y).ifPresent(commune -> fillGeocodeDataFromCommune(dtoGeocode, commune));
+        }
         return dtoGeocode;
     }
 
-    private static Optional<String> getInseeFromOkinaAPI(double x, double y) {
-        final String okinaUrl = String.format(OKINA_ENDPOINT, x,y);
-
-        RestTemplate restTemplate = new RestTemplate();
-
-        ResponseEntity response = null;
-        String city = "";
-
-        try {
-            response = restTemplate.exchange(okinaUrl, HttpMethod.GET, HttpEntity.EMPTY, String.class);
-            JSONObject body = new JSONObject(Objects.requireNonNull(response.getBody()).toString());
-
-            if (body.getJSONArray("features") != null && body.getJSONArray("features").length() > 0) {
-
-                JSONObject properties = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties");
-                city = properties.has("citycode") ? properties.getString("citycode") : "";
-                return Optional.of(city);
-            }
-        } catch (RestClientException | JSONException | IllegalArgumentException | NullPointerException e) {
-            logger.error("Error on insee recovering", e);
-            logger.error("okinaUrl : " + okinaUrl);
-            if (response != null && response.getBody() != null){
-                logger.error(response.getBody().toString());
-            }
-
+    private static void fillGeocodeDataFromCommune(DtoGeocode dtoGeocode, JSONObject commune) {
+        if (StringUtils.isEmpty(dtoGeocode.getCityCode()) && isInseeCode(commune.optString("code"))) {
+            dtoGeocode.setCityCode(commune.optString("code"));
         }
-        return Optional.empty();
+        if (StringUtils.isEmpty(dtoGeocode.getPostCode())) {
+            Optional.ofNullable(commune.optJSONArray("codesPostaux"))
+                    .filter(postCodes -> postCodes.length() > 0)
+                    .map(postCodes -> postCodes.optString(0))
+                    .filter(StringUtils::isNumeric)
+                    .ifPresent(dtoGeocode::setPostCode);
+        }
     }
 
-    private static Optional<String> getInseeFromGovAPI(double x, double y) {
-        final String dataGouvUrl = String.format(DATA_GOUV_ENDPOINT, y,x);
-        final String geoApiGouvUrl = String.format(GEO_API_GOUV_ENDPOINT, x,y);
-        RestTemplate restTemplate = new RestTemplate();
+    private static boolean isComplete(DtoGeocode dtoGeocode) {
+        return StringUtils.isNoneEmpty(dtoGeocode.getCityCode(), dtoGeocode.getPostCode(), dtoGeocode.getAddress(), dtoGeocode.getCity());
+    }
 
-        ResponseEntity response = null;
-        String city = "";
-
-        try {
-            response = restTemplate.exchange(dataGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, String.class);
-            JSONObject body = new JSONObject(Objects.requireNonNull(response.getBody()).toString());
-
-            if (body.getJSONArray("features") != null && body.getJSONArray("features").length() > 0) {
-
-                JSONObject properties = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties");
-                city = properties.has("citycode") ? properties.getString("citycode") : "";
-                return Optional.of(city);
-            }
-        } catch (RestClientException | JSONException | IllegalArgumentException | NullPointerException e) {
-            logger.error("Error on insee recovering", e);
-            logger.error("dataGouvUrl : " + dataGouvUrl);
-            logger.error("geoApiGouvUrl : " + geoApiGouvUrl);
-            if (response != null && response.getBody() != null){
-                logger.error(response.getBody().toString());
-            }
-
-        }
-
-
-        //2ème essai avec la 2ème URL
-
-        try {
-            response = restTemplate.exchange(geoApiGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, Object.class);
-            JSONObject body = new JSONObject(Objects.requireNonNull(response.getBody()).toString());
-
-            if (body.getString("nom") != null && !body.getString("nom").isEmpty()) {
-                city = body.getString("nom");
-                return Optional.of(city);
-            }
-        } catch (RestClientException | JSONException | IllegalArgumentException | NullPointerException e) {
-            logger.error("Error on insee recovering", e);
-            logger.error("dataGouvUrl : " + dataGouvUrl);
-            logger.error("geoApiGouvUrl : " + geoApiGouvUrl);
-            if (response != null && response.getBody() != null){
-                logger.error(response.getBody().toString());
-            }
-        }
-
-        return Optional.empty();
+    /**
+     * Okina and data.gouv share the same response format, only the order of the coordinates in the URL differs.
+     * geo.api.gouv is always called afterwards as a fallback
+     */
+    private static Optional<String> getInseeFromAddressAPI(String endpoint, double first, double second) {
+        return getFirstFeatureProperties(String.format(endpoint, first, second), true)
+                .map(properties -> properties.optString("citycode"))
+                .filter(ImporterUtils::isInseeCode);
     }
 
     /**
@@ -156,125 +135,96 @@ public class ImporterUtils {
         return Optional.of(siteElement.getAccessibilityAssessment().getLimitations().get(0).getWheelchairAccess());
     }
 
-    private static DtoGeocode getGeocodeDataFromOkinaAPI(double x, double y) {
-        final String okinaUrl = String.format(OKINA_ENDPOINT, x, y);
-
-        RestTemplate restTemplate = new RestTemplate();
-
-        ResponseEntity response = null;
-
-        try {
-            response = restTemplate.exchange(okinaUrl, HttpMethod.GET, HttpEntity.EMPTY, String.class);
-            JSONObject body = new JSONObject(Objects.requireNonNull(response.getBody()).toString());
-
-            if (body.getJSONArray("features") != null && body.getJSONArray("features").length() > 0) {
-
-                JSONObject properties = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties");
-                String cityCode = properties.has("citycode") ? properties.getString("citycode") : "";
-                String postCode  = properties.has("postcode") ? properties.getString("postcode") : "";
-                String address = properties.has("name") ? properties.getString("name") : "";
-                String city = properties.has("city") ? properties.getString("city") : "";
-
-                DtoGeocode geocodeResult = new DtoGeocode();
-                if(StringUtils.isNumeric(cityCode)){
-                    geocodeResult.setCityCode(cityCode);
-                }
-                if(StringUtils.isNumeric(postCode)) {
-                    geocodeResult.setPostCode(postCode);
-                }
-                geocodeResult.setAddress(address);
-                geocodeResult.setCity(city);
-                return geocodeResult;
-            }
-        } catch (RestClientException | JSONException | IllegalArgumentException | NullPointerException e) {
-            logger.error("Error on geocode recovering", e);
-            logger.error("okinaUrl : " + okinaUrl);
-            if (response != null && response.getBody() != null){
-                logger.error(response.getBody().toString());
-            }
-
+    /**
+     * Only fills the fields that are still empty : the APIs are called by order of priority
+     */
+    private static void fillGeocodeData(DtoGeocode dtoGeocode, JSONObject properties) {
+        if (StringUtils.isEmpty(dtoGeocode.getCityCode()) && isInseeCode(properties.optString("citycode"))) {
+            dtoGeocode.setCityCode(properties.optString("citycode"));
         }
-        return new DtoGeocode();
+        if (StringUtils.isEmpty(dtoGeocode.getPostCode()) && StringUtils.isNumeric(properties.optString("postcode"))) {
+            dtoGeocode.setPostCode(properties.optString("postcode"));
+        }
+        if (StringUtils.isEmpty(dtoGeocode.getAddress())) {
+            dtoGeocode.setAddress(properties.optString("name"));
+        }
+        if (StringUtils.isEmpty(dtoGeocode.getCity())) {
+            dtoGeocode.setCity(properties.optString("city"));
+        }
     }
 
-    private static DtoGeocode getGeocodeDataFromDataGouvAPI(double x, double y, DtoGeocode dtoGeocode) {
-        final String dataGouvUrl = String.format(DATA_GOUV_ENDPOINT, y, x);
-        RestTemplate restTemplate = new RestTemplate();
-
-        ResponseEntity response = null;
-
-        try {
-            response = restTemplate.exchange(dataGouvUrl, HttpMethod.GET, HttpEntity.EMPTY, String.class);
-            JSONObject body = new JSONObject(Objects.requireNonNull(response.getBody()).toString());
-
-            if (body.getJSONArray("features") != null && body.getJSONArray("features").length() > 0) {
-
-                JSONObject properties = body.getJSONArray("features").getJSONObject(0).getJSONObject("properties");
-                if(org.apache.commons.lang3.StringUtils.isEmpty(dtoGeocode.getCityCode())){
-                    String cityCode = properties.has("citycode") ? properties.getString("citycode") : "";
-                    if(StringUtils.isNumeric(cityCode)){
-                        dtoGeocode.setCityCode(cityCode);
-                    }
-                }
-                if(org.apache.commons.lang3.StringUtils.isEmpty(dtoGeocode.getPostCode())){
-                    String postCode = properties.has("postcode") ? properties.getString("postcode") : "";
-                    if(StringUtils.isNumeric(postCode)) {
-                        dtoGeocode.setPostCode(postCode);
-                    }
-                }
-                if(org.apache.commons.lang3.StringUtils.isEmpty(dtoGeocode.getAddress())){
-                    String address = properties.has("name") ? properties.getString("name") : "";
-                    dtoGeocode.setAddress(address);
-                }
-                if(org.apache.commons.lang3.StringUtils.isEmpty(dtoGeocode.getCity())){
-                    String city = properties.has("city") ? properties.getString("city") : "";
-                    dtoGeocode.setCity(city);
-                }
-
-                return dtoGeocode;
-            }
-        } catch (RestClientException | JSONException | IllegalArgumentException | NullPointerException e) {
-            logger.error("Error on geocode recovering", e);
-            logger.error("dataGouvUrl : " + dataGouvUrl);
-            if (response != null && response.getBody() != null){
-                logger.error(response.getBody().toString());
-            }
-
-        }
-        return dtoGeocode;
+    private static Optional<JSONObject> getFirstFeatureProperties(String url, boolean hasFallback) {
+        return callApi(url, hasFallback, body -> {
+            JSONArray features = new JSONObject(body).getJSONArray("features");
+            return features.length() > 0 ? features.getJSONObject(0).getJSONObject("properties") : null;
+        });
     }
 
-    private static DtoGeocode getGeocodeDataFromGeoGouvAPI(double x, double y, DtoGeocode dtoGeocode) {
-        final String geoApiGouv = String.format(GEO_API_GOUV_ENDPOINT, y, x);
-        RestTemplate restTemplate = new RestTemplate();
-
-        ResponseEntity response = null;
-
-        try {
-            response = restTemplate.exchange(geoApiGouv, HttpMethod.GET, HttpEntity.EMPTY, String.class);
-            JSONArray body = new JSONArray(Objects.requireNonNull(response.getBody()).toString());
-
-            if (body.length() > 0 &&
-                    body.getJSONObject(0).getJSONArray("codesPostaux") != null &&
-                    body.getJSONObject(0).getJSONArray("codesPostaux").length() > 0) {
-                String postCode = (String) body.getJSONObject(0).getJSONArray("codesPostaux").get(0);
-                if(org.apache.commons.lang3.StringUtils.isEmpty(dtoGeocode.getPostCode())){
-                    if(StringUtils.isNumeric(postCode)) {
-                        dtoGeocode.setPostCode(postCode);
-                    }
-                }
-
-                return dtoGeocode;
-            }
-        } catch (RestClientException | JSONException | IllegalArgumentException | NullPointerException e) {
-            logger.error("Error on geocode recovering", e);
-            logger.error("geoApiGouv : " + geoApiGouv);
-            if (response != null && response.getBody() != null){
-                logger.error(response.getBody().toString());
-            }
-
+    /**
+     * For Paris, Lyon and Marseille, geo.api.gouv returns the commune whereas Okina, which is the reference, returns the
+     * arrondissement : in this case the arrondissement is requested. Returns empty if it cannot be recovered, so that no
+     * code different from Okina's is stored
+     */
+    private static Optional<JSONObject> getCommuneFromGeoApiGouv(double x, double y) {
+        Optional<JSONObject> commune = callApi(String.format(GEO_API_GOUV_ENDPOINT, y, x), false, ImporterUtils::getFirstCommune);
+        if (commune.isPresent() && COMMUNES_WITH_ARRONDISSEMENTS.contains(commune.get().optString("code"))) {
+            return callApi(String.format(GEO_API_GOUV_ARRONDISSEMENT_ENDPOINT, y, x), false, ImporterUtils::getFirstCommune);
         }
-        return dtoGeocode;
+        return commune;
+    }
+
+    private static JSONObject getFirstCommune(String body) throws JSONException {
+        JSONArray communes = new JSONArray(body);
+        return communes.length() > 0 ? communes.getJSONObject(0) : null;
+    }
+
+    @FunctionalInterface
+    private interface ResponseParser<T> {
+        /** Returns null if the response does not contain the expected data */
+        T parse(String body) throws JSONException;
+    }
+
+    /**
+     * Calls a geocoding API and parses its response. Errors are logged at warn level if another API will be called
+     * afterwards, at error level otherwise
+     */
+    private static <T> Optional<T> callApi(String url, boolean hasFallback, ResponseParser<T> parser) {
+        String body = null;
+        try {
+            body = restTemplate.getForObject(url, String.class);
+            if (body == null) {
+                log(hasFallback, "Empty response from {}", url);
+                return Optional.empty();
+            }
+            return Optional.ofNullable(parser.parse(body));
+        } catch (RestClientException | JSONException | IllegalArgumentException e) {
+            log(hasFallback, "Error on geocoding API call {} : {}", url, shortMessage(e));
+            logger.debug("Error on geocoding API call", e);
+            if (body != null) {
+                log(hasFallback, "Unusable response ({} characters), beginning : {}", body.length(), StringUtils.abbreviate(StringUtils.normalizeSpace(body), 200));
+                logger.debug("Full response : {}", body);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static void log(boolean hasFallback, String format, Object... arguments) {
+        if (hasFallback) {
+            logger.warn(format, arguments);
+        } else {
+            logger.error(format, arguments);
+        }
+    }
+
+    /**
+     * Exception message on a single line and truncated : JSON parsing exceptions contain the whole unreadable response
+     */
+    static String shortMessage(Exception e) {
+        return StringUtils.abbreviate(StringUtils.normalizeSpace(e.getMessage()), 200);
+    }
+
+    private static boolean isInseeCode(String code) {
+        return code != null && INSEE_CODE_PATTERN.matcher(code).matches();
     }
 
     public static org.locationtech.jts.geom.Point createPoint(double lon, double lat){

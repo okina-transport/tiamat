@@ -34,8 +34,8 @@ public class CityNameService {
                 return Optional.of(commune.getNom());
             }
         } catch (Exception e) {
-            logger.error("Error on city name recovering from insee code {}", inseeCode, e);
-            logger.error("url : {}", url);
+            logger.error("Error on city name recovering from insee code {} ({}) : {}", inseeCode, url, ImporterUtils.shortMessage(e));
+            logger.debug("Error on city name recovering", e);
         }
         return Optional.empty();
     }

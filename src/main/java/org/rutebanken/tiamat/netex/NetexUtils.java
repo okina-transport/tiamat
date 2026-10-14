@@ -1,12 +1,12 @@
 package org.rutebanken.tiamat.netex;
 
+import jakarta.xml.bind.JAXBElement;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import jakarta.xml.bind.JAXBElement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,6 +28,12 @@ public class NetexUtils {
 
         }
         return quays;
+    }
+
+    public static boolean isEmptyPlaceEquipments(PlaceEquipments_RelStructure placeEquipments) {
+        return placeEquipments != null
+                && (placeEquipments.getInstalledEquipmentRefOrInstalledEquipment() == null
+                || placeEquipments.getInstalledEquipmentRefOrInstalledEquipment().isEmpty());
     }
 
 

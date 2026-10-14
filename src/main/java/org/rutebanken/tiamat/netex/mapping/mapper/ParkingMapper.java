@@ -244,6 +244,10 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
         super.mapBtoA(tiamatParking, netexParking, context);
         NetexUtils.fillTypeOfKey(netexParking);
 
+        if (NetexUtils.isEmptyPlaceEquipments(netexParking.getPlaceEquipments())) {
+            netexParking.setPlaceEquipments(null);
+        }
+
         String originalId =
                 tiamatParking.getKeyValues().get(ORIGINAL_ID_KEY).getItems().stream().findFirst().orElseThrow();
 

@@ -2,7 +2,6 @@ package org.rutebanken.tiamat.repository.search;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.rutebanken.tiamat.exporter.params.ExportParams;
 
 public class StopPlaceQueryFromSearchBuilderTest {
 
@@ -27,5 +26,11 @@ public class StopPlaceQueryFromSearchBuilderTest {
         result = stopPlaceQueryFromSearchBuilder.handleCommonWordsInQuery("Should wordToBeSkipped contain only one joker between each word");
 
         Assertions.assertThat(result).isEqualToIgnoringCase("Should%contain%only%one%joker%between%each%word");
+    }
+
+    @Test
+    public void organisationPrefixLikePatternIsLowerCasedAndEscaped() {
+        Assertions.assertThat(StopPlaceQueryFromSearchBuilder.toOrganisationPrefixLikePattern(" BFC ")).isEqualTo("bfc:%");
+        Assertions.assertThat(StopPlaceQueryFromSearchBuilder.toOrganisationPrefixLikePattern("A_B%C")).isEqualTo("a\\_b\\%c:%");
     }
 }

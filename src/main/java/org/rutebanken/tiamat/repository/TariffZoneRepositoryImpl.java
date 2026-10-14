@@ -16,6 +16,10 @@
 package org.rutebanken.tiamat.repository;
 
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
@@ -37,10 +41,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
-import jakarta.persistence.TypedQuery;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -77,6 +77,11 @@ public class TariffZoneRepositoryImpl implements TariffZoneRepositoryCustom {
         nativeQuery.addEntity(TariffZone.class);
 
         searchHelper.addParams(nativeQuery, pair.getSecond());
+
+        if (search != null && search.getSize() != null) {
+            nativeQuery.setFirstResult(search.getPage() * search.getSize());
+            nativeQuery.setMaxResults(search.getSize());
+        }
 
         @SuppressWarnings("unchecked")
         List<TariffZone> tariffZones = nativeQuery.list();

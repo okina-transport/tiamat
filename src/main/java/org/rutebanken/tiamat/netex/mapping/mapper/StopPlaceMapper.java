@@ -43,9 +43,7 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
     public void mapAtoB(StopPlace netexStopPlace, org.rutebanken.tiamat.model.StopPlace stopPlace, MappingContext context) {
         try {
             super.mapAtoB(netexStopPlace, stopPlace, context);
-            if (netexStopPlace.getPlaceEquipments() != null &&
-                    netexStopPlace.getPlaceEquipments().getInstalledEquipmentRefOrInstalledEquipment() != null &&
-                    netexStopPlace.getPlaceEquipments().getInstalledEquipmentRefOrInstalledEquipment().isEmpty()) {
+            if (NetexUtils.isEmptyPlaceEquipments(netexStopPlace.getPlaceEquipments())) {
                 netexStopPlace.setPlaceEquipments(null);
                 stopPlace.setPlaceEquipments(null);
             }
@@ -95,10 +93,7 @@ public class StopPlaceMapper extends CustomMapper<StopPlace, org.rutebanken.tiam
         try {
             super.mapBtoA(stopPlace, netexStopPlace, context);
             NetexUtils.fillTypeOfKey(netexStopPlace);
-            if (stopPlace.getPlaceEquipments() != null &&
-                    stopPlace.getPlaceEquipments().getInstalledEquipment() != null &&
-                    stopPlace.getPlaceEquipments().getInstalledEquipment().isEmpty()) {
-                stopPlace.setPlaceEquipments(null);
+            if (NetexUtils.isEmptyPlaceEquipments(netexStopPlace.getPlaceEquipments())) {
                 netexStopPlace.setPlaceEquipments(null);
             }
 

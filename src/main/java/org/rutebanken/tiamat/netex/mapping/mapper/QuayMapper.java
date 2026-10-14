@@ -41,9 +41,7 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
     @Override
     public void mapAtoB(Quay quay, org.rutebanken.tiamat.model.Quay quay2, MappingContext context) {
         super.mapAtoB(quay, quay2, context);
-        if (quay.getPlaceEquipments() != null &&
-                quay.getPlaceEquipments().getInstalledEquipmentRefOrInstalledEquipment() != null &&
-                quay.getPlaceEquipments().getInstalledEquipmentRefOrInstalledEquipment().isEmpty()) {
+        if (NetexUtils.isEmptyPlaceEquipments(quay.getPlaceEquipments())) {
             quay.setPlaceEquipments(null);
             quay2.setPlaceEquipments(null);
         }
@@ -94,10 +92,7 @@ public class QuayMapper extends CustomMapper<Quay, org.rutebanken.tiamat.model.Q
     public void mapBtoA(org.rutebanken.tiamat.model.Quay quay, Quay quay2, MappingContext context) {
         super.mapBtoA(quay, quay2, context);
         NetexUtils.fillTypeOfKey(quay2);
-        if (quay.getPlaceEquipments() != null &&
-                quay.getPlaceEquipments().getInstalledEquipment() != null &&
-                quay.getPlaceEquipments().getInstalledEquipment().isEmpty()) {
-            quay.setPlaceEquipments(null);
+        if (NetexUtils.isEmptyPlaceEquipments(quay2.getPlaceEquipments())) {
             quay2.setPlaceEquipments(null);
         }
 

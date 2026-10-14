@@ -28,6 +28,8 @@ public final class StopPlaceSearchArgumentsMapper {
         setIfNonNull(arguments, NEARBY_STOP_PLACES, stopPlaceSearchBuilder::setNearbyStopPlaces);
         setIfNonNull(arguments, NEARBY_RADIUS, stopPlaceSearchBuilder::setNearbyRadius);
         setIfNonNull(arguments, ORGANISATION_NAME, stopPlaceSearchBuilder::setOrganisationName);
+        setIfNonNull(arguments, ORGANISATION_PREFIX, stopPlaceSearchBuilder::setOrganisationPrefix);
+        setIfNonNull(arguments, SEARCH_QUAYS, stopPlaceSearchBuilder::setSearchQuays);
         setIfNonNull(arguments, WITH_DISTANT_QUAYS, stopPlaceSearchBuilder::setWithDistantQuays);
         setIfNonNull(arguments, DETECT_MULTI_MODAL_POINTS, stopPlaceSearchBuilder::setDetectMultiModalPoints);
         setIfNonNull(arguments, HAS_PARKING, stopPlaceSearchBuilder::setHasParking);

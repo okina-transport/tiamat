@@ -150,6 +150,20 @@ public class StopPlaceQueryFromSearchBuilder {
             " where substring(vi.items, 4, 1) = ':' and lower(substring(vi.items, 1, 3)) = :codeSpace)";
 
     /**
+     * Stop places (or their parent) having an imported-id / merged-id starting with the organisation prefix,
+     * or having a quay with such an imported-id / merged-id.
+     */
+    private static final String SQL_SEARCH_BY_ORGANISATION_PREFIX = "(EXISTS (select 1 from stop_place_key_values orgspkv" +
+            " join value_items orgvi on orgvi.value_id = orgspkv.key_values_id" +
+            " where orgspkv.stop_place_id in (s.id, p.id) and orgspkv.key_values_key in (:originalIdKey, :mergedIdKey)" +
+            " and lower(orgvi.items) like :organisationPrefixPattern)" +
+            " OR EXISTS (select 1 from stop_place_quays orgspq" +
+            " join quay_key_values orgqkv on orgqkv.quay_id = orgspq.quays_id" +
+            " join value_items orgvi on orgvi.value_id = orgqkv.key_values_id" +
+            " where orgspq.stop_place_id = s.id and orgqkv.key_values_key in (:originalIdKey, :mergedIdKey)" +
+            " and lower(orgvi.items) like :organisationPrefixPattern))";
+
+    /**
      * Default version validity for searches where pointInTime is not given.
      */
     private static final ExportParams.VersionValidity defaultVersionValidity = ExportParams.VersionValidity.CURRENT;
@@ -275,6 +289,14 @@ public class StopPlaceQueryFromSearchBuilder {
             if (StringUtils.isNotBlank(stopPlaceSearch.getOrganisationName())) {
                 wheres.add("s.provider = :organisationName");
                 parameters.put("organisationName", stopPlaceSearch.getOrganisationName());
+                operators.add("and");
+            }
+
+            if (StringUtils.isNotBlank(stopPlaceSearch.getOrganisationPrefix())) {
+                wheres.add(SQL_SEARCH_BY_ORGANISATION_PREFIX);
+                parameters.put("originalIdKey", ORIGINAL_ID_KEY);
+                parameters.put("mergedIdKey", MERGED_ID_KEY);
+                parameters.put("organisationPrefixPattern", toOrganisationPrefixLikePattern(stopPlaceSearch.getOrganisationPrefix()));
                 operators.add("and");
             }
 
@@ -619,7 +641,7 @@ public class StopPlaceQueryFromSearchBuilder {
             parameters.put("query", hashRemoved);
             wheres.add("(s." + SQL_SINGLE_TAG_QUERY + " OR p." + SQL_SINGLE_TAG_QUERY + ")");
 
-        } else if (NetexIdHelper.isNetexId(query)) {
+        } else if (NetexIdHelper.isNetexId(query) && !(stopPlaceSearch.isSearchQuays() && !netexIdHelper.isNsrId(query))) {
             String netexId = query;
 
             String netexIdType = netexIdHelper.extractIdType(netexId);
@@ -677,9 +699,25 @@ public class StopPlaceQueryFromSearchBuilder {
                     " value_items vi on vi.value_id = spkv.key_values_id " +
                     "  where  spkv.key_values_key= 'imported-id' and s.id = spkv.stop_place_id  and lower(vi.items) like " + containsLowerMatchQuerySql + " )" ;
 
+            String quaySearchString = "";
+            if (stopPlaceSearch.isSearchQuays()) {
+                parameters.put("originalIdKey", ORIGINAL_ID_KEY);
+                parameters.put("mergedIdKey", MERGED_ID_KEY);
 
+                importedIdSearchString = "  or EXISTS(select 1 from stop_place_key_values spkv inner join " +
+                        " value_items vi on vi.value_id = spkv.key_values_id " +
+                        "  where spkv.key_values_key in (:originalIdKey, :mergedIdKey) and s.id = spkv.stop_place_id and lower(vi.items) like " + containsLowerMatchQuerySql + " )";
 
-            wheres.add("( unaccent(lower(s.name_value)) like " + comparingString + orNameMatchInParentStopSql + comparingString + netexComparing + importedIdSearchString + " )");
+                quaySearchString = " or EXISTS(select 1 from stop_place_quays qspq inner join quay q on q.id = qspq.quays_id " +
+                        " where qspq.stop_place_id = s.id and (" +
+                        " unaccent(lower(q.name_value)) like " + comparingString +
+                        " or unaccent(lower(q.public_code)) like " + comparingString +
+                        " or EXISTS(select 1 from quay_key_values qkv inner join value_items qvi on qvi.value_id = qkv.key_values_id " +
+                        "  where qkv.quay_id = q.id and qkv.key_values_key in (:originalIdKey, :mergedIdKey) and lower(qvi.items) like " + containsLowerMatchQuerySql + ")" +
+                        " ))";
+            }
+
+            wheres.add("( unaccent(lower(s.name_value)) like " + comparingString + orNameMatchInParentStopSql + comparingString + netexComparing + importedIdSearchString + quaySearchString + " )");
 
 
             if (!stopPlaceSearch.isNearbyStopPlaces()){
@@ -690,6 +728,17 @@ public class StopPlaceQueryFromSearchBuilder {
         }
     }
 
+
+    /**
+     * @return a lower case LIKE pattern matching values starting with "prefix:", LIKE wildcards in prefix being escaped
+     */
+    static String toOrganisationPrefixLikePattern(String organisationPrefix) {
+        String escaped = organisationPrefix.trim().toLowerCase()
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
+        return escaped + ":%";
+    }
 
     /**
      * Replaces common words and white spaces in query by % sign, allowing a more flexible comparison.

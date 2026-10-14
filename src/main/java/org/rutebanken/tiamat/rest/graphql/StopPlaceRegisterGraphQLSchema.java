@@ -723,6 +723,16 @@ public class StopPlaceRegisterGraphQLSchema {
                 .name(QUERY)
                 .type(GraphQLString)
                 .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(ORGANISATION_PREFIX)
+                .type(GraphQLString)
+                .description(TARIFF_ZONE_ORGANISATION_PREFIX_DESCRIPTION)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(POINT_IN_TIME)
+                .type(dateScalar.getGraphQLDateScalar())
+                .description(TARIFF_ZONE_POINT_IN_TIME_DESCRIPTION)
+                .build());
         return arguments;
     }
 
@@ -857,6 +867,17 @@ public class StopPlaceRegisterGraphQLSchema {
                 .type(GraphQLString)
                 .defaultValue("")
                 .description(ORGANISATION_NAME_DESCRIPTION)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(ORGANISATION_PREFIX)
+                .type(GraphQLString)
+                .description(ORGANISATION_PREFIX_DESCRIPTION)
+                .build());
+        arguments.add(GraphQLArgument.newArgument()
+                .name(SEARCH_QUAYS)
+                .type(GraphQLBoolean)
+                .defaultValue(Boolean.FALSE)
+                .description(SEARCH_QUAYS_DESCRIPTION)
                 .build());
         arguments.add(GraphQLArgument.newArgument()
                 .name(WITH_DISTANT_QUAYS)
@@ -1235,6 +1256,7 @@ public class StopPlaceRegisterGraphQLSchema {
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_STOPPLACE, KEY_VALUES, keyValuesDataFetcher);
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_PARENT_STOPPLACE, KEY_VALUES, keyValuesDataFetcher);
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_TARIFF_ZONE, KEY_VALUES, keyValuesDataFetcher);
+        registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_TARIFF_ZONE, IMPORTED_ID, getOriginalIdsFetcher());
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_QUAY, KEY_VALUES, keyValuesDataFetcher);
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_POINT_OF_INTEREST, KEY_VALUES, keyValuesDataFetcher);
         registerDataFetcher(codeRegistryBuilder, OUTPUT_TYPE_PARKING, KEY_VALUES, keyValuesDataFetcher);

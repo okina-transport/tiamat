@@ -47,6 +47,7 @@ package org.rutebanken.tiamat.rest.graphql.fetchers;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.exporter.params.TariffZoneSearch;
 import org.rutebanken.tiamat.model.TariffZone;
 import org.rutebanken.tiamat.repository.TariffZoneRepository;
@@ -76,11 +77,20 @@ public class TariffZonesFetcher implements DataFetcher<Page<TariffZone>> {
     @Transactional
     public Page<TariffZone> get(DataFetchingEnvironment environment) {
 
-        TariffZoneSearch tariffZoneSearch = TariffZoneSearch.newTariffZoneSearchBuilder()
-                .query(environment.getArgument(QUERY))
-                .build();
+        String organisationPrefix = environment.getArgument(ORGANISATION_PREFIX);
+        int page = environment.getArgument(PAGE);
+        int size = environment.getArgument(SIZE);
 
-        List<TariffZone> tariffZones = tariffZoneRepository.findTariffZones(tariffZoneSearch);
-        return new PageImpl<>(tariffZones, PageRequest.of(environment.getArgument(PAGE), environment.getArgument(SIZE)), tariffZones.size());
+        TariffZoneSearch.Builder tariffZoneSearchBuilder = TariffZoneSearch.newTariffZoneSearchBuilder()
+                .query(environment.getArgument(QUERY))
+                .organisationPrefix(organisationPrefix)
+                .pointInTime(environment.getArgument(POINT_IN_TIME));
+
+        if (StringUtils.isNotBlank(organisationPrefix)) {
+            tariffZoneSearchBuilder.page(page).size(size);
+        }
+
+        List<TariffZone> tariffZones = tariffZoneRepository.findTariffZones(tariffZoneSearchBuilder.build());
+        return new PageImpl<>(tariffZones, PageRequest.of(page, size), tariffZones.size());
     }
 }

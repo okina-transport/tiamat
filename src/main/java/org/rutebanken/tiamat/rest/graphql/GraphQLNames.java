@@ -364,6 +364,15 @@ public class GraphQLNames {
     public static final String ORGANISATION_NAME = "organisationName";
     public static final String ORGANISATION_NAME_DESCRIPTION = "argument to filter stop places by organisation (provider) name, either the nearby stop places or the main search results";
 
+    public static final String ORGANISATION_PREFIX = "organisationPrefix";
+    public static final String ORGANISATION_PREFIX_DESCRIPTION = "Only return stop places having an imported-id or merged-id (on the stop place, its parent or one of its quays) starting with '<organisationPrefix>:' (case insensitive).";
+    public static final String TARIFF_ZONE_ORGANISATION_PREFIX_DESCRIPTION = "Only return tariff zones having an imported-id or fare-zone key value starting with '<organisationPrefix>:' (case insensitive). " +
+            "When set, page and size are applied to the search (otherwise all matching tariff zones are returned).";
+    public static final String TARIFF_ZONE_POINT_IN_TIME_DESCRIPTION = "Only return tariff zones whose latest version is valid at this point in time.";
+    public static final String SEARCH_QUAYS = "searchQuays";
+    public static final String SEARCH_QUAYS_DESCRIPTION = "When true, the query argument also searches in quays (name, public code, imported-id and merged-id, partial match). " +
+            "Results are still the stop places (or parent stop places) containing the matching quays.";
+
     public static final String DETECT_MULTI_MODAL_POINTS = "detectMultiModalPoints";
     public static final String DETECT_MULTI_MODAL_POINTS_DESCRIPTION = "Set to true only bus stations that have another different type of stop place arround";
 

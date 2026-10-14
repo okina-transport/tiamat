@@ -16,16 +16,12 @@
 package org.rutebanken.tiamat.repository;
 
 import com.google.common.collect.Sets;
-
 import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.exporter.params.ExportParams;
 import org.rutebanken.tiamat.exporter.params.StopPlaceSearch;
-import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
-import org.rutebanken.tiamat.model.Quay;
-import org.rutebanken.tiamat.model.SiteRefStructure;
-import org.rutebanken.tiamat.model.StopPlace;
-import org.rutebanken.tiamat.model.ValidBetween;
+import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,7 +29,7 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
+import java.util.List;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -213,5 +209,37 @@ public class StopPlaceRepositoryTest extends TiamatIntegrationTest {
 				.hasSize(1)
 				.contains(futureVersion);
 
+	}
+
+	@Test
+	public void organisationPrefixSearchKeepsProviderFiltering() {
+		StopPlace ownProvider = new StopPlace(new EmbeddableMultilingualString("Arrêt fournisseur"));
+		ownProvider.setProvider("PROV1");
+		ownProvider.setValidBetween(new ValidBetween(now.minus(1, DAYS)));
+		ownProvider.getKeyValues().put(NetexIdMapper.ORIGINAL_ID_KEY, new Value("BFC:StopPlace:1"));
+		stopPlaceRepository.save(ownProvider);
+
+		StopPlace otherProvider = new StopPlace(new EmbeddableMultilingualString("Arrêt autre fournisseur"));
+		otherProvider.setProvider("PROV2");
+		otherProvider.setValidBetween(new ValidBetween(now.minus(1, DAYS)));
+		Quay quay = new Quay(new EmbeddableMultilingualString("Quai"));
+		quay.getKeyValues().put(NetexIdMapper.ORIGINAL_ID_KEY, new Value("BFC:Quay:2"));
+		otherProvider.getQuays().add(quay);
+		stopPlaceRepository.save(otherProvider);
+
+		StopPlaceSearch stopPlaceSearch = StopPlaceSearch.newStopPlaceSearchBuilder()
+				.setQuery("arrêt")
+				.setOrganisationPrefix("BFC")
+				.setSearchQuays(true)
+				.build();
+
+		Page<StopPlace> unrestricted = stopPlaceRepository.findStopPlace(ExportParams.newExportParamsBuilder().setStopPlaceSearch(stopPlaceSearch).build());
+		assertThat(unrestricted).containsExactlyInAnyOrder(ownProvider, otherProvider);
+
+		Page<StopPlace> restricted = stopPlaceRepository.findStopPlace(ExportParams.newExportParamsBuilder()
+				.setStopPlaceSearch(stopPlaceSearch)
+				.setProviderList(List.of("PROV1"))
+				.build());
+		assertThat(restricted).containsExactly(ownProvider);
 	}
 }

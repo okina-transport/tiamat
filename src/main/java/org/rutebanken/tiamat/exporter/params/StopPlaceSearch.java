@@ -15,17 +15,17 @@
 
 package org.rutebanken.tiamat.exporter.params;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
-
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.QueryParam;
 import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.rest.graphql.GraphQLNames;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.QueryParam;
 import java.time.Instant;
 import java.util.List;
 
@@ -121,6 +121,10 @@ public class StopPlaceSearch implements SearchObject {
     @Parameter(description = ORGANISATION_NAME)
     private String organisationName;
 
+    private String organisationPrefix;
+
+    private boolean searchQuays;
+
     @QueryParam(value = "withDistantQuays")
     @Parameter(description = WITH_DISTANT_QUAYS)
     private boolean withDistantQuays;
@@ -162,6 +166,8 @@ public class StopPlaceSearch implements SearchObject {
                             boolean detectMultiModalPoints,
                             int nearbyRadius,
                             String organisationName,
+                            String organisationPrefix,
+                            boolean searchQuays,
                             boolean withDistantQuays,
                             boolean hasParking,
                             Instant pointInTime,
@@ -186,6 +192,8 @@ public class StopPlaceSearch implements SearchObject {
         this.nearbyRadius = nearbyRadius;
         this.detectMultiModalPoints = detectMultiModalPoints;
         this.organisationName = organisationName;
+        this.organisationPrefix = organisationPrefix;
+        this.searchQuays = searchQuays;
         this.withDistantQuays = withDistantQuays;
         this.hasParking = hasParking;
         this.pointInTime = pointInTime;
@@ -266,6 +274,21 @@ public class StopPlaceSearch implements SearchObject {
 
     public String getOrganisationName(){return organisationName;}
 
+    @JsonIgnore
+    public String getOrganisationPrefix() {
+        return organisationPrefix;
+    }
+
+    @JsonIgnore
+    public boolean isSearchQuays() {
+        return searchQuays;
+    }
+
+    @JsonIgnore
+    public boolean isOrganisationOrQuaySearch() {
+        return (organisationPrefix != null && !organisationPrefix.isBlank()) || searchQuays;
+    }
+
     public boolean isWithDistantQuays(){return withDistantQuays;}
 
     public boolean isHasParking() {
@@ -291,7 +314,8 @@ public class StopPlaceSearch implements SearchObject {
     public boolean isEligibleToStandardSearch(){
         return CollectionUtils.isNotEmpty(getNetexIdList()) && getVersion() == null  && getQuery() == null && getStopTypeEnumerations() == null
                 && getSubmode() == null && getTags() == null && getPointInTime() == null  && !isWithoutLocationOnly() && !isWithoutQuaysOnly() && !isHasParking()
-                && !isWithTags() && !isWithDuplicatedQuayImportedIds() && !isWithNearbySimilarDuplicates() && !isDetectMultiModalPoints();
+                && !isWithTags() && !isWithDuplicatedQuayImportedIds() && !isWithNearbySimilarDuplicates() && !isDetectMultiModalPoints()
+                && !isOrganisationOrQuaySearch();
     }
 
     @Override
@@ -315,6 +339,8 @@ public class StopPlaceSearch implements SearchObject {
                 .add("nearbyRadius", getNearbyRadius())
                 .add("detectMultiModalPoints",isDetectMultiModalPoints())
                 .add("withDistantQuays", isWithDistantQuays())
+                .add("organisationPrefix", getOrganisationPrefix())
+                .add("searchQuays", isSearchQuays())
                 .add("withTags", tags)
                 .add("tags", tags)
                 .add("page", page)
@@ -344,6 +370,8 @@ public class StopPlaceSearch implements SearchObject {
         private boolean detectMultiModalPoints;
         private int nearbyRadius;
         private String organisationName;
+        private String organisationPrefix;
+        private boolean searchQuays;
         private boolean withDistantQuays;
         private boolean hasParking;
         private boolean withTags;
@@ -436,6 +464,16 @@ public class StopPlaceSearch implements SearchObject {
 
         public void setOrganisationName(String organisationName){ this.organisationName = organisationName; }
 
+        public Builder setOrganisationPrefix(String organisationPrefix) {
+            this.organisationPrefix = organisationPrefix;
+            return this;
+        }
+
+        public Builder setSearchQuays(boolean searchQuays) {
+            this.searchQuays = searchQuays;
+            return this;
+        }
+
         public void setWithDistantQuays(boolean withDistantQuays){this.withDistantQuays = withDistantQuays;}
 
         public void setHasParking(boolean hasParking) {
@@ -483,6 +521,8 @@ public class StopPlaceSearch implements SearchObject {
                     detectMultiModalPoints,
                     nearbyRadius,
                     organisationName,
+                    organisationPrefix,
+                    searchQuays,
                     withDistantQuays,
                     hasParking,
                     pointInTime,

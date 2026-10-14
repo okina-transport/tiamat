@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.repository.search;
 
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.exporter.params.TariffZoneSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,13 +23,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.FARE_ZONE;
+import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
+
 @Component
 public class TariffZoneQueryFromSearchBuilder {
+
+    private static final String SQL_IMPORTED_ID_QUERY = "exists (select 1 from tariff_zone_key_values qtzkv" +
+            " join value_items qvi on qvi.value_id = qtzkv.key_values_id" +
+            " where qtzkv.tariff_zone_id = t.id and qtzkv.key_values_key in (:originalIdKey, :fareZoneKey)" +
+            " and lower(qvi.items) like concat('%', lower(:query), '%'))";
+
+    private static final String SQL_ORGANISATION_PREFIX = "exists (select 1 from tariff_zone_key_values otzkv" +
+            " join value_items ovi on ovi.value_id = otzkv.key_values_id" +
+            " where otzkv.tariff_zone_id = t.id and otzkv.key_values_key in (:originalIdKey, :fareZoneKey)" +
+            " and lower(ovi.items) like :organisationPrefixPattern)";
 
     private static final Logger logger = LoggerFactory.getLogger(TariffZoneQueryFromSearchBuilder.class);
 
@@ -48,10 +63,30 @@ public class TariffZoneQueryFromSearchBuilder {
             return Pair.of(queryString.toString(), parameters);
         }
 
+        boolean hasOrganisationPrefix = StringUtils.isNotBlank(search.getOrganisationPrefix());
+
         if (search.getQuery() != null) {
-            wheres.add("(lower(t.name_value) like concat('%', lower(:query), '%') or t.netex_id like concat('%', :query, '%'))");
+            if (hasOrganisationPrefix) {
+                wheres.add("(lower(t.name_value) like concat('%', lower(:query), '%') or t.netex_id like concat('%', :query, '%') or " + SQL_IMPORTED_ID_QUERY + ")");
+            } else {
+                wheres.add("(lower(t.name_value) like concat('%', lower(:query), '%') or t.netex_id like concat('%', :query, '%'))");
+            }
             parameters.put("query", search.getQuery());
             orderByStatements.add("similarity(t.name_value, :query) desc");
+        }
+
+        if (hasOrganisationPrefix) {
+            operators.add("and");
+            wheres.add(SQL_ORGANISATION_PREFIX);
+            parameters.put("organisationPrefixPattern", StopPlaceQueryFromSearchBuilder.toOrganisationPrefixLikePattern(search.getOrganisationPrefix()));
+            parameters.put("originalIdKey", ORIGINAL_ID_KEY);
+            parameters.put("fareZoneKey", FARE_ZONE);
+        }
+
+        if (search.getPointInTime() != null) {
+            operators.add("and");
+            wheres.add("((t.from_date is null or t.from_date <= :pointInTime) and (t.to_date is null or t.to_date > :pointInTime))");
+            parameters.put("pointInTime", Timestamp.from(search.getPointInTime()));
         }
 
         // When it comes to tariff zones, max version is the current version.
@@ -59,6 +94,10 @@ public class TariffZoneQueryFromSearchBuilder {
         // At the time of writing, we are re-saving the latest version of a tariff zone.
         operators.add("and");
         wheres.add("t.version = (select max(tv.version) from tariff_zone tv where tv.netex_id = t.netex_id)");
+
+        if (search.getSize() != null) {
+            orderByStatements.add("t.netex_id");
+        }
 
         searchHelper.addWheres(queryString, wheres, operators);
         searchHelper.addOrderByStatements(queryString, orderByStatements);

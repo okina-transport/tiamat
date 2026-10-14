@@ -16,19 +16,17 @@
 package org.rutebanken.tiamat.netex.mapping;
 
 import org.junit.jupiter.api.Disabled;
-import org.locationtech.jts.geom.Coordinate;
-import ma.glasnost.orika.MappingContext;
-
 import org.junit.jupiter.api.Test;
+import org.locationtech.jts.geom.Coordinate;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.netex.model.MultilingualString;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
+import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.model.AccessibilityAssessment;
 import org.rutebanken.tiamat.model.AccessibilityLimitation;
 import org.rutebanken.tiamat.model.AddressablePlaceRefStructure;
 import org.rutebanken.tiamat.model.AlternativeName;
 import org.rutebanken.tiamat.model.CountryRef;
-import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.model.GroupOfStopPlaces;
 import org.rutebanken.tiamat.model.IanaCountryTldEnumeration;
 import org.rutebanken.tiamat.model.LimitationStatusEnumeration;
@@ -41,7 +39,6 @@ import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopPlacesInFrame_RelStructure;
 import org.rutebanken.tiamat.model.TopographicPlace;
 import org.rutebanken.tiamat.model.TopographicPlaceRefStructure;
-import org.rutebanken.tiamat.netex.mapping.mapper.QuayMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 
@@ -50,8 +47,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -597,5 +592,34 @@ public class NetexMapperTest extends TiamatIntegrationTest {
         assertThat(
                 firstSiteRef.getRef())
                 .isEqualTo("NSR:StopPlace:1");
+    }
+
+    @Test
+    public void mapParkingWithEmptyPlaceEquipmentsShouldOmitPlaceEquipments() {
+        org.rutebanken.tiamat.model.Parking parking = new org.rutebanken.tiamat.model.Parking();
+        parking.setNetexId("MOBIITI:Parking:1");
+        parking.getKeyValues().put(ORIGINAL_ID_KEY, new org.rutebanken.tiamat.model.Value("FR:12345:Parking:1:LOC"));
+        parking.setPlaceEquipments(new org.rutebanken.tiamat.model.PlaceEquipment());
+
+        org.rutebanken.netex.model.Parking netexParking = netexMapper.getFacade().map(parking, org.rutebanken.netex.model.Parking.class);
+
+        assertThat(netexParking.getPlaceEquipments()).isNull();
+    }
+
+    @Test
+    public void mapParkingWithInstalledEquipmentShouldKeepPlaceEquipments() {
+        org.rutebanken.tiamat.model.Parking parking = new org.rutebanken.tiamat.model.Parking();
+        parking.setNetexId("MOBIITI:Parking:2");
+        parking.getKeyValues().put(ORIGINAL_ID_KEY, new org.rutebanken.tiamat.model.Value("FR:12345:Parking:2:LOC"));
+        org.rutebanken.tiamat.model.PlaceEquipment placeEquipment = new org.rutebanken.tiamat.model.PlaceEquipment();
+        org.rutebanken.tiamat.model.CycleStorageEquipment cycleStorageEquipment = new org.rutebanken.tiamat.model.CycleStorageEquipment();
+        cycleStorageEquipment.setNetexId("MOBIITI:CycleStorageEquipment:1");
+        placeEquipment.getInstalledEquipment().add(cycleStorageEquipment);
+        parking.setPlaceEquipments(placeEquipment);
+
+        org.rutebanken.netex.model.Parking netexParking = netexMapper.getFacade().map(parking, org.rutebanken.netex.model.Parking.class);
+
+        assertThat(netexParking.getPlaceEquipments()).isNotNull();
+        assertThat(netexParking.getPlaceEquipments().getInstalledEquipmentRefOrInstalledEquipment()).hasSize(1);
     }
 }

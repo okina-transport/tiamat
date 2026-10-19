@@ -15,20 +15,23 @@
 
 package org.rutebanken.tiamat.rest.netex.publicationdelivery.async;
 
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 import org.rutebanken.netex.model.Parking;
 import org.rutebanken.netex.model.StopPlace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.xml.bind.JAXBException;
-import jakarta.xml.bind.Unmarshaller;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class RunnableUnmarshaller implements Runnable {
@@ -39,17 +42,27 @@ public class RunnableUnmarshaller implements Runnable {
     public static final Parking POISON_PARKING = new Parking().withId("-100");
 
     private final InputStream inputStream;
+    private final Path tempFile;
     private final Unmarshaller unmarshaller;
     private final UnmarshalResult unmarshalResult;
 
-    public RunnableUnmarshaller(InputStream inputStream, Unmarshaller unmarshaller, UnmarshalResult unmarshalResult) {
+    public RunnableUnmarshaller(InputStream inputStream, Path tempFile, Unmarshaller unmarshaller, UnmarshalResult unmarshalResult) {
         this.inputStream = inputStream;
+        this.tempFile = tempFile;
         this.unmarshaller = unmarshaller;
         this.unmarshalResult = unmarshalResult;
     }
 
     @Override
     public void run() {
+        try {
+            unmarshal();
+        } finally {
+            closeAndDeleteTempFile();
+        }
+    }
+
+    private void unmarshal() {
         final XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
         AtomicInteger stops = new AtomicInteger();
         AtomicInteger parkings = new AtomicInteger();
@@ -123,6 +136,19 @@ public class RunnableUnmarshaller implements Runnable {
         }
 
         logger.info("Unmarshalling thread finished after {} stops, {} parkings.", stops.get(), parkings.get());
+    }
+
+    private void closeAndDeleteTempFile() {
+        try {
+            inputStream.close();
+        } catch (IOException e) {
+            logger.warn("Could not close input stream on {}", tempFile, e);
+        }
+        try {
+            Files.deleteIfExists(tempFile);
+        } catch (IOException e) {
+            logger.warn("Could not delete temp file {}", tempFile, e);
+        }
     }
 
 }

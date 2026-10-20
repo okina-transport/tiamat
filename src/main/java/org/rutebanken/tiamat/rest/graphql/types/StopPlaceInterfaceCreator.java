@@ -17,6 +17,7 @@ package org.rutebanken.tiamat.rest.graphql.types;
 
 import graphql.schema.*;
 import org.rutebanken.tiamat.rest.graphql.fetchers.*;
+import org.rutebanken.tiamat.rest.graphql.scalars.DateScalar;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -53,6 +54,9 @@ public class StopPlaceInterfaceCreator {
 
     @Autowired
     private StopPlaceProviderFetcher stopPlaceProviderFetcher;
+
+    @Autowired
+    private DateScalar dateScalar;
 
     public List<GraphQLFieldDefinition> createCommonInterfaceFields(GraphQLObjectType tariffZoneObjectType,
                                                               GraphQLObjectType topographicPlaceObjectType,
@@ -103,6 +107,10 @@ public class StopPlaceInterfaceCreator {
                 .name(PROVIDER)
                 .type(GraphQLString)
                 .dataFetcher(stopPlaceProviderFetcher)
+                .build());
+        stopPlaceInterfaceFields.add(newFieldDefinition()
+                .name(CREATED)
+                .type(dateScalar.getGraphQLDateScalar())
                 .build());
         return stopPlaceInterfaceFields;
     }

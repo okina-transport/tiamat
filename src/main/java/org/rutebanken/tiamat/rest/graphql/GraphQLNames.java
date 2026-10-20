@@ -534,6 +534,7 @@ public class GraphQLNames {
     public static final String TIME_BAND = "timeBand";
     public static final String INSEE_CODE = "inseeCode";
     public static final String MERGE_ID = "mergeId";
+    public static final String CREATED = "created";
     public static final String PROVIDER = "provider";
     public static final String ADDRESS = "address";
     public static final String CITY = "city";

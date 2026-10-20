@@ -6,6 +6,7 @@ import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.Instant;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -98,6 +99,21 @@ class StopPlaceReportCsvExporterTest extends TiamatIntegrationTest {
         String csv = export(StopPlaceReportExportRequest.Type.STOP_PLACES, List.of("id"), "Export Sans Limite");
 
         assertThat(lines(csv)).hasSize(numberOfStopPlaces + 1);
+    }
+
+    @Test
+    void exportStopPlaceCreationDate() {
+        StopPlace stopPlace = createStopPlace("Export Creation", StopTypeEnumeration.ONSTREET_BUS, 2.3522, 48.8566);
+        stopPlace.setCreated(Instant.parse("2024-03-15T10:00:00Z"));
+        stopPlaceRepository.save(stopPlace);
+        stopPlaceRepository.save(createStopPlace("Export Creation Inconnue", StopTypeEnumeration.ONSTREET_BUS, 2.3522, 48.8566));
+
+        String csv = export(StopPlaceReportExportRequest.Type.STOP_PLACES, List.of("name", "created"), "Export Creation");
+
+        assertThat(lines(csv)).containsExactlyInAnyOrder(
+                "name;created",
+                "\"Export Creation\";\"2024-03-15\"",
+                "\"Export Creation Inconnue\";\"\"");
     }
 
     @Test

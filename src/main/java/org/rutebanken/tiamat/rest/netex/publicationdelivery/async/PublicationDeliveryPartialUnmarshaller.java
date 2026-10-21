@@ -15,6 +15,9 @@
 
 package org.rutebanken.tiamat.rest.netex.publicationdelivery.async;
 
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 import org.rutebanken.netex.model.PublicationDeliveryStructure;
 import org.rutebanken.netex.model.StopPlace;
 import org.rutebanken.netex.model.TopographicPlace;
@@ -27,21 +30,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
-import jakarta.xml.bind.Unmarshaller;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.EventFilter;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 import static com.google.common.io.ByteStreams.toByteArray;
@@ -88,34 +84,44 @@ public class PublicationDeliveryPartialUnmarshaller {
 
     public UnmarshalResult unmarshal(InputStream inputStream) throws JAXBException, IOException, SAXException, XMLStreamException, InterruptedException, ParserConfigurationException {
         File file = File.createTempFile("tiamat-" + System.currentTimeMillis(), ".xml");
-        Files.copy(inputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        boolean ownedByAsyncThread = false;
+        try {
+            Files.copy(inputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
 
-        if (logger.isDebugEnabled()) {
-            String xml = new String(toByteArray(inputStream));
-            logger.debug("Debug is enabled. Will log the input (this kills performance.):\n{}", xml);
-            inputStream = new ByteArrayInputStream(xml.getBytes());
-            logger.debug("Valdiation enabled? {}", validateAgainstSchema);
+            if (logger.isDebugEnabled()) {
+                String xml = new String(toByteArray(inputStream));
+                logger.debug("Debug is enabled. Will log the input (this kills performance.):\n{}", xml);
+                inputStream = new ByteArrayInputStream(xml.getBytes());
+                logger.debug("Valdiation enabled? {}", validateAgainstSchema);
+            }
+
+            if (validateAgainstSchema) {
+                unmarshaller.setSchema(neTExValidator.getSchema());
+            }
+
+            XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
+
+            logger.debug("Unmarshalling incoming publication delivery structure. Schema validation enabled: {}", validateAgainstSchema);
+
+            PublicationDeliveryStructure publicationDeliveryStructure;
+            try (InputStream fileInputStream = new FileInputStream(file)) {
+                publicationDeliveryStructure = readPublicationDeliveryStructure(xmlInputFactory, fileInputStream, unmarshaller);
+            }
+            updateMappingContext(publicationDeliveryHelper.findSiteFrame(publicationDeliveryStructure));
+
+            UnmarshalResult unmarshalResult = readWithXmlEventReaderAsync(file.toPath(), unmarshaller);
+            ownedByAsyncThread = true;
+            unmarshalResult.setPublicationDeliveryStructure(publicationDeliveryStructure);
+
+            logger.debug("Done unmarshalling incoming publication delivery structure with schema validation enabled: {}", validateAgainstSchema);
+            return unmarshalResult;
+        } finally {
+            if (!ownedByAsyncThread) {
+                Files.deleteIfExists(file.toPath());
+            }
         }
-
-        if (validateAgainstSchema) {
-            unmarshaller.setSchema(neTExValidator.getSchema());
-        }
-
-        XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
-
-        logger.debug("Unmarshalling incoming publication delivery structure. Schema validation enabled: {}", validateAgainstSchema);
-
-        PublicationDeliveryStructure publicationDeliveryStructure = readPublicationDeliveryStructure(xmlInputFactory, new FileInputStream(file), unmarshaller);
-        updateMappingContext(publicationDeliveryHelper.findSiteFrame(publicationDeliveryStructure));
-
-        // Read the rest from the same file
-        UnmarshalResult unmarshalResult = readWithXmlEventReaderAsync(new FileInputStream(file), unmarshaller);
-        unmarshalResult.setPublicationDeliveryStructure(publicationDeliveryStructure);
-
-        logger.debug("Done unmarshalling incoming publication delivery structure with schema validation enabled: {}", validateAgainstSchema);
-        return unmarshalResult;
     }
 
 
@@ -133,11 +139,11 @@ public class PublicationDeliveryPartialUnmarshaller {
         return publicationDeliveryStructure;
     }
 
-    public UnmarshalResult readWithXmlEventReaderAsync(InputStream inputStream, Unmarshaller unmarshaller) throws XMLStreamException, JAXBException, InterruptedException, IOException {
+    public UnmarshalResult readWithXmlEventReaderAsync(Path file, Unmarshaller unmarshaller) throws IOException {
 
         UnmarshalResult unmarshalResult = new UnmarshalResult(100);
 
-        Thread thread = new Thread(new RunnableUnmarshaller(inputStream, unmarshaller, unmarshalResult));
+        Thread thread = new Thread(new RunnableUnmarshaller(new FileInputStream(file.toFile()), file, unmarshaller, unmarshalResult));
 
         thread.setName("unmarshalling-thread");
         logger.info("Starting unmarshalling thread ", thread);

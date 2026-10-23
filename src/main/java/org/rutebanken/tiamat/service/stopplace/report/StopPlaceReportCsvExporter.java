@@ -13,6 +13,7 @@ import org.rutebanken.tiamat.model.StopTypeEnumeration;
 import org.rutebanken.tiamat.repository.search.StopPlaceQueryFromSearchBuilder;
 import org.rutebanken.tiamat.rest.graphql.fetchers.StopPlaceSearchArgumentsMapper;
 import org.rutebanken.tiamat.service.stopplace.StopPlaceMergeCandidateFinder;
+import org.rutebanken.tiamat.time.ExportTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.util.Pair;
@@ -22,7 +23,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -40,7 +45,7 @@ public class StopPlaceReportCsvExporter {
     public static final List<String> STOP_PLACE_COLUMNS = List.of("name", "modality", "id", "county", "muncipality",
             "importedId", "importedName", "position", "inseeCode", "mergeId", "provider", "quays", "parking",
             "wheelchairAccess", "stepFreeAccess", "shelterEquipment", "waitingRoomEquipment", "sanitaryEquipment",
-            "generalSign", "tags");
+            "generalSign", "tags", "created");
 
     public static final List<String> QUAY_COLUMNS = List.of("stopPlaceId", "stopPlaceName", "id", "importedId",
             "importedName", "position", "privateCode", "publicCode", "wheelchairAccess", "stepFreeAccess",
@@ -68,6 +73,8 @@ public class StopPlaceReportCsvExporter {
     private static final String GENERAL_SIGN_TYPE = "GeneralSign";
     private static final String TRANSPORT_MODE_SIGN_CONTENT = "TRANSPORT_MODE";
 
+    private static final DateTimeFormatter CREATED_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PersistenceContext
@@ -79,12 +86,16 @@ public class StopPlaceReportCsvExporter {
 
     private final StopPlaceMergeCandidateFinder stopPlaceMergeCandidateFinder;
 
+    private final ExportTimeZone exportTimeZone;
+
     public StopPlaceReportCsvExporter(StopPlaceQueryFromSearchBuilder stopPlaceQueryFromSearchBuilder,
                                       StopPlaceAuthorizationService stopPlaceAuthorizationService,
-                                      StopPlaceMergeCandidateFinder stopPlaceMergeCandidateFinder) {
+                                      StopPlaceMergeCandidateFinder stopPlaceMergeCandidateFinder,
+                                      ExportTimeZone exportTimeZone) {
         this.stopPlaceQueryFromSearchBuilder = stopPlaceQueryFromSearchBuilder;
         this.stopPlaceAuthorizationService = stopPlaceAuthorizationService;
         this.stopPlaceMergeCandidateFinder = stopPlaceMergeCandidateFinder;
+        this.exportTimeZone = exportTimeZone;
     }
 
     @Transactional(readOnly = true)
@@ -275,7 +286,7 @@ public class StopPlaceReportCsvExporter {
     private void loadStopPlaces(Set<Long> stopPlaceIds, ReportData data) {
         forEachChunk(stopPlaceIds, chunk -> {
             List<Object[]> rows = entityManager.createNativeQuery("select s.id, s.netex_id, s.name_value, s.stop_place_type, s.parent_stop_place, s.provider, " +
-                            "ST_Y(s.centroid), ST_X(s.centroid), s.topographic_place_id, s.accessibility_assessment_id, s.place_equipments_id " +
+                            "ST_Y(s.centroid), ST_X(s.centroid), s.topographic_place_id, s.accessibility_assessment_id, s.place_equipments_id, s.created " +
                             "from stop_place s where s.id in (:ids)")
                     .setParameter("ids", chunk)
                     .getResultList();
@@ -292,6 +303,7 @@ public class StopPlaceReportCsvExporter {
                 stopPlace.topographicPlaceId = toLong(row[8]);
                 stopPlace.accessibilityAssessmentId = toLong(row[9]);
                 stopPlace.placeEquipmentId = toLong(row[10]);
+                stopPlace.created = toInstant(row[11]);
                 data.stopPlaces.put(stopPlace.id, stopPlace);
             });
         });
@@ -499,6 +511,8 @@ public class StopPlaceReportCsvExporter {
                 return data.transportModeSigns(stopPlace.placeEquipmentId);
             case "tags":
                 return String.join(",", data.tagsByNetexId.getOrDefault(stopPlace.netexId, List.of()));
+            case "created":
+                return stopPlace.created == null ? null : stopPlace.created.atZone(exportTimeZone.getDefaultTimeZoneId()).format(CREATED_FORMATTER);
             default:
                 throw new IllegalArgumentException("Unknown stop place column " + column);
         }
@@ -682,6 +696,16 @@ public class StopPlaceReportCsvExporter {
         return value == null ? null : ((Number) value).doubleValue();
     }
 
+    private static Instant toInstant(Object value) {
+        if (value instanceof Timestamp timestamp) {
+            return timestamp.toInstant();
+        }
+        if (value instanceof LocalDateTime localDateTime) {
+            return localDateTime.atZone(ZoneId.systemDefault()).toInstant();
+        }
+        return (Instant) value;
+    }
+
     private static BigDecimal toNumberOrNull(String value) {
         if (StringUtils.isBlank(value)) {
             return null;
@@ -716,6 +740,7 @@ public class StopPlaceReportCsvExporter {
         Long topographicPlaceId;
         Long accessibilityAssessmentId;
         Long placeEquipmentId;
+        Instant created;
     }
 
     private static class QuayData extends ImportedData {

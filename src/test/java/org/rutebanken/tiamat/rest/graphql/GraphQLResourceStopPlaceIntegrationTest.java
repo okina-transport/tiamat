@@ -15,8 +15,6 @@
 
 package org.rutebanken.tiamat.rest.graphql;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,9 +51,6 @@ public class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLReso
     private ExportTimeZone exportTimeZone;
 
     private Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     @Autowired
     private CleanTablesTools cleanTableTools;
@@ -1063,6 +1058,58 @@ public class GraphQLResourceStopPlaceIntegrationTest extends AbstractGraphQLReso
                 .body("name", nullValue())
                 .body("stopPlaceType", equalTo(StopTypeEnumeration.BUS_STATION.value()))
                 .body("version", equalTo(String.valueOf(bus.getVersion() + 1)));
+    }
+
+    @Test
+    public void retrieveCreatedOfFirstVersionForAllVersionsOfStopPlace() throws Exception {
+        StopPlace stopPlace = stopPlaceVersionedSaverService.saveNewVersion(new StopPlace(new EmbeddableMultilingualString("Created stop place")));
+        Thread.sleep(10);
+        StopPlace copy = versionCreator.createCopy(stopPlace, StopPlace.class);
+        stopPlaceVersionedSaverService.saveNewVersion(stopPlace, copy);
+
+        String expectedCreated = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN)
+                .format(stopPlace.getCreated().atZone(exportTimeZone.getDefaultTimeZoneId()));
+
+        String graphQlJsonQuery = """
+                {
+                  stopPlace: %s (%s: "%s", allVersions: true) {
+                    id
+                    version
+                    %s
+                  }
+                }""".formatted(FIND_STOPPLACE, ID, stopPlace.getNetexId(), CREATED);
+
+        executeGraphqQLQueryOnly(graphQlJsonQuery)
+                .body("data.stopPlace", hasSize(2))
+                .body("data.stopPlace.version", containsInAnyOrder("1", "2"))
+                .body("data.stopPlace." + CREATED, everyItem(equalTo(expectedCreated)));
+    }
+
+    @Test
+    public void retrieveCreatedOfParentStopPlace() {
+        var existingChild = new StopPlace();
+        existingChild.setStopPlaceType(StopTypeEnumeration.BUS_STATION);
+        var newChild = new StopPlace();
+        newChild.setStopPlaceType(StopTypeEnumeration.TRAM_STATION);
+
+        var parent = createParentInTransaction(existingChild, newChild, new EmbeddableMultilingualString("Created parent stop place"));
+
+        String expectedCreated = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN)
+                .format(parent.getCreated().atZone(exportTimeZone.getDefaultTimeZoneId()));
+
+        String graphQlJsonQuery = """
+                {
+                  stopPlace: %s (%s: "%s") {
+                    __typename
+                    id
+                    %s
+                  }
+                }""".formatted(FIND_STOPPLACE, ID, parent.getNetexId(), CREATED);
+
+        executeGraphqQLQueryOnly(graphQlJsonQuery)
+                .body("data.stopPlace", hasSize(1))
+                .body("data.stopPlace[0].__typename", equalTo(OUTPUT_TYPE_PARENT_STOPPLACE))
+                .body("data.stopPlace[0]." + CREATED, equalTo(expectedCreated));
     }
 
     @Transactional

@@ -15,14 +15,15 @@
 
 package org.rutebanken.tiamat.netex.mapping.mapper;
 
+import jakarta.xml.bind.JAXBElement;
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.ParkingArea;
 import org.rutebanken.tiamat.model.SpecificParkingAreaUsageEnumeration;
+import org.rutebanken.tiamat.netex.NetexUtils;
 
-import jakarta.xml.bind.JAXBElement;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +68,10 @@ public class ParkingAreaMapper extends CustomMapper<org.rutebanken.netex.model.P
     @Override
     public void mapBtoA(ParkingArea tiamatParkingArea, org.rutebanken.netex.model.ParkingArea netexParkingArea, MappingContext context) {
         super.mapBtoA(tiamatParkingArea, netexParkingArea, context);
+
+        if (NetexUtils.isEmptyPlaceEquipments(netexParkingArea.getPlaceEquipments())) {
+            netexParkingArea.setPlaceEquipments(null);
+        }
 
         // NETEX Parking profile FRANCE v1.2 requires ":LOC" suffix
         netexParkingArea.setId(StringUtils.appendIfMissing(tiamatParkingArea.getNetexId(), ":LOC"));

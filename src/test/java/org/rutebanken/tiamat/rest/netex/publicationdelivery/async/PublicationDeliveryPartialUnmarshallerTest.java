@@ -18,13 +18,23 @@ package org.rutebanken.tiamat.rest.netex.publicationdelivery.async;
 import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.xml.sax.SAXException;
 
 import java.io.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 import static org.rutebanken.tiamat.rest.netex.publicationdelivery.async.RunnableUnmarshaller.POISON_PARKING;
 import static org.rutebanken.tiamat.rest.netex.publicationdelivery.async.RunnableUnmarshaller.POISON_STOP_PLACE;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -122,6 +132,7 @@ public class PublicationDeliveryPartialUnmarshallerTest {
                 "</PublicationDelivery>\n";
 
         InputStream inputStream = new ByteArrayInputStream(notValidPublicationDeliveryXml.getBytes());
+        Set<Path> tempFilesBefore = listTempFiles();
 
 
         UnmarshalResult unmarshalResult = publicationDeliveryPartialUnmarshaller.unmarshal(inputStream);
@@ -130,17 +141,65 @@ public class PublicationDeliveryPartialUnmarshallerTest {
 
 
         readAndVerifyStops(unmarshalResult, 1);
+        awaitNoNewTempFile(tempFilesBefore);
     }
 
     @Test
     public void testPartialUnmarshallingPublicationDeliveryFromFile() throws Exception {
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("publication_delivery/tiamat_publication_delivery.xml").getFile());
+        Set<Path> tempFilesBefore = listTempFiles();
 
         UnmarshalResult unmarshalResult = publicationDeliveryPartialUnmarshaller.unmarshal(new FileInputStream(file));
         assertThat(unmarshalResult).isNotNull();
         readAndVerifyStops(unmarshalResult, 6);
         readAndVerifyParkings(unmarshalResult, 2);
+        awaitNoNewTempFile(tempFilesBefore);
+    }
+
+    @Test
+    public void tempFileDeletedWhenXmlIsMalformed() throws Exception {
+        String malformedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<PublicationDelivery xmlns=\"http://www.netex.org.uk/netex\" version=\"any\">\n" +
+                "    <PublicationTimestamp>2017-01-07T15:28:33.38+01:00</PublicationTimestamp>\n" +
+                "    <dataObjects>\n";
+        Set<Path> tempFilesBefore = listTempFiles();
+
+        assertThatThrownBy(() -> publicationDeliveryPartialUnmarshaller.unmarshal(new ByteArrayInputStream(malformedXml.getBytes())))
+                .isNotNull();
+
+        assertThat(listTempFiles()).isEqualTo(tempFilesBefore);
+    }
+
+    @Test
+    public void tempFileDeletedWhenXsdValidationFails() throws Exception {
+        PublicationDeliveryPartialUnmarshaller validatingUnmarshaller = new PublicationDeliveryPartialUnmarshaller(new PublicationDeliveryHelper());
+        ReflectionTestUtils.setField(validatingUnmarshaller, "validateAgainstSchema", true);
+
+        String xsdInvalidXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<PublicationDelivery xmlns=\"http://www.netex.org.uk/netex\" version=\"any\">\n" +
+                "    <PublicationTimestamp>2017-01-07T15:28:33.38+01:00</PublicationTimestamp>\n" +
+                "    <ParticipantRef>NSR</ParticipantRef>\n" +
+                "    <NotANetexElement>invalid</NotANetexElement>\n" +
+                "</PublicationDelivery>\n";
+        Set<Path> tempFilesBefore = listTempFiles();
+
+        assertThatThrownBy(() -> validatingUnmarshaller.unmarshal(new ByteArrayInputStream(xsdInvalidXml.getBytes())))
+                .isNotNull();
+
+        assertThat(listTempFiles()).isEqualTo(tempFilesBefore);
+    }
+
+    private void awaitNoNewTempFile(Set<Path> tempFilesBefore) {
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> assertThat(listTempFiles()).isEqualTo(tempFilesBefore));
+    }
+
+    private Set<Path> listTempFiles() throws IOException {
+        Set<Path> tempFiles = new HashSet<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(System.getProperty("java.io.tmpdir")), "tiamat-*.xml")) {
+            stream.forEach(tempFiles::add);
+        }
+        return tempFiles;
     }
 
     private void readAndVerifyStops(UnmarshalResult unmarshalResult, int expectedStopCount) throws InterruptedException {

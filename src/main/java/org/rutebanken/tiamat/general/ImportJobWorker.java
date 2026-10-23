@@ -166,6 +166,18 @@ public class ImportJobWorker implements Runnable {
             }
         } finally {
             jobRepository.save(job);
+            closeInputStream();
+        }
+    }
+
+    private void closeInputStream() {
+        if (inputStream == null) {
+            return;
+        }
+        try {
+            inputStream.close();
+        } catch (IOException e) {
+            logger.warn("Could not close input stream of import job {}", job.getId(), e);
         }
     }
 

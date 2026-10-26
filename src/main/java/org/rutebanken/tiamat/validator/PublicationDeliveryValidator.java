@@ -67,6 +67,7 @@ public class PublicationDeliveryValidator implements Validator {
             }
             errors.pushNestedPath("members");
             if (generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity().stream().noneMatch(e -> e.getValue() instanceof Parking)) {
+                errors.popNestedPath(); // members
                 return;
             }
             if (generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity().stream().noneMatch(e -> e.getValue() instanceof TypeOfFrame)) {
@@ -89,7 +90,7 @@ public class PublicationDeliveryValidator implements Validator {
                 } else if (entity.getValue() instanceof TypeOfFrame tof) {
                     validateTypeOfFrame(tof, errors);
                 }
-                errors.popNestedPath();
+                errors.popNestedPath(); // generalFrameMemberOrDataManagedObjectOrEntity_Entity[%d].value
             }
 
             validateParkingDepth(parkings, errors);

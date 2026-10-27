@@ -198,6 +198,11 @@ public class MergingStopPlaceImporter {
         StopTypeEnumeration incomingStopPlaceType = incomingStopPlace.getStopPlaceType();
         VehicleModeEnumeration incomingTransportMode = TiamatVehicleModeStopPlacetypeMapping.getVehicleModeEnumeration(incomingStopPlaceType);
         incomingStopPlace.setTransportMode(incomingTransportMode);
+        incomingStopPlace.getQuays().forEach(q -> {
+            if (q.getCreated() == null) {
+                q.setCreated(Instant.now());
+            }
+        });
 
         incomingStopPlace = stopPlaceVersionedSaverService.saveNewVersion(incomingStopPlace);
         return updateCache(incomingStopPlace);

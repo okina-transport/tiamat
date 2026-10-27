@@ -49,7 +49,7 @@ class ImportJobWorkerNetexParkingErrorsTest extends TiamatIntegrationTest {
         Job job = runNetexParkingImport("parkings_v1.2_bad_encoding.xml");
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
-        assertThat(job.getErrors()).containsExactly(AnalyzeImportErrorType.ENCODING);
+        assertThat(job.getErrors()).extracting(JobError::getCode).containsExactly(AnalyzeImportErrorType.ENCODING);
     }
 
     @Test
@@ -57,7 +57,7 @@ class ImportJobWorkerNetexParkingErrorsTest extends TiamatIntegrationTest {
         Job job = runNetexParkingImport("parkings_v1.2_malformed.xml");
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
-        assertThat(job.getErrors()).containsExactly(AnalyzeImportErrorType.TEMPLATE);
+        assertThat(job.getErrors()).extracting(JobError::getCode).containsExactly(AnalyzeImportErrorType.TEMPLATE);
     }
 
     @Test
@@ -65,7 +65,7 @@ class ImportJobWorkerNetexParkingErrorsTest extends TiamatIntegrationTest {
         Job job = runNetexParkingImport("parkings_v1.2_missing_required_fields_valid_tof.xml");
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
-        assertThat(job.getErrors()).containsExactly(AnalyzeImportErrorType.MISSING_DATA);
+        assertThat(job.getErrors()).extracting(JobError::getCode).containsExactly(AnalyzeImportErrorType.MISSING_DATA);
     }
 
     @Test
@@ -73,7 +73,7 @@ class ImportJobWorkerNetexParkingErrorsTest extends TiamatIntegrationTest {
         Job job = runNetexParkingImport("parkings_v1.2_valid_parking_tof_invalid.xml");
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
-        assertThat(job.getErrors()).containsExactly(AnalyzeImportErrorType.TEMPLATE);
+        assertThat(job.getErrors()).extracting(JobError::getCode).containsExactly(AnalyzeImportErrorType.TEMPLATE);
     }
 
     private Job runNetexParkingImport(String fileName) throws IOException {

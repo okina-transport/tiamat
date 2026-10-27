@@ -94,9 +94,9 @@ public class Job {
     @Column(name = "operator", nullable = false, length = 100)
     private Set<String> operators = new HashSet<>();
 
-    @Convert(converter = AnalyzeErrorTypeSetConverter.class)
+    @Convert(converter = JobErrorListConverter.class)
     @Column(columnDefinition = "text")
-    private Set<AnalyzeImportErrorType> errors = new LinkedHashSet<>();
+    private List<JobError> errors = new ArrayList<>();
 
 
     public Job() {
@@ -291,11 +291,11 @@ public class Job {
         this.operators = operators;
     }
 
-    public Set<AnalyzeImportErrorType> getErrors() {
+    public List<JobError> getErrors() {
         return errors;
     }
 
-    public void setErrors(Set<AnalyzeImportErrorType> errors) {
+    public void setErrors(List<JobError> errors) {
         this.errors = errors;
     }
 }

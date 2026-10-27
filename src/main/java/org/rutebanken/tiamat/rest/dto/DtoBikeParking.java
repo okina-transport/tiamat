@@ -28,6 +28,8 @@ public class DtoBikeParking {
     private String dateMaj;
     private String commentaires;
     private String name;
+    /** line number in the imported file, header included */
+    private Integer line;
 
     public String getIdLocal() {
         return idLocal;
@@ -243,6 +245,15 @@ public class DtoBikeParking {
                 .add("date_maj", dateMaj)
                 .add("commentaires", commentaires)
                 .add("nom", name)
+                .add("line", line)
                 .toString();
+    }
+
+    public Integer getLine() {
+        return line;
+    }
+
+    public void setLine(Integer line) {
+        this.line = line;
     }
 }

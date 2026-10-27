@@ -38,6 +38,8 @@ public class DtoParking {
     private String info;
     private String hookType;
     private String operator;
+    /** line number in the imported file, header included */
+    private Integer line;
 
     public DtoParking(String id, String name, String insee, String address, String url, String userType, String free, String nbOfPlaces, String nbOfPr, String disabledParkingNb, String electricVehicleNb, String bikeNb, String electricBikesNb, String carSharingNb, String motorcycleNb, String carPoolingNb, String maxHeight, String siretNumber, String xlong, String ylat, String disabledParkingPrice, String oneHourPrice, String twoHoursPrice, String threeHoursPrice, String fourHoursPrice, String twentyFourHoursPrice, String residentSubscription, String nonResidentSubscription, String workType, String info, String operator) {
         this.id = id;
@@ -363,6 +365,15 @@ public class DtoParking {
                 .add("type_ouvrage", workType)
                 .add("info", info)
                 .add("operator", operator)
+                .add("line", line)
                 .toString();
+    }
+
+    public Integer getLine() {
+        return line;
+    }
+
+    public void setLine(Integer line) {
+        this.line = line;
     }
 }

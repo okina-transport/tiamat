@@ -2,7 +2,6 @@ package org.rutebanken.tiamat.general;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
-import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,6 +38,9 @@ public class CSVHelper {
                 .parse(new StringReader(content));
     }
 
+    /**
+     * @throws InvalidTemplateException if the headers are not exactly the expected ones, in the expected order
+     */
     public static void validateHeaders(List<String> expectedHeaders, List<String> actualHeaders, String templateName) {
         if (expectedHeaders.equals(actualHeaders)) {
             return;
@@ -50,6 +52,9 @@ public class CSVHelper {
         List<String> unexpected = actualHeaders.stream()
                 .filter(header -> !expectedHeaders.contains(header))
                 .toList();
+        // columns present in both lists must appear in the same relative order
+        boolean orderIssue = !expectedHeaders.stream().filter(actualHeaders::contains).toList()
+                .equals(actualHeaders.stream().filter(expectedHeaders::contains).toList());
 
         StringBuilder message = new StringBuilder("The CSV file does not match the expected " + templateName + " template.");
         if (!missing.isEmpty()) {
@@ -58,11 +63,11 @@ public class CSVHelper {
         if (!unexpected.isEmpty()) {
             message.append(" Unexpected column(s): ").append(String.join(", ", unexpected)).append(".");
         }
-        if (missing.isEmpty() && unexpected.isEmpty()) {
+        if (orderIssue) {
             message.append(" Column order does not match the expected template: ").append(String.join(",", actualHeaders)).append(".");
         }
 
-        throw new AnalyzeImportException(AnalyzeImportErrorType.TEMPLATE, message.toString());
+        throw new InvalidTemplateException(message.toString(), missing, unexpected, orderIssue);
     }
 
     private static String guessDelimiter(String fileContent) {

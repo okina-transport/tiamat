@@ -61,7 +61,7 @@ public class ImportPOIResource {
         poiHelper.clearClassificationCache();
 
         List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
-        PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
+        PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest, fileName);
         List<DtoPointOfInterest> poiWithClassification = poiHelper.filterPoisWithClassificationOrShop(dtoPointOfInterest, null);
 
         try {

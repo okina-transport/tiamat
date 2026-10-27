@@ -3,7 +3,6 @@ package org.rutebanken.tiamat.general;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.importer.ImporterUtils;
 import org.rutebanken.tiamat.model.*;
@@ -19,11 +18,17 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ParkingsCSVHelper {
 
@@ -32,9 +37,26 @@ public class ParkingsCSVHelper {
     private static final BigDecimal DEFAULT_PARKING_AREA_MAXIMUM_HEIGHT = new BigDecimal(300); // 3 meters
     private static final Pattern patternXlongYlat = Pattern.compile("^-?(\\d*)\\.\\d{1,20}");
     private static final List<String> EXPECTED_HEADERS = ParkingCsvHeader.headerNames();
+    private static final String NOT_AVAILABLE = "N/A";
+    // French aliases followed by the NeTEx values of ParkingUserEnumeration
+    private static final Map<String, ParkingUserEnumeration> USER_TYPE_MAPPING = buildUserTypeMapping();
+    private static final List<String> USER_TYPE_ALLOWED_VALUES = List.copyOf(USER_TYPE_MAPPING.keySet());
+    // values accepted by ParkingLayoutEnumeration.fromValue
+    private static final List<String> WORK_TYPE_ALLOWED_VALUES = Stream.concat(
+                    Stream.of("enclos_en_surface", "ouvrage"),
+                    Arrays.stream(ParkingLayoutEnumeration.values()).map(ParkingLayoutEnumeration::value))
+            .toList();
 
     private ParkingsCSVHelper() {
         throw new IllegalStateException();
+    }
+
+    private static Map<String, ParkingUserEnumeration> buildUserTypeMapping() {
+        Map<String, ParkingUserEnumeration> mapping = new LinkedHashMap<>();
+        mapping.put("tous", ParkingUserEnumeration.ALL);
+        mapping.put("abonnés", ParkingUserEnumeration.REGISTERED);
+        Arrays.stream(ParkingUserEnumeration.values()).forEach(userType -> mapping.put(userType.value(), userType));
+        return Collections.unmodifiableMap(mapping);
     }
 
     public static List<DtoParking> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
@@ -44,13 +66,18 @@ public class ParkingsCSVHelper {
 
         CSVParser parser = CSVHelper.getRecords(csvFile);
         List<String> actualHeaders = parser.getHeaderNames();
+        if (actualHeaders.isEmpty()) {
+            throw new AnalyzeImportException(AnalyzeImportErrorType.EMPTY_FILE, "The CSV file is empty");
+        }
         CSVHelper.validateHeaders(EXPECTED_HEADERS, actualHeaders, "parking");
 
         for (CSVRecord csvRecord : parser) {
+            // physical line where the record ends: blank lines and multi-line quoted fields are counted
+            int fileLine = (int) csvRecord.getParser().getCurrentLineNumber();
             if (csvRecord.size() != EXPECTED_HEADERS.size()) {
                 rowErrors.add(new AnalyzeImportError(AnalyzeImportErrorType.TEMPLATE,
                         "Expected " + EXPECTED_HEADERS.size() + " columns but found " + csvRecord.size(),
-                        (int) csvRecord.getRecordNumber(), null));
+                        fileLine, null));
                 continue;
             }
 
@@ -88,12 +115,21 @@ public class ParkingsCSVHelper {
                     csvRecord.get(30)
             );
 
-            List<AnalyzeImportError> validationErrors = validateParking(dtoParking, (int) csvRecord.getRecordNumber());
+            dtoParking.setLine(fileLine);
+
+            List<AnalyzeImportError> validationErrors = validateParking(dtoParking, fileLine);
+            validationErrors.addAll(validateNumericFields(dtoParking, fileLine));
+            validationErrors.addAll(validateEnumFields(dtoParking, fileLine));
             if (!validationErrors.isEmpty()) {
                 rowErrors.addAll(validationErrors);
             } else {
                 dtoParkingList.add(dtoParking);
             }
+        }
+
+        // empty lines are skipped by the parser
+        if (parser.getRecordNumber() == 0) {
+            throw new AnalyzeImportException(AnalyzeImportErrorType.NO_DATA_ROWS, "The CSV file does not contain any parking");
         }
 
         if (!rowErrors.isEmpty()) {
@@ -103,54 +139,161 @@ public class ParkingsCSVHelper {
         return dtoParkingList;
     }
 
-    private static List<AnalyzeImportError> validateParking(DtoParking parking, int line) {
+    /**
+     * Checks that the numeric fields can be parsed, as they are converted when mapping the parkings,
+     * and that the coordinates are decimals.
+     * Empty values are allowed (mandatory fields are checked by {@link #validateParking}).
+     *
+     * @param fileLine line number in the file, header included
+     */
+    private static List<AnalyzeImportError> validateNumericFields(DtoParking parking, int fileLine) {
         List<AnalyzeImportError> errors = new ArrayList<>();
-        if (StringUtils.isBlank(parking.getId())) {
-            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "ID is required in all your parkings", line, "id"));
-        }
-        if (StringUtils.isBlank(parking.getInsee())) {
-            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "INSEE is required for parking with id " + parking.getId(), line, "insee"));
-        }
-        if (StringUtils.isBlank(parking.getName())) {
-            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "NAME is required for parking with id " + parking.getId(), line, "name"));
-        }
-        if (StringUtils.isBlank(parking.getUserType())) {
-            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "TYPE_USAGERS is required for parking with id " + parking.getId(), line, "userType"));
-        }
-        if (StringUtils.isBlank(parking.getFree())) {
-            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "GRATUIT is required for parking with id " + parking.getId(), line, "free"));
-        }
-        if (StringUtils.isBlank(parking.getNbOfPlaces())) {
-            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "NB_PLACES is required for parking with id " + parking.getId(), line, "nbOfPlaces"));
-        }
-        if (StringUtils.isBlank(parking.getMaxHeight())) {
-            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "HAUTEUR_MAX is required for parking with id " + parking.getId(), line, "maxHeight"));
-        }
-        if (StringUtils.isBlank(parking.getSiretNumber())) {
-            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "NUM_SIRET is required for parking with id " + parking.getId(), line, "siretNumber"));
-        }
-        if (StringUtils.isBlank(parking.getOperator())) {
-            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "OPERATOR is required for parking with id " + parking.getId(), line, "operator"));
-        }
-        if (!patternXlongYlat.matcher(parking.getXlong()).matches()) {
-            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "X Longitude is not correct for parking with id " + parking.getId(), line, "Xlong"));
-        }
-        if (!patternXlongYlat.matcher(parking.getYlat()).matches()) {
-            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "Y Latitude is not correct for parking with id " + parking.getId(), line, "Ylat"));
+        checkInteger(errors, ParkingCsvHeader.NB_OF_PLACES, parking.getNbOfPlaces(), parking.getId(), fileLine);
+        checkInteger(errors, ParkingCsvHeader.NB_OF_PR, parking.getNbOfPr(), parking.getId(), fileLine);
+        checkInteger(errors, ParkingCsvHeader.DISABLED_PARKING_NB, parking.getDisabledParkingNb(), parking.getId(), fileLine);
+        checkInteger(errors, ParkingCsvHeader.ELECTRIC_VEHICLE_NB, parking.getElectricVehicleNb(), parking.getId(), fileLine);
+        checkInteger(errors, ParkingCsvHeader.BIKE_NB, parking.getBikeNb(), parking.getId(), fileLine);
+        checkInteger(errors, ParkingCsvHeader.ELECTRIC_BIKES_NB, parking.getElectricBikesNb(), parking.getId(), fileLine);
+        checkInteger(errors, ParkingCsvHeader.CAR_SHARING_NB, parking.getCarSharingNb(), parking.getId(), fileLine);
+        checkInteger(errors, ParkingCsvHeader.MOTORCYCLE_NB, parking.getMotorcycleNb(), parking.getId(), fileLine);
+        checkInteger(errors, ParkingCsvHeader.CAR_POOLING_NB, parking.getCarPoolingNb(), parking.getId(), fileLine);
+
+        checkCoordinate(errors, ParkingCsvHeader.XLONG, parking.getXlong(), parking.getId(), fileLine);
+        checkCoordinate(errors, ParkingCsvHeader.YLAT, parking.getYlat(), parking.getId(), fileLine);
+
+        String maxHeight = parking.getMaxHeight();
+        if (StringUtils.isNotEmpty(maxHeight) && !NOT_AVAILABLE.equalsIgnoreCase(maxHeight)) {
+            try {
+                new BigDecimal(maxHeight);
+            } catch (NumberFormatException e) {
+                errors.add(invalidNumberError(ParkingCsvHeader.MAX_HEIGHT, maxHeight, parking.getId(), fileLine));
+            }
         }
         return errors;
     }
 
-    public static void checkDuplicatedParkings(List<DtoParking> parkings) throws IllegalArgumentException {
-        List<String> compositeKey = parkings.stream().map(parking -> parking.getId() + parking.getName()).collect(Collectors.toList());
-        List<String> duplicates = AccessibilityCSVUtils.foundDuplicates(compositeKey);
-
-        if (CollectionUtils.isNotEmpty(duplicates)) {
-            String duplicatesMsg = String.join(",", duplicates);
-
-            throw new IllegalArgumentException("There are duplicated parkings in your CSV File 'With the same ID & Name'. Duplicates:" + duplicatesMsg);
+    private static void checkInteger(List<AnalyzeImportError> errors, ParkingCsvHeader header, String value, String parkingId, int fileLine) {
+        if (StringUtils.isEmpty(value)) {
+            return;
         }
+        try {
+            Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            errors.add(invalidNumberError(header, value, parkingId, fileLine));
+        }
+    }
 
+    private static void checkCoordinate(List<AnalyzeImportError> errors, ParkingCsvHeader header, String value, String parkingId, int fileLine) {
+        if (StringUtils.isBlank(value) || patternXlongYlat.matcher(value).matches()) {
+            return;
+        }
+        errors.add(AnalyzeImportError.builder()
+                .type(AnalyzeImportErrorType.INVALID_FORMAT_COORDINATE)
+                .message("Invalid decimal coordinate '" + value + "' in field " + header.value() + " for parking with id " + parkingId)
+                .line(fileLine)
+                .field(header.value())
+                .errorValue(value)
+                .build());
+    }
+
+    /**
+     * Checks that the enumerated fields contain one of the values handled when mapping the parkings.
+     * Empty values are allowed (mandatory fields are checked by {@link #validateParking}).
+     *
+     * @param fileLine line number in the file, header included
+     */
+    private static List<AnalyzeImportError> validateEnumFields(DtoParking parking, int fileLine) {
+        List<AnalyzeImportError> errors = new ArrayList<>();
+        checkEnum(errors, ParkingCsvHeader.USER_TYPE, parking.getUserType(), USER_TYPE_ALLOWED_VALUES, parking.getId(), fileLine);
+        checkEnum(errors, ParkingCsvHeader.WORK_TYPE, parking.getWorkType(), WORK_TYPE_ALLOWED_VALUES, parking.getId(), fileLine);
+        return errors;
+    }
+
+    private static void checkEnum(List<AnalyzeImportError> errors, ParkingCsvHeader header, String value, List<String> allowedValues,
+                                  String parkingId, int fileLine) {
+        if (StringUtils.isBlank(value) || allowedValues.contains(value)) {
+            return;
+        }
+        errors.add(AnalyzeImportError.builder()
+                .type(AnalyzeImportErrorType.INVALID_FORMAT_ENUM)
+                .message("Invalid value '" + value + "' in field " + header.value() + " for parking with id " + parkingId
+                        + ". Allowed values: " + String.join(", ", allowedValues))
+                .line(fileLine)
+                .field(header.value())
+                .errorValue(value)
+                .allowedValues(allowedValues)
+                .build());
+    }
+
+    private static AnalyzeImportError invalidNumberError(ParkingCsvHeader header, String value, String parkingId, int fileLine) {
+        return AnalyzeImportError.builder()
+                .type(AnalyzeImportErrorType.INVALID_FORMAT_NUMBER)
+                .message("Invalid number '" + value + "' in field " + header.value() + " for parking with id " + parkingId)
+                .line(fileLine)
+                .field(header.value())
+                .errorValue(value)
+                .build();
+    }
+
+    private static List<AnalyzeImportError> validateParking(DtoParking parking, int line) {
+        List<AnalyzeImportError> errors = new ArrayList<>();
+        if (StringUtils.isBlank(parking.getId())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "ID is required in all your parkings", line, ParkingCsvHeader.ID.value()));
+        }
+        if (StringUtils.isBlank(parking.getInsee())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "INSEE is required for parking with id " + parking.getId(), line, ParkingCsvHeader.INSEE.value()));
+        }
+        if (StringUtils.isBlank(parking.getName())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "NAME is required for parking with id " + parking.getId(), line, ParkingCsvHeader.NAME.value()));
+        }
+        if (StringUtils.isBlank(parking.getUserType())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "TYPE_USAGERS is required for parking with id " + parking.getId(), line, ParkingCsvHeader.USER_TYPE.value()));
+        }
+        if (StringUtils.isBlank(parking.getFree())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "GRATUIT is required for parking with id " + parking.getId(), line, ParkingCsvHeader.FREE.value()));
+        }
+        if (StringUtils.isBlank(parking.getNbOfPlaces())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "NB_PLACES is required for parking with id " + parking.getId(), line, ParkingCsvHeader.NB_OF_PLACES.value()));
+        }
+        if (StringUtils.isBlank(parking.getMaxHeight())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "HAUTEUR_MAX is required for parking with id " + parking.getId(), line, ParkingCsvHeader.MAX_HEIGHT.value()));
+        }
+        if (StringUtils.isBlank(parking.getSiretNumber())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "NUM_SIRET is required for parking with id " + parking.getId(), line, ParkingCsvHeader.SIRET_NUMBER.value()));
+        }
+        if (StringUtils.isBlank(parking.getOperator())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "OPERATOR is required for parking with id " + parking.getId(), line, ParkingCsvHeader.OPERATOR.value()));
+        }
+        if (StringUtils.isBlank(parking.getXlong())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "X Longitude is required for parking with id " + parking.getId(), line, ParkingCsvHeader.XLONG.value()));
+        }
+        if (StringUtils.isBlank(parking.getYlat())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "Y Latitude is required for parking with id " + parking.getId(), line, ParkingCsvHeader.YLAT.value()));
+        }
+        return errors;
+    }
+
+    /**
+     * Fails if several parkings share the same ID and name.
+     *
+     * @throws DuplicatedIdentifierException with one message line per duplicated parking ID
+     */
+    public static void checkDuplicatedParkings(List<DtoParking> parkings, String fileName) throws DuplicatedIdentifierException {
+        Set<String> seenKeys = new HashSet<>();
+        List<DtoParking> duplicatedParkings = parkings.stream()
+                .filter(parking -> !seenKeys.add(parking.getId() + parking.getName()))
+                .toList();
+
+        if (CollectionUtils.isNotEmpty(duplicatedParkings)) {
+            String duplicatesMsg = duplicatedParkings.stream()
+                    .map(parking -> parking.getId() + parking.getName())
+                    .collect(Collectors.joining(","));
+            List<DuplicatedIdentifierException.Duplicate> duplicates = duplicatedParkings.stream()
+                    .map(parking -> new DuplicatedIdentifierException.Duplicate(parking.getId(), parking.getLine()))
+                    .toList();
+            throw new DuplicatedIdentifierException("There are duplicated parkings in your CSV File 'With the same ID & Name'. Duplicates:" + duplicatesMsg,
+                    fileName, ParkingCsvHeader.ID.value(), duplicates);
+        }
     }
 
     public static List<Parking> mapFromDtoToEntity(List<DtoParking> dtoParkingsCSV, ParkingLayoutEnumeration parkingLayoutEnumeration,
@@ -171,12 +314,9 @@ public class ParkingsCSVHelper {
             parking.setName(new EmbeddableMultilingualString(parkingDto.getName()));
 
             //Type d'usagers du parking
-            if (EnumUtils.isValidEnum(ParkingUserEnumeration.class, parkingDto.getUserType())) {
-                parkingProperties.getParkingUserTypes().add(ParkingUserEnumeration.fromValue(parkingDto.getUserType()));
-            } else if (parkingDto.getUserType().equals("abonnés")) {
-                parkingProperties.getParkingUserTypes().add(ParkingUserEnumeration.REGISTERED);
-            } else if (parkingDto.getUserType().equals("tous")) {
-                parkingProperties.getParkingUserTypes().add(ParkingUserEnumeration.ALL);
+            ParkingUserEnumeration userType = USER_TYPE_MAPPING.get(parkingDto.getUserType());
+            if (userType != null) {
+                parkingProperties.getParkingUserTypes().add(userType);
             }
 
             BigInteger parkAndRideCapacity = parkingDto.getNbOfPr().isEmpty() ? BigInteger.ZERO : new BigInteger(parkingDto.getNbOfPr());

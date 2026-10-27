@@ -49,9 +49,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ImportJobWorker implements Runnable {
@@ -146,16 +144,24 @@ public class ImportJobWorker implements Runnable {
                         .map(oe -> messages.get(oe.getCode(), oe.getArguments()))
                         .collect(Collectors.joining(System.lineSeparator()));
                 if (job.getType() == JobType.NETEX_PARKING || job.getType() == JobType.NETEX_POI) {
-                    job.setErrors(NetexValidationErrorClassifier.classify(bindException));
+                    job.setErrors(NetexValidationErrorClassifier.classify(bindException).stream()
+                            .map(JobError::error)
+                            .collect(Collectors.toList()));
                 }
             } else {
                 exceptionMessage = e.getMessage();
             }
             if (e instanceof AnalyzeImportException analyzeImportException) {
-                Set<AnalyzeImportErrorType> errorTypes = analyzeImportException.getErrors().stream()
-                        .map(AnalyzeImportError::getType)
-                        .collect(Collectors.toCollection(LinkedHashSet::new));
-                job.setErrors(errorTypes);
+                job.setErrors(analyzeImportException.getErrors().stream()
+                        .map(ImportJobWorker::toJobError)
+                        .distinct()
+                        .collect(Collectors.toList()));
+            }
+            if (e instanceof InvalidTemplateException invalidTemplateException) {
+                job.setErrors(List.of(invalidTemplateException.toJobError(job.getFileName())));
+            }
+            if (e instanceof DuplicatedIdentifierException duplicatedIdentifierException) {
+                job.setErrors(duplicatedIdentifierException.toJobErrors());
             }
             String message = "Error executing import job " + job.getId() + ". " + e.getClass().getSimpleName() + " - " + exceptionMessage;
             logger.error("{}.\nImport job was {}", message, job, e);
@@ -183,23 +189,51 @@ public class ImportJobWorker implements Runnable {
 
     private void launchCSVRentalBikeParkingImport() throws IOException {
         List<DtoBikeParking> dtoParkingCSV = BikesCSVHelper.parseDocument(inputStream);
-        BikesCSVHelper.checkDuplicatedBikeParkings(dtoParkingCSV);
+        BikesCSVHelper.checkDuplicatedBikeParkings(dtoParkingCSV, job.getFileName());
         List<Parking> parkings = BikesCSVHelper.mapFromDtoToEntityParking(dtoParkingCSV, true);
         parkingsImportedService.createOrUpdateParkings(parkings);
     }
 
     private void launchCSVBikeParkingImport() throws IOException {
         List<DtoBikeParking> dtoBikeParkingsCSV = BikesCSVHelper.parseDocument(inputStream);
-        BikesCSVHelper.checkDuplicatedBikeParkings(dtoBikeParkingsCSV);
+        BikesCSVHelper.checkDuplicatedBikeParkings(dtoBikeParkingsCSV, job.getFileName());
         List<Parking> bikeParkings = BikesCSVHelper.mapFromDtoToEntityParking(dtoBikeParkingsCSV, false);
         parkingsImportedService.createOrUpdateParkings(bikeParkings);
+    }
+
+    /**
+     * Invalid number, coordinate, date and enum errors, as well as missing data detected on a CSV row,
+     * are reported one by one with their details. The other errors are only reported once, without params.
+     */
+    private static JobError toJobError(AnalyzeImportError error) {
+        if (error.getType() == AnalyzeImportErrorType.INVALID_FORMAT_ENUM) {
+            return JobError.error(error.getType())
+                    .withParam("field", error.getField())
+                    .withParam("allowedValues", String.join(", ", error.getAllowedValues()))
+                    .withParam("line", String.valueOf(error.getLine()))
+                    .withParam("errorValue", error.getErrorValue());
+        }
+        if (error.getType() == AnalyzeImportErrorType.INVALID_FORMAT_NUMBER
+                || error.getType() == AnalyzeImportErrorType.INVALID_FORMAT_COORDINATE
+                || error.getType() == AnalyzeImportErrorType.INVALID_FORMAT_DATE) {
+            return JobError.error(error.getType())
+                    .withParam("field", error.getField())
+                    .withParam("line", String.valueOf(error.getLine()))
+                    .withParam("errorValue", error.getErrorValue());
+        }
+        if (error.getType() == AnalyzeImportErrorType.MISSING_DATA && error.getField() != null && error.getLine() != null) {
+            return JobError.error(error.getType())
+                    .withParam("field", error.getField())
+                    .withParam("line", String.valueOf(error.getLine()));
+        }
+        return JobError.error(error.getType());
     }
 
     private void launchCSVParkingImport() throws IOException {
         ParkingLayoutEnumeration parkingLayoutEnumeration = ParkingLayoutEnumeration.fromValue(parkingLayoutParam);
         ParkingTypeEnumeration parkingTypeEnumeration = ParkingTypeEnumeration.fromValue(parkingTypeParam);
         List<DtoParking> dtoParkingCSV = ParkingsCSVHelper.parseDocument(inputStream);
-        ParkingsCSVHelper.checkDuplicatedParkings(dtoParkingCSV);
+        ParkingsCSVHelper.checkDuplicatedParkings(dtoParkingCSV, job.getFileName());
         List<Parking> parkings = ParkingsCSVHelper.mapFromDtoToEntity(dtoParkingCSV, parkingLayoutEnumeration, parkingTypeEnumeration, parkAndRideDetection);
         parkingsImportedService.createOrUpdateParkings(parkings);
     }
@@ -334,7 +368,7 @@ public class ImportJobWorker implements Runnable {
     private void launchCSVPoiImport() throws IOException {
         poiHelper.clearClassificationCache();
         List<DtoPointOfInterest> dtoPointOfInterest = poiHelper.parseDocument(inputStream);
-        PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest);
+        PointOfInterestCSVHelper.checkDuplicatedPois(dtoPointOfInterest, job.getFileName());
         List<DtoPointOfInterest> poiWithClassification = poiHelper.filterPoisWithClassificationOrShop(dtoPointOfInterest, job);
         poiHelper.persistPointsOfInterest(poiWithClassification);
     }

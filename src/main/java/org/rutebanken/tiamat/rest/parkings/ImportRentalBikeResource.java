@@ -59,7 +59,7 @@ public class ImportRentalBikeResource {
         logger.info("Import VLS par " + user + " du fichier " + fileName);
         loggingService.logRentalBikeCsvImport(user, fileName);
         List<DtoBikeParking> dtoParkingCSV = BikesCSVHelper.parseDocument(inputStream);
-        BikesCSVHelper.checkDuplicatedBikeParkings(dtoParkingCSV);
+        BikesCSVHelper.checkDuplicatedBikeParkings(dtoParkingCSV, fileName);
         List<Parking> parkings = BikesCSVHelper.mapFromDtoToEntityParking(dtoParkingCSV, true);
         parkingsImportedService.createOrUpdateParkings(parkings);
         return Response.status(200).build();

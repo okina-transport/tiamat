@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -39,12 +41,22 @@ public class BikesCSVHelper {
 
     private static final List<String> EXPECTED_HEADERS = BikeParkingCsvHeader.headerNames();
 
+    // values handled when mapping the furniture to a CycleStorageEnumeration
+    private static final List<String> MOBILIER_ALLOWED_VALUES = List.of("RACK DOUBLE ETAGE", "RATELIER", "CROCHET", "SUPPORT GUIDON",
+            "POTELET", "ARCEAU", "ARCEAU VELO GRANDE TAILLE", "AUCUN EQUIPEMENT", "AUTRE");
+
+    // read with Boolean.parseBoolean, which ignores case
+    private static final List<String> BOOLEAN_ALLOWED_VALUES = List.of("true", "false");
+
     public static List<DtoBikeParking> parseDocument(InputStream csvFile) throws IllegalArgumentException, IOException {
 
         List<DtoBikeParking> bikeParkingList = new ArrayList<>();
         List<AnalyzeImportError> rowErrors = new ArrayList<>();
 
         CSVParser parser = CSVHelper.getRecords(csvFile);
+        if (parser.getHeaderNames().isEmpty()) {
+            throw new AnalyzeImportException(AnalyzeImportErrorType.EMPTY_FILE, "The CSV file is empty");
+        }
         CSVHelper.validateHeaders(EXPECTED_HEADERS, parser.getHeaderNames(), "bike parking");
 
         for (CSVRecord csvRecord : parser) {
@@ -56,6 +68,11 @@ public class BikesCSVHelper {
             }
         }
 
+        // empty lines are skipped by the parser
+        if (parser.getRecordNumber() == 0) {
+            throw new AnalyzeImportException(AnalyzeImportErrorType.NO_DATA_ROWS, "The CSV file does not contain any bike parking");
+        }
+
         if (!rowErrors.isEmpty()) {
             throw new AnalyzeImportException(rowErrors);
         }
@@ -64,7 +81,8 @@ public class BikesCSVHelper {
     }
 
     private static RowOutcome parseRow(CSVRecord csvRecord) {
-        int line = (int) csvRecord.getRecordNumber();
+        // physical line where the record ends: blank lines and multi-line quoted fields are counted
+        int line = (int) csvRecord.getParser().getCurrentLineNumber();
 
         if (csvRecord.size() != EXPECTED_HEADERS.size()) {
             return RowOutcome.failure(AnalyzeImportError.builder()
@@ -86,7 +104,12 @@ public class BikesCSVHelper {
                     .build());
         }
 
+        dtoBikeParking.setLine(line);
+
         List<AnalyzeImportError> validationErrors = validateBikeParking(dtoBikeParking, line);
+        validationErrors.addAll(validateNumericFields(dtoBikeParking, line));
+        validationErrors.addAll(validateDateFields(dtoBikeParking, line));
+        validationErrors.addAll(validateEnumFields(dtoBikeParking, line));
         if (!validationErrors.isEmpty()) {
             return RowOutcome.failure(validationErrors);
         }
@@ -163,6 +186,96 @@ public class BikesCSVHelper {
         return coordinatesTab;
     }
 
+    /**
+     * Checks that the numeric fields can be parsed.
+     * Empty values are allowed (mandatory fields are checked by {@link #validateBikeParking}).
+     *
+     * @param line line number in the file, header included
+     */
+    private static List<AnalyzeImportError> validateNumericFields(DtoBikeParking bikeParking, int line) {
+        List<AnalyzeImportError> errors = new ArrayList<>();
+        checkInteger(errors, BikeParkingCsvHeader.CAPACITE, bikeParking.getCapacite(), bikeParking.getIdLocal(), line);
+        checkInteger(errors, BikeParkingCsvHeader.CAPACITE_CARGO, bikeParking.getCapaciteCargo(), bikeParking.getIdLocal(), line);
+        return errors;
+    }
+
+    private static void checkInteger(List<AnalyzeImportError> errors, BikeParkingCsvHeader header, String value, String bikeParkingId, int line) {
+        if (StringUtils.isEmpty(value)) {
+            return;
+        }
+        try {
+            Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            errors.add(AnalyzeImportError.builder()
+                    .type(AnalyzeImportErrorType.INVALID_FORMAT_NUMBER)
+                    .message("Invalid number '" + value + "' in field " + header.value() + " for bike parking with id " + bikeParkingId)
+                    .line(line)
+                    .field(header.value())
+                    .errorValue(value)
+                    .build());
+        }
+    }
+
+    /**
+     * Checks that the date fields are ISO dates (yyyy-MM-dd), as expected by the national bike parking schema.
+     * Empty values are allowed.
+     *
+     * @param line line number in the file, header included
+     */
+    private static List<AnalyzeImportError> validateDateFields(DtoBikeParking bikeParking, int line) {
+        List<AnalyzeImportError> errors = new ArrayList<>();
+        checkDate(errors, BikeParkingCsvHeader.DATE_MAJ, bikeParking.getDateMaj(), bikeParking.getIdLocal(), line);
+        return errors;
+    }
+
+    private static void checkDate(List<AnalyzeImportError> errors, BikeParkingCsvHeader header, String value, String bikeParkingId, int line) {
+        if (StringUtils.isEmpty(value)) {
+            return;
+        }
+        try {
+            LocalDate.parse(value);
+        } catch (DateTimeParseException e) {
+            errors.add(AnalyzeImportError.builder()
+                    .type(AnalyzeImportErrorType.INVALID_FORMAT_DATE)
+                    .message("Invalid date '" + value + "' in field " + header.value() + " for bike parking with id " + bikeParkingId + ". Expected format: yyyy-MM-dd")
+                    .line(line)
+                    .field(header.value())
+                    .errorValue(value)
+                    .build());
+        }
+    }
+
+    /**
+     * Checks that the fields mapped to an enumeration contain one of the values handled when mapping the bike parkings.
+     * Empty values are allowed.
+     *
+     * @param line line number in the file, header included
+     */
+    private static List<AnalyzeImportError> validateEnumFields(DtoBikeParking bikeParking, int line) {
+        List<AnalyzeImportError> errors = new ArrayList<>();
+        checkEnum(errors, BikeParkingCsvHeader.MOBILIER, bikeParking.getMobilier(), MOBILIER_ALLOWED_VALUES, false, bikeParking.getIdLocal(), line);
+        checkEnum(errors, BikeParkingCsvHeader.GRATUIT, bikeParking.getGratuit(), BOOLEAN_ALLOWED_VALUES, true, bikeParking.getIdLocal(), line);
+        checkEnum(errors, BikeParkingCsvHeader.COUVERTURE, bikeParking.getCouverture(), BOOLEAN_ALLOWED_VALUES, true, bikeParking.getIdLocal(), line);
+        return errors;
+    }
+
+    private static void checkEnum(List<AnalyzeImportError> errors, BikeParkingCsvHeader header, String value, List<String> allowedValues,
+                                  boolean ignoreCase, String bikeParkingId, int line) {
+        if (StringUtils.isBlank(value)
+                || allowedValues.stream().anyMatch(allowed -> ignoreCase ? allowed.equalsIgnoreCase(value) : allowed.equals(value))) {
+            return;
+        }
+        errors.add(AnalyzeImportError.builder()
+                .type(AnalyzeImportErrorType.INVALID_FORMAT_ENUM)
+                .message("Invalid value '" + value + "' in field " + header.value() + " for bike parking with id " + bikeParkingId
+                        + ". Allowed values: " + String.join(", ", allowedValues))
+                .line(line)
+                .field(header.value())
+                .errorValue(value)
+                .allowedValues(allowedValues)
+                .build());
+    }
+
     private static List<AnalyzeImportError> validateBikeParking(DtoBikeParking bikeParking, int line) {
         List<AnalyzeImportError> errors = new ArrayList<>();
         if (StringUtils.isBlank(bikeParking.getIdLocal())) {
@@ -183,29 +296,27 @@ public class BikesCSVHelper {
         return errors;
     }
 
-    public static void checkDuplicatedBikeParkings(List<DtoBikeParking> bikeParkings) throws IllegalArgumentException {
-        List<String> key = bikeParkings.stream().map(DtoBikeParking::getIdLocal).collect(Collectors.toList());
-        List<String> duplicates = foundDuplicates(key);
+    /**
+     * Fails if several bike parkings share the same local ID.
+     *
+     * @throws DuplicatedIdentifierException with one duplicate per repeated bike parking
+     */
+    public static void checkDuplicatedBikeParkings(List<DtoBikeParking> bikeParkings, String fileName) throws DuplicatedIdentifierException {
+        Set<String> seenIds = new HashSet<>();
+        List<DtoBikeParking> duplicatedBikeParkings = bikeParkings.stream()
+                .filter(bikeParking -> !seenIds.add(bikeParking.getIdLocal()))
+                .toList();
 
-        if (duplicates.size() > 0) {
-            String duplicatesMsg = String.join(",", duplicates);
-            throw new IllegalArgumentException("There are duplicated bike parkings in your CSV File 'With the same ID'. Duplicates:" + duplicatesMsg);
+        if (!duplicatedBikeParkings.isEmpty()) {
+            String duplicatesMsg = duplicatedBikeParkings.stream()
+                    .map(DtoBikeParking::getIdLocal)
+                    .collect(Collectors.joining(","));
+            List<DuplicatedIdentifierException.Duplicate> duplicates = duplicatedBikeParkings.stream()
+                    .map(bikeParking -> new DuplicatedIdentifierException.Duplicate(bikeParking.getIdLocal(), bikeParking.getLine()))
+                    .toList();
+            throw new DuplicatedIdentifierException("There are duplicated bike parkings in your CSV File 'With the same ID'. Duplicates:" + duplicatesMsg,
+                    fileName, BikeParkingCsvHeader.ID_LOCAL.value(), duplicates);
         }
-    }
-
-    private static List<String> foundDuplicates(List<String> fullList) {
-        List<String> alreadyReadList = new ArrayList<>();
-        List<String> duplicateList = new ArrayList<>();
-
-        fullList.forEach(id -> {
-            if (alreadyReadList.contains(id)) {
-                duplicateList.add(id);
-            } else {
-                alreadyReadList.add(id);
-            }
-        });
-
-        return duplicateList;
     }
 
 

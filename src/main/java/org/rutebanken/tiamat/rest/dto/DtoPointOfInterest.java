@@ -30,6 +30,8 @@ public class DtoPointOfInterest {
     private String tourism;
     private Map<String, String> tags = new HashMap<>();
     private String operator;
+    /** line number in the imported file, header included */
+    private Integer line;
 
     public DtoPointOfInterest() {
     }
@@ -186,6 +188,15 @@ public class DtoPointOfInterest {
                 .add("shop", shop)
                 .add("lpImportId", lpImportId)
                 .add("operator", operator)
+                .add("line", line)
                 .toString();
+    }
+
+    public Integer getLine() {
+        return line;
+    }
+
+    public void setLine(Integer line) {
+        this.line = line;
     }
 }

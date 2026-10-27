@@ -76,7 +76,7 @@ class ImportJobWorkerGbfsParkingErrorsTest extends TiamatIntegrationTest {
         Job job = runGbfsParkingImport();
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
-        assertThat(job.getErrors()).containsExactly(AnalyzeImportErrorType.ENCODING);
+        assertThat(job.getErrors()).extracting(JobError::getCode).containsExactly(AnalyzeImportErrorType.ENCODING);
     }
 
     @Test
@@ -88,7 +88,7 @@ class ImportJobWorkerGbfsParkingErrorsTest extends TiamatIntegrationTest {
         Job job = runGbfsParkingImport();
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
-        assertThat(job.getErrors()).containsExactly(AnalyzeImportErrorType.TEMPLATE);
+        assertThat(job.getErrors()).extracting(JobError::getCode).containsExactly(AnalyzeImportErrorType.TEMPLATE);
     }
 
     @Test
@@ -111,7 +111,7 @@ class ImportJobWorkerGbfsParkingErrorsTest extends TiamatIntegrationTest {
         Job job = runGbfsParkingImport();
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
-        assertThat(job.getErrors()).containsExactly(AnalyzeImportErrorType.MISSING_DATA);
+        assertThat(job.getErrors()).extracting(JobError::getCode).containsExactly(AnalyzeImportErrorType.MISSING_DATA);
     }
 
     private Job runGbfsParkingImport() {

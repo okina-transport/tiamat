@@ -47,7 +47,7 @@ class ImportJobWorkerNetexPoiErrorsTest extends TiamatIntegrationTest {
         Job job = runNetexPoiImport("poi_bad_encoding.xml");
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
-        assertThat(job.getErrors()).containsExactly(AnalyzeImportErrorType.ENCODING);
+        assertThat(job.getErrors()).extracting(JobError::getCode).containsExactly(AnalyzeImportErrorType.ENCODING);
     }
 
     @Test
@@ -55,7 +55,7 @@ class ImportJobWorkerNetexPoiErrorsTest extends TiamatIntegrationTest {
         Job job = runNetexPoiImport("poi_malformed.xml");
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
-        assertThat(job.getErrors()).containsExactly(AnalyzeImportErrorType.TEMPLATE);
+        assertThat(job.getErrors()).extracting(JobError::getCode).containsExactly(AnalyzeImportErrorType.TEMPLATE);
     }
 
     @Test
@@ -63,7 +63,7 @@ class ImportJobWorkerNetexPoiErrorsTest extends TiamatIntegrationTest {
         Job job = runNetexPoiImport("poi_missing_centroid.xml");
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
-        assertThat(job.getErrors()).containsExactly(AnalyzeImportErrorType.MISSING_DATA);
+        assertThat(job.getErrors()).extracting(JobError::getCode).containsExactly(AnalyzeImportErrorType.MISSING_DATA);
     }
 
     @Test
@@ -71,7 +71,7 @@ class ImportJobWorkerNetexPoiErrorsTest extends TiamatIntegrationTest {
         Job job = runNetexPoiImport("poi_invalid_id.xml");
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
-        assertThat(job.getErrors()).containsExactly(AnalyzeImportErrorType.TEMPLATE);
+        assertThat(job.getErrors()).extracting(JobError::getCode).containsExactly(AnalyzeImportErrorType.TEMPLATE);
     }
 
     private Job runNetexPoiImport(String fileName) throws IOException {

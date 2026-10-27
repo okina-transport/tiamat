@@ -72,7 +72,7 @@ public class ImportParkingsResource {
             ParkingLayoutEnumeration parkingLayoutEnumeration = ParkingLayoutEnumeration.fromValue(parkingLayoutParam);
             ParkingTypeEnumeration parkingTypeEnumeration = ParkingTypeEnumeration.fromValue(parkingTypeParam);
             List<DtoParking> dtoParkingCSV = ParkingsCSVHelper.parseDocument(inputStream);
-            ParkingsCSVHelper.checkDuplicatedParkings(dtoParkingCSV);
+            ParkingsCSVHelper.checkDuplicatedParkings(dtoParkingCSV, fileName);
             List<Parking> parkings = ParkingsCSVHelper.mapFromDtoToEntity(dtoParkingCSV, parkingLayoutEnumeration, parkingTypeEnumeration, parkAndRideDetection);
             parkingsImportedService.createOrUpdateParkings(parkings);
             return Response.status(200).build();

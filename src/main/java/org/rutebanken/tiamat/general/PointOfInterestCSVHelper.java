@@ -95,24 +95,36 @@ public class PointOfInterestCSVHelper {
         List<AnalyzeImportError> rowErrors = new ArrayList<>();
 
         CSVParser parser = CSVHelper.getRecords(csvFile);
-        validateHeaders(parser.getHeaderNames());
+        List<String> actualHeaders = parser.getHeaderNames();
+        if (actualHeaders.isEmpty()) {
+            throw new AnalyzeImportException(AnalyzeImportErrorType.EMPTY_FILE, "The CSV file is empty");
+        }
+        validateHeaders(actualHeaders);
 
         for (CSVRecord csvRecord : parser) {
+            // physical line where the record ends: blank lines and multi-line quoted fields are counted
+            int fileLine = (int) csvRecord.getParser().getCurrentLineNumber();
             if (csvRecord.size() < EXPECTED_HEADERS.size() || csvRecord.size() > MAX_COLUMNS) {
                 rowErrors.add(new AnalyzeImportError(AnalyzeImportErrorType.TEMPLATE,
                         "Expected between " + EXPECTED_HEADERS.size() + " and " + MAX_COLUMNS + " columns but found " + csvRecord.size(),
-                        (int) csvRecord.getRecordNumber(), null));
+                        fileLine, null));
                 continue;
             }
 
             DtoPointOfInterest poiDTO = new DtoPointOfInterest(csvRecord);
-            List<AnalyzeImportError> validationErrors = validatePoi(poiDTO, (int) csvRecord.getRecordNumber());
+            poiDTO.setLine(fileLine);
+            List<AnalyzeImportError> validationErrors = validatePoi(poiDTO, fileLine);
             if (!validationErrors.isEmpty()) {
                 rowErrors.addAll(validationErrors);
                 continue;
             }
 
             dtoList.add(poiDTO);
+        }
+
+        // empty lines are skipped by the parser
+        if (parser.getRecordNumber() == 0) {
+            throw new AnalyzeImportException(AnalyzeImportErrorType.NO_DATA_ROWS, "The CSV file does not contain any POI");
         }
 
         if (!rowErrors.isEmpty()) {
@@ -155,7 +167,7 @@ public class PointOfInterestCSVHelper {
      * Checks if Point of interest matches the conditions
      *
      * @param poi  The point of interest to check
-     * @param line the CSV line number the POI was read from
+     * @param line the line number in the file the POI was read from, header included
      * @return the list of validation errors found for this POI, empty if valid
      */
     private static List<AnalyzeImportError> validatePoi(DtoPointOfInterest poi, int line) {
@@ -166,31 +178,52 @@ public class PointOfInterestCSVHelper {
         if (StringUtils.isBlank(poi.getName())) {
             errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "NAME is required for POI :" + poi.getId(), line, "name"));
         }
-        if (!patternXlongYlat.matcher(poi.getLongitude()).matches()) {
-            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "longitude is required for POI: " + poi.getId(), line, "longitude"));
+        if (StringUtils.isBlank(poi.getLongitude())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "longitude is required for POI: " + poi.getId(), line, PointOfInterestCsvHeader.LONGITUDE.value()));
+        } else {
+            checkDecimal(errors, PointOfInterestCsvHeader.LONGITUDE, poi.getLongitude(), poi.getId(), line);
         }
-        if (!patternXlongYlat.matcher(poi.getLatitude()).matches()) {
-            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "latitude is required for POI: " + poi.getId(), line, "latitude"));
+        if (StringUtils.isBlank(poi.getLatitude())) {
+            errors.add(new AnalyzeImportError(AnalyzeImportErrorType.MISSING_DATA, "latitude is required for POI: " + poi.getId(), line, PointOfInterestCsvHeader.LATITUDE.value()));
+        } else {
+            checkDecimal(errors, PointOfInterestCsvHeader.LATITUDE, poi.getLatitude(), poi.getId(), line);
         }
         return errors;
     }
 
+    /**
+     * Checks that a numeric field is a decimal number with a dot separator, as it is converted when mapping the POI
+     */
+    private static void checkDecimal(List<AnalyzeImportError> errors, PointOfInterestCsvHeader header, String value, String poiId, int line) {
+        if (patternXlongYlat.matcher(value).matches()) {
+            return;
+        }
+        errors.add(AnalyzeImportError.builder()
+                .type(AnalyzeImportErrorType.INVALID_FORMAT_NUMBER)
+                .message("Invalid number '" + value + "' in field " + header.value() + " for POI: " + poiId)
+                .line(line)
+                .field(header.value())
+                .errorValue(value)
+                .build());
+    }
+
 
     /**
-     * Removes duplicate Point of interest from the input
+     * Fails if several points of interest share the same ID and name.
      *
-     * @param pointOfInterestList
-     * @throws IllegalArgumentException
+     * @throws DuplicatedIdentifierException with one duplicate per repeated point of interest
      */
-    public static void checkDuplicatedPois(List<DtoPointOfInterest> pointOfInterestList) throws IllegalArgumentException {
-        List<String> compositeKey = pointOfInterestList.stream()
-                .map(poi -> poi.getId() + poi.getName())
-                .collect(Collectors.toList());
+    public static void checkDuplicatedPois(List<DtoPointOfInterest> pointOfInterestList, String fileName) throws DuplicatedIdentifierException {
+        Set<String> seenKeys = new HashSet<>();
+        List<DuplicatedIdentifierException.Duplicate> duplicates = pointOfInterestList.stream()
+                .filter(poi -> !seenKeys.add(poi.getId() + poi.getName()))
+                .map(poi -> new DuplicatedIdentifierException.Duplicate(poi.getId(), poi.getLine()))
+                .toList();
 
-        Set listWithoutDuplicatedValues = new HashSet(compositeKey);
-
-        if (compositeKey.size() > listWithoutDuplicatedValues.size())
-            throw new IllegalArgumentException("There are duplicated POI in your CSV File (With the same ID & Name)");
+        if (!duplicates.isEmpty()) {
+            throw new DuplicatedIdentifierException("There are duplicated POI in your CSV File (With the same ID & Name)",
+                    fileName, PointOfInterestCsvHeader.ID.value(), duplicates);
+        }
     }
 
 

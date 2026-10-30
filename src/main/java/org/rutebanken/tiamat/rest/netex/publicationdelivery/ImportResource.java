@@ -229,7 +229,7 @@ public class ImportResource {
         String stopPlaceImportedId = provider + ":StopPlace:" + stopPlaceView.getImportedId();
         handleStopPlaceLink(stopPlaceImportedId, quayToCreate, newQuay);
 
-        return new DtoQuayIdMapping(netexId, stopPlaceImportedId);
+        return new DtoQuayIdMapping(netexId, newQuay.getNetexId());
     }
 
     private Quay createNewQuay(QuayView quayToCreate, String importedQuayId) {

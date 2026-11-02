@@ -151,8 +151,7 @@ public class DeleteService {
         deleteAlternativeNames("parking_bay_alternative_names");
         deleteKeyValues("parking_bay_key_values");
 
-        entityManager.createNativeQuery("DELETE FROM parking_bay_equipment_places").executeUpdate();
-        logger.info("Executed DELETE on parking_bay_equipment_places.");
+        deleteLink("equipment_place","parking_bay_equipment_places","equipment_places_id");
 
         entityManager.createNativeQuery(
                 "DELETE FROM persistable_polygon " +
@@ -193,9 +192,7 @@ public class DeleteService {
         ).executeUpdate();
         logger.info("Executed DELETE on installed_equipment_version_structure.");
 
-
-        entityManager.createNativeQuery("DELETE FROM parking_equipment_places").executeUpdate();
-        logger.info("Executed DELETE on parking_equipment_places.");
+        deleteLink("equipment_place","parking_equipment_places","equipment_places_id");
 
         deleteAlternativeNames("parking_area_alternative_names");
         deleteKeyValues("parking_area_key_values");

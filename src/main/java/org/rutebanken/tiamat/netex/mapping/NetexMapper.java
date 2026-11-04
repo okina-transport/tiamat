@@ -24,6 +24,7 @@ import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.importer.CityNameService;
 import org.rutebanken.tiamat.model.PlaceEquipment;
 import org.rutebanken.tiamat.model.Value;
+import org.rutebanken.tiamat.netex.NetexUtils;
 import org.rutebanken.tiamat.netex.mapping.converter.QuayListConverter;
 import org.rutebanken.tiamat.netex.mapping.mapper.*;
 import org.rutebanken.tiamat.repository.QuayRepository;
@@ -34,7 +35,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -731,13 +731,13 @@ public class NetexMapper {
 
     public org.rutebanken.tiamat.model.ParkingArea mapToTiamatModel(VehiclePoolingParkingArea area) {
         org.rutebanken.tiamat.model.ParkingArea parkingArea = facade.map(area, org.rutebanken.tiamat.model.ParkingArea.class);
-        parkingArea.setTotalCapacity(area.getRest().get(0).getName().getLocalPart().equals("TotalCapacity") ? (BigInteger) area.getRest().get(0).getValue() : BigInteger.valueOf(0));
+        parkingArea.setTotalCapacity(NetexUtils.getParkingAreaTotalCapacity(area.getRest()));
         return parkingArea;
     }
 
     public org.rutebanken.tiamat.model.ParkingArea mapToTiamatModel(VehicleSharingParkingArea area) {
         org.rutebanken.tiamat.model.ParkingArea parkingArea = facade.map(area, org.rutebanken.tiamat.model.ParkingArea.class);
-        parkingArea.setTotalCapacity(area.getRest().get(0).getName().getLocalPart().equals("TotalCapacity") ? (BigInteger) area.getRest().get(0).getValue() : BigInteger.valueOf(0));
+        parkingArea.setTotalCapacity(NetexUtils.getParkingAreaTotalCapacity(area.getRest()));
         return parkingArea;
     }
 

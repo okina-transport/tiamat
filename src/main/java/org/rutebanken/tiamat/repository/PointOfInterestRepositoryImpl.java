@@ -1,10 +1,6 @@
 package org.rutebanken.tiamat.repository;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
-import jakarta.persistence.TypedQuery;
+import jakarta.persistence.*;
 import org.hibernate.Hibernate;
 import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
@@ -32,13 +28,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
@@ -293,7 +283,7 @@ public class PointOfInterestRepositoryImpl implements PointOfInterestRepositoryC
                 if (pointOfInterest.getPointOfInterestOpeningHours().getDaysType() != null) {
                     Hibernate.initialize(pointOfInterest.getPointOfInterestOpeningHours().getDaysType());
                     pointOfInterest.getPointOfInterestOpeningHours().getDaysType().forEach(dayType -> {
-                        Hibernate.initialize(dayType.getDays());
+                        Hibernate.initialize(dayType.getDaysOfWeek());
                         if (dayType.getTimeBand() != null){
                             Hibernate.initialize(dayType.getTimeBand());
                             dayType.getTimeBand().forEach(timeBand -> {

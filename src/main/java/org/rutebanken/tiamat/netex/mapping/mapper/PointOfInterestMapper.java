@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.netex.mapping.mapper;
 
+import jakarta.xml.bind.JAXBElement;
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
 import org.apache.commons.lang3.StringUtils;
@@ -9,10 +10,6 @@ import org.rutebanken.tiamat.model.PointOfInterestOpeningHours;
 import org.rutebanken.tiamat.netex.NetexUtils;
 import org.springframework.stereotype.Component;
 
-import jakarta.xml.bind.JAXBElement;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -99,7 +96,7 @@ public class PointOfInterestMapper extends CustomMapper<PointOfInterest, org.rut
 
                 PropertiesOfDay_RelStructure propertiesOfDayRelStructure = new PropertiesOfDay_RelStructure();
                 PropertyOfDay propertyOfDay = new PropertyOfDay();
-                propertyOfDay.withDaysOfWeek(DayOfWeekEnumeration.fromValue(dayType.getDays().value()));
+                dayType.getDaysOfWeek().forEach(dayOfWeek -> propertyOfDay.withDaysOfWeek(DayOfWeekEnumeration.fromValue(dayOfWeek.value())));
                 propertiesOfDayRelStructure.getPropertyOfDay().add(propertyOfDay);
                 dayType2.setProperties(propertiesOfDayRelStructure);
 

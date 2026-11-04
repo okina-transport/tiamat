@@ -234,8 +234,9 @@ class PointOfInterestUpdater implements DataFetcher {
                 .map(entry -> {
                     DayType dayType = new DayType();
                     Set<TimeBand> timeBands = new HashSet<>();
-                    dayType.setDays(DayOfWeekEnumeration.fromValue(entry.getKey()));
-                    String day = dayType.getDays().value();
+                    DayOfWeekEnumeration dayOfWeek = DayOfWeekEnumeration.fromValue(entry.getKey());
+                    dayType.setDaysOfWeek(List.of(dayOfWeek));
+                    String day = dayOfWeek.value();
                     dayType.setNetexId("FR:DayType:" + day + "_" + poiNetexId);
                     Map<?, ?> value = (Map<?, ?>) entry.getValue();
                     if (value.get("facility").equals("Journée")) {

@@ -129,6 +129,9 @@ public class DeleteService {
         entityManager.createNativeQuery("DELETE FROM parking_parking_payment_process").executeUpdate();
         logger.info("Executed DELETE on parking_parking_payment_process.");
 
+        entityManager.createNativeQuery("DELETE FROM parking_cards_accepted").executeUpdate();
+        logger.info("Executed DELETE on parking_cards_accepted.");
+
         entityManager.createNativeQuery("DELETE FROM parking_type_of_payment_methods").executeUpdate();
         logger.info("Executed DELETE on parking_type_of_payment_methods.");
 

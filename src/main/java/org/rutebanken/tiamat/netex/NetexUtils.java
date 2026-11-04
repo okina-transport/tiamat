@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,6 +37,17 @@ public class NetexUtils {
                 || placeEquipments.getInstalledEquipmentRefOrInstalledEquipment().isEmpty());
     }
 
+
+    public static BigInteger getParkingAreaTotalCapacity(List<JAXBElement<?>> rest) {
+        if (rest == null) {
+            return null;
+        }
+        return rest.stream()
+                .filter(element -> "TotalCapacity".equals(element.getName().getLocalPart()))
+                .map(element -> (BigInteger) element.getValue())
+                .findFirst()
+                .orElse(null);
+    }
 
     public static void fillTypeOfKey(DataManagedObjectStructure object){
         if (object.getKeyList() == null || object.getKeyList().getKeyValue() == null || object.getKeyList().getKeyValue().isEmpty()){

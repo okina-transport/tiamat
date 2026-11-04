@@ -6,6 +6,7 @@ import ma.glasnost.orika.metadata.Type;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.ParkingArea;
+import org.rutebanken.tiamat.netex.NetexUtils;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -26,7 +27,9 @@ public class VehiclePoolingParkingAreaConverter extends BidirectionalConverter<P
         vehiclePoolingParkingArea.setMaximumHeight(parkingArea.getMaximumHeight());
         vehiclePoolingParkingArea.setPublicUse(parkingArea.getPublicUse() != null ? PublicUseEnumeration.fromValue(parkingArea.getPublicUse().value()) : PublicUseEnumeration.ALL);
         vehiclePoolingParkingArea.setVersion(String.valueOf(parkingArea.getVersion()));
-        vehiclePoolingParkingArea.withRest(netexObjectFactory.createParkingArea_VersionStructureTotalCapacity(parkingArea.getTotalCapacity()));
+        if (parkingArea.getTotalCapacity() != null) {
+            vehiclePoolingParkingArea.withRest(netexObjectFactory.createParkingArea_VersionStructureTotalCapacity(parkingArea.getTotalCapacity()));
+        }
         vehiclePoolingParkingArea.setModification(parkingArea.getModification() != null ? ModificationEnumeration.fromValue(parkingArea.getModification().value()) : null);
         return vehiclePoolingParkingArea;
     }
@@ -44,7 +47,7 @@ public class VehiclePoolingParkingAreaConverter extends BidirectionalConverter<P
         parkingArea.setMaximumHeight(vehiclePoolingParkingArea.getMaximumHeight());
         parkingArea.setPublicUse(parkingArea.getPublicUse() != null ? org.rutebanken.tiamat.model.PublicUseEnumeration.fromValue(vehiclePoolingParkingArea.getPublicUse().value()) : org.rutebanken.tiamat.model.PublicUseEnumeration.ALL);
         parkingArea.setVersion(Long.parseLong(vehiclePoolingParkingArea.getVersion()));
-        parkingArea.setTotalCapacity(netexObjectFactory.createParkingArea_VersionStructureTotalCapacity(parkingArea.getTotalCapacity()).getValue());
+        parkingArea.setTotalCapacity(NetexUtils.getParkingAreaTotalCapacity(vehiclePoolingParkingArea.getRest()));
         parkingArea.setModification(vehiclePoolingParkingArea.getModification() != null ? org.rutebanken.tiamat.model.ModificationEnumeration.fromValue(vehiclePoolingParkingArea.getModification().value()) : null);
         return parkingArea;
     }

@@ -6,9 +6,8 @@ import ma.glasnost.orika.metadata.Type;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.ParkingArea;
+import org.rutebanken.tiamat.netex.NetexUtils;
 import org.springframework.stereotype.Component;
-
-import java.math.BigInteger;
 
 @Component
 public class VehicleSharingParkingAreaConverter extends BidirectionalConverter<ParkingArea, VehicleSharingParkingArea> {
@@ -28,7 +27,9 @@ public class VehicleSharingParkingAreaConverter extends BidirectionalConverter<P
         vehicleSharingParkingArea.setMaximumHeight(parkingArea.getMaximumHeight());
         vehicleSharingParkingArea.setPublicUse(parkingArea.getPublicUse() != null ? PublicUseEnumeration.fromValue(parkingArea.getPublicUse().value()) : PublicUseEnumeration.ALL);
         vehicleSharingParkingArea.setVersion(String.valueOf(parkingArea.getVersion()));
-        vehicleSharingParkingArea.withRest(netexObjectFactory.createParkingArea_VersionStructureTotalCapacity(parkingArea.getTotalCapacity()));
+        if (parkingArea.getTotalCapacity() != null) {
+            vehicleSharingParkingArea.withRest(netexObjectFactory.createParkingArea_VersionStructureTotalCapacity(parkingArea.getTotalCapacity()));
+        }
         vehicleSharingParkingArea.setModification(parkingArea.getModification() != null ? ModificationEnumeration.fromValue(parkingArea.getModification().value()) : null);
         return vehicleSharingParkingArea;
     }
@@ -46,7 +47,7 @@ public class VehicleSharingParkingAreaConverter extends BidirectionalConverter<P
         parkingArea.setMaximumHeight(vehicleSharingParkingArea.getMaximumHeight());
         parkingArea.setPublicUse(vehicleSharingParkingArea.getPublicUse() != null ? org.rutebanken.tiamat.model.PublicUseEnumeration.fromValue(vehicleSharingParkingArea.getPublicUse().value()) : org.rutebanken.tiamat.model.PublicUseEnumeration.ALL);
         parkingArea.setVersion(Long.parseLong(vehicleSharingParkingArea.getVersion()));
-        parkingArea.setTotalCapacity(netexObjectFactory.createParkingArea_VersionStructureTotalCapacity((BigInteger) vehicleSharingParkingArea.getRest().get(0).getValue()).getValue());
+        parkingArea.setTotalCapacity(NetexUtils.getParkingAreaTotalCapacity(vehicleSharingParkingArea.getRest()));
         parkingArea.setModification(vehicleSharingParkingArea.getModification() != null ? org.rutebanken.tiamat.model.ModificationEnumeration.fromValue(vehicleSharingParkingArea.getModification().value()) : null);
         return parkingArea;
     }

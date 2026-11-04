@@ -17,9 +17,8 @@ package org.rutebanken.tiamat.model;
 
 import com.google.common.base.MoreObjects;
 import jakarta.persistence.*;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
+import jakarta.persistence.CascadeType;
+import org.hibernate.annotations.*;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -45,7 +44,8 @@ public class Parking
     protected String defaultCurrency;
     @Transient
     protected List<String> currenciesAccepted;
-    @Transient
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
     protected List<String> cardsAccepted;
     @Transient
     protected PaymentByMobileStructure paymentByMobile;
@@ -90,6 +90,9 @@ public class Parking
     protected boolean realTimeOccupancyAvailable = false;
     protected ParkingReservationEnumeration parkingReservation;
     protected String bookingUrl;
+
+    @Column(name = "url")
+    protected String url;
     protected boolean freeParkingOutOfHours = false;
     protected String insee;
     protected String siret;
@@ -138,6 +141,16 @@ public class Parking
     @JoinColumn(name = "parking_id")
     protected List<ParkingEntrance> vehicleEntrances = new ArrayList<>();
 
+
+    @Override
+    public String getUrl() {
+        return url;
+    }
+
+    @Override
+    public void setUrl(String url) {
+        this.url = url;
+    }
 
     public List<TypeOfPaymentMethod> getTypeOfPaymentMethods() {
         return typeOfPaymentMethods;
@@ -336,6 +349,10 @@ public class Parking
             cardsAccepted = new ArrayList<>();
         }
         return this.cardsAccepted;
+    }
+
+    public void setCardsAccepted(List<String> value) {
+        this.cardsAccepted = value == null ? new ArrayList<>() : new ArrayList<>(value);
     }
 
     public ParkingReservationEnumeration getParkingReservation() {

@@ -15,9 +15,11 @@
 
 package org.rutebanken.tiamat.importer.merging;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
-import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
@@ -26,7 +28,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,6 +50,9 @@ public class MergingParkingImporterTest extends TiamatIntegrationTest {
 
     @Autowired
     private ParkingVersionedSaverService parkingVersionedSaverService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     /**
      * Two parkingss with the same name and coordinates should become one parking.
@@ -218,6 +227,95 @@ public class MergingParkingImporterTest extends TiamatIntegrationTest {
 
         assertThat(parking).isNotNull();
         assertThat(parking.getParkingVehicleTypes()).containsAll(Arrays.asList(ParkingVehicleEnumeration.CAR, ParkingVehicleEnumeration.PEDAL_CYCLE));
+    }
+
+    @Test
+    public void testHandleAlreadyExistingParkingUpdatedProfileFields() {
+
+        StopPlace stopPlace = new StopPlace();
+        stopPlaceRepository.save(stopPlace);
+
+        Parking firstParking = new Parking();
+        firstParking.setParentSiteRef(new SiteRefStructure(stopPlace.getNetexId()));
+
+        TimeBand timeBand = new TimeBand();
+        timeBand.setStartTime(LocalTime.of(7, 0));
+        timeBand.setEndTime(LocalTime.of(20, 0));
+        DayType dayType = new DayType();
+        dayType.setDaysOfWeek(List.of(DayOfWeekEnumeration.SUNDAY, DayOfWeekEnumeration.SATURDAY));
+        dayType.setHolidayTypes(List.of(HolidayTypeEnumeration.NATIONAL_HOLIDAY));
+        dayType.setTimeBand(new HashSet<>(List.of(timeBand)));
+        AvailabilityCondition availabilityCondition = new AvailabilityCondition();
+        availabilityCondition.setAvailable(true);
+        availabilityCondition.setDayTypes(new HashSet<>(List.of(dayType)));
+
+        TypeOfPaymentMethod visa = new TypeOfPaymentMethod();
+        visa.setNetexId("MOBIITI:TypeOfPaymentMethod:VISA");
+
+        Parking secondParking = new Parking();
+        secondParking.setParentSiteRef(new SiteRefStructure(stopPlace.getNetexId()));
+        secondParking.setAvailabilityConditions(new HashSet<>(List.of(availabilityCondition)));
+        secondParking.setTypeOfPaymentMethods(new ArrayList<>(List.of(visa)));
+        secondParking.setUrl("https://fr.parkindigo.com/parking/patriarches");
+        secondParking.setCardsAccepted(List.of("VISA", "CB"));
+        secondParking.setParkingReservation(ParkingReservationEnumeration.REGISTRATION_REQUIRED);
+
+        Parking parking = mergingParkingImporter.handleAlreadyExistingParking(firstParking, secondParking);
+
+        assertThat(parking.getAvailabilityConditions()).hasSize(1);
+        AvailabilityCondition mergedCondition = parking.getAvailabilityConditions().iterator().next();
+        assertThat(mergedCondition.isAvailable()).isTrue();
+        assertThat(mergedCondition.getDayTypes()).flatExtracting(DayType::getDaysOfWeek).containsExactly(DayOfWeekEnumeration.SUNDAY, DayOfWeekEnumeration.SATURDAY);
+        assertThat(parking.getTypeOfPaymentMethods()).extracting(TypeOfPaymentMethod::getNetexId).containsExactly("MOBIITI:TypeOfPaymentMethod:VISA");
+        assertThat(parking.getUrl()).isEqualTo("https://fr.parkindigo.com/parking/patriarches");
+        assertThat(parking.getCardsAccepted()).containsExactly("VISA", "CB");
+        assertThat(parking.getParkingReservation()).isEqualTo(ParkingReservationEnumeration.REGISTRATION_REQUIRED);
+
+        entityManager.flush();
+        entityManager.clear();
+        Parking reloaded = parkingRepository.findFirstByNetexIdOrderByVersionDesc(parking.getNetexId());
+        assertThat(reloaded.getUrl()).isEqualTo("https://fr.parkindigo.com/parking/patriarches");
+        assertThat(reloaded.getCardsAccepted()).containsExactlyInAnyOrder("VISA", "CB");
+        DayType reloadedDayType = reloaded.getAvailabilityConditions().iterator().next().getDayTypes().iterator().next();
+        assertThat(reloadedDayType.getDaysOfWeek()).containsExactlyInAnyOrder(DayOfWeekEnumeration.SUNDAY, DayOfWeekEnumeration.SATURDAY);
+        assertThat(reloadedDayType.getHolidayTypes()).containsExactly(HolidayTypeEnumeration.NATIONAL_HOLIDAY);
+
+        Parking thirdParking = new Parking();
+        thirdParking.setParentSiteRef(new SiteRefStructure(stopPlace.getNetexId()));
+
+        Parking cleared = mergingParkingImporter.handleAlreadyExistingParking(reloaded, thirdParking);
+
+        assertThat(cleared.getVersion()).isGreaterThan(reloaded.getVersion());
+        assertThat(cleared.getCardsAccepted()).isEmpty();
+        assertThat(cleared.getAvailabilityConditions()).isEmpty();
+        assertThat(cleared.getTypeOfPaymentMethods()).isEmpty();
+
+        entityManager.flush();
+        entityManager.clear();
+        Parking reloadedCleared = parkingRepository.findFirstByNetexIdOrderByVersionDesc(parking.getNetexId());
+        assertThat(reloadedCleared.getCardsAccepted()).isEmpty();
+        assertThat(reloadedCleared.getAvailabilityConditions()).isEmpty();
+        assertThat(reloadedCleared.getTypeOfPaymentMethods()).isEmpty();
+    }
+
+    @Test
+    public void testHandleAlreadyExistingParkingSameCardsAcceptedInAnotherOrderNotReplaced() {
+
+        StopPlace stopPlace = new StopPlace();
+        stopPlaceRepository.save(stopPlace);
+
+        Parking firstParking = new Parking();
+        firstParking.setVersion(1L);
+        firstParking.setParentSiteRef(new SiteRefStructure(stopPlace.getNetexId()));
+        firstParking.setCardsAccepted(List.of("VISA", "CB"));
+
+        Parking secondParking = new Parking();
+        secondParking.setParentSiteRef(new SiteRefStructure(stopPlace.getNetexId()));
+        secondParking.setCardsAccepted(List.of("CB", "VISA"));
+
+        Parking parking = mergingParkingImporter.handleAlreadyExistingParking(firstParking, secondParking);
+
+        assertThat(parking.getCardsAccepted()).containsExactly("VISA", "CB");
     }
 
     private Point point(double longitude, double latitude) {

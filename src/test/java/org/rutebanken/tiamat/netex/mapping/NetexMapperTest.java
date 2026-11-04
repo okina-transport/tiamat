@@ -595,6 +595,73 @@ public class NetexMapperTest extends TiamatIntegrationTest {
     }
 
     @Test
+    public void mapParkingInfoLinksCardsAcceptedReservationAndTypesOfPaymentMethodRoundTrip() {
+        org.rutebanken.netex.model.Parking netexParking = new org.rutebanken.netex.model.Parking()
+                .withId("FR:44109:Parking:23638:LOC")
+                .withVersion("1")
+                .withInfoLinks(new org.rutebanken.netex.model.GroupOfEntities_VersionStructure.InfoLinks()
+                        .withInfoLink(new InfoLinkStructure().withValue("https://fr.parkindigo.com/parking/patriarches")))
+                .withCardsAccepted("VISA", "MASTERCARD", "CB")
+                .withParkingReservation(org.rutebanken.netex.model.ParkingReservationEnumeration.REGISTRATION_REQUIRED)
+                .withTypesOfPaymentMethod(new TypeOfPaymentMethodRefs_RelStructure()
+                        .withTypeOfPaymentMethodRef(new TypeOfPaymentMethodRef().withRef("VISA")));
+
+        org.rutebanken.tiamat.model.Parking tiamatParking = netexMapper.mapToNetexModel(netexParking);
+        netexMapper.parseToSetTypeOfPaymentMethods(netexParking, tiamatParking, java.util.Map.of());
+
+        assertThat(tiamatParking.getUrl()).isEqualTo("https://fr.parkindigo.com/parking/patriarches");
+        assertThat(tiamatParking.getCardsAccepted()).containsExactly("VISA", "MASTERCARD", "CB");
+        assertThat(tiamatParking.getParkingReservation()).isEqualTo(org.rutebanken.tiamat.model.ParkingReservationEnumeration.REGISTRATION_REQUIRED);
+        assertThat(tiamatParking.getTypeOfPaymentMethods()).hasSize(1);
+        assertThat(tiamatParking.getTypeOfPaymentMethods().getFirst().getName().getValue()).isEqualTo("VISA");
+
+        org.rutebanken.netex.model.Parking exported = netexMapper.mapToNetexModel(tiamatParking);
+
+        assertThat(exported.getInfoLinks().getInfoLink()).extracting(InfoLinkStructure::getValue)
+                .containsExactly("https://fr.parkindigo.com/parking/patriarches");
+        assertThat(exported.getUrl()).isNull();
+        assertThat(exported.getCardsAccepted()).containsExactly("VISA", "MASTERCARD", "CB");
+        assertThat(exported.getParkingReservation()).isEqualTo(org.rutebanken.netex.model.ParkingReservationEnumeration.REGISTRATION_REQUIRED);
+    }
+
+    @Test
+    public void mapParkingValidityConditionsWithSeveralDaysOfWeekAndHolidayTypesRoundTrip() {
+        org.rutebanken.netex.model.DayType closedDayType = new org.rutebanken.netex.model.DayType()
+                .withId("FR:DayType:03:Qpark")
+                .withVersion("any")
+                .withProperties(new PropertiesOfDay_RelStructure().withPropertyOfDay(new PropertyOfDay()
+                        .withDaysOfWeek(org.rutebanken.netex.model.DayOfWeekEnumeration.SUNDAY, org.rutebanken.netex.model.DayOfWeekEnumeration.SATURDAY)
+                        .withHolidayTypes(org.rutebanken.netex.model.HolidayTypeEnumeration.NATIONAL_HOLIDAY)));
+        org.rutebanken.netex.model.AvailabilityCondition closedCondition = new org.rutebanken.netex.model.AvailabilityCondition()
+                .withId("FR:org.rutebanken.netex.model.AvailabilityCondition:02:Qpark")
+                .withVersion("any")
+                .withIsAvailable(false)
+                .withDayTypes(new DayTypes_RelStructure().withDayTypeRefOrDayType_(new ObjectFactory().createDayType(closedDayType)));
+
+        org.rutebanken.netex.model.Parking netexParking = new org.rutebanken.netex.model.Parking()
+                .withId("FR:44109:Parking:23638:LOC")
+                .withVersion("1")
+                .withValidityConditions(new ValidityConditions_RelStructure()
+                        .withValidityConditionRefOrValidBetweenOrValidityCondition_(new ObjectFactory().createAvailabilityCondition(closedCondition)));
+
+        org.rutebanken.tiamat.model.Parking tiamatParking = netexMapper.mapToNetexModel(netexParking);
+
+        org.rutebanken.tiamat.model.DayType tiamatDayType = tiamatParking.getAvailabilityConditions().iterator().next().getDayTypes().iterator().next();
+        assertThat(tiamatDayType.getDaysOfWeek()).containsExactly(org.rutebanken.tiamat.model.DayOfWeekEnumeration.SUNDAY, org.rutebanken.tiamat.model.DayOfWeekEnumeration.SATURDAY);
+        assertThat(tiamatDayType.getHolidayTypes()).containsExactly(org.rutebanken.tiamat.model.HolidayTypeEnumeration.NATIONAL_HOLIDAY);
+
+        org.rutebanken.netex.model.Parking exported = netexMapper.mapToNetexModel(tiamatParking);
+
+        org.rutebanken.netex.model.AvailabilityCondition exportedCondition = (org.rutebanken.netex.model.AvailabilityCondition) ((jakarta.xml.bind.JAXBElement<?>) exported.getValidityConditions()
+                .getValidityConditionRefOrValidBetweenOrValidityCondition_().getFirst()).getValue();
+        assertThat(exportedCondition.isIsAvailable()).isFalse();
+        org.rutebanken.netex.model.DayType exportedDayType = (org.rutebanken.netex.model.DayType) exportedCondition.getDayTypes().getDayTypeRefOrDayType_().getFirst().getValue();
+        PropertyOfDay exportedProperty = exportedDayType.getProperties().getPropertyOfDay().getFirst();
+        assertThat(exportedProperty.getDaysOfWeek()).containsExactly(org.rutebanken.netex.model.DayOfWeekEnumeration.SUNDAY, org.rutebanken.netex.model.DayOfWeekEnumeration.SATURDAY);
+        assertThat(exportedProperty.getHolidayTypes()).containsExactly(org.rutebanken.netex.model.HolidayTypeEnumeration.NATIONAL_HOLIDAY);
+    }
+
+    @Test
     public void mapParkingWithEmptyPlaceEquipmentsShouldOmitPlaceEquipments() {
         org.rutebanken.tiamat.model.Parking parking = new org.rutebanken.tiamat.model.Parking();
         parking.setNetexId("MOBIITI:Parking:1");

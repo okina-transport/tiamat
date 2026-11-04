@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @Qualifier("mergingParkingImporter")
@@ -207,6 +208,16 @@ public class MergingParkingImporter {
         boolean paymentProcessChanged = mergingUtils.updateProperty(copyParking.getParkingPaymentProcess(), incomingParking.getParkingPaymentProcess(), copyParking::setParkingPaymentProcess, "payment process", netexId);
         boolean rechargingAvailableChanged = mergingUtils.updateProperty(copyParking.isRechargingAvailable(), incomingParking.isRechargingAvailable(), copyParking::setRechargingAvailable, "recharging available", netexId);
         boolean bookingUrlChanged = mergingUtils.updateProperty(copyParking.getBookingUrl(), incomingParking.getBookingUrl(), copyParking::setBookingUrl, "booking url", netexId);
+        boolean urlChanged = mergingUtils.updateProperty(copyParking.getUrl(), incomingParking.getUrl(), copyParking::setUrl, "url", netexId);
+        boolean parkingReservationChanged = mergingUtils.updateProperty(copyParking.getParkingReservation(), incomingParking.getParkingReservation(), copyParking::setParkingReservation, "parking reservation", netexId);
+        boolean cardsAcceptedChanged = false;
+        if (!new HashSet<>(incomingParking.getCardsAccepted()).equals(new HashSet<>(copyParking.getCardsAccepted()))) {
+            copyParking.setCardsAccepted(incomingParking.getCardsAccepted());
+            logger.info("Updated cards accepted to {} for parking {}", copyParking.getCardsAccepted(), copyParking);
+            cardsAcceptedChanged = true;
+        }
+        boolean availabilityConditionsChanged = updateAvailabilityConditions(copyParking, incomingParking);
+        boolean typeOfPaymentMethodsChanged = updateTypeOfPaymentMethods(copyParking, incomingParking);
 
         boolean propertiesChanged = false;
         List<ParkingProperties> copyParkingProperty = new ArrayList<>();
@@ -292,7 +303,8 @@ public class MergingParkingImporter {
         if (keyValuesChanged || nameChanged || allAreasWheelchairAccessibleChanged || typeChanged || centroidChanged ||
                 operatorChanged ||vehicleType || totalCapacityChanged || paymentProcessChanged || rechargingAvailableChanged ||
                 bookingUrlChanged || propertiesChanged || areasChanged || equipmentChanged || accessibilityChanged ||
-                hasPostalAddressChanged || entrancesChanged) {
+                hasPostalAddressChanged || entrancesChanged || availabilityConditionsChanged || typeOfPaymentMethodsChanged ||
+                urlChanged || parkingReservationChanged || cardsAcceptedChanged) {
             logger.info("Updated existing parking {}. ", copyParking);
             copyParking = parkingVersionedSaverService.saveNewVersion(copyParking);
             return updateCache(copyParking);
@@ -301,6 +313,52 @@ public class MergingParkingImporter {
         logger.debug("No changes. Returning existing parking {}", existingParking);
         return existingParking;
 
+    }
+
+    private boolean updateAvailabilityConditions(Parking copyParking, Parking incomingParking) {
+        if (availabilityConditionsSignature(copyParking.getAvailabilityConditions()).equals(availabilityConditionsSignature(incomingParking.getAvailabilityConditions()))) {
+            return false;
+        }
+        copyParking.setAvailabilityConditions(new HashSet<>(CollectionUtils.emptyIfNull(incomingParking.getAvailabilityConditions())));
+        logger.info("Updated availability conditions for parking {}", copyParking);
+        return true;
+    }
+
+    private Set<String> availabilityConditionsSignature(Set<AvailabilityCondition> availabilityConditions) {
+        return CollectionUtils.emptyIfNull(availabilityConditions).stream()
+                .map(availabilityCondition -> availabilityCondition.isAvailable() + ";" +
+                        CollectionUtils.emptyIfNull(availabilityCondition.getDayTypes()).stream()
+                                .map(dayType -> sortedNames(dayType.getDaysOfWeek()) + "/" + sortedNames(dayType.getHolidayTypes()) + "=" +
+                                        CollectionUtils.emptyIfNull(dayType.getTimeBand()).stream()
+                                                .map(timeBand -> timeBand.getStartTime() + "-" + timeBand.getEndTime() + "+" + timeBand.getDayOffset())
+                                                .sorted()
+                                                .collect(Collectors.joining(",")))
+                                .sorted()
+                                .collect(Collectors.joining("|")))
+                .collect(Collectors.toSet());
+    }
+
+    private String sortedNames(List<? extends Enum<?>> values) {
+        return CollectionUtils.emptyIfNull(values).stream().map(Enum::name).sorted().collect(Collectors.joining(","));
+    }
+
+    private boolean updateTypeOfPaymentMethods(Parking copyParking, Parking incomingParking) {
+        if (typeOfPaymentMethodsSignature(copyParking.getTypeOfPaymentMethods()).equals(typeOfPaymentMethodsSignature(incomingParking.getTypeOfPaymentMethods()))) {
+            return false;
+        }
+        if (copyParking.getTypeOfPaymentMethods() == null) {
+            copyParking.setTypeOfPaymentMethods(new ArrayList<>());
+        }
+        copyParking.getTypeOfPaymentMethods().clear();
+        copyParking.getTypeOfPaymentMethods().addAll(CollectionUtils.emptyIfNull(incomingParking.getTypeOfPaymentMethods()));
+        logger.info("Updated types of payment method for parking {}", copyParking);
+        return true;
+    }
+
+    private Set<String> typeOfPaymentMethodsSignature(List<TypeOfPaymentMethod> typeOfPaymentMethods) {
+        return CollectionUtils.emptyIfNull(typeOfPaymentMethods).stream()
+                .map(typeOfPaymentMethod -> typeOfPaymentMethod.getNetexId() + ";" + typeOfPaymentMethod.getPaymentMethod())
+                .collect(Collectors.toSet());
     }
 
     private boolean updatePostalAddress(Parking copyParking, Parking incomingParking) {

@@ -20,6 +20,7 @@ import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.importer.CityNameService;
 import org.rutebanken.tiamat.model.PlaceEquipment;
@@ -58,6 +59,8 @@ public class NetexMapper {
     StopPlaceRepository stopPlaceRepository;
 
 
+    private final String superIdPrefix;
+
     @Autowired
     public NetexMapper(List<Converter> converters, KeyListToKeyValuesMapMapper keyListToKeyValuesMapMapper,
                        DataManagedObjectStructureMapper dataManagedObjectStructureMapper,
@@ -69,6 +72,7 @@ public class NetexMapper {
 ) {
 
         logger.info("Setting up netexMapper with DI");
+        this.superIdPrefix = superIdPrefix;
 
         MapperFactory mapperFactory = new DefaultMapperFactory.Builder().build();
 
@@ -628,6 +632,13 @@ public class NetexMapper {
             var netexTopm = topmRefToTopm.get(topmRef.getRef());
             if (netexTopm != null) {
                 tpoms.add(facade.map(netexTopm, org.rutebanken.tiamat.model.TypeOfPaymentMethod.class));
+            } else if (StringUtils.isNotBlank(topmRef.getRef())) {
+                // TypeOfPaymentMethod not defined in the frame : keep the reference (ex: "VISA", "Mastercard")
+                var tiamatTopm = new org.rutebanken.tiamat.model.TypeOfPaymentMethod();
+                tiamatTopm.setNetexId(StringUtils.countMatches(topmRef.getRef(), ":") == 2 ?
+                        topmRef.getRef() : superIdPrefix + ":TypeOfPaymentMethod:" + topmRef.getRef());
+                tiamatTopm.setName(new org.rutebanken.tiamat.model.EmbeddableMultilingualString(topmRef.getRef()));
+                tpoms.add(tiamatTopm);
             }
         }
 

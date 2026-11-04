@@ -135,6 +135,16 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
         mapPaymentMethodAtoB(netexParking, tiamatParking);
         mapVehicleEntrancesMethodAtoB(netexParking, tiamatParking);
 
+        tiamatParking.setCardsAccepted(netexParking.getCardsAccepted());
+
+        if (StringUtils.isBlank(tiamatParking.getUrl()) && netexParking.getInfoLinks() != null) {
+            netexParking.getInfoLinks().getInfoLink().stream()
+                    .map(InfoLinkStructure::getValue)
+                    .filter(StringUtils::isNotBlank)
+                    .findFirst()
+                    .ifPresent(tiamatParking::setUrl);
+        }
+
         if (netexParking.getTypeOfParkingRef() != null) {
             tiamatParking.setTypeOfParkingRef(netexParking.getTypeOfParkingRef().getRef());
         }
@@ -191,12 +201,24 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
                 //tiamatDayType.setNetexId(netexDayType.getId());
 
                 if (netexDayType.getProperties() != null && CollectionUtils.isNotEmpty(netexDayType.getProperties().getPropertyOfDay())) {
-                    PropertyOfDay firstDay = netexDayType.getProperties().getPropertyOfDay().getFirst();
-                    if (firstDay.getDaysOfWeek() != null && CollectionUtils.isNotEmpty(firstDay.getDaysOfWeek())) {
-                        String dayOfWeekValue = firstDay.getDaysOfWeek().getFirst().value();
-                        org.rutebanken.tiamat.model.DayOfWeekEnumeration tiamatDayOfWeek = org.rutebanken.tiamat.model.DayOfWeekEnumeration.fromValue(dayOfWeekValue);
-                        tiamatDayType.setDays(tiamatDayOfWeek);
+                    List<org.rutebanken.tiamat.model.DayOfWeekEnumeration> tiamatDaysOfWeek = new ArrayList<>();
+                    List<org.rutebanken.tiamat.model.HolidayTypeEnumeration> tiamatHolidayTypes = new ArrayList<>();
+                    for (PropertyOfDay propertyOfDay : netexDayType.getProperties().getPropertyOfDay()) {
+                        for (DayOfWeekEnumeration dayOfWeek : CollectionUtils.emptyIfNull(propertyOfDay.getDaysOfWeek())) {
+                            var tiamatDayOfWeek = org.rutebanken.tiamat.model.DayOfWeekEnumeration.fromValue(dayOfWeek.value());
+                            if (!tiamatDaysOfWeek.contains(tiamatDayOfWeek)) {
+                                tiamatDaysOfWeek.add(tiamatDayOfWeek);
+                            }
+                        }
+                        for (HolidayTypeEnumeration holidayType : CollectionUtils.emptyIfNull(propertyOfDay.getHolidayTypes())) {
+                            var tiamatHolidayType = org.rutebanken.tiamat.model.HolidayTypeEnumeration.fromValue(holidayType.value());
+                            if (!tiamatHolidayTypes.contains(tiamatHolidayType)) {
+                                tiamatHolidayTypes.add(tiamatHolidayType);
+                            }
+                        }
                     }
+                    tiamatDayType.setDaysOfWeek(tiamatDaysOfWeek);
+                    tiamatDayType.setHolidayTypes(tiamatHolidayTypes);
                 }
 
                 if (netexDayType.getTimebands() != null && CollectionUtils.isNotEmpty(netexDayType.getTimebands().getTimebandRefOrTimeband())) {
@@ -216,7 +238,7 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
 
                             if (netexTimeband.getDayOffset() != null) {
                                 tiamatTimeBand.setDayOffset(netexTimeband.getDayOffset().intValue());
-                            } else if (netexTimeband.getEndTime().equals(LocalTime.of(0, 0, 0)) && netexTimeband.getDayOffset() == null) {
+                            } else if (LocalTime.MIDNIGHT.equals(netexTimeband.getEndTime())) {
                                 tiamatTimeBand.setDayOffset(1);
                             }
 
@@ -255,6 +277,11 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
         mapPaymentMethodBtoA(tiamatParking, netexParking);
         mapVehicleEntrancesMethodBtoA(tiamatParking, netexParking);
 
+        netexParking.getCardsAccepted().clear();
+        if (CollectionUtils.isNotEmpty(tiamatParking.getCardsAccepted())) {
+            netexParking.getCardsAccepted().addAll(tiamatParking.getCardsAccepted());
+        }
+
         if (StringUtils.isNotEmpty(tiamatParking.getParkingTypeRef())) {
             TypeOfParkingRefStructure typeOfParkingRefStructure = new TypeOfParkingRefStructure();
             typeOfParkingRefStructure.withRef(tiamatParking.getParkingTypeRef());
@@ -274,6 +301,7 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
             infoLinks.getInfoLink().add(infoLink);
 
             netexParking.setInfoLinks(infoLinks);
+            netexParking.setUrl(null);
         }
 
         if (tiamatParking.getParkingAreas() != null &&
@@ -354,11 +382,15 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
                     netexDayType.setId(dayType.getNetexId());
                     netexDayType.setVersion("any");
 
-                    if (dayType.getDays() != null) {
+                    if (CollectionUtils.isNotEmpty(dayType.getDaysOfWeek()) || CollectionUtils.isNotEmpty(dayType.getHolidayTypes())) {
                         PropertiesOfDay_RelStructure propOfDayStruct = new PropertiesOfDay_RelStructure();
                         PropertyOfDay propOfDay = new PropertyOfDay();
-                        String dayOfWeekStr = dayType.getDays().value();
-                        propOfDay.getDaysOfWeek().add(DayOfWeekEnumeration.fromValue(dayOfWeekStr));
+                        for (var dayOfWeek : CollectionUtils.emptyIfNull(dayType.getDaysOfWeek())) {
+                            propOfDay.getDaysOfWeek().add(DayOfWeekEnumeration.fromValue(dayOfWeek.value()));
+                        }
+                        for (var holidayType : CollectionUtils.emptyIfNull(dayType.getHolidayTypes())) {
+                            propOfDay.getHolidayTypes().add(HolidayTypeEnumeration.fromValue(holidayType.value()));
+                        }
                         propOfDayStruct.getPropertyOfDay().add(propOfDay);
                         netexDayType.setProperties(propOfDayStruct);
                     }
@@ -371,7 +403,9 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
                             netexTimeBand.setVersion("any");
                             netexTimeBand.setStartTime(timeBand.getStartTime());
                             netexTimeBand.setEndTime(timeBand.getEndTime());
-                            netexTimeBand.setDayOffset(BigInteger.valueOf(timeBand.getDayOffset()));
+                            if (timeBand.getDayOffset() != null) {
+                                netexTimeBand.setDayOffset(BigInteger.valueOf(timeBand.getDayOffset()));
+                            }
                             netexTimeBands.add(netexTimeBand);
                         }
 

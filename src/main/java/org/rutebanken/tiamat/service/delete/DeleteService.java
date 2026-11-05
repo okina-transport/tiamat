@@ -30,7 +30,7 @@ public class DeleteService {
         entityManager.createNativeQuery("DELETE FROM point_of_interest_adjacent_sites").executeUpdate();
 
         // Delete point_of_interest_equipment_places
-        entityManager.createNativeQuery("DELETE FROM point_of_interest_equipment_places").executeUpdate();
+        deleteLink("equipment_place","point_of_interest_equipment_places","equipment_places_id");
 
         // Delete persistable_polygon
         entityManager.createNativeQuery(

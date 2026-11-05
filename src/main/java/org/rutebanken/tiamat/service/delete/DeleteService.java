@@ -17,32 +17,137 @@ public class DeleteService {
 
     @Transactional
     public void deleteAllPoi() {
-        try {
-            // Deleting value_items from point_of_interest_key_values if exists...
-            Long countKeyValuesPoi = ((Long) entityManager.createNativeQuery("SELECT COUNT(*) FROM point_of_interest_key_values")
-                    .getSingleResult());
-
-            if (countKeyValuesPoi > 0) {
-                entityManager.createNativeQuery("DELETE FROM value_items WHERE value_id IN (SELECT key_values_id FROM point_of_interest_key_values)")
-                        .executeUpdate();
-            }
-
-            // Deleting value_items from point_of_interest_classification_key_values if exists...
-            Long countKeyValuesClassification = ((Long) entityManager.createNativeQuery("SELECT COUNT(*) FROM point_of_interest_classification_key_values")
-                    .getSingleResult());
-
-            if (countKeyValuesClassification > 0) {
-                entityManager.createNativeQuery("DELETE FROM value_items WHERE value_id IN (SELECT key_values_id FROM point_of_interest_classification_key_values)")
-                        .executeUpdate();
-            }
-
-            // Truncating point_of_interest and related tables...
-            entityManager.createNativeQuery("TRUNCATE TABLE point_of_interest CASCADE").executeUpdate();
-            logger.info("Point of interests deleted successfully");
-        } catch (Exception e) {
-            logger.error("Error occurred: ", e);
-            throw e;
+        // Deleting value_items from point_of_interest_key_values if exists...
+        Long countKeyValuesPoi = ((Long) entityManager.createNativeQuery("SELECT COUNT(*) FROM point_of_interest_key_values").getSingleResult());
+        if (countKeyValuesPoi > 0) {
+            entityManager.createNativeQuery("DELETE FROM value_items WHERE value_id IN (SELECT key_values_id FROM point_of_interest_key_values)").executeUpdate();
         }
+        logger.info("Deleted value_items linked to point_of_interest_key_values");
+
+        // Delete alternative_name & point_of_interest_alternative_names
+        deleteLink("alternative_name","point_of_interest_alternative_names","alternative_names_id");
+        logger.info("Deleted point_of_interest_alternative_names and linked alternative_name");
+
+        // Delete point_of_interest_adjacent_sites
+        entityManager.createNativeQuery("DELETE FROM point_of_interest_adjacent_sites").executeUpdate();
+        logger.info("Deleted point_of_interest_adjacent_sites");
+
+        // Delete point_of_interest_equipment_places & equipment_place
+        deleteLink("equipment_place","point_of_interest_equipment_places","equipment_places_id");
+        logger.info("Deleted point_of_interest_equipment_places and linked equipment_place");
+
+        // Delete persistable_polygon
+        entityManager.createNativeQuery(
+                "DELETE FROM persistable_polygon " +
+                        "WHERE id IN (SELECT polygon_id FROM point_of_interest)"
+        ).executeUpdate();
+        logger.info("Deleted persistable_polygon");
+
+        entityManager.createNativeQuery(
+                "CREATE TEMP TABLE IF NOT EXISTS temp_installed_equipment_ids AS " +
+                        "SELECT installed_equipment_id FROM installed_equipment_version_structure_installed_equipment WHERE place_equipment_id IN "+
+                        "(SELECT place_equipments_id FROM point_of_interest)"
+        ).executeUpdate();
+
+        // Delete installed_equipment_version_structure_installed_equipment
+        entityManager.createNativeQuery(
+                "DELETE FROM installed_equipment_version_structure_installed_equipment " +
+                        "WHERE installed_equipment_id IN (SELECT place_equipments_id FROM point_of_interest)"+
+                        "OR place_equipment_id IN (SELECT place_equipments_id FROM point_of_interest)"
+        ).executeUpdate();
+        logger.info("Deleted installed_equipment_version_structure_installed_equipment");
+
+        // Delete installed_equipment_version_structure directly from poi
+        entityManager.createNativeQuery(
+                "DELETE FROM installed_equipment_version_structure " +
+                        "WHERE id IN (SELECT place_equipments_id FROM point_of_interest)"
+        ).executeUpdate();
+        // Delete installed_equipment_version_structure from installed_equipment_version_structure_installed_equipment
+        entityManager.createNativeQuery(
+                "DELETE FROM installed_equipment_version_structure " +
+                        "WHERE id IN (SELECT installed_equipment_id FROM temp_installed_equipment_ids)"
+        ).executeUpdate();
+        logger.info("Deleted installed_equipment_version_structure");
+
+        // Delete accessibility_assessment & linked tables
+        String[] poi_assessments = startDeleteAccessibilityAssessments("point_of_interest");
+
+        // Delete point_of_interest_key_values
+        entityManager.createNativeQuery("DELETE FROM point_of_interest_key_values").executeUpdate();
+        logger.info("Deleted point_of_interest_key_values");
+
+        // Delete values
+        entityManager.createNativeQuery("DELETE FROM value WHERE id IN (SELECT key_values_id FROM point_of_interest_key_values)").executeUpdate();
+
+        // Delete point_of_interest_classifications
+        entityManager.createNativeQuery("DELETE FROM point_of_interest_classifications").executeUpdate();
+        logger.info("Deleted point_of_interest_classifications");
+
+        // Delete point_of_interest
+        entityManager.createNativeQuery("DELETE FROM point_of_interest").executeUpdate();
+        logger.info("Deleted point_of_interest");
+
+        finishDeleteAccessibilityAssessments(poi_assessments);
+        logger.info("Deleted accessibility_assessment & linked tables");
+
+        // Delete point_of_interest_facility_set
+        entityManager.createNativeQuery("DELETE FROM point_of_interest_facility_set").executeUpdate();
+        logger.info("Deleted point_of_interest_facility_set");
+
+        // Find day_type to delete
+        entityManager.createNativeQuery(
+                "CREATE TEMP TABLE IF NOT EXISTS temp_day_type_ids AS " +
+                        "SELECT id FROM day_type WHERE id IN "+
+                        "(SELECT day_type_id FROM point_of_interest_opening_hours_day_type)"+
+                        "AND id NOT IN "+
+                        "(SELECT day_types_id FROM availability_condition_day_types)"
+        ).executeUpdate();
+        logger.info("Captured point_of_interest_opening_hours_day_type IDs before deletion.");
+
+        // find time_band to delete
+        entityManager.createNativeQuery(
+                "CREATE TEMP TABLE IF NOT EXISTS temp_time_band_ids AS " +
+                        "SELECT time_band_id FROM day_type_time_band WHERE day_type_id IN "+
+                        "(SELECT id FROM temp_day_type_ids)"
+        ).executeUpdate();
+
+        // Delete point_of_interest_opening_hours_day_type
+        entityManager.createNativeQuery("DELETE FROM point_of_interest_opening_hours_day_type").executeUpdate();
+        logger.info("Deleted point_of_interest_opening_hours_day_type");
+
+        // Delete point_of_interest_opening_hours
+        entityManager.createNativeQuery("DELETE FROM point_of_interest_opening_hours").executeUpdate();
+        logger.info("Deleted point_of_interest_opening_hours");
+
+        // Delete day_type_time_band
+        entityManager.createNativeQuery(
+                "DELETE FROM day_type_time_band WHERE day_type_id IN "+
+                        "(SELECT id FROM temp_day_type_ids)"
+        ).executeUpdate();
+        logger.info("Deleted day_type_time_band");
+
+        // Delete time_band
+        entityManager.createNativeQuery(
+                "DELETE FROM time_band WHERE id IN "+
+                        "(SELECT time_band_id FROM temp_time_band_ids)"
+        ).executeUpdate();
+        logger.info("Deleted time_band");
+
+        // Delete day_type
+        entityManager.createNativeQuery(
+                "DELETE FROM day_type WHERE id IN "+
+                        "(SELECT id FROM temp_day_type_ids)"
+        ).executeUpdate();
+        logger.info("Deleted day_type");
+
+        // Delete temp day_type ids table
+        entityManager.createNativeQuery("DROP TABLE IF EXISTS temp_day_type_ids").executeUpdate();
+        // Delete temp time_band ids table
+        entityManager.createNativeQuery("DROP TABLE IF EXISTS temp_time_band_ids").executeUpdate();
+        // Delete temp installed_equipment ids table
+        entityManager.createNativeQuery("DROP TABLE IF EXISTS temp_installed_equipment_ids").executeUpdate();
+
+        logger.info("Point of interests deleted successfully");
     }
 
     private void deleteLink(String base,String link,String on) {

@@ -15,8 +15,19 @@ WHERE availability_condition_id IN (
 DELETE FROM availability_condition_day_types
 WHERE day_types_id IN (SELECT day_types_id FROM temp_day_type_ids);
 
+DROP TABLE IF EXISTS temp_time_band_ids;
+CREATE TEMP TABLE IF NOT EXISTS temp_time_band_ids AS
+SELECT id FROM time_band
+WHERE id IN (
+    SELECT time_band_id FROM day_type_time_band
+    WHERE day_type_id IN (SELECT id FROM temp_day_type_ids)
+);
+
 DELETE FROM day_type_time_band
 WHERE day_type_id IN (SELECT day_types_id FROM temp_day_type_ids);
+
+DELETE FROM time_band
+WHERE id in (SELECT id FROM temp_time_band_ids);
 
 DELETE FROM day_type
 WHERE id IN (SELECT day_types_id FROM temp_day_type_ids);
@@ -157,7 +168,7 @@ WHERE
         SELECT alternative_names_id FROM parking_entrance_alternative_names
     );
 
-DROP TABLE IS EXISTS temp_constraint_ids;
+DROP TABLE IF EXISTS temp_constraint_ids;
 CREATE TEMP TABLE IF NOT EXISTS temp_constraint_ids AS
 SELECT id FROM check_constraint
 WHERE
@@ -185,13 +196,27 @@ WHERE
         SELECT check_constraints_id FROM parking_entrance_check_constraints
     );
 
+
+DROP TABLE IF EXISTS temp_value_ids;
+CREATE TEMP TABLE IF NOT EXISTS temp_value_ids AS
+SELECT key_values_id FROM check_constraint_key_values
+WHERE check_constraint_id IN (SELECT id FROM temp_constraint_ids);
+
 DELETE FROM check_constraint_key_values
 WHERE check_constraint_id IN (SELECT id FROM temp_constraint_ids);
+
+DELETE FROM value_items
+WHERE value_id IN (SELECT key_values_id FROM temp_value_ids);
+
+DELETE FROM value
+WHERE id IN (SELECT key_values_id FROM temp_value_ids);
 
 DELETE FROM check_constraint
 WHERE id IN (SELECT id FROM temp_constraint_ids);
 
+DROP TABLE IF EXISTS temp_value_ids;
 DROP TABLE IF EXISTS temp_constraint_ids;
 DROP TABLE IF EXISTS temp_day_type_ids;
+DROP TABLE IF EXISTS temp_time_band_ids;
 DROP TABLE IF EXISTS temp_assessment_ids;
 DROP TABLE IF EXISTS temp_limitation_ids;

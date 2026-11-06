@@ -13,7 +13,7 @@ SELECT day_type_id FROM point_of_interest_opening_hours_day_type
 WHERE point_of_interest_opening_hours_id IN (
     SELECT id FROM point_of_interest_opening_hours
     WHERE id NOT IN (
-        SELECT point_of_interest_opening_hours_id FROM point_of_interest
+        SELECT point_of_interest_opening_hours_id FROM point_of_interest WHERE point_of_interest_opening_hours_id IS NOT NULL
     )
 );
 

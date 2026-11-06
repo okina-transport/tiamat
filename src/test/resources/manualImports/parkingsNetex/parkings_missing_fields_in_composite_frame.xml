@@ -1,0 +1,77 @@
+<PublicationDelivery version="1.0" xmlns="http://www.netex.org.uk/netex" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gml="http://www.opengis.net/gml/3.2" xsi:schemaLocation="http://www.netex.org.uk/netex ../../../xsd/NeTEx_publication.xsd">
+    <PublicationTimestamp>2026-08-18T14:05:07Z</PublicationTimestamp>
+    <ParticipantRef>VOI</ParticipantRef>
+    <PublicationRefreshInterval>PT6H</PublicationRefreshInterval>
+    <Description>VOI Netex</Description>
+    <dataObjects>
+        <CompositeFrame version="1.0" id="VOI:CompositeFrame:421">
+            <validityConditions>
+                <AvailabilityCondition version="any" id="VOI:AvailabilityCondition:421">
+                    <Name/>
+                    <FromDate>2026-08-18T14:05:07Z</FromDate>
+                </AvailabilityCondition>
+            </validityConditions>
+            <codespaces>
+                <Codespace id="VOI:Codespace:421">
+                    <Xmlns>VOI</Xmlns>
+                    <XmlnsUrl>http://www.netex.org.uk/netex</XmlnsUrl>
+                    <Description>Netex codespace for 421</Description>
+                </Codespace>
+            </codespaces>
+            <FrameDefaults>
+                <DefaultCodespaceRef ref="VOI:Codespace:421"/>
+            </FrameDefaults>
+            <frames>
+                <SiteFrame version="any" id="VOI:SiteFrame:421">
+                    <parkings>
+                        <Parking version="any" id="VOI:Parking:19881b0e-fb31-4e25-8e1d-77730fc45fa8">
+                            <Name lang="en">541</Name>
+                            <Description>Virtual station</Description>
+                            <Centroid>
+                                <Location>
+                                    <Longitude>-1.559868</Longitude>
+                                    <Latitude>47.223273</Latitude>
+                                </Location>
+                            </Centroid>
+                            <parkingProperties>
+                                <ParkingProperties version="any" id="VOI:ParkingProperty:pp_421_1">
+                                    <ParkingVehicleTypes>eCycle motorScooter</ParkingVehicleTypes>
+                                </ParkingProperties>
+                            </parkingProperties>
+                        </Parking>
+                        <Parking version="any" id="VOI:Parking:1fed01e2-54fd-4e03-a341-3c2017e318b0">
+                            <Name lang="en">52</Name>
+                            <Description>Virtual station</Description>
+                            <Centroid>
+                                <Location>
+                                    <Longitude>-1.536541</Longitude>
+                                    <Latitude>47.195899</Latitude>
+                                </Location>
+                            </Centroid>
+                            <parkingProperties>
+                                <ParkingProperties version="any" id="VOI:ParkingProperty:pp_421_2">
+                                    <ParkingVehicleTypes>eCycle motorScooter</ParkingVehicleTypes>
+                                </ParkingProperties>
+                            </parkingProperties>
+                        </Parking>
+                        <Parking version="any" id="VOI:Parking:471cf23e-232b-4464-9b08-a6a6e5382256">
+                            <Name lang="en">6</Name>
+                            <Description>Virtual station</Description>
+                            <Centroid>
+                                <Location>
+                                    <Longitude>-1.536954</Longitude>
+                                    <Latitude>47.213395</Latitude>
+                                </Location>
+                            </Centroid>
+                            <parkingProperties>
+                                <ParkingProperties version="any" id="VOI:ParkingProperty:pp_421_3">
+                                    <ParkingVehicleTypes>eCycle motorScooter</ParkingVehicleTypes>
+                                </ParkingProperties>
+                            </parkingProperties>
+                        </Parking>
+                    </parkings>
+                </SiteFrame>
+            </frames>
+        </CompositeFrame>
+    </dataObjects>
+</PublicationDelivery>

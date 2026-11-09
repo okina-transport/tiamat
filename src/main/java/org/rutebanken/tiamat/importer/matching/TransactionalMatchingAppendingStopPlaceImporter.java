@@ -200,6 +200,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                 boolean wheelChairChanged = false;
                 boolean tariffZoneChanged = false;
                 boolean privateCodeChanged = false;
+                boolean publicCodeChanged = false;
                 boolean hasTransportModeChanged = updateTransportMode(incomingStopPlace, copy);
 
 
@@ -219,6 +220,11 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
                     copy.setPrivateCode(incomingStopPlace.getPrivateCode());
                 }
 
+                if (incomingStopPlace.getPublicCode() != null && !incomingStopPlace.getPublicCode().equals(existingStopPlace.getPublicCode())) {
+                    publicCodeChanged = true;
+                    copy.setPublicCode(incomingStopPlace.getPublicCode());
+                }
+
                 boolean quayChanged = quayMerger.mergeQuays(incomingStopPlace, copy, CREATE_NEW_QUAYS, importParams);
                 boolean centroidChanged = false;
 
@@ -236,7 +242,7 @@ public class TransactionalMatchingAppendingStopPlaceImporter {
 
                 boolean updateAlternativeName = alternativeNameMerger.updateSiteElementAlternativeName(incomingStopPlace, copy);
 
-                if (quayChanged || keyValuesChanged || centroidChanged || nameChanged || wheelChairChanged || tariffZoneChanged || privateCodeChanged || hasTransportModeChanged || updateAlternativeName) {
+                if (quayChanged || keyValuesChanged || centroidChanged || nameChanged || wheelChairChanged || tariffZoneChanged || privateCodeChanged || publicCodeChanged || hasTransportModeChanged || updateAlternativeName) {
                     if (existingStopPlace.getParentSiteRef() != null && !existingStopPlace.isParentStopPlace()) {
                         org.rutebanken.tiamat.model.StopPlace existingParentStopPlace = stopPlaceRepository.findFirstByNetexIdOrderByVersionDesc(existingStopPlace.getParentSiteRef().getRef());
                         org.rutebanken.tiamat.model.StopPlace copyParentStopPlace = versionCreator.createCopy(existingParentStopPlace, org.rutebanken.tiamat.model.StopPlace.class);

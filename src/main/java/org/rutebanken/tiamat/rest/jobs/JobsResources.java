@@ -4,9 +4,12 @@ import com.amazonaws.services.directory.model.ServiceException;
 import org.rutebanken.tiamat.model.job.*;
 import org.rutebanken.tiamat.model.job.Link;
 import org.rutebanken.tiamat.repository.JobRepository;
+import org.rutebanken.tiamat.service.job.JobPurgeResult;
+import org.rutebanken.tiamat.service.job.JobPurgeService;
 import org.rutebanken.tiamat.service.job.JobService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 import jakarta.ws.rs.*;
@@ -27,11 +30,35 @@ public class JobsResources {
     @Context
     UriInfo uriInfo;
     private final JobRepository jobRepository;
+    private final JobPurgeService jobPurgeService;
 
     public JobsResources(JobService jobService,
-                         JobRepository jobRepository){
+                         JobRepository jobRepository,
+                         JobPurgeService jobPurgeService){
         this.jobService = jobService;
         this.jobRepository = jobRepository;
+        this.jobPurgeService = jobPurgeService;
+    }
+
+    /**
+     * Purge old completed jobs (and their export files), same semantics as Chouette's
+     * DELETE /chouette_iev/admin/completed_jobs. Called periodically by Marduk.
+     */
+    @DELETE
+    @Path("/completed")
+    @Produces({ MediaType.APPLICATION_JSON })
+    @PreAuthorize("@rolesChecker.hasRoleEdit()")
+    public Response removeCompletedJobs(@QueryParam("keepJobs") Integer keepJobs, @QueryParam("keepDays") Integer keepDays) {
+        if (keepJobs == null || keepDays == null || keepJobs < 0 || keepDays < 0) {
+            throw new WebApplicationException("keepJobs and keepDays are mandatory and must be greater than or equal to 0", Response.Status.BAD_REQUEST);
+        }
+        try {
+            JobPurgeResult result = jobPurgeService.purgeCompletedJobs(keepJobs, keepDays);
+            return Response.ok(result).build();
+        } catch (Exception ex) {
+            logger.error("Error while purging completed jobs", ex);
+            throw new WebApplicationException("INTERNAL_ERROR", Response.Status.INTERNAL_SERVER_ERROR);
+        }
     }
 
 

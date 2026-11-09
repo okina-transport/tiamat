@@ -20,11 +20,15 @@ import org.rutebanken.tiamat.model.job.Job;
 import org.rutebanken.tiamat.model.job.JobAction;
 import org.rutebanken.tiamat.model.job.JobStatus;
 import org.rutebanken.tiamat.model.job.JobType;
+import org.rutebanken.tiamat.service.job.JobPurgeCandidate;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface JobRepository extends PagingAndSortingRepository<Job, Long>, JobRepositoryCustom<Job>, JpaRepository<Job, Long>,
@@ -36,5 +40,25 @@ public interface JobRepository extends PagingAndSortingRepository<Job, Long>, Jo
 
     @Query("select j from Job j left join fetch j.operators where j.id in :ids order by j.started desc")
     List<Job> findJobsWithOperatorsFetching(List<Long> ids);
+
+    @Query("select new org.rutebanken.tiamat.service.job.JobPurgeCandidate(j.id, j.subFolder, j.type, j.action, j.fileName, coalesce(j.finished, j.started)) " +
+            "from Job j where j.status in :statuses")
+    List<JobPurgeCandidate> findPurgeCandidatesByStatusIn(@Param("statuses") Collection<JobStatus> statuses);
+
+    @Query("select new org.rutebanken.tiamat.service.job.JobPurgeCandidate(j.id, j.subFolder, j.type, j.action, j.fileName, coalesce(j.finished, j.started)) " +
+            "from Job j where j.status is null or j.status not in :statuses")
+    List<JobPurgeCandidate> findPurgeCandidatesByStatusNotIn(@Param("statuses") Collection<JobStatus> statuses);
+
+    @Modifying
+    @Query(value = "delete from job_operators where job_id in :ids", nativeQuery = true)
+    int deleteOperatorsByJobIdIn(@Param("ids") Collection<Long> ids);
+
+    @Modifying
+    @Query(value = "delete from job_id_list where job_id in :ids", nativeQuery = true)
+    int deleteJobIdListByJobIdIn(@Param("ids") Collection<Long> ids);
+
+    @Modifying
+    @Query("delete from Job j where j.id in :ids")
+    int deleteByIdIn(@Param("ids") Collection<Long> ids);
 
 }

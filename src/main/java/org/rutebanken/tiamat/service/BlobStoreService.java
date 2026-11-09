@@ -73,6 +73,25 @@ public class BlobStoreService {
         }
     }
 
+    /**
+     * Delete a blob, relative to the configured blob path.
+     *
+     * @return true if the blob existed and was deleted, false if it did not exist
+     */
+    public boolean delete(String fileName) {
+        String blobIdName = createBlobIdName(blobPath, fileName);
+        try {
+            if (!client.doesObjectExist(bucketName, blobIdName)) {
+                return false;
+            }
+            client.deleteObject(bucketName, blobIdName);
+            logger.debug("Deleted blob {} in bucket {}", blobIdName, bucketName);
+            return true;
+        } catch (Exception e) {
+            throw new RuntimeException("Error deleting blob " + blobIdName + " in bucket " + bucketName, e);
+        }
+    }
+
     private AmazonS3 getClient(String accessKey, String accessSecret) {
         try {
             logger.info(String.format("Getting client for key %s", accessKey));

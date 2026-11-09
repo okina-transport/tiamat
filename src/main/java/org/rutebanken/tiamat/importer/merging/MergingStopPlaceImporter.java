@@ -252,6 +252,7 @@ public class MergingStopPlaceImporter {
         boolean transportModeChanged = mergingUtils.updateProperty(copyStopPlace.getTransportMode(), incomingStopPlace.getTransportMode(), copyStopPlace::setTransportMode, "transport mode", netexId);
         boolean typeChanged = mergingUtils.updateProperty(copyStopPlace.getStopPlaceType(), incomingStopPlace.getStopPlaceType(), copyStopPlace::setStopPlaceType, "type", netexId);
         boolean weightingChanged = mergingUtils.updateProperty(copyStopPlace.getWeighting(), incomingStopPlace.getWeighting(), copyStopPlace::setWeighting, "weighting", netexId);
+        boolean publicCodeChanged = mergingUtils.updateProperty(copyStopPlace.getPublicCode(), incomingStopPlace.getPublicCode(), copyStopPlace::setPublicCode, "public code", netexId);
 
         boolean quaysChanged = false;
         if (incomingStopPlace.getQuays() != null && (!new HashSet<>(copyStopPlace.getQuays()).containsAll(incomingStopPlace.getQuays()) ||
@@ -279,7 +280,7 @@ public class MergingStopPlaceImporter {
         }
 
         if (validBetweenChanged || keyValuesChanged || nameChanged || descriptionChanged || centroidChanged || accessibilityAssessmentChanged ||
-                transportModeChanged || typeChanged || weightingChanged || quaysChanged) {
+                transportModeChanged || typeChanged || weightingChanged || publicCodeChanged || quaysChanged) {
             logger.info("Updated existing stop place {}. ", copyStopPlace);
             copyStopPlace = stopPlaceVersionedSaverService.saveNewVersion(existingStopPlace, copyStopPlace);
             return updateCache(copyStopPlace);

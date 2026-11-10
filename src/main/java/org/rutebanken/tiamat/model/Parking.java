@@ -98,6 +98,7 @@ public class Parking
     protected String siret;
     protected String typeOfParkingRef;
     protected String operator;
+    @Column(length = 1000)
     protected String address;
 
     @Transient

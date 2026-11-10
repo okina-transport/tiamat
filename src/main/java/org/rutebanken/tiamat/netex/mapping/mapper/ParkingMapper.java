@@ -31,8 +31,6 @@ import org.rutebanken.tiamat.netex.NetexUtils;
 import java.math.BigInteger;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.rutebanken.tiamat.netex.id.NetexIdHelper.*;
 import static org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper.ORIGINAL_ID_KEY;
@@ -41,7 +39,6 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
 
     private static final ObjectFactory netexObjectFactory = new ObjectFactory();
 
-    private static final Pattern patternStreetNumber = Pattern.compile("^(\\d+)\\s*(.*)$");
 
     private final String superId;
 
@@ -66,16 +63,11 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
             PostalAddress netexPostalAddress = new PostalAddress();
             netexPostalAddress.setId(superId + ":PostalAddress:" + UUID.randomUUID());
             netexPostalAddress.setVersion("any");
-            if (tiamatParking.getAddress() != null) {
-                // Expression régulière pour capturer les premiers chiffres au début de l'adresse
-                Matcher matcher = patternStreetNumber.matcher(tiamatParking.getAddress());
-
-                if (matcher.matches()) {
-                    netexPostalAddress.setHouseNumber(matcher.group(1));
-                    netexPostalAddress.setStreet(new MultilingualString().withValue(matcher.group(2)));
-                } else {
-                    netexPostalAddress.setStreet(new MultilingualString().withValue(tiamatParking.getAddress()));
-                }
+            if (StringUtils.isNotBlank(tiamatParking.getAddress())) {
+                MultilingualString addressLine1 = new MultilingualString();
+                addressLine1.setValue(tiamatParking.getAddress());
+                addressLine1.setLang("fr");
+                netexPostalAddress.setAddressLine1(addressLine1);
             }
             if (tiamatParking.getInsee() != null) {
                 netexPostalAddress.setPostalRegion(tiamatParking.getInsee());
@@ -277,9 +269,13 @@ public class ParkingMapper extends CustomMapper<Parking, org.rutebanken.tiamat.m
         mapPaymentMethodBtoA(tiamatParking, netexParking);
         mapVehicleEntrancesMethodBtoA(tiamatParking, netexParking);
 
-        netexParking.getCardsAccepted().clear();
-        if (CollectionUtils.isNotEmpty(tiamatParking.getCardsAccepted())) {
-            netexParking.getCardsAccepted().addAll(tiamatParking.getCardsAccepted());
+        // CardsAccepted is an xsd:NMTOKENS (minLength 1) : never call getCardsAccepted() on the NeTEx object
+        // when there is nothing to export, otherwise the lazily created empty list is marshalled as <CardsAccepted/>
+        List<String> cardsAccepted = CollectionUtils.emptyIfNull(tiamatParking.getCardsAccepted()).stream()
+                .filter(StringUtils::isNotBlank)
+                .toList();
+        if (!cardsAccepted.isEmpty()) {
+            netexParking.withCardsAccepted(cardsAccepted);
         }
 
         if (StringUtils.isNotEmpty(tiamatParking.getParkingTypeRef())) {

@@ -32,6 +32,8 @@ public class AlternateSuperIdTest {
         MappingContext mappingContext = new MappingContext(globalProperties);
         parkingMapper.mapBtoA(tiamatParkingToExport, convertedNetex, mappingContext);
         Assertions.assertTrue(convertedNetex.getPostalAddress().getId().startsWith("ALTID:PostalAddress:"));
+        Assertions.assertEquals("253 rue machin", convertedNetex.getPostalAddress().getAddressLine1().getValue());
+        Assertions.assertEquals("fr", convertedNetex.getPostalAddress().getAddressLine1().getLang());
     }
 
     @Test

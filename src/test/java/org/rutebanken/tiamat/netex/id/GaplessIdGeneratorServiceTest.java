@@ -52,6 +52,9 @@ public class GaplessIdGeneratorServiceTest extends TiamatIntegrationTest {
     @Autowired
     private NetexIdHelper netexIdHelper;
 
+    @Autowired
+    private IdGeneratorConnectionPool idGeneratorConnectionPool;
+
     @Test
     public void verifyNetexIdAssignedToStop() {
         StopPlace stopPlace = new StopPlace();
@@ -128,7 +131,7 @@ public class GaplessIdGeneratorServiceTest extends TiamatIntegrationTest {
 
         final String testEntityName = "testEntityName";
         int fetchSize = LOW_LEVEL_AVAILABLE_IDS;
-        GaplessIdGeneratorService gaplessIdGeneratorService = new GaplessIdGeneratorService(entityManagerFactory, hazelcastInstance, generatedIdState, fetchSize);
+        GaplessIdGeneratorService gaplessIdGeneratorService = new GaplessIdGeneratorService(idGeneratorConnectionPool, hazelcastInstance, generatedIdState, fetchSize);
         long actual = gaplessIdGeneratorService.getNextIdForEntity(testEntityName);
 
         assertThat(actual).as("generated id is last id plus one").isEqualTo(1L);
@@ -184,7 +187,7 @@ public class GaplessIdGeneratorServiceTest extends TiamatIntegrationTest {
         String entityName = "testEntityName2";
 
         int fetchSize = LOW_LEVEL_AVAILABLE_IDS;
-        GaplessIdGeneratorService gaplessIdGeneratorService = new GaplessIdGeneratorService(entityManagerFactory, hazelcastInstance, generatedIdState, fetchSize);
+        GaplessIdGeneratorService gaplessIdGeneratorService = new GaplessIdGeneratorService(idGeneratorConnectionPool, hazelcastInstance, generatedIdState, fetchSize);
 
         /**
          * Offset to not claim ids that will be present in the available ids queue.
@@ -217,7 +220,7 @@ public class GaplessIdGeneratorServiceTest extends TiamatIntegrationTest {
     public void ignoreDuplicateIdsOnInsert() {
         String entityName = "testEntityName2";
         int fetchSize = LOW_LEVEL_AVAILABLE_IDS;
-        GaplessIdGeneratorService gaplessIdGeneratorService = new GaplessIdGeneratorService(entityManagerFactory, hazelcastInstance, generatedIdState, fetchSize);
+        GaplessIdGeneratorService gaplessIdGeneratorService = new GaplessIdGeneratorService(idGeneratorConnectionPool, hazelcastInstance, generatedIdState, fetchSize);
         Set<Long> claimedIds = new HashSet<>();
         claimedIds.add(gaplessIdGeneratorService.getNextIdForEntity(entityName, 10L));
         gaplessIdGeneratorService.persistClaimedIds();

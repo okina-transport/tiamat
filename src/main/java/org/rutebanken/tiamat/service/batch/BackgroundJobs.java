@@ -77,21 +77,25 @@ public class BackgroundJobs {
         logger.info("Scheduling background job for updating stop places");
         backgroundJobExecutor.scheduleAtFixedRate(stopPlaceRefUpdaterService::updateAllStopPlaces, 30, 280, TimeUnit.MINUTES);
 
+        // File creation jobs are staggered so that they never start at the same time:
+        // each one holds a DB connection (long transaction scrolling a whole table) and running
+        // them together can exhaust the connection pool.
+        // 2h jobs start at minutes 0, 20, 40, 60 (mod 120); the 3h job starts at minute 90,
+        // so its runs fall at minutes 30 or 90 (mod 120), never overlapping the start of a 2h job.
         logger.info("Scheduling background job for quay id mapping file creation");
-        backgroundJobExecutor.scheduleAtFixedRate(quayIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
+        backgroundJobExecutor.scheduleAtFixedRate(quayIdMappingService::createIdMappingFile, 0, 120, TimeUnit.MINUTES);
 
         logger.info("Scheduling background job for stopPlace id mapping file creation");
-        backgroundJobExecutor.scheduleAtFixedRate(stopPlaceIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
+        backgroundJobExecutor.scheduleAtFixedRate(stopPlaceIdMappingService::createIdMappingFile, 20, 120, TimeUnit.MINUTES);
 
         logger.info("Scheduling background job for parking id mapping file creation");
-        backgroundJobExecutor.scheduleAtFixedRate(parkingIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
+        backgroundJobExecutor.scheduleAtFixedRate(parkingIdMappingService::createIdMappingFile, 40, 120, TimeUnit.MINUTES);
 
         logger.info("Scheduling background job for POI id mapping file creation");
-        backgroundJobExecutor.scheduleAtFixedRate(poiIdMappingService::createIdMappingFile, 0, 2, TimeUnit.HOURS);
+        backgroundJobExecutor.scheduleAtFixedRate(poiIdMappingService::createIdMappingFile, 60, 120, TimeUnit.MINUTES);
 
-
-        logger.info("Scheduling background job for POI id mapping file creation");
-        backgroundJobExecutor.scheduleAtFixedRate(stopPlaceQuayAssociationService::createSpQuayFile, 0, 3, TimeUnit.HOURS);
+        logger.info("Scheduling background job for stopPlace/quay association file creation");
+        backgroundJobExecutor.scheduleAtFixedRate(stopPlaceQuayAssociationService::createSpQuayFile, 90, 180, TimeUnit.MINUTES);
 
         if (shoundSyncIds) {
             syncIdGenerator();

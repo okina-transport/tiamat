@@ -19,22 +19,20 @@ import com.hazelcast.collection.ISet;
 import com.hazelcast.core.HazelcastInstance;
 
 import com.hazelcast.cp.lock.FencedLock;
-import org.hibernate.engine.jdbc.internal.BasicFormatterImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityTransaction;
-import jakarta.persistence.Query;
-import java.math.BigInteger;
+import java.sql.Array;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
 
 import static java.util.stream.Collectors.toList;
 
@@ -62,24 +60,22 @@ public class GaplessIdGeneratorService {
 
     public static final int INSERT_CLAIMED_ID_THRESHOLD = 1000;
 
-    private static BasicFormatterImpl basicFormatter = new BasicFormatterImpl();
-
     private final int fetchSize;
 
-    private final EntityManagerFactory entityManagerFactory;
+    private final IdGeneratorConnectionPool connectionPool;
     private final HazelcastInstance hazelcastInstance;
     private final GeneratedIdState generatedIdState;
 
     @Autowired
-    public GaplessIdGeneratorService(EntityManagerFactory entityManagerFactory, HazelcastInstance hazelcastInstance, GeneratedIdState generatedIdState) {
-        this.entityManagerFactory = entityManagerFactory;
+    public GaplessIdGeneratorService(IdGeneratorConnectionPool connectionPool, HazelcastInstance hazelcastInstance, GeneratedIdState generatedIdState) {
+        this.connectionPool = connectionPool;
         this.hazelcastInstance = hazelcastInstance;
         this.generatedIdState = generatedIdState;
         this.fetchSize = DEFAULT_FETCH_SIZE;
     }
 
-    public GaplessIdGeneratorService(EntityManagerFactory entityManagerFactory, HazelcastInstance hazelcastInstance, GeneratedIdState generatedIdState, int fetchSize) {
-        this.entityManagerFactory = entityManagerFactory;
+    public GaplessIdGeneratorService(IdGeneratorConnectionPool connectionPool, HazelcastInstance hazelcastInstance, GeneratedIdState generatedIdState, int fetchSize) {
+        this.connectionPool = connectionPool;
         this.hazelcastInstance = hazelcastInstance;
         this.generatedIdState = generatedIdState;
 
@@ -152,26 +148,21 @@ public class GaplessIdGeneratorService {
      * Write claimed IDs and generate new ones.
      */
     private void writeClaimedIdsAndGenerateNew(String entityTypeName, boolean timeToGenerateAvailableIds) {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
-        executeInTransaction(() -> {
+        executeInTransaction(connection -> {
             BlockingQueue<Long> availableIds = generatedIdState.getQueueForEntity(entityTypeName);
             ISet<Long> claimedIds = generatedIdState.getClaimedIdListForEntity(entityTypeName);
 
             if (!claimedIds.isEmpty()) {
                 // Ignore duplicates because claimed ids could already have been inserted as available IDs previously
                 logger.debug("Inserting {} claimed IDs for {}", claimedIds.size(), entityTypeName);
-                insertIdsIgnoreDuplicates(entityTypeName, claimedIds, entityManager);
+                insertIdsIgnoreDuplicates(entityTypeName, claimedIds, connection);
                 claimedIds.destroy();
             }
             if (timeToGenerateAvailableIds) {
                 logger.debug("Generating new available IDs for {}", entityTypeName);
-                try {
-                    generateNewIds(entityTypeName, availableIds, entityManager);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                generateNewIds(entityTypeName, availableIds, connection);
             }
-        }, entityManager);
+        });
     }
 
     /**
@@ -179,13 +170,13 @@ public class GaplessIdGeneratorService {
      *
      * @param entityTypeName Table to writeClaimedIdsAndGenerateNew IDs for
      * @param availableIds The (empty) queue of available IDs to fill
-     * @param entityManager The entity manager to use
+     * @param connection The connection to use
      */
-    private void generateNewIds(String entityTypeName, BlockingQueue<Long> availableIds, EntityManager entityManager) throws InterruptedException {
+    private void generateNewIds(String entityTypeName, BlockingQueue<Long> availableIds, Connection connection) throws SQLException, InterruptedException {
         List<Long> retrievedIds = new ArrayList<>();
 
         while (retrievedIds.isEmpty()) {
-            retrievedIds.addAll(retrieveIds(entityTypeName, entityManager));
+            retrievedIds.addAll(retrieveIds(entityTypeName, connection));
         }
 
         for (long retrievedId : retrievedIds) {
@@ -200,11 +191,10 @@ public class GaplessIdGeneratorService {
      *
      * @return list of available IDs for table.
      */
-    @SuppressWarnings(value = "unchecked")
-    private List<Long> retrieveIds(String entityTypeName, EntityManager entityManager) {
+    private List<Long> retrieveIds(String entityTypeName, Connection connection) throws SQLException {
         long lastId = generatedIdState.getLastIdForEntity(entityTypeName);
 
-        List<Long> retrievedIds = selectNextAvailableIds(entityTypeName, lastId, entityManager);
+        List<Long> retrievedIds = selectNextAvailableIds(entityTypeName, lastId, connection);
 
         logger.trace("Generated for {}: {}", entityTypeName, retrievedIds);
 
@@ -221,73 +211,62 @@ public class GaplessIdGeneratorService {
      * This inserts a list of IDs ignoring duplicates
      * @param tableName Entity name
      * @param list List of IDs
-     * @param entityManager Entity manager to use
+     * @param connection Connection to use
      */
-    private void insertIdsIgnoreDuplicates(String tableName, Set<Long> list, EntityManager entityManager) {
+    private void insertIdsIgnoreDuplicates(String tableName, Set<Long> list, Connection connection) throws SQLException {
         if (list.isEmpty()) {
             throw new IllegalArgumentException("No IDs to insert");
         }
 
-        Iterator<Long> iterator = list.iterator();
+        String sql = "INSERT INTO id_generator(table_name, id_value) " +
+                "SELECT ?, ids.id_value FROM unnest(?) AS ids(id_value) " +
+                "ON CONFLICT DO NOTHING";
 
-        StringBuilder insertUsedIdsSql = new StringBuilder("insert into id_generator(table_name, id_value) ")
-                .append("select id1.table_name, id1.id_value ")
-                .append("from ( ")
-                .append("select cast('")
-                .append(tableName)
-                .append("' as varchar) ")
-                .append("as table_name, ")
-                .append(iterator.next()) // First value
-                .append(" as id_value ");
-
-        while(iterator.hasNext()) {
-            insertUsedIdsSql.append("union all ")
-                    .append("select '")
-                    .append(tableName)
-                    .append("',")
-                    .append(iterator.next())
-                    .append(" ");
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            Array idArray = connection.createArrayOf("bigint", list.toArray(new Long[0]));
+            try {
+                statement.setString(1, tableName);
+                statement.setArray(2, idArray);
+                int result = statement.executeUpdate();
+                logger.trace("Inserted {} ids for {}", result, tableName);
+            } finally {
+                idArray.free();
+            }
         }
-
-        insertUsedIdsSql.append(" ) as id1 ")
-                .append("where not exists (select 1 from id_generator id2 where id2.id_value = id1.id_value and id2.table_name = id1.table_name)");
-
-        // Format the sql for logging
-        String sql = basicFormatter.format(insertUsedIdsSql.toString());
-
-        Query query = entityManager.createNativeQuery(sql);
-        logger.trace(sql);
-        int result = query.executeUpdate();
-        logger.trace("Inserted {} ids for {}", result, tableName);
-        entityManager.flush();
     }
 
     /**
      * Use SQL command genererate_series to be able to find new IDs, without selecting the ones already used.
      * @param tableName The name of the entity.
      * @param lastId The last ID to avoid selecting the same window each time
-     * @param entityManager The entity manager to use
+     * @param connection The connection to use
      * @return A list of fresh IDs to use
      */
-    private List<Long> selectNextAvailableIds(String tableName, long lastId, EntityManager entityManager) {
+    private List<Long> selectNextAvailableIds(String tableName, long lastId, Connection connection) throws SQLException {
         logger.debug("Will fetch new IDs from id_generator table for {}, lastId: {}", tableName, lastId);
 
         long lastIdPlusOne = lastId + 1;
         long upperBound = lastId + fetchSize;
 
-        String sql = "SELECT * FROM generate_series(" + lastIdPlusOne + "," + upperBound + ")  " +
-                "EXCEPT (SELECT id_value FROM id_generator WHERE table_name='" + tableName + "') ";
+        String sql = "SELECT * FROM generate_series(?::bigint, ?::bigint) " +
+                "EXCEPT (SELECT id_value FROM id_generator WHERE table_name = ?)";
 
-        Query sqlQuery = entityManager.createNativeQuery(sql);
-
-        @SuppressWarnings("unchecked")
-        List<Long> results = sqlQuery.getResultList();
+        List<Long> results = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, lastIdPlusOne);
+            statement.setLong(2, upperBound);
+            statement.setString(3, tableName);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    results.add(resultSet.getLong(1));
+                }
+            }
+        }
 
         logger.trace("Got generated values: {}", results);
 
-        return results.stream()
-                .sorted((v1, v2) -> Long.compare(v1, v2))
-                .collect(toList());
+        Collections.sort(results);
+        return results;
     }
 
     /**
@@ -309,18 +288,17 @@ public class GaplessIdGeneratorService {
 
             if(gotLock) {
                 try {
-                    EntityManager entityManager = entityManagerFactory.createEntityManager();
-                    executeInTransaction(() -> {
+                    executeInTransaction(connection -> {
                         ISet<Long> claimedIds = generatedIdState.getClaimedIdListForEntity(entityTypeName);
                         if(!claimedIds.isEmpty()) {
                             logger.info("About to write {} claimed IDs to db for {}", claimedIds.size(), entityTypeName);
-                            insertIdsIgnoreDuplicates(entityTypeName, claimedIds, entityManager);
+                            insertIdsIgnoreDuplicates(entityTypeName, claimedIds, connection);
                             persisted.addAndGet(claimedIds.size());
                             claimedIds.destroy();
                         } else {
                             logger.debug("No claimed IDs to insert for {}", entityTypeName);
                         }
-                    }, entityManager);
+                    });
                 } catch (Exception e) {
                   logger.warn("Error writing claimed IDs for {} in transaction", entityTypeName, e);
                 } finally {
@@ -333,35 +311,47 @@ public class GaplessIdGeneratorService {
         }
     }
 
+    @FunctionalInterface
+    private interface ConnectionWork {
+        void execute(Connection connection) throws SQLException, InterruptedException;
+    }
+
     /**
-     * Helper method to execute runnable in transaction, and handle exceptions.
-     * @param runnable The runnable to run inside the transaction
-     * @param entityManager The entity manager to retrieve the transaction from
+     * Helper method to execute work in a transaction on a connection from the dedicated ID generator pool.
+     * The connection is committed on success, rolled back on failure, and always returned to the pool.
+     * @param work The work to run inside the transaction
      */
-    private void executeInTransaction(Runnable runnable, EntityManager entityManager) {
-        EntityTransaction transaction = entityManager.getTransaction();
-
-        try {
-            transaction.begin();
-            runnable.run();
-            transaction.commit();
-
-        } catch (RuntimeException e) {
-            rollbackAndThrow(transaction, e);
-        } catch (Exception e) {
-            rollbackAndThrow(transaction, e);
-        } finally {
-            entityManager.close();
+    private void executeInTransaction(ConnectionWork work) {
+        try (Connection connection = connectionPool.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                work.execute(connection);
+                connection.commit();
+            } catch (Exception e) {
+                rollbackAndThrow(connection, e);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
     /**
      * Helper method to rollback transaction if possible
-     * @param transaction The transaction to rollback
+     * @param connection The connection holding the transaction to rollback
      * @param e The exception to throw
      */
-    private void rollbackAndThrow(EntityTransaction transaction, Exception e) {
-        if (transaction != null && transaction.isActive()) transaction.rollback();
+    private void rollbackAndThrow(Connection connection, Exception e) {
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackException) {
+            e.addSuppressed(rollbackException);
+        }
+        if (e instanceof InterruptedException) {
+            Thread.currentThread().interrupt();
+        }
+        if (e instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
         throw new RuntimeException(e);
     }
 

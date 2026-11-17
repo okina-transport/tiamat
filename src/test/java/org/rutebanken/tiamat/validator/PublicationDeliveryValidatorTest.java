@@ -40,6 +40,7 @@ class PublicationDeliveryValidatorTest {
     private static final File NETEX_PARKING_XML_TYPE_OF_FRAME_INVALID = new File("src/test/resources/manualImports/parkingsNetex/parkings_v1.2_tof_invalid.xml");
     private static final File NETEX_PARKING_XML_TYPE_OF_FRAME_VALID = new File("src/test/resources/manualImports/parkingsNetex/parkings_v1.2_tof_valid.xml");
     private static final File NETEX_POI_TWO_VALID = new File("src/test/resources/manualImports/poiNetex/poi_two_valid.xml");
+    private static final File NETEX_PARKING_MISSING_FIELDS_IN_COMPOSITE_FRAME = new File("src/test/resources/manualImports/parkingsNetex/parkings_missing_fields_in_composite_frame.xml");
     private final PublicationDeliveryUnmarshaller unmarshaller = new PublicationDeliveryUnmarshaller();
 
     @Mock
@@ -55,7 +56,7 @@ class PublicationDeliveryValidatorTest {
     }
 
     @Test
-    void givenParkingHasMoreThan3Levels_whenValidatingPublicationDelivery_thenProducesValidationError() throws IOException, JAXBException, SAXException {
+     void givenParkingHasMoreThan3Levels_whenValidatingPublicationDelivery_thenProducesValidationError() throws IOException, JAXBException, SAXException {
         // Arrange
         var pd = unmarshaller.unmarshal(new FileInputStream(NETEX_PARKING_XML_MORE_THAN_3_PARKING_LEVELS));
         Errors errors = new BeanPropertyBindingResult(pd, "");
@@ -221,6 +222,20 @@ class PublicationDeliveryValidatorTest {
         // Assert
         Mockito.verify(mockPointOfInterestValidator, Mockito.times(2)).validate(any(), eq(errors));
         Mockito.verifyNoInteractions(mockParkingValidator);
+    }
+
+    @Test
+    void givenParkingsInSiteFrameInCompositeFrame_whenValidatingPublicationDelivery_thenParkingsAreAllChecked() throws IOException, JAXBException, SAXException {
+        // Arrange
+        var pd = unmarshaller.unmarshal(new FileInputStream(NETEX_PARKING_MISSING_FIELDS_IN_COMPOSITE_FRAME));
+        Errors errors = new BeanPropertyBindingResult(pd, "");
+        Mockito.doNothing().when(mockParkingValidator).validate(any(), eq(errors));
+
+        // Act
+        tested.validate(pd, errors);
+
+        // Assert
+        Mockito.verify(mockParkingValidator, Mockito.times(3)).validate(any(), eq(errors));
     }
 
     record FieldErrorRecordTest(String field, String code, Object[] args) {

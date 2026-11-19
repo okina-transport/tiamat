@@ -4,6 +4,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.rutebanken.netex.model.*;
+import org.rutebanken.tiamat.general.ImportErrorLimit;
 import org.rutebanken.tiamat.netex.NetexConstants;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
@@ -40,11 +41,16 @@ public class PublicationDeliveryValidator implements Validator {
             var frame = publicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame().get(i);
             errors.pushNestedPath(String.format("compositeFrameOrCommonFrame[%d].value", i));
             if (frame.getValue() instanceof GeneralFrame generalFrame) {
+                // the nested paths must be popped before skipping a frame: otherwise the paths of the following frames
+                // (ex: the site frame of points of interest) are wrong and the validation fails with NotReadablePropertyException
                 if (generalFrame.getMembers() == null || CollectionUtils.isEmpty(generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity())) {
+                    errors.popNestedPath(); // compositeFrameOrCommonFrame[i].value
                     continue;
                 }
                 errors.pushNestedPath("members");
                 if (generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity().stream().noneMatch(e -> e.getValue() instanceof Parking)) {
+                    errors.popNestedPath(); // members
+                    errors.popNestedPath(); // compositeFrameOrCommonFrame[i].value
                     continue;
                 }
                 if (generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity().stream().noneMatch(e -> e.getValue() instanceof TypeOfFrame)) {
@@ -75,6 +81,10 @@ public class PublicationDeliveryValidator implements Validator {
                         validateTypeOfFrame(tof, errors);
                     }
                     errors.popNestedPath();
+                    if (ImportErrorLimit.isExceeded(errors.getErrorCount())) {
+                        // too many errors: the other entities are not checked
+                        break;
+                    }
                 }
                 for (String parkingTopLevelId : parkingTopLevelIds) {
                     // initial depth is 1
@@ -87,6 +97,9 @@ public class PublicationDeliveryValidator implements Validator {
                 validatePointsOfInterest(siteFrame, errors);
             }
             errors.popNestedPath(); // compositeFrameOrCommonFrame[i].value
+            if (ImportErrorLimit.isExceeded(errors.getErrorCount())) {
+                break;
+            }
         }
         errors.popNestedPath(); // dataObjects
     }
@@ -101,6 +114,10 @@ public class PublicationDeliveryValidator implements Validator {
             errors.pushNestedPath(String.format("pointOfInterest[%d]", i));
             pointOfInterestValidator.validate(pointsOfInterest.get(i), errors);
             errors.popNestedPath();
+            if (ImportErrorLimit.isExceeded(errors.getErrorCount())) {
+                // too many errors: the other points of interest are not checked
+                break;
+            }
         }
         errors.popNestedPath();
     }

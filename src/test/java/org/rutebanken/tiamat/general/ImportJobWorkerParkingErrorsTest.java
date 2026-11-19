@@ -4,6 +4,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.rutebanken.tiamat.TiamatIntegrationTest;
+import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.model.job.*;
 import org.rutebanken.tiamat.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -157,6 +158,21 @@ class ImportJobWorkerParkingErrorsTest extends TiamatIntegrationTest {
                         .withParam("field", "type_ouvrage")
                         .withParam("allowedValues", "enclos_en_surface, ouvrage, covered, openSpace, multistorey, underground, roadside, undefined, other, cycleHire")
                         .withParam("line", "3").withParam("errorValue", "souterrain"));
+    }
+
+    @Test
+    void truncatesLongAddressAndReportsWarning() throws IOException {
+        Job job = runParkingImport("parkings_long_address.csv");
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.FINISHED);
+        assertThat(job.getErrors()).containsExactly(JobError.warning(AnalyzeImportErrorType.FIELD_TRUNCATED)
+                .withParam("field", "address")
+                .withParam("entityId", "P1")
+                .withParam("originalLength", "1500")
+                .withParam("maxLength", "1000"));
+        assertThat(parkingRepository.findAll())
+                .extracting(parking -> parking.getAddress().length())
+                .containsExactly(Parking.ADDRESS_MAX_LENGTH);
     }
 
     private Job runParkingImport(String fileName) throws IOException {

@@ -72,6 +72,10 @@ public class ParkingsCSVHelper {
         CSVHelper.validateHeaders(EXPECTED_HEADERS, actualHeaders, "parking");
 
         for (CSVRecord csvRecord : parser) {
+            if (ImportErrorLimit.isExceeded(rowErrors.size())) {
+                // too many errors: the other rows are not checked
+                break;
+            }
             // physical line where the record ends: blank lines and multi-line quoted fields are counted
             int fileLine = (int) csvRecord.getParser().getCurrentLineNumber();
             if (csvRecord.size() != EXPECTED_HEADERS.size()) {

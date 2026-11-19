@@ -27,6 +27,7 @@ import org.rutebanken.tiamat.model.Parking;
 import org.rutebanken.tiamat.netex.NetexUtils;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper;
+import org.rutebanken.tiamat.validator.FieldLengthValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +66,12 @@ public class ParkingsImportHandler {
 
     @Autowired
     private HazelcastInstance hazelcastInstance;
+
+    private final FieldLengthValidator fieldLengthValidator;
+
+    public ParkingsImportHandler(FieldLengthValidator fieldLengthValidator) {
+        this.fieldLengthValidator = fieldLengthValidator;
+    }
 
     public void handleParkings(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger parkingsCreatedOrUpdated, SiteFrame responseSiteframe) {
         if (!publicationDeliveryHelper.hasParkings(netexSiteFrame)) {
@@ -114,6 +121,8 @@ public class ParkingsImportHandler {
 
     public void handleParkingsGeneralFrame(List<org.rutebanken.netex.model.Parking> tiamatParking, ImportParams importParams, List<JAXBElement<? extends EntityStructure>> members, AtomicInteger parkingsCreatedOrUpdated, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets, List<TransportType> transportTypes, List<TypeOfPaymentMethod> topms) {
         List<Parking> parkingsParsed = parseParkings(tiamatParking, generalOrganisations, responsibilitySets, transportTypes, topms);
+        // every text value must fit in its database column, otherwise the whole file is rejected before any parking is saved
+        fieldLengthValidator.checkAll(parkingsParsed);
 
         int numberOfParkingsBeforeFiltering = parkingsParsed.size();
         logger.info("About to filter {} parkings based on topographic references: {}", parkingsParsed.size(), importParams.targetTopographicPlaces);

@@ -43,6 +43,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -77,6 +78,7 @@ public class ImportJobWorker implements Runnable {
     private boolean keepStopGeolocalisation;
     private boolean updateStopAccessibility;
     private GbfsParkingImportParams gbfsParkingImportParams;
+    private NetexLineLocator netexLineLocator;
 
     protected ImportJobWorker(Job job, JobRepository jobRepository,
                               PublicationDeliveryUnmarshaller publicationDeliveryUnmarshaller, PointOfInterestCSVHelper poiHelper, NetexImporter netexImporter, ParkingsImportedService parkingsImportedService, MissingInseeCodeService missingInseeCodeService, GbfsParkingImporter gbfsParkingImporter, Messages messages) {
@@ -97,7 +99,7 @@ public class ImportJobWorker implements Runnable {
         if (authentication != null) {
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
-
+        ImportWarnings.start();
 
         try {
             switch (job.getType()) {
@@ -144,9 +146,7 @@ public class ImportJobWorker implements Runnable {
                         .map(oe -> messages.get(oe.getCode(), oe.getArguments()))
                         .collect(Collectors.joining(System.lineSeparator()));
                 if (job.getType() == JobType.NETEX_PARKING || job.getType() == JobType.NETEX_POI) {
-                    job.setErrors(NetexValidationErrorClassifier.classify(bindException).stream()
-                            .map(JobError::error)
-                            .collect(Collectors.toList()));
+                    job.setErrors(NetexValidationErrorClassifier.toJobErrors(bindException, netexLineLocator));
                 }
             } else {
                 exceptionMessage = e.getMessage();
@@ -156,6 +156,12 @@ public class ImportJobWorker implements Runnable {
                         .map(ImportJobWorker::toJobError)
                         .distinct()
                         .collect(Collectors.toList()));
+            }
+            if (e instanceof InvalidXmlException invalidXmlException) {
+                job.setErrors(List.of(invalidXmlException.toJobError()));
+            }
+            if (e instanceof FieldTooLongException fieldTooLongException) {
+                job.setErrors(fieldTooLongException.toJobErrors(netexLineLocator));
             }
             if (e instanceof InvalidTemplateException invalidTemplateException) {
                 job.setErrors(List.of(invalidTemplateException.toJobError(job.getFileName())));
@@ -171,9 +177,26 @@ public class ImportJobWorker implements Runnable {
                 Thread.currentThread().interrupt();
             }
         } finally {
+            addWarnings(ImportWarnings.stop());
+            job.setErrors(ImportErrorLimit.cap(job.getErrors()));
             jobRepository.save(job);
             closeInputStream();
         }
+    }
+
+    /**
+     * Warnings (ex: truncated values) are reported after the errors, whatever the status of the job
+     */
+    private void addWarnings(List<JobError> warnings) {
+        if (warnings.isEmpty()) {
+            return;
+        }
+        List<JobError> errorsAndWarnings = new ArrayList<>();
+        if (job.getErrors() != null) {
+            errorsAndWarnings.addAll(job.getErrors());
+        }
+        errorsAndWarnings.addAll(warnings);
+        job.setErrors(errorsAndWarnings);
     }
 
     private void closeInputStream() {
@@ -244,18 +267,108 @@ public class ImportJobWorker implements Runnable {
 
     private void launchNetexParkingImport() throws IOException, BindException {
         PublicationDeliveryStructure incomingPublicationDelivery = unmarshalNetex();
+        if (!containsParking(incomingPublicationDelivery)) {
+            throw new AnalyzeImportException(AnalyzeImportErrorType.NO_DATA_ROWS, "The NeTEx file does not contain any parking");
+        }
         netexImporter.importProcess(incomingPublicationDelivery, new ImportParams(), false);
     }
 
+    /**
+     * Two objects of the file must not share the same id: the whole file is rejected, before any import.
+     */
+    private void checkDuplicatedNetexIds() {
+        List<DuplicatedIdentifierException.Duplicate> duplicates = netexLineLocator.findDuplicatedIds();
+        if (!duplicates.isEmpty()) {
+            String duplicatesMsg = duplicates.stream()
+                    .map(duplicate -> duplicate.id() + " (line " + duplicate.line() + ")")
+                    .collect(Collectors.joining(", "));
+            throw new DuplicatedIdentifierException("There are objects sharing the same id in your NeTEx file. Duplicates: " + duplicatesMsg,
+                    job.getFileName(), "id", duplicates);
+        }
+    }
+
+    /**
+     * Points of interest are only imported from the first site frame: at the top level of the file, otherwise in a
+     * composite frame (see {@link org.rutebanken.tiamat.netex.mapping.PublicationDeliveryHelper#findSiteFrame})
+     */
+    private static boolean containsPointOfInterest(PublicationDeliveryStructure publicationDelivery) {
+        if (publicationDelivery.getDataObjects() == null) {
+            return false;
+        }
+        List<Common_VersionFrameStructure> frames = publicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame().stream()
+                .map(JAXBElement::getValue)
+                .collect(Collectors.toList());
+        SiteFrame siteFrame = frames.stream()
+                .filter(SiteFrame.class::isInstance)
+                .map(SiteFrame.class::cast)
+                .findFirst()
+                .orElseGet(() -> frames.stream()
+                        .filter(CompositeFrame.class::isInstance)
+                        .map(CompositeFrame.class::cast)
+                        .filter(compositeFrame -> compositeFrame.getFrames() != null)
+                        .flatMap(compositeFrame -> compositeFrame.getFrames().getCommonFrame().stream())
+                        .map(JAXBElement::getValue)
+                        .filter(SiteFrame.class::isInstance)
+                        .map(SiteFrame.class::cast)
+                        .findFirst()
+                        .orElse(null));
+        return siteFrame != null
+                && siteFrame.getPointsOfInterest() != null
+                && !siteFrame.getPointsOfInterest().getPointOfInterest().isEmpty();
+    }
+
+    /**
+     * Parkings are only imported from the members of the top level general frames (see {@link NetexImporter}).
+     */
+    private static boolean containsParking(PublicationDeliveryStructure publicationDelivery) {
+        if (publicationDelivery.getDataObjects() == null) {
+            return false;
+        }
+        return publicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame().stream()
+                .map(JAXBElement::getValue)
+                .filter(GeneralFrame.class::isInstance)
+                .map(GeneralFrame.class::cast)
+                .filter(generalFrame -> generalFrame.getMembers() != null)
+                .flatMap(generalFrame -> generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity().stream())
+                .anyMatch(member -> member.getValue() instanceof org.rutebanken.netex.model.Parking);
+    }
+
+    /**
+     * Checks the encoding and the duplicated ids of the file, then unmarshals it.
+     * Duplicated ids are checked before unmarshalling: the NeTEx XSD already rejects an id used twice with the
+     * same version, but only with a generic schema error.
+     */
     private PublicationDeliveryStructure unmarshalNetex() throws IOException {
         byte[] netexBytes = NetexXmlHelper.readAllBytes(inputStream);
-        Utf8Helper.decodeStrictUtf8(netexBytes, "NeTEx");
+        netexLineLocator = new NetexLineLocator(Utf8Helper.decodeStrictUtf8(netexBytes, "NeTEx"));
+        checkDuplicatedNetexIds();
 
         try {
             return publicationDeliveryUnmarshaller.unmarshal(new ByteArrayInputStream(netexBytes));
         } catch (JAXBException | SAXException e) {
+            SAXParseException parseException = findSaxParseException(e);
+            if (parseException != null) {
+                throw InvalidXmlException.from(parseException);
+            }
             throw new AnalyzeImportException(AnalyzeImportErrorType.TEMPLATE, "Le fichier NeTEx est invalide ou mal formé : " + e.getMessage());
         }
+    }
+
+    /**
+     * JAXB wraps the parser error (well-formedness or XSD violation) in its linked exception.
+     */
+    private static SAXParseException findSaxParseException(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof SAXParseException saxParseException) {
+                return saxParseException;
+            }
+            Throwable next = current instanceof JAXBException jaxbException && jaxbException.getLinkedException() != null
+                    ? jaxbException.getLinkedException()
+                    : current.getCause();
+            current = next == current ? null : next;
+        }
+        return null;
     }
 
     private void launchNetexStopPlaceImport() throws JAXBException, IOException, SAXException, BindException {
@@ -360,6 +473,9 @@ public class ImportJobWorker implements Runnable {
 
     private void launchNetexPoiImport() throws IOException, BindException {
         PublicationDeliveryStructure incomingPublicationDelivery = unmarshalNetex();
+        if (!containsPointOfInterest(incomingPublicationDelivery)) {
+            throw new AnalyzeImportException(AnalyzeImportErrorType.NO_DATA_ROWS, "The NeTEx file does not contain any point of interest");
+        }
 
         poiHelper.clearClassificationCache();
         netexImporter.importProcess(incomingPublicationDelivery, new ImportParams(), false);

@@ -36,6 +36,11 @@ import java.util.Set;
 public class Parking
         extends Site_VersionStructure {
 
+    /**
+     * Size of the parking.address database column
+     */
+    public static final int ADDRESS_MAX_LENGTH = 1000;
+
     @Transient
     protected String publicCode;
     @Transient
@@ -98,7 +103,7 @@ public class Parking
     protected String siret;
     protected String typeOfParkingRef;
     protected String operator;
-    @Column(length = 1000)
+    @Column(length = ADDRESS_MAX_LENGTH)
     protected String address;
 
     @Transient

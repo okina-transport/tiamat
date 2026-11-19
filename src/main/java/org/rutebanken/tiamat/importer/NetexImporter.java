@@ -18,6 +18,7 @@ package org.rutebanken.tiamat.importer;
 import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.domain.Provider;
+import org.rutebanken.tiamat.general.AnalyzeImportException;
 import org.rutebanken.tiamat.importer.handler.ParkingsImportHandler;
 import org.rutebanken.tiamat.importer.handler.PointOfInterestsImportHandler;
 import org.rutebanken.tiamat.importer.handler.StopPlacesImportHandler;
@@ -120,6 +121,9 @@ public class NetexImporter {
                 siteFrameProcess(publicationDeliveryStructure, importParams, atomicInteger, generalOrganisations, responsibilitySets);
             }
 
+        } catch (AnalyzeImportException e) {
+            // errors of the imported file (ex: values too long) are reported as is to the import job
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {

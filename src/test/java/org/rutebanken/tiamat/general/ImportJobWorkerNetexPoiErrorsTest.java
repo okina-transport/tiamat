@@ -63,7 +63,80 @@ class ImportJobWorkerNetexPoiErrorsTest extends TiamatIntegrationTest {
         Job job = runNetexPoiImport("poi_missing_centroid.xml");
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
-        assertThat(job.getErrors()).extracting(JobError::getCode).containsExactly(AnalyzeImportErrorType.MISSING_DATA);
+        assertThat(job.getErrors()).containsExactly(
+                missingPoiField("Centroid/Location/Longitude", "15"),
+                missingPoiField("Centroid/Location/Latitude", "15"));
+    }
+
+    private static JobError missingPoiField(String field, String line) {
+        return JobError.error(AnalyzeImportErrorType.MISSING_DATA)
+                .withParam("field", field)
+                .withParam("entity", "PointOfInterest")
+                .withParam("entityId", "MOBIITI:PointOfInterest:70")
+                .withParam("line", line);
+    }
+
+    @Test
+    void populatesStructuredErrorsOnFileWithoutPointOfInterest() throws IOException {
+        Job job = runNetexPoiImport("poi_no_poi.xml");
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(job.getErrors()).containsExactly(JobError.error(AnalyzeImportErrorType.NO_DATA_ROWS));
+    }
+
+    @Test
+    void rejectsWholeFileOnDuplicatedIds() throws IOException {
+        Job job = runNetexPoiImport("poi_duplicated_ids.xml");
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(job.getErrors()).containsExactly(
+                duplicatedId("poi_duplicated_ids.xml", "MOBIITI:PointOfInterest:70", "61"),
+                duplicatedId("poi_duplicated_ids.xml", "MOBIITI:AccessibilityAssessment:8054", "79"),
+                duplicatedId("poi_duplicated_ids.xml", "14850", "82"));
+        assertThat(poiRepository.count()).isZero();
+    }
+
+    private static JobError duplicatedId(String fileName, String id, String line) {
+        return JobError.error(AnalyzeImportErrorType.DUPLICATE_ID_FILE)
+                .withParam("fileName", fileName)
+                .withParam("field", "id")
+                .withParam("errorValue", id)
+                .withParam("line", line);
+    }
+
+    @Test
+    void rejectsWholeFileOnValuesTooLong() throws IOException {
+        Job job = runNetexPoiImport("poi_values_too_long.xml");
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(job.getErrors()).containsExactlyInAnyOrder(
+                tooLong("Name", 300),
+                tooLong("KeyValues/Items", 260));
+        assertThat(poiRepository.count()).isZero();
+    }
+
+    private static JobError tooLong(String field, int length) {
+        return JobError.error(AnalyzeImportErrorType.FIELD_TOO_LONG)
+                .withParam("field", field)
+                .withParam("entity", "PointOfInterest")
+                .withParam("entityId", "MOBIITI:PointOfInterest:70")
+                .withParam("line", "29")
+                .withParam("length", String.valueOf(length))
+                .withParam("maxLength", "255");
+    }
+
+    /**
+     * A general frame without parking (here: organisations) before the site frame must not break the validation of
+     * the points of interest
+     */
+    @Test
+    void populatesStructuredErrorsOnMissingCentroidAfterGeneralFrame() throws IOException {
+        Job job = runNetexPoiImport("poi_missing_centroid_with_general_frame.xml");
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(job.getErrors()).containsExactly(
+                missingPoiField("Centroid/Location/Longitude", "29"),
+                missingPoiField("Centroid/Location/Latitude", "29"));
     }
 
     @Test
@@ -71,7 +144,24 @@ class ImportJobWorkerNetexPoiErrorsTest extends TiamatIntegrationTest {
         Job job = runNetexPoiImport("poi_invalid_id.xml");
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
-        assertThat(job.getErrors()).extracting(JobError::getCode).containsExactly(AnalyzeImportErrorType.TEMPLATE);
+        assertThat(job.getErrors()).containsExactly(JobError.error(AnalyzeImportErrorType.INVALID_FORMAT_ID)
+                .withParam("field", "id")
+                .withParam("entity", "PointOfInterest")
+                .withParam("entityId", "INVALID_ID")
+                .withParam("line", "15")
+                .withParam("errorValue", "INVALID_ID"));
+    }
+
+    @Test
+    void stopsAfterTooManyErrors() throws IOException {
+        // 150 points of interest without centroid: 2 missing data each
+        Job job = runNetexPoiImport("poi_too_many_errors.xml");
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(job.getErrors()).hasSize(201);
+        assertThat(job.getErrors().subList(0, 200)).extracting(JobError::getCode).containsOnly(AnalyzeImportErrorType.MISSING_DATA);
+        assertThat(job.getErrors().getLast()).isEqualTo(JobError.error(AnalyzeImportErrorType.TOO_MANY_ERRORS).withParam("maxErrors", "200"));
+        assertThat(poiRepository.count()).isZero();
     }
 
     private Job runNetexPoiImport(String fileName) throws IOException {

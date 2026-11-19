@@ -4,10 +4,15 @@ import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 import org.rutebanken.tiamat.general.ParkingsCSVHelper;
 import org.rutebanken.tiamat.model.*;
+import org.rutebanken.tiamat.model.job.AnalyzeImportErrorType;
+import org.rutebanken.tiamat.model.job.ImportWarnings;
+import org.rutebanken.tiamat.model.job.JobError;
 import org.rutebanken.tiamat.netex.mapping.mapper.NetexIdMapper;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +25,8 @@ import java.util.function.Supplier;
 @Service
 @Transactional
 public class ParkingsImportedService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ParkingsImportedService.class);
 
     private static final String ID_LOCAL = "id_local";
     private static final String ID_OSM = "id_osm";
@@ -47,6 +54,7 @@ public class ParkingsImportedService {
 
         for (Parking parkingToSave : parkingsToSave) {
             boolean founded = false;
+            truncateAddress(parkingToSave);
 
             Parking parkingInBDD = retrieveParkingInBDD(parkingToSave);
             attachOperatorOrganisation(parkingToSave, operatorOrganisations);
@@ -123,6 +131,32 @@ public class ParkingsImportedService {
 
     private double roundFourDigits(double inputValue) {
         return Math.round(inputValue * 10000.0) / 10000.0;
+    }
+
+    /**
+     * The address is truncated to {@link Parking#ADDRESS_MAX_LENGTH} characters (size of the database column):
+     * some sources (ex: GBFS feeds) put free information text in it. A truncation is reported as an import warning.
+     *
+     * @param parking imported parking, before it is merged with the parking found in database
+     */
+    static void truncateAddress(Parking parking) {
+        String address = parking.getAddress();
+        if (address == null) {
+            return;
+        }
+        int length = address.codePointCount(0, address.length());
+        if (length <= Parking.ADDRESS_MAX_LENGTH) {
+            return;
+        }
+        String parkingId = parking.getOriginalId() != null ? parking.getOriginalId() : parking.getNetexId();
+        logger.warn("Address of parking {} truncated from {} to {} characters", parkingId, length, Parking.ADDRESS_MAX_LENGTH);
+        ImportWarnings.add(JobError.warning(AnalyzeImportErrorType.FIELD_TRUNCATED)
+                .withParam("field", "address")
+                .withParam("entityId", parkingId != null ? parkingId : "")
+                .withParam("originalLength", String.valueOf(length))
+                .withParam("maxLength", String.valueOf(Parking.ADDRESS_MAX_LENGTH)));
+        // cut on a code point boundary, never in the middle of a surrogate pair
+        parking.setAddress(address.substring(0, address.offsetByCodePoints(0, Parking.ADDRESS_MAX_LENGTH)));
     }
 
     private boolean populateParking(Parking existingParking, Parking updatedParking) {

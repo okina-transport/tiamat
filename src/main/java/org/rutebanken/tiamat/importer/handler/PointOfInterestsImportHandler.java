@@ -26,6 +26,7 @@ import org.rutebanken.tiamat.importer.initial.ParallelInitialPointOfInterestImpo
 import org.rutebanken.tiamat.importer.merging.TransactionalMergingPointOfInterestssImporter;
 import org.rutebanken.tiamat.netex.mapping.NetexMapper;
 import org.rutebanken.tiamat.repository.JobRepository;
+import org.rutebanken.tiamat.validator.FieldLengthValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,12 +69,21 @@ public class PointOfInterestsImportHandler {
     @Autowired
     private PointOfInterestFromOriginalIdFinder pointOfInterestRepository;
 
+    private final FieldLengthValidator fieldLengthValidator;
+
+    public PointOfInterestsImportHandler(FieldLengthValidator fieldLengthValidator) {
+        this.fieldLengthValidator = fieldLengthValidator;
+    }
+
     public void handlePointOfInterests(SiteFrame netexSiteFrame, ImportParams importParams, AtomicInteger poisCreatedOrUpdated, SiteFrame responseSiteframe, List<GeneralOrganisation> generalOrganisations, List<ResponsibilitySet> responsibilitySets) {
         List<org.rutebanken.tiamat.model.PointOfInterest> tiamatPointOfInterests = netexMapper.mapPointsOfInterestToTiamatModel(netexSiteFrame.getPointsOfInterest().getPointOfInterest());
 
         setOperatorPoiForGeneralFrame(generalOrganisations, responsibilitySets, tiamatPointOfInterests);
 
         parseToSynchronizeKeyValues(netexSiteFrame, tiamatPointOfInterests);
+
+        // every text value must fit in its database column, otherwise the whole file is rejected before any point of interest is saved
+        fieldLengthValidator.checkAll(tiamatPointOfInterests);
 
         int numberOfPoisBeforeFiltering = tiamatPointOfInterests.size();
         logger.info("About to filter {} point of interests based on topographic references: {}", tiamatPointOfInterests.size(), importParams.targetTopographicPlaces);

@@ -60,6 +60,10 @@ public class BikesCSVHelper {
         CSVHelper.validateHeaders(EXPECTED_HEADERS, parser.getHeaderNames(), "bike parking");
 
         for (CSVRecord csvRecord : parser) {
+            if (ImportErrorLimit.isExceeded(rowErrors.size())) {
+                // too many errors: the other rows are not checked
+                break;
+            }
             RowOutcome outcome = parseRow(csvRecord);
             if (outcome.isSuccess()) {
                 bikeParkingList.add(outcome.dtoBikeParking());

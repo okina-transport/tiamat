@@ -942,6 +942,39 @@ public class CustomGraphQLTypes {
                     .build()).collect(Collectors.toList());
     }
 
+    public static GraphQLInputObjectType parkingTimeBandInputObjectType = GraphQLInputObjectType.newInputObject()
+            .name(INPUT_TYPE_PARKING_TIME_BAND)
+            .field(newInputObjectField()
+                    .name(START_TIME)
+                    .type(GraphQLString))
+            .field(newInputObjectField()
+                    .name(END_TIME)
+                    .type(GraphQLString))
+            .field(newInputObjectField()
+                    .name(DAY_OFFSET)
+                    .type(GraphQLInt))
+            .build();
+
+    public static GraphQLInputObjectType parkingDayTypeInputObjectType = GraphQLInputObjectType.newInputObject()
+            .name(INPUT_TYPE_PARKING_DAY_TYPE)
+            .field(newInputObjectField()
+                    .name(DAYS_OF_WEEK)
+                    .type(new GraphQLList(daysOfWeekEnumeration)))
+            .field(newInputObjectField()
+                    .name(TIME_BANDS)
+                    .type(new GraphQLList(parkingTimeBandInputObjectType)))
+            .build();
+
+    public static GraphQLInputObjectType parkingAvailabilityConditionInputObjectType = GraphQLInputObjectType.newInputObject()
+            .name(INPUT_TYPE_PARKING_AVAILABILITY_CONDITION)
+            .field(newInputObjectField()
+                    .name(IS_AVAILABLE)
+                    .type(GraphQLBoolean))
+            .field(newInputObjectField()
+                    .name(DAY_TYPES)
+                    .type(new GraphQLList(parkingDayTypeInputObjectType)))
+            .build();
+
     public static GraphQLInputObjectType createParkingInputObjectType(List<GraphQLInputObjectField> commonInputFieldsList, GraphQLInputObjectType validBetweenInputObjectType) {
         return GraphQLInputObjectType.newInputObject()
                 .name(INPUT_TYPE_PARKING)
@@ -1018,6 +1051,21 @@ public class CustomGraphQLTypes {
                 .field(newInputObjectField()
                         .name(COVERED)
                         .type(parkingCoveredEnum))
+                .field(newInputObjectField()
+                        .name(OPERATOR)
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name(ADDRESS)
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name(POSTAL_CODE)
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name(CITY)
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name(AVAILABILITY_CONDITIONS)
+                        .type(new GraphQLList(parkingAvailabilityConditionInputObjectType)))
                 .build();
     }
 

@@ -1,5 +1,6 @@
 package org.rutebanken.tiamat.importer.merging;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.tiamat.importer.KeyValueListAppender;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.versioning.save.AccessibilityVersionedSaverService;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 @Component
 @Qualifier("mergingUtils")
@@ -93,4 +95,21 @@ public class MergingUtils {
         return false;
     }
 
+    public static Set<String> availabilityConditionsSignature(Set<AvailabilityCondition> availabilityConditions) {
+        return CollectionUtils.emptyIfNull(availabilityConditions).stream()
+                .map(availabilityCondition -> availabilityCondition.isAvailable() + ";" +
+                        CollectionUtils.emptyIfNull(availabilityCondition.getDayTypes()).stream()
+                                .map(dayType -> sortedNames(dayType.getDaysOfWeek()) + "/" + sortedNames(dayType.getHolidayTypes()) + "=" +
+                                        CollectionUtils.emptyIfNull(dayType.getTimeBand()).stream()
+                                                .map(timeBand -> timeBand.getStartTime() + "-" + timeBand.getEndTime() + "+" + timeBand.getDayOffset())
+                                                .sorted()
+                                                .collect(Collectors.joining(",")))
+                                .sorted()
+                                .collect(Collectors.joining("|")))
+                .collect(Collectors.toSet());
+    }
+
+    private static String sortedNames(List<? extends Enum<?>> values) {
+        return CollectionUtils.emptyIfNull(values).stream().map(Enum::name).sorted().collect(Collectors.joining(","));
+    }
 }

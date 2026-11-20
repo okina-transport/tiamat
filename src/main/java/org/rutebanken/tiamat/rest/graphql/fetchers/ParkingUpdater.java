@@ -22,76 +22,91 @@ import org.locationtech.jts.geom.Point;
 import org.rutebanken.helper.organisation.ReflectionAuthorizationService;
 import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.changelog.LoggingService;
+import org.rutebanken.tiamat.importer.merging.MergingUtils;
 import org.rutebanken.tiamat.model.*;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.rest.graphql.mappers.GeometryMapper;
 import org.rutebanken.tiamat.rest.graphql.mappers.GroupOfEntitiesMapper;
 import org.rutebanken.tiamat.rest.graphql.mappers.ValidBetweenMapper;
+import org.rutebanken.tiamat.service.parking.ParkingInseeCodeResolver;
 import org.rutebanken.tiamat.versioning.VersionCreator;
 import org.rutebanken.tiamat.versioning.save.ParkingVersionedSaverService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigInteger;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.rutebanken.helper.organisation.AuthorizationConstants.ROLE_EDIT_STOPS;
 import static org.rutebanken.tiamat.rest.graphql.GraphQLNames.*;
 
 @Service("parkingUpdater")
 @Transactional
-class ParkingUpdater implements DataFetcher {
+class ParkingUpdater implements DataFetcher<List<Parking>> {
 
     private static final Logger logger = LoggerFactory.getLogger(ParkingUpdater.class);
 
-    @Autowired
-    private ParkingRepository parkingRepository;
+    private final ParkingRepository parkingRepository;
+    private final ParkingVersionedSaverService parkingVersionedSaverService;
+    private final GeometryMapper geometryMapper;
+    private final ReflectionAuthorizationService authorizationService;
+    private final ValidBetweenMapper validBetweenMapper;
+    private final VersionCreator versionCreator;
+    private final GroupOfEntitiesMapper groupOfEntitiesMapper;
+    private final UsernameFetcher usernameFetcher;
+    private final LoggingService loggingService;
+    private final ParkingInseeCodeResolver parkingInseeCodeResolver;
 
-    @Autowired
-    private ParkingVersionedSaverService parkingVersionedSaverService;
-
-    @Autowired
-    private GeometryMapper geometryMapper;
-
-    @Autowired
-    private ReflectionAuthorizationService authorizationService;
-
-    @Autowired
-    private ValidBetweenMapper validBetweenMapper;
-
-    @Autowired
-    private VersionCreator versionCreator;
-
-    @Autowired
-    private GroupOfEntitiesMapper groupOfEntitiesMapper;
-
-    @Autowired
-    private UsernameFetcher usernameFetcher;
-
-    @Autowired
-    private LoggingService loggingService;
-
-    @Override
-    public Object get(DataFetchingEnvironment environment) {
-
-        List<Map> input = environment.getArgument(OUTPUT_TYPE_PARKING);
-        List<Parking> parkings = null;
-        if (input != null) {
-            parkings = input.stream()
-                    .map(m -> createOrUpdateParking(m))
-                    .collect(Collectors.toList());
-        }
-        return parkings;
+    ParkingUpdater(ParkingRepository parkingRepository,
+                   ParkingVersionedSaverService parkingVersionedSaverService,
+                   GeometryMapper geometryMapper,
+                   ReflectionAuthorizationService authorizationService,
+                   ValidBetweenMapper validBetweenMapper,
+                   VersionCreator versionCreator,
+                   GroupOfEntitiesMapper groupOfEntitiesMapper,
+                   UsernameFetcher usernameFetcher,
+                   LoggingService loggingService,
+                   ParkingInseeCodeResolver parkingInseeCodeResolver) {
+        this.parkingRepository = parkingRepository;
+        this.parkingVersionedSaverService = parkingVersionedSaverService;
+        this.geometryMapper = geometryMapper;
+        this.authorizationService = authorizationService;
+        this.validBetweenMapper = validBetweenMapper;
+        this.versionCreator = versionCreator;
+        this.groupOfEntitiesMapper = groupOfEntitiesMapper;
+        this.usernameFetcher = usernameFetcher;
+        this.loggingService = loggingService;
+        this.parkingInseeCodeResolver = parkingInseeCodeResolver;
     }
 
-    private Parking createOrUpdateParking(Map input) {
+    @Override
+    public List<Parking> get(DataFetchingEnvironment environment) {
+        List<Map<String, Object>> input = environment.getArgument(OUTPUT_TYPE_PARKING);
+        if (input == null) {
+            return null;
+        }
+        return input.stream()
+                .map(this::createOrUpdateParking)
+                .collect(Collectors.toList());
+    }
+
+    private static <T> T get(Map<String, Object> input, String key) {
+        return (T) input.get(key);
+    }
+
+    private static List<Map<String, Object>> getList(Map<String, Object> input, String key) {
+        return Objects.requireNonNullElse(get(input, key), List.of());
+    }
+
+    private Parking createOrUpdateParking(Map<String, Object> input) {
         Parking updatedParking;
         Parking existingVersion = null;
-        String netexId = (String) input.get(ID);
+        String netexId = get(input, ID);
         if (netexId != null) {
             logger.info("Updating Parking {}", netexId);
             existingVersion = parkingRepository.findFirstByNetexIdOrderByVersionDesc(netexId);
@@ -133,22 +148,34 @@ class ParkingUpdater implements DataFetcher {
         }
     }
 
-    private boolean populateParking(Map input, Parking updatedParking) {
+    private boolean populateParking(Map<String, Object> input, Parking updatedParking) {
         boolean isUpdated = false;
+        EmbeddableMultilingualString nameBefore = updatedParking.getName();
+        Map<String, Set<String>> keyValuesBefore = keyValuesSnapshot(updatedParking);
         if (input.get(VALID_BETWEEN) != null) {
-            updatedParking.setValidBetween(validBetweenMapper.map((Map) input.get(VALID_BETWEEN)));
+            updatedParking.setValidBetween(validBetweenMapper.map(get(input, VALID_BETWEEN)));
             isUpdated = true;
         }
 
         if (input.get(GEOMETRY) != null) {
-            Point geoJsonPoint = geometryMapper.createGeoJsonPoint((Map) input.get(GEOMETRY));
-            isUpdated = isUpdated || (!geoJsonPoint.equals(updatedParking.getCentroid()));
+            Point geoJsonPoint = geometryMapper.createGeoJsonPoint(get(input, GEOMETRY));
+            boolean centroidChanged = !geoJsonPoint.equals(updatedParking.getCentroid());
+            isUpdated = isUpdated || centroidChanged;
             updatedParking.setCentroid(geoJsonPoint);
+
+            // Remote calls inside the GraphQL transaction: only for new or moved parkings, the get_missing_inseecode batch fills the gaps
+            if (centroidChanged) {
+                try {
+                    parkingInseeCodeResolver.resolve(geoJsonPoint.getX(), geoJsonPoint.getY()).ifPresent(updatedParking::setInsee);
+                } catch (Exception e) {
+                    logger.error("Unable to get insee code for parking {}", updatedParking.getNetexId(), e);
+                }
+            }
         }
 
         if (input.get(PARENT_SITE_REF) != null) {
             SiteRefStructure parentSiteRef = new SiteRefStructure();
-            parentSiteRef.setRef((String) input.get(PARENT_SITE_REF));
+            parentSiteRef.setRef(get(input, PARENT_SITE_REF));
 
             isUpdated = isUpdated || (!parentSiteRef.equals(updatedParking.getParentSiteRef()));
 
@@ -156,27 +183,27 @@ class ParkingUpdater implements DataFetcher {
         }
 
         if (input.get(TOTAL_CAPACITY) != null) {
-            BigInteger totalCapacity = (BigInteger) input.get(TOTAL_CAPACITY);
+            BigInteger totalCapacity = get(input, TOTAL_CAPACITY);
             isUpdated = isUpdated || (!totalCapacity.equals(updatedParking.getTotalCapacity()));
 
             updatedParking.setTotalCapacity(totalCapacity);
         }
 
         if (input.get(PRINCIPAL_CAPACITY) != null) {
-            BigInteger principalCapacity = (BigInteger) input.get(PRINCIPAL_CAPACITY);
+            BigInteger principalCapacity = get(input, PRINCIPAL_CAPACITY);
             isUpdated = isUpdated || (!principalCapacity.equals(updatedParking.getPrincipalCapacity()));
 
             updatedParking.setPrincipalCapacity(principalCapacity);
         }
 
         if (input.get(PARKING_TYPE) != null) {
-            ParkingTypeEnumeration parkingType = (ParkingTypeEnumeration) input.get(PARKING_TYPE);
+            ParkingTypeEnumeration parkingType = get(input, PARKING_TYPE);
             isUpdated = isUpdated || (!parkingType.equals(updatedParking.getParkingType()));
             updatedParking.setParkingType(parkingType);
         }
 
         if (input.get(PARKING_VEHICLE_TYPES) != null) {
-            List<ParkingVehicleEnumeration> vehicleTypes = (List<ParkingVehicleEnumeration>) input.get(PARKING_VEHICLE_TYPES);
+            List<ParkingVehicleEnumeration> vehicleTypes = get(input, PARKING_VEHICLE_TYPES);
             isUpdated = isUpdated || !(updatedParking.getParkingVehicleTypes().containsAll(vehicleTypes) &&
                     vehicleTypes.containsAll(updatedParking.getParkingVehicleTypes()));
 
@@ -185,55 +212,55 @@ class ParkingUpdater implements DataFetcher {
         }
 
         if (input.get(PARKING_LAYOUT) != null) {
-            ParkingLayoutEnumeration parkingLayout = (ParkingLayoutEnumeration) input.get(PARKING_LAYOUT);
+            ParkingLayoutEnumeration parkingLayout = get(input, PARKING_LAYOUT);
             isUpdated = isUpdated || (!parkingLayout.equals(updatedParking.getParkingLayout()));
             updatedParking.setParkingLayout(parkingLayout);
         }
 
         if (input.get(OVERNIGHT_PARKING_PERMITTED) != null) {
-            Boolean overnightParkingPermitted = (Boolean) input.get(OVERNIGHT_PARKING_PERMITTED);
+            Boolean overnightParkingPermitted = get(input, OVERNIGHT_PARKING_PERMITTED);
             isUpdated = isUpdated || (!overnightParkingPermitted.equals(updatedParking.isOvernightParkingPermitted()));
             updatedParking.setOvernightParkingPermitted(overnightParkingPermitted);
         }
 
         if (input.get(RECHARGING_AVAILABLE) != null) {
-            Boolean rechargingAvailable = (Boolean) input.get(RECHARGING_AVAILABLE);
+            Boolean rechargingAvailable = get(input, RECHARGING_AVAILABLE);
             isUpdated = isUpdated || (!rechargingAvailable.equals(updatedParking.isRechargingAvailable()));
             updatedParking.setRechargingAvailable(rechargingAvailable);
         }
 
         if (input.get(CARPOOLING_AVAILABLE) != null) {
-            Boolean carpoolingAvailable = (Boolean) input.get(CARPOOLING_AVAILABLE);
+            Boolean carpoolingAvailable = get(input, CARPOOLING_AVAILABLE);
             isUpdated = isUpdated || (!carpoolingAvailable.equals(updatedParking.isCarpoolingAvailable()));
             updatedParking.setCarpoolingAvailable(carpoolingAvailable);
         }
 
         if (input.get(CARSHARING_AVAILABLE) != null) {
-            Boolean carsharingAvailable = (Boolean) input.get(CARSHARING_AVAILABLE);
+            Boolean carsharingAvailable = get(input, CARSHARING_AVAILABLE);
             isUpdated = isUpdated || (!carsharingAvailable.equals(updatedParking.isCarsharingAvailable()));
             updatedParking.setCarsharingAvailable(carsharingAvailable);
         }
 
         if (input.get(SECURE) != null) {
-            Boolean isSecure = (Boolean) input.get(SECURE);
+            Boolean isSecure = get(input, SECURE);
             isUpdated = isUpdated || (!isSecure.equals(updatedParking.isSecure()));
             updatedParking.setSecure(isSecure);
         }
 
         if (input.get(REAL_TIME_OCCUPANCY_AVAILABLE) != null) {
-            Boolean isRealtimeOccupancyAvailable = (Boolean) input.get(REAL_TIME_OCCUPANCY_AVAILABLE);
+            Boolean isRealtimeOccupancyAvailable = get(input, REAL_TIME_OCCUPANCY_AVAILABLE);
             isUpdated = isUpdated || (!isRealtimeOccupancyAvailable.equals(updatedParking.isRealTimeOccupancyAvailable()));
             updatedParking.setRealTimeOccupancyAvailable(isRealtimeOccupancyAvailable);
         }
 
         if (input.get(FREE_PARKING_OUT_OF_HOURS) != null) {
-            Boolean freeParkingOutOfHours = (Boolean) input.get(FREE_PARKING_OUT_OF_HOURS);
+            Boolean freeParkingOutOfHours = get(input, FREE_PARKING_OUT_OF_HOURS);
             isUpdated = isUpdated || (!freeParkingOutOfHours.equals(updatedParking.isFreeParkingOutOfHours()));
             updatedParking.setFreeParkingOutOfHours(freeParkingOutOfHours);
         }
 
         if (input.get(PARKING_PAYMENT_PROCESS) != null) {
-            List<ParkingPaymentProcessEnumeration> parkingPaymentProcessTypes = (List<ParkingPaymentProcessEnumeration>) input.get(PARKING_PAYMENT_PROCESS);
+            List<ParkingPaymentProcessEnumeration> parkingPaymentProcessTypes = get(input, PARKING_PAYMENT_PROCESS);
             isUpdated = isUpdated || !(updatedParking.getParkingPaymentProcess().containsAll(parkingPaymentProcessTypes) &&
                     parkingPaymentProcessTypes.containsAll(updatedParking.getParkingPaymentProcess()));
 
@@ -242,20 +269,20 @@ class ParkingUpdater implements DataFetcher {
         }
 
         if (input.get(PARKING_RESERVATION) != null) {
-            ParkingReservationEnumeration parkingReservation = (ParkingReservationEnumeration) input.get(PARKING_RESERVATION);
+            ParkingReservationEnumeration parkingReservation = get(input, PARKING_RESERVATION);
             isUpdated = isUpdated || (!parkingReservation.equals(updatedParking.getParkingReservation()));
             updatedParking.setParkingReservation(parkingReservation);
         }
 
         if (input.get(BOOKING_URL) != null) {
-            String bookingUrl = (String) input.get(BOOKING_URL);
+            String bookingUrl = get(input, BOOKING_URL);
             isUpdated = isUpdated || (!bookingUrl.equals(updatedParking.getBookingUrl()));
             updatedParking.setBookingUrl(bookingUrl);
         }
 
         if (input.get(PARKING_PROPERTIES) != null) {
             List<ParkingProperties> existingParkingProperties = updatedParking.getParkingProperties();
-            List<ParkingProperties> parkingPropertiesList = resolveParkingPropertiesList((List) input.get(PARKING_PROPERTIES), existingParkingProperties);
+            List<ParkingProperties> parkingPropertiesList = resolveParkingPropertiesList(getList(input, PARKING_PROPERTIES), existingParkingProperties);
             int totalCapacity = parkingPropertiesList.stream()
                     .map(ParkingProperties::getSpaces)
                     .filter(Objects::nonNull)
@@ -340,7 +367,7 @@ class ParkingUpdater implements DataFetcher {
 
         if (input.get(PARKING_AREAS) != null) {
             List<ParkingArea> existingParkingAreas = updatedParking.getParkingAreas();
-            List<ParkingArea> parkingAreasList = resolveParkingAreasList((List) input.get(PARKING_AREAS), existingParkingAreas);
+            List<ParkingArea> parkingAreasList = resolveParkingAreasList(getList(input, PARKING_AREAS), existingParkingAreas);
 
             int newNoneCapacity = parkingAreasList.stream()
                     .filter(pa -> pa.getSpecificParkingAreaUsage().equals(SpecificParkingAreaUsageEnumeration.NONE))
@@ -382,46 +409,131 @@ class ParkingUpdater implements DataFetcher {
         }
 
         if (input.get(COVERED) != null) {
-            CoveredEnumeration parkingCovered = (CoveredEnumeration) input.get(COVERED);
+            CoveredEnumeration parkingCovered = get(input, COVERED);
             isUpdated = isUpdated || (!parkingCovered.equals(updatedParking.getCovered()));
             updatedParking.setCovered(parkingCovered);
         }
 
         if (input.get(TYPE_OF_PARKING_REF) != null) {
-            TypeOfParkingRefEnumeration parkingTypeOfParkingRef = (TypeOfParkingRefEnumeration) input.get(TYPE_OF_PARKING_REF);
+            TypeOfParkingRefEnumeration parkingTypeOfParkingRef = get(input, TYPE_OF_PARKING_REF);
             isUpdated = isUpdated || (!parkingTypeOfParkingRef.value().equals(updatedParking.getParkingTypeRef()));
             updatedParking.setTypeOfParkingRef(parkingTypeOfParkingRef.value());
         }
 
-        isUpdated = isUpdated | groupOfEntitiesMapper.populate(input, updatedParking);
+        if (input.get(OPERATOR) != null) {
+            String operator = get(input, OPERATOR);
+            isUpdated = isUpdated || !operator.equals(updatedParking.getOperator());
+            updatedParking.setOperator(operator);
+        }
+
+        if (input.get(ADDRESS) != null) {
+            String address = get(input, ADDRESS);
+            isUpdated = isUpdated || !address.equals(updatedParking.getAddress());
+            updatedParking.setAddress(address);
+        }
+
+        if (input.get(POSTAL_CODE) != null || input.get(CITY) != null) {
+            if (updatedParking.getPostalAddress() == null) {
+                updatedParking.setPostalAddress(new PostalAddress());
+            }
+            PostalAddress postalAddress = updatedParking.getPostalAddress();
+            if (input.get(POSTAL_CODE) != null) {
+                String postCode = get(input, POSTAL_CODE);
+                isUpdated = isUpdated || !postCode.equals(postalAddress.getPostCode());
+                postalAddress.setPostCode(postCode);
+            }
+            if (input.get(CITY) != null) {
+                String town = get(input, CITY);
+                isUpdated = isUpdated || !town.equals(postalAddress.getTown());
+                postalAddress.setTown(town);
+            }
+        }
+
+        if (input.get(AVAILABILITY_CONDITIONS) != null) {
+            Set<AvailabilityCondition> availabilityConditions = mapAvailabilityConditions(getList(input, AVAILABILITY_CONDITIONS));
+            if (!MergingUtils.availabilityConditionsSignature(availabilityConditions)
+                    .equals(MergingUtils.availabilityConditionsSignature(updatedParking.getAvailabilityConditions()))) {
+                updatedParking.setAvailabilityConditions(availabilityConditions);
+                isUpdated = true;
+            }
+        }
+
+        boolean groupOfEntitiesUpdated = groupOfEntitiesMapper.populate(input, updatedParking);
+        // name, keyValues and geometry are always flagged as updated by the shared mappers: compare real values instead
+        if (groupOfEntitiesUpdated && onlyNameKeyValuesOrGeometry(input)) {
+            groupOfEntitiesUpdated = !Objects.equals(nameBefore, updatedParking.getName())
+                    || !keyValuesBefore.equals(keyValuesSnapshot(updatedParking));
+        }
+        isUpdated = isUpdated || groupOfEntitiesUpdated;
 
         return isUpdated;
     }
 
-    private List<ParkingProperties> resolveParkingPropertiesList(List propertyList, List<ParkingProperties> existingParkingPropertiesList) {
+    private boolean onlyNameKeyValuesOrGeometry(Map<String, Object> input) {
+        return Stream.of(SHORT_NAME, DESCRIPTION, VERSION_COMMENT, ALTERNATIVE_NAMES, ACCESSIBILITY_ASSESSMENT, PLACE_EQUIPMENTS)
+                .allMatch(key -> input.get(key) == null);
+    }
+
+    private Map<String, Set<String>> keyValuesSnapshot(Parking parking) {
+        Map<String, Set<String>> snapshot = new HashMap<>();
+        parking.getKeyValues().forEach((key, value) -> {
+            if (value != null && !value.getItems().isEmpty()) {
+                snapshot.put(key, new HashSet<>(value.getItems()));
+            }
+        });
+        return snapshot;
+    }
+
+    private Set<AvailabilityCondition> mapAvailabilityConditions(List<Map<String, Object>> input) {
+        Set<AvailabilityCondition> availabilityConditions = new HashSet<>();
+        for (Map<String, Object> availabilityConditionInput : input) {
+            AvailabilityCondition availabilityCondition = new AvailabilityCondition();
+            availabilityCondition.setAvailable(Boolean.TRUE.equals(availabilityConditionInput.get(IS_AVAILABLE)));
+            for (Map<String, Object> dayTypeInput : getList(availabilityConditionInput, DAY_TYPES)) {
+                DayType dayType = new DayType();
+                dayType.setDaysOfWeek(new ArrayList<>(Objects.<List<DayOfWeekEnumeration>>requireNonNullElse(get(dayTypeInput, DAYS_OF_WEEK), List.of())));
+                for (Map<String, Object> timeBandInput : getList(dayTypeInput, TIME_BANDS)) {
+                    TimeBand timeBand = new TimeBand();
+                    if (timeBandInput.get(START_TIME) != null) {
+                        timeBand.setStartTime(LocalTime.parse(get(timeBandInput, START_TIME)));
+                    }
+                    if (timeBandInput.get(END_TIME) != null) {
+                        timeBand.setEndTime(LocalTime.parse(get(timeBandInput, END_TIME)));
+                    }
+                    timeBand.setDayOffset(get(timeBandInput, DAY_OFFSET));
+                    dayType.getTimeBand().add(timeBand);
+                }
+                availabilityCondition.getDayTypes().add(dayType);
+            }
+            availabilityConditions.add(availabilityCondition);
+        }
+        return availabilityConditions;
+    }
+
+    private List<ParkingProperties> resolveParkingPropertiesList(List<Map<String, Object>> propertyList, List<ParkingProperties> existingParkingPropertiesList) {
         List<ParkingProperties> result = new ArrayList<>();
         for (int i = 0; i < propertyList.size(); i++) {
             ParkingProperties existing = existingParkingPropertiesList != null && i < existingParkingPropertiesList.size()
                     ? existingParkingPropertiesList.get(i)
                     : null;
-            result.add(resolveSingleParkingProperties((Map) propertyList.get(i), existing));
+            result.add(resolveSingleParkingProperties(propertyList.get(i), existing));
         }
 
         return result;
     }
 
-    private ParkingProperties resolveSingleParkingProperties(Map input, ParkingProperties existing) {
+    private ParkingProperties resolveSingleParkingProperties(Map<String, Object> input, ParkingProperties existing) {
         ParkingProperties p = existing != null ? versionCreator.createCopy(existing, ParkingProperties.class) : new ParkingProperties();
-        p.setSpaces(resolveParkingCapacities((List) input.get(SPACES), existing != null ? existing.getSpaces() : null));
+        p.setSpaces(resolveParkingCapacities(get(input, SPACES), existing != null ? existing.getSpaces() : null));
         return p;
     }
 
-    private List<ParkingCapacity> resolveParkingCapacities(List input, List<ParkingCapacity> existingSpaces) {
+    private List<ParkingCapacity> resolveParkingCapacities(List<Map<String, Object>> input, List<ParkingCapacity> existingSpaces) {
         List<ParkingCapacity> result = new ArrayList<>();
         List<ParkingCapacity> remainingExistingSpaces = existingSpaces != null ? new ArrayList<>(existingSpaces) : new ArrayList<>();
 
-        for (Object property : input) {
-            result.add(resolveSingleParkingCapacity((Map) property, remainingExistingSpaces));
+        for (Map<String, Object> property : input) {
+            result.add(resolveSingleParkingCapacity(property, remainingExistingSpaces));
         }
 
         remainingExistingSpaces.stream()
@@ -431,8 +543,8 @@ class ParkingUpdater implements DataFetcher {
         return result;
     }
 
-    private ParkingCapacity resolveSingleParkingCapacity(Map input, List<ParkingCapacity> remainingExistingSpaces) {
-        ParkingUserEnumeration parkingUserType = (ParkingUserEnumeration) input.get(PARKING_USER_TYPE);
+    private ParkingCapacity resolveSingleParkingCapacity(Map<String, Object> input, List<ParkingCapacity> remainingExistingSpaces) {
+        ParkingUserEnumeration parkingUserType = get(input, PARKING_USER_TYPE);
 
         ParkingCapacity existing = remainingExistingSpaces.stream()
                 .filter(s -> parkingUserType != null && parkingUserType.equals(s.getParkingUserType()))
@@ -442,22 +554,22 @@ class ParkingUpdater implements DataFetcher {
 
         ParkingCapacity capacity = existing != null ? versionCreator.createCopy(existing, ParkingCapacity.class) : new ParkingCapacity();
         capacity.setParkingUserType(parkingUserType);
-        capacity.setParkingVehicleType((ParkingVehicleEnumeration) input.get(PARKING_VEHICLE_TYPE));
-        capacity.setParkingStayType((ParkingStayEnumeration) input.get(PARKING_STAY_TYPE));
-        capacity.setNumberOfSpaces((BigInteger) input.get(NUMBER_OF_SPACES));
-        capacity.setNumberOfSpacesWithRechargePoint((BigInteger) input.get(NUMBER_OF_SPACES_WITH_RECHARGE_POINT));
+        capacity.setParkingVehicleType(get(input, PARKING_VEHICLE_TYPE));
+        capacity.setParkingStayType(get(input, PARKING_STAY_TYPE));
+        capacity.setNumberOfSpaces(get(input, NUMBER_OF_SPACES));
+        capacity.setNumberOfSpacesWithRechargePoint(get(input, NUMBER_OF_SPACES_WITH_RECHARGE_POINT));
         if (capacity.getNumberOfSpacesWithRechargePoint() != null && capacity.getNumberOfSpacesWithRechargePoint().compareTo(capacity.getNumberOfSpaces()) > 0) {
             throw new IllegalArgumentException("Le nombre de places équipées de bornes de recharge ne peut pas être supérieur à la capacité totale");
         }
-        capacity.setNumberOfCarsharingSpaces((BigInteger) input.get(NUMBER_OF_CARSHARING_SPACES));
+        capacity.setNumberOfCarsharingSpaces(get(input, NUMBER_OF_CARSHARING_SPACES));
         return capacity;
     }
 
-    private List<ParkingArea> resolveParkingAreasList(List list, List<ParkingArea> existingParkingAreas) {
+    private List<ParkingArea> resolveParkingAreasList(List<Map<String, Object>> list, List<ParkingArea> existingParkingAreas) {
         List<ParkingArea> result = new ArrayList<>();
         Set<SpecificParkingAreaUsageEnumeration> newUsages = new HashSet<>();
-        for (Object property : list) {
-            ParkingArea newArea = createParkingAreaFromInputParameters((Map) property);
+        for (Map<String, Object> property : list) {
+            ParkingArea newArea = createParkingAreaFromInputParameters(property);
             result.add(newArea);
             newUsages.add(newArea.getSpecificParkingAreaUsage());
         }
@@ -516,12 +628,12 @@ class ParkingUpdater implements DataFetcher {
                 .collect(Collectors.toList());
     }
 
-    private ParkingArea createParkingAreaFromInputParameters(Map inputParams) {
+    private ParkingArea createParkingAreaFromInputParameters(Map<String, Object> inputParams) {
         ParkingArea newParkingArea = new ParkingArea();
         if (inputParams.get("specificParkingAreaUsage") != null) {
-            newParkingArea.setSpecificParkingAreaUsage((SpecificParkingAreaUsageEnumeration) inputParams.get("specificParkingAreaUsage"));
+            newParkingArea.setSpecificParkingAreaUsage(get(inputParams, "specificParkingAreaUsage"));
         }
-        newParkingArea.setTotalCapacity((BigInteger) inputParams.get(TOTAL_CAPACITY));
+        newParkingArea.setTotalCapacity(get(inputParams, TOTAL_CAPACITY));
         return newParkingArea;
     }
 

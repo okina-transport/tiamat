@@ -15,23 +15,34 @@
 
 package org.rutebanken.tiamat.rest.graphql;
 
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
+import java.util.Optional;
 import org.locationtech.jts.geom.Coordinate;
 import org.rutebanken.tiamat.model.EmbeddableMultilingualString;
 import org.rutebanken.tiamat.model.Parking;
+import org.rutebanken.tiamat.model.ParkingIdEntity;
 import org.rutebanken.tiamat.model.ParkingTypeEnumeration;
 import org.rutebanken.tiamat.model.SiteRefStructure;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.rutebanken.tiamat.model.StopTypeEnumeration;
+import org.rutebanken.tiamat.model.AvailabilityCondition;
+import org.rutebanken.tiamat.model.DayOfWeekEnumeration;
+import org.rutebanken.tiamat.model.DayType;
+import org.rutebanken.tiamat.model.Value;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 
-public class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceIntegrationTest {
+class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResourceIntegrationTest {
 
     @Test
-    public void searchForParkingById() throws Exception {
+    void searchForParkingById() {
 
         Parking parking = new Parking();
         parking.setCentroid(geometryFactory.createPoint(new Coordinate(10.533212, 59.678080)));
@@ -56,7 +67,7 @@ public class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResour
     }
 
     @Test
-    public void searchForParkingByIdAndVersion() throws Exception {
+    void searchForParkingByIdAndVersion() {
 
         Parking parking = new Parking();
         parking.setCentroid(geometryFactory.createPoint(new Coordinate(10.533212, 59.678080)));
@@ -67,7 +78,7 @@ public class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResour
 
         String netexId = parking.getNetexId();
 
-        String version_1_GraphQlJsonQuery = "{" +
+        String version1GraphQlJsonQuery = "{" +
                 "\"query\":\"{" +
                 "  parking: " + GraphQLNames.FIND_PARKING + " (id:\\\"" + netexId + "\\\", version:1 ) { " +
                 "    id " +
@@ -77,14 +88,14 @@ public class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResour
                 "}\"," +
                 "\"variables\":\"\"}";
 
-        executeGraphQL(version_1_GraphQlJsonQuery)
+        executeGraphQL(version1GraphQlJsonQuery)
                 .body("data.parking[0].id", equalTo(netexId))
                 .body("data.parking[0].version", equalTo(""+parking.getVersion()))
                 .body("data.parking[0].parkingType", equalTo(parking.getParkingType().value()));
 
 
         String updatedParkingTypeValue = ParkingTypeEnumeration.PARKING_ZONE.value();
-        String version_2_GraphQlJsonQuery = "{" +
+        String version2GraphQlJsonQuery = "{" +
                 "\"query\":\"mutation { " +
                 "  parking:" + GraphQLNames.MUTATE_PARKING + " (Parking: {" +
                 "        id:\\\"" + netexId + "\\\" " +
@@ -97,7 +108,7 @@ public class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResour
                 "}\"," +
                 "\"variables\":\"\"}";
 
-        executeGraphQL(version_2_GraphQlJsonQuery)
+        executeGraphQL(version2GraphQlJsonQuery)
                 .body("data.parking[0].id", equalTo(netexId))
                 .body("data.parking[0].version", equalTo("2"))
                 .body("data.parking[0].parkingType", equalTo(updatedParkingTypeValue));
@@ -105,7 +116,7 @@ public class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResour
     }
 
     @Test
-    public void testMutateParkingWithParentSiteRef() throws Exception {
+    void testMutateParkingWithParentSiteRef() {
 
 
         StopPlace stopPlace = new StopPlace(new EmbeddableMultilingualString("Brummunddal"));
@@ -237,7 +248,7 @@ public class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResour
 
 
     @Test
-    public void testMutateParkingWithoutParentSiteRef() throws Exception {
+    void testMutateParkingWithoutParentSiteRef() {
 
         StopPlace stopPlace = stopPlaceRepository.save(new StopPlace());
 
@@ -364,7 +375,7 @@ public class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResour
 
 
     @Test
-    public void testMutateMultipleParkings() throws Exception {
+    void testMutateMultipleParkings() {
 
         StopPlace stopPlace = stopPlaceRepository.save(new StopPlace());
 
@@ -404,5 +415,139 @@ public class GraphQLResourceParkingIntegrationTest extends AbstractGraphQLResour
 
     }
 
+    private static final String DIWIO_PARKING_INPUT = """
+            name: {value: "Abri 11 novembre", lang: "fr"}
+            geometry: {type: Point, coordinates: [[10.5, 59.0]]}
+            keyValues: [{key: "imported-id", values: ["DIWIO:Parking:abri1"]}]
+            operator: "Diwio"
+            address: "3 rue du bourg"
+            postalCode: "35200"
+            city: "St Jean"
+            availabilityConditions: [{isAvailable: true, dayTypes: [{daysOfWeek: [Everyday], timeBands: [{startTime: "00:00", endTime: "23:59"}]}]}]
+            """;
 
+    @Test
+    void testMutateParkingWithOperatorAddressAndAvailabilityConditions() {
+        String netexId = executeGraphqQLQueryOnly("mutation { parking: " + GraphQLNames.MUTATE_PARKING + " (Parking: [{" + DIWIO_PARKING_INPUT + "}]) { id version } }")
+                .body("data.parking[0].version", equalTo("1"))
+                .extract().path("data.parking[0].id");
+
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        try {
+            Parking parking = entityManager.createQuery("select p from Parking p where p.netexId = :netexId", Parking.class)
+                    .setParameter("netexId", netexId)
+                    .getSingleResult();
+
+            assertThat(parking.getOperator()).isEqualTo("Diwio");
+            assertThat(parking.getAddress()).isEqualTo("3 rue du bourg");
+            assertThat(parking.getPostalAddress().getPostCode()).isEqualTo("35200");
+            assertThat(parking.getPostalAddress().getTown()).isEqualTo("St Jean");
+            assertThat(parking.getKeyValues().get("imported-id").getItems()).containsExactly("DIWIO:Parking:abri1");
+            assertThat(parking.getAvailabilityConditions()).hasSize(1);
+            AvailabilityCondition availabilityCondition = parking.getAvailabilityConditions().iterator().next();
+            assertThat(availabilityCondition.isAvailable()).isTrue();
+            assertThat(availabilityCondition.getDayTypes()).hasSize(1);
+            DayType dayType = availabilityCondition.getDayTypes().iterator().next();
+            assertThat(dayType.getDaysOfWeek()).containsExactly(DayOfWeekEnumeration.EVERYDAY);
+            assertThat(dayType.getTimeBand()).hasSize(1);
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    @Test
+    void testMutateParkingWithSameValuesDoesNotCreateNewVersion() {
+        String netexId = executeGraphqQLQueryOnly("mutation { parking: " + GraphQLNames.MUTATE_PARKING + " (Parking: [{" + DIWIO_PARKING_INPUT + "}]) { id } }")
+                .extract().path("data.parking[0].id");
+
+        executeGraphqQLQueryOnly("mutation { parking: " + GraphQLNames.MUTATE_PARKING + " (Parking: [{id: \"" + netexId + "\" " + DIWIO_PARKING_INPUT + "}]) { id version } }")
+                .body("data.parking[0].id", equalTo(netexId))
+                .body("data.parking[0].version", equalTo("1"));
+
+        executeGraphqQLQueryOnly("mutation { parking: " + GraphQLNames.MUTATE_PARKING + " (Parking: [{id: \"" + netexId + "\" " + DIWIO_PARKING_INPUT.replace("Abri 11 novembre", "Abri renomme") + "}]) { id version } }")
+                .body("data.parking[0].id", equalTo(netexId))
+                .body("data.parking[0].version", equalTo("2"));
+    }
+
+    @Test
+    void testMutateParkingsAndDeleteParkingInOneRequest() {
+        Parking toDelete = new Parking();
+        toDelete.setName(new EmbeddableMultilingualString("Old shelter"));
+        toDelete.setCentroid(geometryFactory.createPoint(new Coordinate(10.533212, 59.678080)));
+        toDelete.getKeyValues().put("imported-id", new Value("DIWIO:Parking:old"));
+        toDelete = parkingVersionedSaverService.saveNewVersion(toDelete);
+
+        executeGraphqQLQueryOnly("mutation { parking: " + GraphQLNames.MUTATE_PARKING + " (Parking: [{" + DIWIO_PARKING_INPUT + "}]) { id } "
+                + "d1: " + GraphQLNames.DELETE_PARKING + " (" + GraphQLNames.PARKING_ID + ": \"" + toDelete.getNetexId() + "\") }")
+                .body("data.parking", hasSize(1))
+                .body("data.d1", equalTo(true));
+
+        assertThat(parkingRepository.findFirstByNetexIdOrderByVersionDesc(toDelete.getNetexId())).isNull();
+    }
+
+    @Test
+    void testDiwioSyncMutationWithVariables() {
+        Parking toDelete = new Parking();
+        toDelete.setName(new EmbeddableMultilingualString("Old shelter"));
+        toDelete.setCentroid(geometryFactory.createPoint(new Coordinate(10.533212, 59.678080)));
+        toDelete = parkingVersionedSaverService.saveNewVersion(toDelete);
+
+        // Same request shape as the one sent by Damona DiwioSyncService
+        String request = """
+                {
+                  "query": "mutation DiwioParkingSync($parkings: [ParkingInput], $d0: String!) { upserts: mutateParking(Parking: $parkings) { id version } d0: deleteParking(parkingId: $d0) }",
+                  "variables": {
+                    "parkings": [{
+                      "name": {"value": "Abri 11 novembre", "lang": "fr"},
+                      "geometry": {"type": "Point", "coordinates": [[10.5, 59.0]]},
+                      "keyValues": [{"key": "imported-id", "values": ["DIWIO:Parking:abri1"]}],
+                      "operator": "Diwio",
+                      "totalCapacity": 1,
+                      "parkingType": "urbanParking",
+                      "parkingLayout": "undefined",
+                      "parkingVehicleTypes": ["pedalCycle"],
+                      "parkingPaymentProcess": ["undefined"],
+                      "availabilityConditions": [{"isAvailable": true, "dayTypes": [{"daysOfWeek": ["Everyday"]}]}],
+                      "address": "3 rue du bourg",
+                      "postalCode": "35200",
+                      "city": "St Jean"
+                    }],
+                    "d0": "%s"
+                  }
+                }
+                """.formatted(toDelete.getNetexId());
+
+        executeGraphQL(request)
+                .body("errors", org.hamcrest.Matchers.nullValue())
+                .body("data.upserts", hasSize(1))
+                .body("data.upserts[0].version", equalTo("1"))
+                .body("data.d0", equalTo(true));
+
+        assertThat(parkingRepository.findFirstByNetexIdOrderByVersionDesc(toDelete.getNetexId())).isNull();
+        assertThat(parkingRepository.findParkingIdsByOperator("Diwio"))
+                .extracting(ParkingIdEntity::getOriginalId)
+                .containsExactly("DIWIO:Parking:abri1");
+    }
+
+    @Test
+    void testNewParkingGetsInseeCodeAndInseeBasedNetexId() {
+        when(parkingInseeCodeResolver.resolve(10.5, 59.0)).thenReturn(Optional.of("35281"));
+
+        String netexId = executeGraphqQLQueryOnly("mutation { parking: " + GraphQLNames.MUTATE_PARKING + " (Parking: [{" + DIWIO_PARKING_INPUT + "}]) { id } }")
+                .extract().path("data.parking[0].id");
+
+        assertThat(netexId).matches("FR:35281:Parking:\\d+:LOC");
+        assertThat(parkingRepository.findFirstByNetexIdOrderByVersionDesc(netexId).getInsee()).isEqualTo("35281");
+    }
+
+    @Test
+    void testInseeCodeIsNotLookedUpWhenParkingDidNotMove() {
+        String netexId = executeGraphqQLQueryOnly("mutation { parking: " + GraphQLNames.MUTATE_PARKING + " (Parking: [{" + DIWIO_PARKING_INPUT + "}]) { id } }")
+                .extract().path("data.parking[0].id");
+        clearInvocations(parkingInseeCodeResolver);
+
+        executeGraphqQLQueryOnly("mutation { parking: " + GraphQLNames.MUTATE_PARKING + " (Parking: [{id: \"" + netexId + "\" " + DIWIO_PARKING_INPUT + "}]) { id } }");
+
+        verifyNoInteractions(parkingInseeCodeResolver);
+    }
 }

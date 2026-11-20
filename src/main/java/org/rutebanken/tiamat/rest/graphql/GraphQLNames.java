@@ -177,6 +177,9 @@ public class GraphQLNames {
     public static final String OUTPUT_TYPE_PARKING_INTERFACE = OUTPUT_TYPE_PARKING + "Interface";
 
     public static final String INPUT_TYPE_PARKING = OUTPUT_TYPE_PARKING + INPUT_TYPE_POSTFIX;
+    public static final String INPUT_TYPE_PARKING_AVAILABILITY_CONDITION = OUTPUT_TYPE_PARKING + "AvailabilityCondition" + INPUT_TYPE_POSTFIX;
+    public static final String INPUT_TYPE_PARKING_DAY_TYPE = OUTPUT_TYPE_PARKING + "DayType" + INPUT_TYPE_POSTFIX;
+    public static final String INPUT_TYPE_PARKING_TIME_BAND = OUTPUT_TYPE_PARKING + "TimeBand" + INPUT_TYPE_POSTFIX;
 
     public static final String OUTPUT_TYPE_PARKING_PROPERTIES = "ParkingProperties";
     public static final String INPUT_TYPE_PARKING_PROPERTIES = OUTPUT_TYPE_PARKING_PROPERTIES + INPUT_TYPE_POSTFIX;
@@ -539,6 +542,13 @@ public class GraphQLNames {
     public static final String ADDRESS = "address";
     public static final String CITY = "city";
     public static final String POSTAL_CODE = "postalCode";
+    public static final String OPERATOR = "operator";
+    public static final String AVAILABILITY_CONDITIONS = "availabilityConditions";
+    public static final String IS_AVAILABLE = "isAvailable";
+    public static final String DAY_TYPES = "dayTypes";
+    public static final String DAYS_OF_WEEK = "daysOfWeek";
+    public static final String TIME_BANDS = "timeBands";
+    public static final String DAY_OFFSET = "dayOffset";
     public static final String POI_CLASSIFICATIONS = "classifications";
     public static final String POI_FACILITY_SET = "pointOfInterestFacilitySet";
     public static final String POI_OPENING_HOURS = "pointOfInterestOpeningHours";

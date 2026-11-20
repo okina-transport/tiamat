@@ -316,30 +316,12 @@ public class MergingParkingImporter {
     }
 
     private boolean updateAvailabilityConditions(Parking copyParking, Parking incomingParking) {
-        if (availabilityConditionsSignature(copyParking.getAvailabilityConditions()).equals(availabilityConditionsSignature(incomingParking.getAvailabilityConditions()))) {
+        if (MergingUtils.availabilityConditionsSignature(copyParking.getAvailabilityConditions()).equals(MergingUtils.availabilityConditionsSignature(incomingParking.getAvailabilityConditions()))) {
             return false;
         }
         copyParking.setAvailabilityConditions(new HashSet<>(CollectionUtils.emptyIfNull(incomingParking.getAvailabilityConditions())));
         logger.info("Updated availability conditions for parking {}", copyParking);
         return true;
-    }
-
-    private Set<String> availabilityConditionsSignature(Set<AvailabilityCondition> availabilityConditions) {
-        return CollectionUtils.emptyIfNull(availabilityConditions).stream()
-                .map(availabilityCondition -> availabilityCondition.isAvailable() + ";" +
-                        CollectionUtils.emptyIfNull(availabilityCondition.getDayTypes()).stream()
-                                .map(dayType -> sortedNames(dayType.getDaysOfWeek()) + "/" + sortedNames(dayType.getHolidayTypes()) + "=" +
-                                        CollectionUtils.emptyIfNull(dayType.getTimeBand()).stream()
-                                                .map(timeBand -> timeBand.getStartTime() + "-" + timeBand.getEndTime() + "+" + timeBand.getDayOffset())
-                                                .sorted()
-                                                .collect(Collectors.joining(",")))
-                                .sorted()
-                                .collect(Collectors.joining("|")))
-                .collect(Collectors.toSet());
-    }
-
-    private String sortedNames(List<? extends Enum<?>> values) {
-        return CollectionUtils.emptyIfNull(values).stream().map(Enum::name).sorted().collect(Collectors.joining(","));
     }
 
     private boolean updateTypeOfPaymentMethods(Parking copyParking, Parking incomingParking) {

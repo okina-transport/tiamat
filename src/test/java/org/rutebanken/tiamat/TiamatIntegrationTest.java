@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat;
 
+import org.rutebanken.tiamat.service.parking.ParkingInseeCodeResolver;
 import com.hazelcast.core.HazelcastInstance;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -77,7 +78,7 @@ import static org.rutebanken.tiamat.netex.id.GaplessIdGeneratorService.INITIAL_L
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 public abstract class TiamatIntegrationTest {
 
-    private static Logger logger = LoggerFactory.getLogger(TiamatIntegrationTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(TiamatIntegrationTest.class);
 
     @DynamicPropertySource
     static void datasourceProperties(DynamicPropertyRegistry registry) {
@@ -170,6 +171,9 @@ public abstract class TiamatIntegrationTest {
 
     @MockitoBean
     public GBFSHttpClient gbfsHttpClient;
+
+    @MockitoBean
+    protected ParkingInseeCodeResolver parkingInseeCodeResolver;
 
     @Value("${local.server.port}")
     protected int port;

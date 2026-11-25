@@ -20,6 +20,7 @@ import org.entur.gbfs.mapper.GBFSMapper;
 import org.entur.gbfs.mapper.GBFSMapperImpl;
 import org.entur.gbfs.validation.GbfsValidator;
 import org.entur.gbfs.validation.GbfsValidatorFactory;
+import org.rutebanken.tiamat.externalapis.gbfs.StatusAwareGbfsHttpClient;
 import org.rutebanken.tiamat.model.StopPlace;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -57,7 +58,7 @@ public class TiamatApplication {
 
     @Bean
     public GBFSHttpClient gbfsHttpClient() {
-        return new GBFSHttpClient();
+        return new StatusAwareGbfsHttpClient();
     }
 
 }

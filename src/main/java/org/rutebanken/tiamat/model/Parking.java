@@ -41,6 +41,17 @@ public class Parking
      */
     public static final int ADDRESS_MAX_LENGTH = 1000;
 
+    /**
+     * @return the address cut to {@link #ADDRESS_MAX_LENGTH} characters, on a code point boundary (never in the middle
+     * of a surrogate pair); the address itself when it is not too long or null
+     */
+    public static String truncateAddress(String address) {
+        if (address == null || address.codePointCount(0, address.length()) <= ADDRESS_MAX_LENGTH) {
+            return address;
+        }
+        return address.substring(0, address.offsetByCodePoints(0, ADDRESS_MAX_LENGTH));
+    }
+
     @Transient
     protected String publicCode;
     @Transient

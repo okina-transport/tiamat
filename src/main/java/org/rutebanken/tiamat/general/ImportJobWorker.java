@@ -163,11 +163,40 @@ public class ImportJobWorker implements Runnable {
             if (e instanceof FieldTooLongException fieldTooLongException) {
                 job.setErrors(fieldTooLongException.toJobErrors(netexLineLocator));
             }
+            if (e instanceof GbfsHttpErrorException gbfsHttpErrorException) {
+                job.setErrors(List.of(gbfsHttpErrorException.toJobError()));
+            }
+            if (e instanceof UnsupportedGbfsVersionException unsupportedGbfsVersionException) {
+                job.setErrors(List.of(unsupportedGbfsVersionException.toJobError()));
+            }
+            if (e instanceof MissingGbfsFeedException missingGbfsFeedException) {
+                job.setErrors(missingGbfsFeedException.toJobErrors());
+            }
+            if (e instanceof GbfsInvalidEncodingException gbfsInvalidEncodingException) {
+                job.setErrors(List.of(gbfsInvalidEncodingException.toJobError()));
+            }
+            if (e instanceof GbfsInvalidJsonException gbfsInvalidJsonException) {
+                job.setErrors(List.of(gbfsInvalidJsonException.toJobError()));
+            }
+            if (e instanceof GbfsFieldErrorException gbfsFieldErrorException) {
+                job.setErrors(gbfsFieldErrorException.toJobErrors());
+            }
+            if (e instanceof GbfsFieldTooLongException gbfsFieldTooLongException) {
+                job.setErrors(gbfsFieldTooLongException.toJobErrors());
+            }
+            if (e instanceof GbfsNoStationException gbfsNoStationException) {
+                job.setErrors(List.of(gbfsNoStationException.toJobError()));
+            }
             if (e instanceof InvalidTemplateException invalidTemplateException) {
                 job.setErrors(List.of(invalidTemplateException.toJobError(job.getFileName())));
             }
             if (e instanceof DuplicatedIdentifierException duplicatedIdentifierException) {
                 job.setErrors(duplicatedIdentifierException.toJobErrors());
+            }
+            if (job.getErrors() == null || job.getErrors().isEmpty()) {
+                // exception not classified: the user is told that an unexpected error occurred, its detail is in the
+                // message of the job and in the logs
+                job.setErrors(List.of(JobError.error(AnalyzeImportErrorType.UNEXPECTED)));
             }
             String message = "Error executing import job " + job.getId() + ". " + e.getClass().getSimpleName() + " - " + exceptionMessage;
             logger.error("{}.\nImport job was {}", message, job, e);

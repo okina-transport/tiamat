@@ -174,7 +174,8 @@ public class StationInformationMapper {
         parking.setName(toParkingName(gbfsStation));
         parking.setShortName(toShortName(gbfsStation));
         parking.setCentroid(toCentroid(gbfsStation));
-        parking.setAddress(gbfsStation.getAddress());
+        // a too long address is reported by GbfsParkingImporter, with the station id
+        parking.setAddress(Parking.truncateAddress(gbfsStation.getAddress()));
         parking.setInsee(toInsee(gbfsStation));
         parking.setCrossRoad(new MultilingualStringEntity(gbfsStation.getCrossStreet()));
         parking.setTotalCapacity(toTotalCapacity(gbfsStation));

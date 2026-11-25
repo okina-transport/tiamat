@@ -138,6 +138,55 @@ class ImportJobWorkerNetexParkingErrorsTest extends TiamatIntegrationTest {
     }
 
     @Test
+    void importsParkingOfGeneralFrameInCompositeFrame() throws IOException {
+        Job job = runNetexParkingImport("parkings_v1.2_composite_frame.xml");
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.FINISHED);
+        assertThat(job.getErrors()).isNullOrEmpty();
+        assertThat(parkingRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void validatesParkingOfGeneralFrameInCompositeFrame() throws IOException {
+        Job job = runNetexParkingImport("parkings_v1.2_composite_frame_missing_total_capacity.xml");
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(job.getErrors()).containsExactly(
+                missingField("TotalCapacity", "Parking", "FR:40088:Parking:327:LOC", "17"));
+        assertThat(parkingRepository.count()).isZero();
+    }
+
+    @Test
+    void rejectsParkingsOfSiteFrame() throws IOException {
+        Job job = runNetexParkingImport("parkings_v1.2_site_frame.xml");
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(job.getErrors()).containsExactly(JobError.error(AnalyzeImportErrorType.TEMPLATE)
+                .withParam("field", "SiteFrame")
+                .withParam("errorValue", "FR:SiteFrame:1")
+                .withParam("line", "7"));
+        assertThat(parkingRepository.count()).isZero();
+    }
+
+    @Test
+    void failsWhenNoParkingIsImported() throws IOException {
+        // the parking is valid but only the first general frame of the file is imported
+        Job job = runNetexParkingImport("parkings_v1.2_parking_in_second_general_frame.xml");
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(job.getErrors()).containsExactly(JobError.error(AnalyzeImportErrorType.NO_DATA_IMPORTED));
+        assertThat(parkingRepository.count()).isZero();
+    }
+
+    @Test
+    void acceptsPublicationTimestampWithMicroseconds() throws IOException {
+        Job job = runNetexParkingImport("parkings_v1.2_timestamp_microseconds.xml");
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.FINISHED);
+        assertThat(parkingRepository.count()).isEqualTo(1);
+    }
+
+    @Test
     void populatesStructuredErrorsOnFileWithoutDataObjects() throws IOException {
         Job job = runNetexParkingImport("parkings_v1.2_no_data_objects.xml");
 

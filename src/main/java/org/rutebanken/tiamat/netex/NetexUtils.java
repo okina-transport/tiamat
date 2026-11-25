@@ -61,6 +61,25 @@ public class NetexUtils {
         }
     }
 
+    public static <T extends Common_VersionFrameStructure> List<T> getFrames(Class<T> frameClass, PublicationDeliveryStructure publicationDelivery) {
+        if (publicationDelivery.getDataObjects() == null) {
+            return List.of();
+        }
+        List<T> frames = new ArrayList<>();
+        for (JAXBElement<? extends Common_VersionFrameStructure> frame : publicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame()) {
+            if (frameClass.isInstance(frame.getValue())) {
+                frames.add(frameClass.cast(frame.getValue()));
+            } else if (frame.getValue() instanceof CompositeFrame compositeFrame && compositeFrame.getFrames() != null) {
+                compositeFrame.getFrames().getCommonFrame().stream()
+                        .map(JAXBElement::getValue)
+                        .filter(frameClass::isInstance)
+                        .map(frameClass::cast)
+                        .forEach(frames::add);
+            }
+        }
+        return frames;
+    }
+
     public static <Parking> List<Parking> getMembers(Class<Parking> clazz, List<JAXBElement<? extends EntityStructure>> members) {
         List<Parking> foundMembers = new ArrayList<>();
 

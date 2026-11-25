@@ -244,6 +244,12 @@ public class ImportJobWorker implements Runnable {
                     .withParam("line", String.valueOf(error.getLine()))
                     .withParam("errorValue", error.getErrorValue());
         }
+        if (error.getType() == AnalyzeImportErrorType.TEMPLATE && error.getField() != null) {
+            JobError jobError = JobError.error(error.getType())
+                    .withParam("field", error.getField())
+                    .withParam("errorValue", error.getErrorValue());
+            return error.getLine() != null ? jobError.withParam("line", String.valueOf(error.getLine())) : jobError;
+        }
         if (error.getType() == AnalyzeImportErrorType.MISSING_DATA && error.getField() != null && error.getLine() != null) {
             return JobError.error(error.getType())
                     .withParam("field", error.getField())
@@ -268,9 +274,25 @@ public class ImportJobWorker implements Runnable {
     private void launchNetexParkingImport() throws IOException, BindException {
         PublicationDeliveryStructure incomingPublicationDelivery = unmarshalNetex();
         if (!containsParking(incomingPublicationDelivery)) {
+            checkNoParkingInSiteFrame(incomingPublicationDelivery);
             throw new AnalyzeImportException(AnalyzeImportErrorType.NO_DATA_ROWS, "The NeTEx file does not contain any parking");
         }
-        netexImporter.importProcess(incomingPublicationDelivery, new ImportParams(), false);
+        int importedParkings = netexImporter.importProcess(incomingPublicationDelivery, new ImportParams(), false);
+        if (importedParkings == 0) {
+            throw new AnalyzeImportException(AnalyzeImportErrorType.NO_DATA_IMPORTED, "No parking of the NeTEx file has been imported");
+        }
+    }
+
+    private void checkNoParkingInSiteFrame(PublicationDeliveryStructure publicationDelivery) {
+        NetexUtils.getFrames(SiteFrame.class, publicationDelivery).stream()
+                .filter(siteFrame -> siteFrame.getParkings() != null && !siteFrame.getParkings().getParking().isEmpty())
+                .findFirst()
+                .ifPresent(siteFrame -> {
+                    Integer line = netexLineLocator != null ? netexLineLocator.findIdLine(siteFrame.getId()) : null;
+                    throw new AnalyzeImportException(List.of(new AnalyzeImportError(AnalyzeImportErrorType.TEMPLATE,
+                            "Parkings must be members of a GeneralFrame of type NETEX_PARKING, not of the SiteFrame '" + siteFrame.getId() + "'",
+                            line, "SiteFrame", siteFrame.getId())));
+                });
     }
 
     /**
@@ -318,16 +340,11 @@ public class ImportJobWorker implements Runnable {
     }
 
     /**
-     * Parkings are only imported from the members of the top level general frames (see {@link NetexImporter}).
+     * Parkings are only imported from the members of the general frames, at the top level of the file or in a
+     * composite frame (see {@link NetexImporter}).
      */
     private static boolean containsParking(PublicationDeliveryStructure publicationDelivery) {
-        if (publicationDelivery.getDataObjects() == null) {
-            return false;
-        }
-        return publicationDelivery.getDataObjects().getCompositeFrameOrCommonFrame().stream()
-                .map(JAXBElement::getValue)
-                .filter(GeneralFrame.class::isInstance)
-                .map(GeneralFrame.class::cast)
+        return NetexUtils.getFrames(GeneralFrame.class, publicationDelivery).stream()
                 .filter(generalFrame -> generalFrame.getMembers() != null)
                 .flatMap(generalFrame -> generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity().stream())
                 .anyMatch(member -> member.getValue() instanceof org.rutebanken.netex.model.Parking);

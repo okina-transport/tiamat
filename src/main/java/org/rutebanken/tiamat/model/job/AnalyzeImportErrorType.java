@@ -12,6 +12,7 @@ public enum AnalyzeImportErrorType {
     EMPTY_FILE,
     MISSING_DATA,
     NO_DATA_ROWS,
+    NO_DATA_IMPORTED,
     ROWS_IGNORED,
     UNKNOWN_CLASSIFICATION,
     INVALID_IMPORT_PARAM,

@@ -15,6 +15,7 @@
 
 package org.rutebanken.tiamat.importer;
 
+import jakarta.xml.bind.JAXBElement;
 import org.apache.commons.collections4.CollectionUtils;
 import org.rutebanken.netex.model.*;
 import org.rutebanken.tiamat.domain.Provider;
@@ -36,7 +37,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 
-import jakarta.xml.bind.JAXBElement;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -80,7 +80,7 @@ public class NetexImporter {
 
 
     @SuppressWarnings("unchecked")
-    public void importProcess(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams, Boolean containsMobiitiIds) throws BindException {
+    public int importProcess(PublicationDeliveryStructure publicationDeliveryStructure, ImportParams importParams, Boolean containsMobiitiIds) throws BindException {
 
         if (publicationDeliveryStructure.getDataObjects() == null) {
             String responseMessage = "Received publication delivery but it does not contain any data objects.";
@@ -120,6 +120,7 @@ public class NetexImporter {
             if (hasFrameOfType(publicationDeliveryStructure, SiteFrame.class)){
                 siteFrameProcess(publicationDeliveryStructure, importParams, atomicInteger, generalOrganisations, responsibilitySets);
             }
+            return atomicInteger.get();
 
         } catch (AnalyzeImportException e) {
             // errors of the imported file (ex: values too long) are reported as is to the import job

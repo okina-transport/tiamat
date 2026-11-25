@@ -205,6 +205,15 @@ public class FieldLengthValidator {
         return entityManagerFactory.unwrap(SessionFactoryImplementor.class).getMappingMetamodel();
     }
 
+    /**
+     * @param table  table name, ex: parking
+     * @param column column name, ex: booking_url
+     * @return the size of the text column, as found in the database schema; null when the column is unknown or unlimited
+     */
+    public Integer maxLength(String table, String column) {
+        return columnMaxLengths().get(columnKey(table, column));
+    }
+
     private Map<String, Integer> columnMaxLengths() {
         Map<String, Integer> lengths = columnMaxLengths;
         if (lengths == null) {

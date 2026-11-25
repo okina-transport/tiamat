@@ -155,8 +155,7 @@ public class ParkingsImportedService {
                 .withParam("entityId", parkingId != null ? parkingId : "")
                 .withParam("originalLength", String.valueOf(length))
                 .withParam("maxLength", String.valueOf(Parking.ADDRESS_MAX_LENGTH)));
-        // cut on a code point boundary, never in the middle of a surrogate pair
-        parking.setAddress(address.substring(0, address.offsetByCodePoints(0, Parking.ADDRESS_MAX_LENGTH)));
+        parking.setAddress(Parking.truncateAddress(address));
     }
 
     private boolean populateParking(Parking existingParking, Parking updatedParking) {

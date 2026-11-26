@@ -39,6 +39,8 @@ class PublicationDeliveryValidatorTest {
     private static final File NETEX_PARKING_XML_TYPE_OF_FRAME_MISSING = new File("src/test/resources/manualImports/parkingsNetex/parkings_v1.2_tof_missing.xml");
     private static final File NETEX_PARKING_XML_TYPE_OF_FRAME_INVALID = new File("src/test/resources/manualImports/parkingsNetex/parkings_v1.2_tof_invalid.xml");
     private static final File NETEX_PARKING_XML_TYPE_OF_FRAME_VALID = new File("src/test/resources/manualImports/parkingsNetex/parkings_v1.2_tof_valid.xml");
+    private static final File NETEX_PARKING_XML_TYPE_OF_FRAME_REF_INVALID = new File("src/test/resources/manualImports/parkingsNetex/parkings_v1.2_tof_ref_invalid.xml");
+    private static final File NETEX_PARKING_XML_TYPE_OF_FRAME_REF_ONLY_VALID = new File("src/test/resources/manualImports/parkingsNetex/parkings_v1.2_tof_ref_only_valid.xml");
     private static final File NETEX_POI_TWO_VALID = new File("src/test/resources/manualImports/poiNetex/poi_two_valid.xml");
     private final PublicationDeliveryUnmarshaller unmarshaller = new PublicationDeliveryUnmarshaller();
 
@@ -179,6 +181,7 @@ class PublicationDeliveryValidatorTest {
 
         // Assert
         List<FieldErrorRecordTest> expectedFieldErrors = List.of(
+                new FieldErrorRecordTest("dataObjects.compositeFrameOrCommonFrame[0].value.typeOfFrameRef.ref", VALIDATION_TOF_REF_INVALID, new Object[]{NetexConstants.NETEX_PARKING_TOF_ID, "MOBI-ITI:GeneralFrame:NETEX_PARKING_20240403T130854Z:LOC", "FR:TypeOfFrame:1"}),
                 new FieldErrorRecordTest("dataObjects.compositeFrameOrCommonFrame[0].value.members.generalFrameMemberOrDataManagedObjectOrEntity_Entity[1].value.id", VALIDATION_TOF_ID_INVALID, new Object[]{NetexConstants.NETEX_PARKING_TOF_ID, "FR:TypeOfFrame:1"}),
                 new FieldErrorRecordTest("dataObjects.compositeFrameOrCommonFrame[0].value.members.generalFrameMemberOrDataManagedObjectOrEntity_Entity[1].value.version", VALIDATION_TOF_VERSION_INVALID, new Object[]{NetexConstants.NETEX_PARKING_TOF_VERSION, "FR:TypeOfFrame:1"}),
                 new FieldErrorRecordTest("dataObjects.compositeFrameOrCommonFrame[0].value.members.generalFrameMemberOrDataManagedObjectOrEntity_Entity[1].value.name.value", VALIDATION_TOF_NAME_INVALID, new Object[]{NetexConstants.NETEX_PARKING_TOF_NAME, "FR:TypeOfFrame:1"}),
@@ -206,6 +209,38 @@ class PublicationDeliveryValidatorTest {
         List<String> expectedErrorCodes = List.of(VALIDATION_TOF_ID_INVALID, VALIDATION_TOF_VERSION_INVALID, VALIDATION_TOF_NAME_INVALID, VALIDATION_TOF_DESCRIPTION_INVALID);
         var expectedErrors = errors.getFieldErrors().stream().filter(e -> expectedErrorCodes.contains(e.getCode())).toList();
         assertEquals(0, expectedErrors.size(), "there should no type of frame validation error");
+    }
+
+    @Test
+    void givenTypeOfFrameRefIsInvalid_whenValidatingPublicationDelivery_thenProducesValidationError() throws IOException, JAXBException, SAXException {
+        // Arrange
+        var pd = unmarshaller.unmarshal(new FileInputStream(NETEX_PARKING_XML_TYPE_OF_FRAME_REF_INVALID));
+        Errors errors = new BeanPropertyBindingResult(pd, "");
+        Mockito.doNothing().when(mockParkingValidator).validate(any(), eq(errors));
+
+        // Act
+        tested.validate(pd, errors);
+
+        // Assert
+        FieldError fe = errors.getFieldError("dataObjects.compositeFrameOrCommonFrame[0].value.typeOfFrameRef.ref");
+        assertNotNull(fe, "should be an error on the TypeOfFrameRef of the general frame");
+        assertEquals(VALIDATION_TOF_REF_INVALID, fe.getCode());
+        assertArrayEquals(new Object[]{NetexConstants.NETEX_PARKING_TOF_ID, "MOBI-ITI:GeneralFrame:NETEX_PARKING_20240403T130854Z:LOC", "FR:TypeOfFrame:NM_AO:LOC"}, fe.getArguments(), "arguments should match");
+        assertEquals(0, errors.getFieldErrors().stream().filter(e -> Objects.equals(e.getCode(), VALIDATION_TOF_REQUIRED)).count(), "there should not be type of frame required validation error");
+    }
+
+    @Test
+    void givenOnlyTypeOfFrameRefIsValid_whenValidatingPublicationDelivery_thenDoesNotProduceValidationError() throws IOException, JAXBException, SAXException {
+        // Arrange
+        var pd = unmarshaller.unmarshal(new FileInputStream(NETEX_PARKING_XML_TYPE_OF_FRAME_REF_ONLY_VALID));
+        Errors errors = new BeanPropertyBindingResult(pd, "");
+        Mockito.doNothing().when(mockParkingValidator).validate(any(), eq(errors));
+
+        // Act
+        tested.validate(pd, errors);
+
+        // Assert
+        assertFalse(errors.hasErrors(), "a TypeOfFrameRef 'FR:TypeOfFrame:NETEX_PARKING' without TypeOfFrame member should be valid: " + errors.getAllErrors());
     }
 
     @Test

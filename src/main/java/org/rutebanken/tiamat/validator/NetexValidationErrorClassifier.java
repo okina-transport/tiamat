@@ -9,11 +9,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.rutebanken.tiamat.config.Messages.*;
@@ -22,6 +18,7 @@ public class NetexValidationErrorClassifier {
 
     private static final Set<String> TEMPLATE_ERROR_CODES = Set.of(
             VALIDATION_TOF_REQUIRED,
+            VALIDATION_TOF_REF_INVALID,
             VALIDATION_TOF_ID_INVALID,
             VALIDATION_TOF_VERSION_INVALID,
             VALIDATION_TOF_NAME_INVALID,

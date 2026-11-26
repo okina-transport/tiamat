@@ -5,7 +5,6 @@
     <ParticipantRef>MOBIITI</ParticipantRef>
     <dataObjects>
         <GeneralFrame id="MOBI-ITI:GeneralFrame:NETEX_PARKING_20240403T130854Z:LOC" modification="revise" version="1">
-            <TypeOfFrameRef ref="FR:TypeOfFrame:1"/>
             <members>
                 <Parking changed="2024-04-03T13:18:04.368" created="2024-04-03T12:13:43.094"
                          id="FR:75056:Parking:1:LOC"

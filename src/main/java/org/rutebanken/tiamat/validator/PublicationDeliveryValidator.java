@@ -84,12 +84,10 @@ public class PublicationDeliveryValidator implements Validator {
         if (generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity().stream().noneMatch(e -> e.getValue() instanceof Parking)) {
             return;
         }
+        validateTypeOfFrameRef(generalFrame, errors);
         // the nested paths must be popped before leaving the frame: otherwise the paths of the following frames
         // (ex: the site frame of points of interest) are wrong and the validation fails with NotReadablePropertyException
         errors.pushNestedPath("members");
-        if (generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity().stream().noneMatch(e -> e.getValue() instanceof TypeOfFrame)) {
-            errors.rejectValue("", VALIDATION_TOF_REQUIRED, new Object[]{generalFrame.getId()}, null);
-        }
         Set<String> parkingTopLevelIds = new HashSet<>();
         Map<String, List<String>> parentToChildrenParking = new HashMap<>();
         for (int j = 0; j < generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity().size(); j++) {
@@ -164,6 +162,19 @@ public class PublicationDeliveryValidator implements Validator {
             depth = Math.max(depth, getParkingDepth(childParkingId, parentToChildrenParking, depth + 1));
         }
         return depth;
+    }
+
+    private void validateTypeOfFrameRef(@NotNull GeneralFrame generalFrame, @NotNull Errors errors) {
+        String tofRef = generalFrame.getTypeOfFrameRef() != null ? generalFrame.getTypeOfFrameRef().getRef() : null;
+        if (StringUtils.isNotBlank(tofRef)) {
+            if (!StringUtils.equals(NetexConstants.NETEX_PARKING_TOF_ID, tofRef)) {
+                errors.rejectValue("typeOfFrameRef.ref", VALIDATION_TOF_REF_INVALID, new Object[]{NetexConstants.NETEX_PARKING_TOF_ID, generalFrame.getId(), tofRef}, null);
+            }
+            return;
+        }
+        if (generalFrame.getMembers().getGeneralFrameMemberOrDataManagedObjectOrEntity_Entity().stream().noneMatch(e -> e.getValue() instanceof TypeOfFrame)) {
+            errors.rejectValue("typeOfFrameRef", VALIDATION_TOF_REQUIRED, new Object[]{generalFrame.getId()}, null);
+        }
     }
 
     private void validateTypeOfFrame(@NotNull TypeOfFrame tof, @NotNull Errors errors) {

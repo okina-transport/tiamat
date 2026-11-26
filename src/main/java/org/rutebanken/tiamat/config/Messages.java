@@ -42,6 +42,7 @@ public class Messages {
     public static final String VALIDATION_COMPANY_NUMBER_REQUIRED = "validation.company-number-required";
     public static final String VALIDATION_SITE_REF_REQUIRED = "validation.site-ref-required";
     public static final String VALIDATION_TOF_REQUIRED = "validation.type-of-frame-required";
+    public static final String VALIDATION_TOF_REF_INVALID = "validation.type-of-frame-ref-invalid";
     public static final String VALIDATION_TOF_ID_INVALID = "validation.type-of-frame-id-invalid";
     public static final String VALIDATION_TOF_VERSION_INVALID = "validation.type-of-frame-version-invalid";
     public static final String VALIDATION_TOF_NAME_INVALID = "validation.type-of-frame-name-invalid";

@@ -19,6 +19,7 @@ import org.rutebanken.tiamat.auth.UsernameFetcher;
 import org.rutebanken.tiamat.model.PointOfInterest;
 import org.rutebanken.tiamat.repository.PointOfInterestRepository;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
+import org.rutebanken.tiamat.versioning.AccessibilityAssessmentVersionResolver;
 import org.rutebanken.tiamat.versioning.VersionIncrementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,9 @@ public class PointOfInterestVersionedSaverService {
 
     @Autowired
     private VersionIncrementor versionIncrementor;
+
+    @Autowired
+    private AccessibilityAssessmentVersionResolver accessibilityAssessmentVersionResolver;
 
     @Autowired
     private MetricsService metricsService;
@@ -68,6 +72,7 @@ public class PointOfInterestVersionedSaverService {
 
         newVersion.setValidBetween(null);
         versionIncrementor.initiateOrIncrement(newVersion);
+        accessibilityAssessmentVersionResolver.resolveVersions(newVersion);
 
         result = poiRepository.save(newVersion);
 

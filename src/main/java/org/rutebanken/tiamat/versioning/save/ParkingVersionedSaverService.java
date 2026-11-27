@@ -26,6 +26,7 @@ import org.rutebanken.tiamat.netex.id.NetexIdHelper;
 import org.rutebanken.tiamat.repository.ParkingRepository;
 import org.rutebanken.tiamat.repository.reference.ReferenceResolver;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
+import org.rutebanken.tiamat.versioning.AccessibilityAssessmentVersionResolver;
 import org.rutebanken.tiamat.versioning.VersionIncrementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,9 @@ public class ParkingVersionedSaverService {
 
     @Autowired
     private VersionIncrementor versionIncrementor;
+
+    @Autowired
+    private AccessibilityAssessmentVersionResolver accessibilityAssessmentVersionResolver;
 
     @Autowired
     private MetricsService metricsService;
@@ -99,6 +103,7 @@ public class ParkingVersionedSaverService {
 
         newVersion.setValidBetween(null);
         versionIncrementor.initiateOrIncrement(newVersion);
+        accessibilityAssessmentVersionResolver.resolveVersions(newVersion);
         Map<String, ParkingProperties> incrementedParkingPropertiesByNetexId = new HashMap<>();
 
         if (CollectionUtils.isNotEmpty(newVersion.getParkingProperties())) {
@@ -110,6 +115,7 @@ public class ParkingVersionedSaverService {
         if (CollectionUtils.isNotEmpty(newVersion.getParkingAreas())) {
             for (ParkingArea pa : newVersion.getParkingAreas()) {
                 versionIncrementor.initiateOrIncrement(pa);
+                accessibilityAssessmentVersionResolver.resolveVersions(pa);
                 pa.setParkingProperties(incrementSharedParkingProperties(pa.getParkingProperties(), incrementedParkingPropertiesByNetexId));
             }
         }

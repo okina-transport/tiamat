@@ -19,6 +19,7 @@ package org.rutebanken.tiamat.versioning.save;
 import org.rutebanken.tiamat.model.ParkingBay;
 import org.rutebanken.tiamat.repository.ParkingBaysRepository;
 import org.rutebanken.tiamat.service.metrics.MetricsService;
+import org.rutebanken.tiamat.versioning.AccessibilityAssessmentVersionResolver;
 import org.rutebanken.tiamat.versioning.VersionIncrementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +40,9 @@ public class ParkingBaysVersionedSaverService {
 
     @Autowired
     private VersionIncrementor versionIncrementor;
+
+    @Autowired
+    private AccessibilityAssessmentVersionResolver accessibilityAssessmentVersionResolver;
 
     @Autowired
     private MetricsService metricsService;
@@ -64,6 +68,7 @@ public class ParkingBaysVersionedSaverService {
 
         newVersion.setValidBetween(null);
         versionIncrementor.initiateOrIncrement(newVersion);
+        accessibilityAssessmentVersionResolver.resolveVersions(newVersion);
 
         result = parkingBaysRepository.save(newVersion);
 
